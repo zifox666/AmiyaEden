@@ -1,0 +1,36 @@
+server:
+  port: "8080"
+  mode: "debug" # debug | release | test
+
+database:
+  host: "127.0.0.1"
+  port: 3306
+  user: "root"
+  password: "your_password"
+  dbname: "amiya_eden"
+  charset: "utf8mb4"
+  max_idle_conns: 10
+  max_open_conns: 100
+
+log:
+  level: "debug"          # debug | info | warn | error
+  filename: "logs/app.log"
+  max_size: 100           # 单文件最大 100MB
+  max_backups: 7          # 最多保留 7 个备份
+  max_age: 30             # 最多保留 30 天
+  compress: true          # 压缩旧文件
+
+jwt:
+  secret: "change_me_in_production"
+  expire_day: 7
+
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""          # 无密码留空
+  db: 0                 # 使用默认 DB
+  pool_size: 10         # 连接池大小
+
+eve_sso:
+  client_id: "your_eve_app_client_id"          # EVE 开发者控制台申请的 Client ID
+  client_secret: "your_eve_app_client_secret"  # EVE 开发者控制台申请的 Client Secret
+  callback_url: "http://localhost:8080/api/v1/sso/eve/callback"
