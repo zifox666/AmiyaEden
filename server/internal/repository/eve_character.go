@@ -40,3 +40,15 @@ func (r *EveCharacterRepository) ListByUserID(userID uint) ([]model.EveCharacter
 func (r *EveCharacterRepository) Update(char *model.EveCharacter) error {
 	return global.DB.Save(char).Error
 }
+
+// ListAllWithToken 查询所有有 refresh_token 的角色（用于 ESI 数据刷新队列）
+func (r *EveCharacterRepository) ListAllWithToken() ([]model.EveCharacter, error) {
+	var chars []model.EveCharacter
+	err := global.DB.Where("refresh_token != '' AND refresh_token IS NOT NULL").Find(&chars).Error
+	return chars, err
+}
+
+// Delete 删除角色记录（硬删除）
+func (r *EveCharacterRepository) Delete(id uint) error {
+	return global.DB.Unscoped().Delete(&model.EveCharacter{}, id).Error
+}

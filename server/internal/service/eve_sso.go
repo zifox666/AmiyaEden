@@ -97,8 +97,9 @@ const (
 
 // stateData OAuth state 中存储的数据
 type stateData struct {
-	ExtraScopes []string `json:"extra_scopes,omitempty"`
-	RedirectURL string   `json:"redirect_url,omitempty"`
+	ExtraScopes  []string `json:"extra_scopes,omitempty"`
+	RedirectURL  string   `json:"redirect_url,omitempty"`
+	BindToUserID uint     `json:"bind_to_user_id,omitempty"` // >0 时表示「绑定角色」流程，而非登录
 }
 
 // EveSSOService EVE SSO 业务逻辑层
@@ -134,6 +135,24 @@ func (s *EveSSOService) GetAuthURL(ctx context.Context, extraScopes []string, re
 	if err := cache.Set(ctx, stateCachePrefix+state, data, stateCacheTTL); err != nil {
 		global.Logger.Warn("存储 SSO state 失败", zap.Error(err))
 		// Redis 不可用时仍允许继续（降级）
+	}
+
+	scopes := buildLoginScopes(extraScopes)
+	return s.eveClient.BuildAuthURL(state, scopes), nil
+}
+
+// GetBindAuthURL 生成「绑定新角色」的 EVE SSO 授权 URL
+// 与 GetAuthURL 不同的是，state 中会记录当前登录用户 ID，回调时将角色绑到该用户下
+func (s *EveSSOService) GetBindAuthURL(ctx context.Context, userID uint, extraScopes []string, redirectURL string) (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	state := hex.EncodeToString(b)
+
+	data := stateData{ExtraScopes: extraScopes, RedirectURL: redirectURL, BindToUserID: userID}
+	if err := cache.Set(ctx, stateCachePrefix+state, data, stateCacheTTL); err != nil {
+		global.Logger.Warn("存储 SSO state 失败", zap.Error(err))
 	}
 
 	scopes := buildLoginScopes(extraScopes)
@@ -191,14 +210,54 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
-		// 首次登录：创建新用户 + 新角色
+
+		// 该角色第一次出现
+
+		// ── 绑定流程：将新角色绑定到已登录的用户 ──
+		if sd.BindToUserID > 0 {
+			user, err := s.userRepo.GetByID(sd.BindToUserID)
+			if err != nil {
+				return nil, errors.New("绑定目标用户不存在")
+			}
+
+			char = &model.EveCharacter{
+				CharacterID:   characterID,
+				CharacterName: claims.Name,
+				PortraitURL:   portraitURL,
+				UserID:        user.ID,
+				AccessToken:   tokenResp.AccessToken,
+				RefreshToken:  tokenResp.RefreshToken,
+				TokenExpiry:   tokenExpiry,
+				Scopes:        scopesStr,
+			}
+			if err := s.charRepo.Create(char); err != nil {
+				return nil, err
+			}
+
+			// 如果用户还没有主角色，自动设为主角色
+			if user.PrimaryCharacterID == 0 {
+				user.PrimaryCharacterID = characterID
+				if err := s.userRepo.Update(user); err != nil {
+					return nil, err
+				}
+			}
+
+			jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+			if err != nil {
+				return nil, err
+			}
+			return &CallbackResult{Token: jwtToken, User: user, Character: char, RedirectURL: sd.RedirectURL}, nil
+		}
+
+		// ── 登录流程：首次登录，创建新用户 + 新角色 ──
 		user := &model.User{
-			Nickname:    claims.Name,
-			Avatar:      portraitURL,
-			Status:      1,
-			Role:        "user",
-			LastLoginAt: &now,
-			LastLoginIP: clientIP,
+			Nickname:           claims.Name,
+			Avatar:             portraitURL,
+			Status:             1,
+			Role:               "user",
+			PrimaryCharacterID: characterID,
+			LastLoginAt:        &now,
+			LastLoginIP:        clientIP,
 		}
 		if err := s.userRepo.Create(user); err != nil {
 			return nil, err
@@ -218,14 +277,42 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 			return nil, err
 		}
 
-		jwtToken, err := jwt.GenerateToken(user.ID, characterID, global.Config.JWT.ExpireDay)
+		jwtToken, err := jwt.GenerateToken(user.ID, characterID, user.Role, global.Config.JWT.ExpireDay)
 		if err != nil {
 			return nil, err
 		}
 		return &CallbackResult{Token: jwtToken, User: user, Character: char, RedirectURL: sd.RedirectURL}, nil
 	}
 
-	// 已有角色：更新 Token 及信息
+	// 已有角色
+
+	// ── 绑定流程：该角色已存在 ──
+	if sd.BindToUserID > 0 {
+		if char.UserID != sd.BindToUserID {
+			return nil, errors.New("该角色已绑定到其他账号，无法再次绑定")
+		}
+		// 角色已属于当前用户，更新 Token 即可
+		char.AccessToken = tokenResp.AccessToken
+		char.RefreshToken = tokenResp.RefreshToken
+		char.TokenExpiry = tokenExpiry
+		char.Scopes = scopesStr
+		char.CharacterName = claims.Name
+		char.PortraitURL = portraitURL
+		if err := s.charRepo.Update(char); err != nil {
+			return nil, err
+		}
+		user, err := s.userRepo.GetByID(sd.BindToUserID)
+		if err != nil {
+			return nil, err
+		}
+		jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+		if err != nil {
+			return nil, err
+		}
+		return &CallbackResult{Token: jwtToken, User: user, Character: char, RedirectURL: sd.RedirectURL}, nil
+	}
+
+	// ── 登录流程：已有角色重新登录 ──
 	char.AccessToken = tokenResp.AccessToken
 	char.RefreshToken = tokenResp.RefreshToken
 	char.TokenExpiry = tokenExpiry
@@ -243,14 +330,18 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	}
 	user.LastLoginAt = &now
 	user.LastLoginIP = clientIP
-	// 同步头像和昵称（取第一个角色）
+	// 如果用户还没有主角色，自动设为当前登录角色
+	if user.PrimaryCharacterID == 0 {
+		user.PrimaryCharacterID = characterID
+	}
+	// 同步头像和昵称为主角色
 	user.Avatar = portraitURL
 	user.Nickname = claims.Name
 	if err := s.userRepo.Update(user); err != nil {
 		return nil, err
 	}
 
-	jwtToken, err := jwt.GenerateToken(user.ID, characterID, global.Config.JWT.ExpireDay)
+	jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
 	if err != nil {
 		return nil, err
 	}
@@ -298,4 +389,80 @@ func (s *EveSSOService) refreshCharacterToken(ctx context.Context, char *model.E
 // GetCharactersByUserID 获取用户绑定的所有 EVE 角色（不含 Token）
 func (s *EveSSOService) GetCharactersByUserID(userID uint) ([]model.EveCharacter, error) {
 	return s.charRepo.ListByUserID(userID)
+}
+
+// SetPrimaryCharacter 设置用户的主角色
+func (s *EveSSOService) SetPrimaryCharacter(userID uint, characterID int64) error {
+	// 验证该角色确实属于当前用户
+	char, err := s.charRepo.GetByCharacterID(characterID)
+	if err != nil {
+		return errors.New("角色不存在")
+	}
+	if char.UserID != userID {
+		return errors.New("该角色不属于当前用户")
+	}
+
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return errors.New("用户不存在")
+	}
+
+	user.PrimaryCharacterID = characterID
+	user.Avatar = char.PortraitURL
+	user.Nickname = char.CharacterName
+	return s.userRepo.Update(user)
+}
+
+// UnbindCharacter 解除绑定某个 EVE 角色
+func (s *EveSSOService) UnbindCharacter(userID uint, characterID int64) error {
+	char, err := s.charRepo.GetByCharacterID(characterID)
+	if err != nil {
+		return errors.New("角色不存在")
+	}
+	if char.UserID != userID {
+		return errors.New("该角色不属于当前用户")
+	}
+
+	// 确保至少保留一个角色
+	chars, err := s.charRepo.ListByUserID(userID)
+	if err != nil {
+		return err
+	}
+	if len(chars) <= 1 {
+		return errors.New("至少需要保留一个角色，无法解绑")
+	}
+
+	// 如果要解绑的是主角色，自动切换到另一个角色
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return err
+	}
+	if user.PrimaryCharacterID == characterID {
+		for _, c := range chars {
+			if c.CharacterID != characterID {
+				user.PrimaryCharacterID = c.CharacterID
+				user.Avatar = c.PortraitURL
+				user.Nickname = c.CharacterName
+				break
+			}
+		}
+		if err := s.userRepo.Update(user); err != nil {
+			return err
+		}
+	}
+
+	return s.charRepo.Delete(char.ID)
+}
+
+// GetRedirectURLFromState 仅读取 state 对应的前端 redirect URL（不删除 state）
+// 用于错误场景下仍能跳回前端
+func (s *EveSSOService) GetRedirectURLFromState(ctx context.Context, state string) string {
+	if state == "" {
+		return ""
+	}
+	var sd stateData
+	if err := cache.Get(ctx, stateCachePrefix+state, &sd); err != nil {
+		return ""
+	}
+	return sd.RedirectURL
 }

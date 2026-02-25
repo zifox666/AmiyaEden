@@ -6,8 +6,8 @@ database:
   host: "127.0.0.1"
   port: 3306
   user: "root"
-  password: "your_password"
-  dbname: "amiya_eden"
+  password: "123456"
+  dbname: "amiya-eden"
   charset: "utf8mb4"
   max_idle_conns: 10
   max_open_conns: 100
@@ -31,6 +31,10 @@ redis:
   pool_size: 10         # 连接池大小
 
 eve_sso:
-  client_id: "your_eve_app_client_id"          # EVE 开发者控制台申请的 Client ID
-  client_secret: "your_eve_app_client_secret"  # EVE 开发者控制台申请的 Client Secret
+  client_id: "44fbbf1270ce427e8df49903b7e83729"          # EVE 开发者控制台申请的 Client ID
+  client_secret: "TD70Lr81Ql7o3Sq7E56YitgRBTKQQKcxDmqhenoA"  # EVE 开发者控制台申请的 Client Secret
   callback_url: "http://localhost:8080/api/v1/sso/eve/callback"
+
+sde:
+  api_key: "change_me_sde_api_key"  # 用于保护 SDE 数据查询接口的 API Key
+  proxy: "http://127.0.0.1:7890"    # 下载 SDE 时使用的代理，例如 http://127.0.0.1:7890 或 socks5://127.0.0.1:1080，留空不使用

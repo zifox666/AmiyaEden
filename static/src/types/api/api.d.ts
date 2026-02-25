@@ -62,26 +62,61 @@ declare namespace Api {
 
   /** 认证类型 */
   namespace Auth {
-    /** 登录参数 */
+    /** 登录参数（已废弃，仅保留兼容） */
     interface LoginParams {
       userName: string
       password: string
     }
 
-    /** 登录响应 */
+    /** 登录响应（已废弃，仅保留兼容） */
     interface LoginResponse {
       token: string
       refreshToken: string
     }
 
-    /** 用户信息 */
+    /** EVE 角色信息 */
+    interface EveCharacter {
+      id: number
+      character_id: number
+      character_name: string
+      portrait_url: string
+      user_id: number
+      scopes: string
+      token_expiry: string
+    }
+
+    /** 已注册的 ESI Scope */
+    interface RegisteredScope {
+      module: string
+      scope: string
+      description: string
+      required: boolean
+    }
+
+    /** /me 接口响应 */
+    interface MeResponse {
+      user: {
+        id: number
+        nickname: string
+        avatar: string
+        status: number
+        role: string
+        primary_character_id: number
+        last_login_at: string
+        last_login_ip: string
+      }
+      characters: EveCharacter[]
+    }
+
+    /** 用户信息（路由守卫和权限指令使用） */
     interface UserInfo {
       buttons: string[]
       roles: string[]
       userId: number
       userName: string
-      email: string
-      avatar?: string
+      avatar: string
+      characters?: EveCharacter[]
+      primaryCharacterId?: number
     }
   }
 
@@ -90,28 +125,26 @@ declare namespace Api {
     /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
-    /** 用户列表项 */
+    /** 用户列表项（匹配后端 model.User） */
     interface UserListItem {
       id: number
+      nickname: string
       avatar: string
-      status: string
-      userName: string
-      userGender: string
-      nickName: string
-      userPhone: string
-      userEmail: string
-      userRoles: string[]
-      createBy: string
-      createTime: string
-      updateBy: string
-      updateTime: string
+      status: number // 1:正常 0:禁用
+      role: string // super_admin | admin | user | guest
+      last_login_at: string | null
+      last_login_ip: string
+      created_at: string
+      updated_at: string
     }
 
     /** 用户搜索参数 */
-    type UserSearchParams = Partial<
-      Pick<UserListItem, 'id' | 'userName' | 'userGender' | 'userPhone' | 'userEmail' | 'status'> &
-        Api.Common.CommonSearchParams
-    >
+    type UserSearchParams = Partial<{
+      nickname: string
+      status: number
+      role: string
+    }> &
+      Partial<Api.Common.CommonSearchParams>
 
     /** 角色列表 */
     type RoleList = Api.Common.PaginatedResponse<RoleListItem>
@@ -131,5 +164,284 @@ declare namespace Api {
       Pick<RoleListItem, 'roleId' | 'roleName' | 'roleCode' | 'description' | 'enabled'> &
         Api.Common.CommonSearchParams
     >
+  }
+
+  /** ESI 刷新队列类型 */
+  namespace ESIRefresh {
+    /** 任务定义信息 */
+    interface TaskInfo {
+      name: string
+      description: string
+      priority: number
+      active_interval: string
+      inactive_interval: string
+      required_scopes: string[]
+    }
+
+    /** 任务运行时状态 */
+    interface TaskStatus {
+      task_name: string
+      description: string
+      character_id: number
+      priority: number
+      last_run?: string | null
+      next_run?: string | null
+      status: 'pending' | 'running' | 'success' | 'failed'
+      error?: string
+    }
+
+    /** 手动触发任务请求参数（指定角色） */
+    interface RunTaskParams {
+      task_name: string
+      character_id: number
+    }
+
+    /** 手动触发任务请求参数（所有角色） */
+    interface RunTaskByNameParams {
+      task_name: string
+    }
+
+    /** 任务状态搜索参数（分页 + 筛选） */
+    type TaskStatusSearchParams = Partial<{
+      task_name: string
+      status: string
+    }> &
+      Partial<Api.Common.CommonSearchParams>
+
+    /** 任务状态分页响应 */
+    type TaskStatusList = Api.Common.PaginatedResponse<TaskStatus>
+  }
+
+  /** 舰队管理类型 */
+  namespace Fleet {
+    /** 舰队信息 */
+    interface FleetItem {
+      id: string
+      title: string
+      description: string
+      start_at: string
+      end_at: string
+      importance: 'strat_op' | 'cta' | 'other'
+      pap_count: number
+      fc_user_id: number
+      fc_character_id: number
+      fc_character_name: string
+      esi_fleet_id: number | null
+      created_at: string
+      updated_at: string
+    }
+
+    /** 舰队列表（分页） */
+    type FleetList = Api.Common.PaginatedResponse<FleetItem>
+
+    /** 舰队搜索参数 */
+    type FleetSearchParams = Partial<{
+      importance: string
+      fc_user_id: number
+    }> &
+      Partial<Api.Common.CommonSearchParams>
+
+    /** 创建舰队请求 */
+    interface CreateFleetParams {
+      title: string
+      description?: string
+      start_at: string
+      end_at: string
+      importance: 'strat_op' | 'cta' | 'other'
+      pap_count: number
+      character_id: number
+    }
+
+    /** 更新舰队请求 */
+    interface UpdateFleetParams {
+      title?: string
+      description?: string
+      start_at?: string
+      end_at?: string
+      importance?: string
+      pap_count?: number
+      character_id?: number
+      esi_fleet_id?: number
+    }
+
+    /** 舰队成员 */
+    interface FleetMember {
+      id: number
+      fleet_id: string
+      character_id: number
+      character_name: string
+      user_id: number
+      ship_type_id: number | null
+      solar_system_id: number | null
+      joined_at: string
+      created_at: string
+    }
+
+    /** PAP 记录 */
+    interface PapLog {
+      id: number
+      fleet_id: string
+      character_id: number
+      user_id: number
+      pap_count: number
+      issued_by: number
+      created_at: string
+    }
+
+    /** 邀请链接 */
+    interface FleetInvite {
+      id: number
+      fleet_id: string
+      code: string
+      active: boolean
+      expires_at: string
+      created_at: string
+    }
+
+    /** 加入舰队请求 */
+    interface JoinFleetParams {
+      code: string
+      character_id: number
+    }
+
+    /** 钱包信息 */
+    interface Wallet {
+      id: number
+      user_id: number
+      balance: number
+      updated_at: string
+    }
+
+    /** 钱包流水 */
+    interface WalletTransaction {
+      id: number
+      user_id: number
+      amount: number
+      reason: string
+      ref_type: string
+      ref_id: string
+      balance_after: number
+      created_at: string
+    }
+
+    /** 钱包流水分页 */
+    type WalletTransactionList = Api.Common.PaginatedResponse<WalletTransaction>
+
+    /** ESI 角色舰队信息 */
+    interface CharacterFleetInfo {
+      fleet_id: number
+      fleet_boss_id: number
+      role: string
+      squad_id: number
+      wing_id: number
+    }
+
+    /** ESI 舰队成员 */
+    interface ESIFleetMember {
+      character_id: number
+      join_time: string
+      role: string
+      role_name: string
+      ship_type_id: number
+      solar_system_id: number
+      squad_id: number
+      wing_id: number
+    }
+  }
+
+  /** SRP 补损管理类型 */
+  namespace Srp {
+    /** 舰船标准补损金额 */
+    interface ShipPrice {
+      id: number
+      ship_type_id: number
+      ship_name: string
+      amount: number
+      created_by: number
+      updated_by: number
+      created_at: string
+      updated_at: string
+    }
+
+    /** 新增/更新舰船价格请求 */
+    interface UpsertShipPriceParams {
+      id?: number
+      ship_type_id: number
+      ship_name: string
+      amount: number
+    }
+
+    /** 补损申请 */
+    interface Application {
+      id: number
+      user_id: number
+      character_id: number
+      character_name: string
+      killmail_id: number
+      fleet_id: string | null
+      note: string
+      ship_type_id: number
+      ship_name: string
+      solar_system_id: number
+      solar_system_name: string
+      killmail_time: string
+      corporation_id: number
+      corporation_name: string
+      alliance_id: number
+      alliance_name: string
+      recommended_amount: number
+      final_amount: number
+      review_status: 'pending' | 'approved' | 'rejected'
+      reviewed_by: number | null
+      reviewed_at: string | null
+      review_note: string
+      payout_status: 'pending' | 'paid'
+      paid_by: number | null
+      paid_at: string | null
+      created_at: string
+      updated_at: string
+    }
+
+    /** 申请列表分页响应 */
+    type ApplicationList = Api.Common.PaginatedResponse<Application>
+
+    /** 提交补损申请请求 */
+    interface SubmitApplicationParams {
+      character_id: number
+      killmail_id: number
+      fleet_id?: string | null
+      note?: string
+      final_amount?: number
+    }
+
+    /** 申请搜索参数（管理端） */
+    type ApplicationSearchParams = Partial<{
+      fleet_id: string
+      character_id: number
+      review_status: string
+      payout_status: string
+    }> &
+      Partial<Api.Common.CommonSearchParams>
+
+    /** 审批请求 */
+    interface ReviewParams {
+      action: 'approve' | 'reject'
+      review_note?: string
+      final_amount?: number
+    }
+
+    /** 发放请求 */
+    interface PayoutParams {
+      final_amount?: number
+    }
+
+    /** 快捷 KM 列表条目 */
+    interface FleetKillmailItem {
+      killmail_id: number
+      killmail_time: string
+      ship_type_id: number
+      solar_system_id: number
+      victim_name: string
+    }
   }
 }

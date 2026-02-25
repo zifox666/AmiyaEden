@@ -62,6 +62,26 @@ func autoMigrate(db *gorm.DB) {
 		&model.User{},
 		&model.OperationLog{},
 		&model.EveCharacter{},
+		&model.SdeVersion{},
+		// ESI 数据表
+		&model.EveCharacterAsset{},
+		&model.EveCharacterNotification{},
+		&model.EveCharacterTitle{},
+		&model.EveCharacterClone{},
+		&model.EveKillmailList{},
+		&model.EveKillmailItem{},
+		&model.EveCharacterKillmail{},
+		&model.EveCharacterContract{},
+		// Fleet / Operation 相关表
+		&model.Fleet{},
+		&model.FleetMember{},
+		&model.FleetPapLog{},
+		&model.FleetInvite{},
+		&model.SystemWallet{},
+		&model.WalletTransaction{},
+		// SRP 补损相关表
+		&model.SrpShipPrice{},
+		&model.SrpApplication{},
 	); err != nil {
 		global.Logger.Fatal("数据库迁移失败", zap.Error(err))
 	}

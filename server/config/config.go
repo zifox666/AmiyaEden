@@ -8,6 +8,7 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	EveSSO   EveSSOConfig   `mapstructure:"eve_sso"`
+	SDE      SDEConfig      `mapstructure:"sde"`
 }
 
 // ServerConfig HTTP 服务配置
@@ -57,4 +58,10 @@ type EveSSOConfig struct {
 	ClientID     string `mapstructure:"client_id"`
 	ClientSecret string `mapstructure:"client_secret"`
 	CallbackURL  string `mapstructure:"callback_url"`
+}
+
+// SDEConfig SDE 模块配置
+type SDEConfig struct {
+	APIKey string `mapstructure:"api_key"` // 用于保护数据查询接口的 API Key
+	Proxy  string `mapstructure:"proxy"`   // 下载 SDE 时使用的 HTTP/SOCKS5 代理，留空则不使用
 }

@@ -4,6 +4,8 @@ import (
 	"amiya-eden/internal/middleware"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
+	"fmt"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,7 +41,7 @@ func (h *EveSSOHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(302, authURL)
+	response.OK(c, gin.H{"url": authURL})
 }
 
 // Callback 处理 EVE SSO OAuth 回调
@@ -50,16 +52,29 @@ func (h *EveSSOHandler) Callback(c *gin.Context) {
 	state := c.Query("state")
 	errParam := c.Query("error")
 
+	// 尝试从 state 中恢复前端 redirect URL，用于错误时也能跳回前端
+	frontendRedirect := h.svc.GetRedirectURLFromState(c.Request.Context(), state)
+
+	// 错误重定向辅助函数：带 error 参数跳回前端 callback 页面
+	redirectError := func(errMsg string) {
+		if frontendRedirect != "" {
+			target := frontendRedirect + "?error=" + url.QueryEscape(errMsg)
+			c.Redirect(302, target)
+			return
+		}
+		response.Fail(c, response.CodeBizError, errMsg)
+	}
+
 	if errParam != "" {
 		errDesc := c.DefaultQuery("error_description", errParam)
-		response.Fail(c, response.CodeUnauthorized, "EVE SSO 授权被拒绝: "+errDesc)
+		redirectError("EVE SSO 授权被拒绝: " + errDesc)
 		return
 	}
 
 	clientIP := c.ClientIP()
 	result, err := h.svc.HandleCallback(c.Request.Context(), code, state, clientIP)
 	if err != nil {
-		response.Fail(c, response.CodeBizError, "登录处理失败: "+err.Error())
+		redirectError("登录处理失败: " + err.Error())
 		return
 	}
 
@@ -100,6 +115,88 @@ func (h *EveSSOHandler) GetMyCharacters(c *gin.Context) {
 		return
 	}
 	response.OK(c, chars)
+}
+
+// BindLogin 发起「绑定新角色」的 EVE SSO 授权
+// 与 Login 类似，但 state 中记录当前用户 ID，回调时将角色绑到该用户
+//
+// GET /api/v1/sso/eve/bind?redirect=xxx&scopes=esi-xxx.v1
+func (h *EveSSOHandler) BindLogin(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Fail(c, response.CodeUnauthorized, "未登录")
+		return
+	}
+
+	redirectURL := c.Query("redirect")
+	scopesParam := c.Query("scopes")
+
+	var extraScopes []string
+	if scopesParam != "" {
+		for _, s := range splitCSV(scopesParam) {
+			if s != "" {
+				extraScopes = append(extraScopes, s)
+			}
+		}
+	}
+
+	authURL, err := h.svc.GetBindAuthURL(c.Request.Context(), userID, extraScopes, redirectURL)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, "生成授权 URL 失败: "+err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"url": authURL})
+}
+
+// SetPrimary 设置主角色
+//
+// PUT /api/v1/sso/eve/primary/:character_id
+func (h *EveSSOHandler) SetPrimary(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Fail(c, response.CodeUnauthorized, "未登录")
+		return
+	}
+
+	cidStr := c.Param("character_id")
+	var characterID int64
+	if _, err := fmt.Sscanf(cidStr, "%d", &characterID); err != nil || characterID <= 0 {
+		response.Fail(c, response.CodeParamError, "无效的角色 ID")
+		return
+	}
+
+	if err := h.svc.SetPrimaryCharacter(userID, characterID); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, nil)
+}
+
+// Unbind 解除绑定角色
+//
+// DELETE /api/v1/sso/eve/characters/:character_id
+func (h *EveSSOHandler) Unbind(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Fail(c, response.CodeUnauthorized, "未登录")
+		return
+	}
+
+	cidStr := c.Param("character_id")
+	var characterID int64
+	if _, err := fmt.Sscanf(cidStr, "%d", &characterID); err != nil || characterID <= 0 {
+		response.Fail(c, response.CodeParamError, "无效的角色 ID")
+		return
+	}
+
+	if err := h.svc.UnbindCharacter(userID, characterID); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, nil)
 }
 
 // splitCSV 按逗号或空格分割字符串

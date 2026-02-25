@@ -36,6 +36,13 @@
     "tips": "Prompt",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "refresh": "Refresh",
+    "operation": "Operation",
+    "detail": "Detail",
+    "edit": "Edit",
+    "delete": "Delete",
+    "status": "Status",
+    "updatedAt": "Updated At",
     "logOutTips": "Do you want to log out?"
   },
   "search": {
@@ -150,28 +157,22 @@
   },
   "login": {
     "leftView": {
-      "title": "A backend system of beauty and efficiency",
-      "subTitle": "A sleek and practical interface for a great user experience"
+      "title": "AmiyaEden \u2014 EVE Online Tools & Community",
+      "subTitle": "Sign in with your EVE Online character, secure and simple"
     },
-    "title": "Welcome back",
-    "subTitle": "Please enter your account and password to login",
-    "roles": {
-      "super": "Super Admin",
-      "admin": "Admin",
-      "user": "User"
+    "title": "Welcome",
+    "subTitle": "Sign in with your EVE Online identity",
+    "btnText": "Sign In with EVE Online",
+    "redirecting": "Redirecting to EVE Online...",
+    "hint": "You will be redirected to the official EVE Online authorization page",
+    "callback": {
+      "loading": "Verifying login...",
+      "loadingSub": "Processing EVE Online authorization, please wait",
+      "success": "Login successful",
+      "successSub": "Welcome back, {name}! Redirecting...",
+      "error": "Login failed",
+      "retry": "Try again"
     },
-    "placeholder": {
-      "username": "Please enter your account",
-      "password": "Please enter your password",
-      "slider": "Please slide to verify"
-    },
-    "sliderText": "Please slide to verify",
-    "sliderSuccessText": "Verification successful",
-    "rememberPwd": "Remember password",
-    "forgetPwd": "Forgot password",
-    "btnText": "Login",
-    "noAccount": "No account yet?",
-    "register": "Register",
     "success": {
       "title": "Login successful",
       "message": "Welcome back"
@@ -261,8 +262,246 @@
       "title": "System Settings",
       "user": "User Manage",
       "role": "Role Manage",
+      "characters": "Characters",
       "userCenter": "User Center",
-      "menu": "Menu Manage"
+      "menu": "Menu Manage",
+      "esiRefresh": "Scheduled Tasks"
+    },
+    "characters": {
+      "title": "EVE Characters"
+    },
+    "operation": {
+      "title": "Fleet Operations",
+      "fleets": "Fleet Management",
+      "fleetDetail": "Fleet Detail",
+      "pap": "My PAP",
+      "wallet": "My Wallet",
+      "join": "Join Fleet",
+      "srpApply": "SRP Apply",
+      "srpManage": "SRP Review",
+      "srpPrices": "SRP Price List"
+    },
+    "srp": {
+      "title": "SRP",
+      "srpApply": "SRP Apply",
+      "srpManage": "SRP Review",
+      "srpPrices": "SRP Prices"
+    }
+  },
+  "fleet": {
+    "title": "Fleet Management",
+    "subTitle": "Create and manage EVE fleet operations",
+    "create": "Create Fleet",
+    "edit": "Edit Fleet",
+    "delete": "Delete Fleet",
+    "deleteConfirm": "Are you sure you want to delete fleet \"{name}\"? This cannot be undone.",
+    "deleteSuccess": "Fleet deleted",
+    "createSuccess": "Fleet created",
+    "updateSuccess": "Fleet updated",
+    "fields": {
+      "title": "Title",
+      "titlePlaceholder": "Operation name",
+      "importance": "Importance",
+      "papCount": "PAP Count",
+      "timeRange": "Time Range",
+      "startAt": "Start Time",
+      "endAt": "End Time",
+      "fc": "Fleet Commander",
+      "fcPlaceholder": "Select a character as FC",
+      "description": "Description",
+      "descriptionPlaceholder": "Additional information about this operation",
+      "esiFleetId": "ESI Fleet ID"
+    },
+    "importance": {
+      "strat_op": "Strat Op",
+      "cta": "CTA",
+      "other": "Other"
+    },
+    "members": {
+      "title": "Fleet Members",
+      "empty": "No members yet",
+      "syncESI": "Sync from ESI",
+      "syncSuccess": "Members synced",
+      "characterName": "Character",
+      "shipType": "Ship",
+      "joinedAt": "Joined At"
+    },
+    "pap": {
+      "title": "PAP Distribution",
+      "issue": "Issue PAP",
+      "issueConfirm": "Issue PAP to all members?",
+      "issueSuccess": "PAP issued",
+      "myTitle": "My PAP Records",
+      "count": "PAP Count",
+      "issuedBy": "Issued By",
+      "issuedAt": "Issued At",
+      "empty": "No PAP records"
+    },
+    "invite": {
+      "title": "Invite Links",
+      "create": "Generate Invite Link",
+      "createSuccess": "Invite link created",
+      "deactivate": "Deactivate",
+      "deactivateConfirm": "Deactivate this invite link?",
+      "deactivateSuccess": "Invite link deactivated",
+      "code": "Invite Code",
+      "active": "Active",
+      "inactive": "Inactive",
+      "expiresAt": "Expires At",
+      "copyLink": "Copy Link",
+      "copied": "Copied to clipboard"
+    },
+    "join": {
+      "title": "Join Fleet",
+      "selectCharacter": "Select Character",
+      "selectCharacterPlaceholder": "Choose a character to join the fleet",
+      "joinSuccess": "Successfully joined the fleet",
+      "invalidCode": "Invalid invite code"
+    },
+    "wallet": {
+      "title": "My Wallet",
+      "balance": "Balance",
+      "transactions": "Transactions",
+      "amount": "Amount",
+      "reason": "Reason",
+      "time": "Time",
+      "empty": "No transactions"
+    }
+  },
+  "characters": {
+    "title": "EVE Characters",
+    "subTitle": "Manage EVE Online characters linked to your account. You can bind multiple characters and switch the primary one.",
+    "bind": "Bind Character",
+    "primary": "Primary",
+    "setPrimary": "Set Primary",
+    "unbind": "Unbind",
+    "empty": "No characters bound",
+    "noScopes": "No extra scopes",
+    "scopeCount": "scopes",
+    "bindFailed": "Failed to get bind URL",
+    "setPrimarySuccess": "{name} is now the primary character",
+    "setPrimaryFailed": "Failed to set primary character",
+    "unbindConfirm": "Are you sure you want to unbind {name}? The authorization data will be removed.",
+    "unbindSuccess": "Successfully unbound {name}",
+    "unbindFailed": "Failed to unbind character"
+  },
+  "srp": {
+    "apply": {
+      "title": "My SRP Applications",
+      "dialogTitle": "Submit SRP Application",
+      "submitBtn": "Submit SRP Application",
+      "selectCharacter": "Select Lost Character",
+      "associatedFleet": "Associated Fleet",
+      "selectFleet": "Optional: select a fleet",
+      "killmail": "KillMail",
+      "selectKillmail": "Select a KillMail",
+      "loadingKm": "Loading KMs...",
+      "noKmHint": "Select a character to load KMs",
+      "recommendedAmount": "Recommended Amount",
+      "finalAmount": "Requested Amount",
+      "finalAmountHint": "Enter 0 to use the recommended amount",
+      "note": "Note",
+      "notePlaceholder": "Optional",
+      "noteRequired": "Required when no fleet is linked",
+      "cancelBtn": "Cancel",
+      "confirmSubmitBtn": "Submit Application",
+      "submitSuccess": "Application submitted",
+      "noKmFound": "No matching KMs found",
+      "columns": {
+        "character": "Character",
+        "ship": "Ship",
+        "system": "System",
+        "killId": "KillID",
+        "time": "Time",
+        "recommendedAmount": "Recommended",
+        "finalAmount": "Final Amount",
+        "reviewStatus": "Review",
+        "payoutStatus": "Payout",
+        "note": "Note"
+      }
+    },
+    "manage": {
+      "title": "SRP Applications",
+      "refresh": "Refresh",
+      "selectFleet": "Filter by fleet",
+      "searchBtn": "Search",
+      "resetBtn": "Reset",
+      "approveBtn": "Approve",
+      "rejectBtn": "Reject",
+      "payoutBtn": "Payout",
+      "approveDialog": "Approve Application",
+      "rejectDialog": "Reject Application",
+      "payoutDialog": "Confirm Payout",
+      "finalAmount": "Final Amount",
+      "finalAmountHint": "Enter 0 to keep the current amount",
+      "reviewNote": "Review Note",
+      "rejectNotePlaceholder": "Required when rejecting",
+      "optionalPlaceholder": "Optional",
+      "overrideAmount": "Override Amount",
+      "overrideAmountHint": "Enter 0 to use the existing final amount",
+      "payoutCharacter": "Character: ",
+      "payoutAmount": "Final Amount: ",
+      "confirmApprove": "Confirm Approve",
+      "confirmReject": "Confirm Reject",
+      "confirmPayout": "Confirm Payout",
+      "approveSuccess": "Approved",
+      "rejectSuccess": "Rejected",
+      "payoutSuccess": "Payout successful",
+      "rejectRequired": "A note is required when rejecting",
+      "columns": {
+        "id": "#",
+        "character": "Character",
+        "ship": "Ship",
+        "system": "System",
+        "killId": "KillID",
+        "kmTime": "KM Time",
+        "corporation": "Corporation",
+        "alliance": "Alliance",
+        "recommendedAmount": "Recommended",
+        "finalAmount": "Final Amount",
+        "review": "Review",
+        "payout": "Payout",
+        "action": "Action"
+      }
+    },
+    "prices": {
+      "title": "SRP Price List",
+      "searchPlaceholder": "Search by ship name",
+      "refresh": "Refresh",
+      "addPrice": "Add Price",
+      "addDialog": "Add Ship Price",
+      "editDialog": "Edit Ship Price",
+      "saveBtn": "Save",
+      "cancelBtn": "Cancel",
+      "deleteConfirm": "Confirm delete this record?",
+      "updateSuccess": "Updated",
+      "addSuccess": "Added",
+      "deleteSuccess": "Deleted",
+      "editBtn": "Edit",
+      "deleteBtn": "Delete",
+      "validTypeId": "Please enter a valid TypeID",
+      "validName": "Please enter a ship name",
+      "validAmount": "Amount cannot be negative",
+      "fields": {
+        "typeId": "Ship TypeID",
+        "name": "Ship Name",
+        "namePlaceholder": "Ship name (CN or EN)",
+        "amount": "SRP Amount (ISK)"
+      },
+      "columns": {
+        "typeId": "TypeID",
+        "name": "Ship Name",
+        "amount": "Standard SRP Amount",
+        "updatedAt": "Last Updated",
+        "action": "Action"
+      }
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "paid": "Paid",
+      "unpaid": "Pending Payout"
     }
   },
   "table": {

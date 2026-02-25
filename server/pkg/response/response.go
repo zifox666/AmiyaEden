@@ -8,7 +8,7 @@ import (
 
 // 业务状态码
 const (
-	CodeOK           = 0
+	CodeOK           = 200
 	CodeParamError   = 400
 	CodeUnauthorized = 401
 	CodeForbidden    = 403
@@ -18,9 +18,9 @@ const (
 
 // Response 统一响应结构
 type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
 }
 
 // PageData 分页数据结构
@@ -34,9 +34,9 @@ type PageData struct {
 // OK 成功响应
 func OK(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, Response{
-		Code:    CodeOK,
-		Message: "success",
-		Data:    data,
+		Code: CodeOK,
+		Msg:  "success",
+		Data: data,
 	})
 }
 
@@ -60,8 +60,8 @@ func Fail(c *gin.Context, code int, msg string) {
 		httpStatus = http.StatusForbidden
 	}
 	c.JSON(httpStatus, Response{
-		Code:    code,
-		Message: msg,
-		Data:    nil,
+		Code: code,
+		Msg:  msg,
+		Data: nil,
 	})
 }

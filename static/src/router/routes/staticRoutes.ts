@@ -11,30 +11,19 @@ import { AppRouteRecordRaw } from '@/utils/router'
  * 2、静态路由不管是否登录都可以访问
  */
 export const staticRoutes: AppRouteRecordRaw[] = [
-  // 不需要登录就能访问的路由示例
-  // {
-  //   path: '/welcome',
-  //   name: 'WelcomeStatic',
-  //   component: () => import('@views/dashboard/console/index.vue'),
-  //   meta: { title: 'menus.dashboard.title' }
-  // },
+  // EVE SSO 登录页
   {
     path: '/auth/login',
     name: 'Login',
     component: () => import('@views/auth/login/index.vue'),
     meta: { title: 'menus.login.title', isHideTab: true }
   },
+  // EVE SSO OAuth 回调页（处理 token 参数）
   {
-    path: '/auth/register',
-    name: 'Register',
-    component: () => import('@views/auth/register/index.vue'),
-    meta: { title: 'menus.register.title', isHideTab: true }
-  },
-  {
-    path: '/auth/forget-password',
-    name: 'ForgetPassword',
-    component: () => import('@views/auth/forget-password/index.vue'),
-    meta: { title: 'menus.forgetPassword.title', isHideTab: true }
+    path: '/auth/callback',
+    name: 'AuthCallback',
+    component: () => import('@views/auth/callback/index.vue'),
+    meta: { title: 'menus.login.title', isHideTab: true }
   },
   {
     path: '/403',

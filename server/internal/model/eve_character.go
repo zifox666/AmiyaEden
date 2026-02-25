@@ -13,6 +13,11 @@ type EveCharacter struct {
 	RefreshToken  string    `gorm:"type:text"              json:"-"`
 	TokenExpiry   time.Time `gorm:""                       json:"token_expiry"`
 	Scopes        string    `gorm:"type:text"              json:"scopes"` // 空格分隔的 scope 列表
+
+	// ESI Affiliation 归属信息
+	CorporationID int64  `gorm:"default:0;index"         json:"corporation_id"`
+	AllianceID    *int64 `gorm:""                         json:"alliance_id,omitempty"`
+	FactionID     *int64 `gorm:""                         json:"faction_id,omitempty"`
 }
 
 func (EveCharacter) TableName() string {
