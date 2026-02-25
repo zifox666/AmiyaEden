@@ -281,6 +281,13 @@
       "srpManage": "补损审批",
       "srpPrices": "补损价格表"
     },
+    "role": {
+      "title": "权限组",
+      "explore": "角色广场",
+      "myRoles": "我的角色",
+      "applications": "我的申请",
+      "manage": "角色管理"
+    },
     "srp": {
       "title": "补损 SRP",
       "srpApply": "申请补损",

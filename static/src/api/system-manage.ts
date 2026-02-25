@@ -1,78 +1,137 @@
 import request from '@/utils/http'
 import { AppRouteRecord } from '@/types/router'
 
-// 获取用户列表（Admin+）
+// ─── 用户管理 ───
+
 export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
   return request.get<Api.SystemManage.UserList>({
-    url: '/api/v1/users',
+    url: '/api/v1/system/user',
     params
   })
 }
 
-// 删除用户（Admin+）
+export function fetchGetUser(id: number) {
+  return request.get<Api.SystemManage.UserListItem>({
+    url: `/api/v1/system/user/${id}`
+  })
+}
+
+export function fetchUpdateUser(id: number, data: { nickname?: string; status?: number }) {
+  return request.put({
+    url: `/api/v1/system/user/${id}`,
+    data
+  })
+}
+
 export function fetchDeleteUser(id: number) {
   return request.del({
-    url: `/api/v1/users/${id}`
+    url: `/api/v1/system/user/${id}`
   })
 }
 
-// 修改用户角色（Admin+）
-export function fetchUpdateUserRole(id: number, role: string) {
-  return request.request({
-    url: `/api/v1/users/${id}/role`,
-    method: 'PATCH',
-    data: { role }
+// ─── 用户角色分配 ───
+
+export function fetchGetUserRoles(userId: number) {
+  return request.get<Api.SystemManage.RoleItem[]>({
+    url: `/api/v1/system/user/${userId}/roles`
   })
 }
 
-// 获取角色列表（前端静态，与后端角色常量一致）
-export function fetchGetRoleList(_params?: Api.SystemManage.RoleSearchParams) {
-  // 系统内置角色，与后端 model.Role* 保持一致
-  const roles: Api.SystemManage.RoleListItem[] = [
-    {
-      roleId: 1,
-      roleName: '超级管理员',
-      roleCode: 'super_admin',
-      description: '拥有系统的全部权限，包括用户管理、数据管理、系统设置等',
-      enabled: true,
-      createTime: '-'
-    },
-    {
-      roleId: 2,
-      roleName: '管理员',
-      roleCode: 'admin',
-      description: '所有非技术性权限，包括用户管理、数据管理等',
-      enabled: true,
-      createTime: '-'
-    },
-    {
-      roleId: 3,
-      roleName: '已认证用户',
-      roleCode: 'user',
-      description: '基本访问权限，包括查看数据和使用系统功能',
-      enabled: true,
-      createTime: '-'
-    },
-    {
-      roleId: 4,
-      roleName: '访客',
-      roleCode: 'guest',
-      description: '有限访问权限，主要用于查看公开信息',
-      enabled: true,
-      createTime: '-'
-    }
-  ]
-  return Promise.resolve({
-    records: roles,
-    current: 1,
-    size: 10,
-    total: roles.length
-  } as Api.SystemManage.RoleList)
+export function fetchSetUserRoles(userId: number, roleIds: number[]) {
+  return request.put({
+    url: `/api/v1/system/user/${userId}/roles`,
+    data: { role_ids: roleIds }
+  })
 }
 
-// 获取菜单列表（后端动态路由，根据当前登录用户角色返回）
+// ─── 角色管理 ───
+
+export function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
+  return request.get<Api.SystemManage.RoleList>({
+    url: '/api/v1/system/role',
+    params
+  })
+}
+
+export function fetchGetAllRoles() {
+  return request.get<Api.SystemManage.RoleItem[]>({
+    url: '/api/v1/system/role/all'
+  })
+}
+
+export function fetchGetRole(id: number) {
+  return request.get<Api.SystemManage.RoleItem>({
+    url: `/api/v1/system/role/${id}`
+  })
+}
+
+export function fetchCreateRole(data: Api.SystemManage.CreateRoleParams) {
+  return request.post<Api.SystemManage.RoleItem>({
+    url: '/api/v1/system/role',
+    data
+  })
+}
+
+export function fetchUpdateRole(id: number, data: Api.SystemManage.UpdateRoleParams) {
+  return request.put({
+    url: `/api/v1/system/role/${id}`,
+    data
+  })
+}
+
+export function fetchDeleteRole(id: number) {
+  return request.del({
+    url: `/api/v1/system/role/${id}`
+  })
+}
+
+// ─── 角色权限（菜单）管理 ───
+
+export function fetchGetRoleMenus(roleId: number) {
+  return request.get<number[]>({
+    url: `/api/v1/system/role/${roleId}/menus`
+  })
+}
+
+export function fetchSetRoleMenus(roleId: number, menuIds: number[]) {
+  return request.put({
+    url: `/api/v1/system/role/${roleId}/menus`,
+    data: { menu_ids: menuIds }
+  })
+}
+
+// ─── 菜单管理 ───
+
+export function fetchGetMenuTree() {
+  return request.get<Api.SystemManage.MenuItem[]>({
+    url: '/api/v1/system/menu/tree'
+  })
+}
+
+export function fetchCreateMenu(data: Api.SystemManage.CreateMenuParams) {
+  return request.post<Api.SystemManage.MenuItem>({
+    url: '/api/v1/system/menu',
+    data
+  })
+}
+
+export function fetchUpdateMenu(id: number, data: Api.SystemManage.UpdateMenuParams) {
+  return request.put({
+    url: `/api/v1/system/menu/${id}`,
+    data
+  })
+}
+
+export function fetchDeleteMenu(id: number) {
+  return request.del({
+    url: `/api/v1/system/menu/${id}`
+  })
+}
+
+// ─── 用户菜单（前端路由） ───
+
 export function fetchGetMenuList() {
   return request.get<AppRouteRecord[]>({
-    url: '/api/v1/menu'
+    url: '/api/v1/menu/list'
   })
 }

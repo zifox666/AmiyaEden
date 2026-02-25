@@ -1,16 +1,57 @@
 package model
 
-// MenuMeta 路由元数据
-type MenuMeta struct {
-	Title     string `json:"title"`
-	Icon      string `json:"icon,omitempty"`
-	KeepAlive bool   `json:"keepAlive,omitempty"`
-	IsHide    bool   `json:"isHide,omitempty"`
-	IsHideTab bool   `json:"isHideTab,omitempty"`
-	FixedTab  bool   `json:"fixedTab,omitempty"`
+// ─── 菜单类型 ───
+
+const (
+	MenuTypeDir    = "dir"    // 目录
+	MenuTypeMenu   = "menu"   // 页面
+	MenuTypeButton = "button" // 按钮/权限
+)
+
+// ─── 数据模型 ───
+
+// Menu 菜单（目录/页面/按钮）
+type Menu struct {
+	BaseModel
+	ParentID   uint    `gorm:"default:0;index"       json:"parent_id"`
+	Type       string  `gorm:"size:20;index"         json:"type"`
+	Name       string  `gorm:"size:100;uniqueIndex"  json:"name"`
+	Path       string  `gorm:"size:200"              json:"path"`
+	Component  string  `gorm:"size:200"              json:"component"`
+	Permission string  `gorm:"size:100;index"        json:"permission"`
+	Title      string  `gorm:"size:200"              json:"title"`
+	Icon       string  `gorm:"size:100"              json:"icon"`
+	Sort       int     `gorm:"default:0"             json:"sort"`
+	IsHide     bool    `gorm:"default:false"         json:"is_hide"`
+	KeepAlive  bool    `gorm:"default:false"         json:"keep_alive"`
+	IsHideTab  bool    `gorm:"default:false"         json:"is_hide_tab"`
+	FixedTab   bool    `gorm:"default:false"         json:"fixed_tab"`
+	Status     int8    `gorm:"default:1"             json:"status"`
+	Children   []*Menu `gorm:"-"                    json:"children,omitempty"`
 }
 
-// MenuItem 路由菜单项（与前端 AppRouteRecord 格式一致）
+func (Menu) TableName() string { return "menu" }
+
+// ─── 菜单转前端路由格式 ───
+
+// MenuMeta 前端路由元数据
+type MenuMeta struct {
+	Title     string         `json:"title"`
+	Icon      string         `json:"icon,omitempty"`
+	KeepAlive bool           `json:"keepAlive,omitempty"`
+	IsHide    bool           `json:"isHide,omitempty"`
+	IsHideTab bool           `json:"isHideTab,omitempty"`
+	FixedTab  bool           `json:"fixedTab,omitempty"`
+	AuthList  []MenuAuthItem `json:"authList,omitempty"`
+}
+
+// MenuAuthItem 按钮权限项
+type MenuAuthItem struct {
+	Title    string `json:"title"`
+	AuthMark string `json:"authMark"`
+}
+
+// MenuItem 前端路由菜单项
 type MenuItem struct {
 	Path      string      `json:"path"`
 	Name      string      `json:"name"`
@@ -19,310 +60,129 @@ type MenuItem struct {
 	Children  []*MenuItem `json:"children,omitempty"`
 }
 
-// menuItemWithRoles 内部用于权限过滤的路由定义
-type menuItemWithRoles struct {
-	MenuItem
-	// 访问此菜单所需的最低角色（空表示任意已登录用户均可）
-	requiredRole string
-	children     []*menuItemWithRoles
-}
-
-// allMenus 全量路由定义，与前端 router/modules 保持一致
-// requiredRole 填写最低访问角色（使用 model.Role* 常量），空串表示所有已登录用户可见
-var allMenus = []*menuItemWithRoles{
-	{
-		MenuItem: MenuItem{
-			Path:      "/dashboard",
-			Name:      "Dashboard",
-			Component: "/index/index",
-			Meta: MenuMeta{
-				Title: "menus.dashboard.title",
-				Icon:  "ri:pie-chart-line",
-			},
+// ToMenuItem 将 Menu 转换为前端 MenuItem 格式
+func (m *Menu) ToMenuItem(buttons []*Menu) *MenuItem {
+	item := &MenuItem{
+		Path:      m.Path,
+		Name:      m.Name,
+		Component: m.Component,
+		Meta: MenuMeta{
+			Title:     m.Title,
+			Icon:      m.Icon,
+			KeepAlive: m.KeepAlive,
+			IsHide:    m.IsHide,
+			IsHideTab: m.IsHideTab,
+			FixedTab:  m.FixedTab,
 		},
-		requiredRole: "", // 所有已登录用户
-		children: []*menuItemWithRoles{
-			{
-				MenuItem: MenuItem{
-					Path:      "console",
-					Name:      "Console",
-					Component: "/dashboard/console",
-					Meta: MenuMeta{
-						Title:    "menus.dashboard.console",
-						FixedTab: true,
-					},
-				},
-				requiredRole: "",
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "characters",
-					Name:      "Characters",
-					Component: "/dashboard/characters",
-					Meta: MenuMeta{
-						Title:     "menus.characters.title",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: "",
-			},
-		},
-	},
-	{
-		MenuItem: MenuItem{
-			Path:      "/system",
-			Name:      "System",
-			Component: "/index/index",
-			Meta: MenuMeta{
-				Title: "menus.system.title",
-				Icon:  "ri:user-3-line",
-			},
-		},
-		requiredRole: RoleAdmin, // Admin 及以上
-		children: []*menuItemWithRoles{
-			{
-				MenuItem: MenuItem{
-					Path:      "user",
-					Name:      "User",
-					Component: "/system/user",
-					Meta: MenuMeta{
-						Title:     "menus.system.user",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: RoleAdmin,
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "role",
-					Name:      "Role",
-					Component: "/system/role",
-					Meta: MenuMeta{
-						Title:     "menus.system.role",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: RoleSuperAdmin,
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "esi-refresh",
-					Name:      "ESIRefresh",
-					Component: "/system/esi-refresh",
-					Meta: MenuMeta{
-						Title:     "menus.system.esiRefresh",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: RoleAdmin,
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "user-center",
-					Name:      "UserCenter",
-					Component: "/system/user-center",
-					Meta: MenuMeta{
-						Title:     "menus.system.userCenter",
-						IsHide:    true,
-						KeepAlive: true,
-						IsHideTab: true,
-					},
-				},
-				requiredRole: "", // 所有已登录用户可访问（个人中心）
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "menu",
-					Name:      "Menus",
-					Component: "/system/menu",
-					Meta: MenuMeta{
-						Title:     "menus.system.menu",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: RoleSuperAdmin,
-			},
-		},
-	},
-	{
-		MenuItem: MenuItem{
-			Path:      "/operation",
-			Name:      "Operation",
-			Component: "/index/index",
-			Meta: MenuMeta{
-				Title: "menus.operation.title",
-				Icon:  "ri:ship-line",
-			},
-		},
-		requiredRole: "", // 所有已登录用户可查看
-		children: []*menuItemWithRoles{
-			{
-				MenuItem: MenuItem{
-					Path:      "fleets",
-					Name:      "Fleets",
-					Component: "/operation/fleets",
-					Meta: MenuMeta{
-						Title:     "menus.operation.fleets",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: RoleFC,
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "fleet-detail/:id",
-					Name:      "FleetDetail",
-					Component: "/operation/fleet-detail",
-					Meta: MenuMeta{
-						Title:  "menus.operation.fleetDetail",
-						IsHide: true,
-					},
-				},
-				requiredRole: RoleFC,
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "pap",
-					Name:      "MyPap",
-					Component: "/operation/pap",
-					Meta: MenuMeta{
-						Title:     "menus.operation.pap",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: "", // 所有已登录用户
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "wallet",
-					Name:      "Wallet",
-					Component: "/operation/wallet",
-					Meta: MenuMeta{
-						Title:     "menus.operation.wallet",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: "", // 所有已登录用户
-			},
-		},
-	},
-	{
-		MenuItem: MenuItem{
-			Path:      "/result",
-			Name:      "Result",
-			Component: "/index/index",
-			Meta: MenuMeta{
-				Title:  "menus.result.title",
-				Icon:   "ri:checkbox-circle-line",
-				IsHide: true,
-			},
-		},
-		requiredRole: "",
-		children: []*menuItemWithRoles{
-			{
-				MenuItem: MenuItem{
-					Path:      "success",
-					Name:      "ResultSuccess",
-					Component: "/result/success",
-					Meta: MenuMeta{
-						Title:     "menus.result.success",
-						KeepAlive: true,
-						IsHide:    true,
-					},
-				},
-				requiredRole: "",
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "fail",
-					Name:      "ResultFail",
-					Component: "/result/fail",
-					Meta: MenuMeta{
-						Title:     "menus.result.fail",
-						KeepAlive: true,
-						IsHide:    true,
-					},
-				},
-				requiredRole: "",
-			},
-		},
-	},
-	{
-		MenuItem: MenuItem{
-			Path:      "/srp",
-			Name:      "SRP",
-			Component: "/index/index",
-			Meta: MenuMeta{
-				Title: "menus.srp.title",
-				Icon:  "ri:money-dollar-box-line",
-			},
-		},
-		requiredRole: "", // 所有已登录用户
-		children: []*menuItemWithRoles{
-			{
-				MenuItem: MenuItem{
-					Path:      "srp-apply",
-					Name:      "SrpApply",
-					Component: "/srp/apply",
-					Meta: MenuMeta{
-						Title:     "menus.srp.srpApply",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: "", // 所有已登录用户
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "srp-manage",
-					Name:      "SrpManage",
-					Component: "/srp/manage",
-					Meta: MenuMeta{
-						Title:     "menus.srp.srpManage",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: RoleSRP,
-			},
-			{
-				MenuItem: MenuItem{
-					Path:      "srp-prices",
-					Name:      "SrpPrices",
-					Component: "/srp/prices",
-					Meta: MenuMeta{
-						Title:     "menus.srp.srpPrices",
-						KeepAlive: true,
-					},
-				},
-				requiredRole: RoleSRP,
-			},
-		},
-	},
-}
-
-// GetMenuByRole 根据角色返回过滤后的菜单树
-func GetMenuByRole(role string) []*MenuItem {
-	return filterMenus(allMenus, role)
-}
-
-// filterMenus 递归过滤菜单，只保留当前角色有权访问的项
-func filterMenus(items []*menuItemWithRoles, role string) []*MenuItem {
-	var result []*MenuItem
-	for _, item := range items {
-		// 校验父菜单权限
-		if item.requiredRole != "" && !HasRole(role, item.requiredRole) {
-			continue
-		}
-
-		node := item.MenuItem // 值复制，避免修改全局数据
-
-		if len(item.children) > 0 {
-			filteredChildren := filterMenus(item.children, role)
-			if len(filteredChildren) > 0 {
-				node.Children = filteredChildren
-			}
-		}
-
-		result = append(result, &node)
 	}
-	return result
+
+	// 将按钮类型子菜单转为 authList
+	if len(buttons) > 0 {
+		for _, btn := range buttons {
+			item.Meta.AuthList = append(item.Meta.AuthList, MenuAuthItem{
+				Title:    btn.Title,
+				AuthMark: btn.Permission,
+			})
+		}
+	}
+
+	return item
+}
+
+// ─── 菜单种子数据 ───
+
+// MenuSeed 用于种子数据的菜单定义
+type MenuSeed struct {
+	ParentName string // 父菜单 Name（空表示根菜单）
+	Menu       Menu
+}
+
+// GetSystemMenuSeeds 返回系统默认菜单种子数据
+func GetSystemMenuSeeds() []MenuSeed {
+	return []MenuSeed{
+		// ── Dashboard ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", Sort: 100, Status: 1}},
+		{ParentName: "Dashboard", Menu: Menu{Type: MenuTypeMenu, Name: "Console", Path: "console", Component: "/dashboard/console", Title: "menus.dashboard.console", Sort: 100, FixedTab: true, Status: 1}},
+		{ParentName: "Dashboard", Menu: Menu{Type: MenuTypeMenu, Name: "Characters", Path: "characters", Component: "/dashboard/characters", Title: "menus.characters.title", Sort: 90, KeepAlive: true, Status: 1}},
+
+		// ── Operation ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "Operation", Path: "/operation", Component: "/index/index", Title: "menus.operation.title", Icon: "ri:ship-line", Sort: 90, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "Fleets", Path: "fleets", Component: "/operation/fleets", Title: "menus.operation.fleets", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "FleetDetail", Path: "fleet-detail/:id", Component: "/operation/fleet-detail", Title: "menus.operation.fleetDetail", Sort: 90, IsHide: true, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "MyPap", Path: "pap", Component: "/operation/pap", Title: "menus.operation.pap", Sort: 80, KeepAlive: true, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "Wallet", Path: "wallet", Component: "/operation/wallet", Title: "menus.operation.wallet", Sort: 70, KeepAlive: true, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "JoinFleet", Path: "join", Component: "/operation/join", Title: "menus.operation.join", Sort: 60, IsHide: true, Status: 1}},
+
+		// ── SRP ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "SRP", Path: "/srp", Component: "/index/index", Title: "menus.srp.title", Icon: "ri:money-dollar-box-line", Sort: 80, Status: 1}},
+		{ParentName: "SRP", Menu: Menu{Type: MenuTypeMenu, Name: "SrpApply", Path: "srp-apply", Component: "/srp/apply", Title: "menus.srp.srpApply", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "SRP", Menu: Menu{Type: MenuTypeMenu, Name: "SrpManage", Path: "srp-manage", Component: "/srp/manage", Title: "menus.srp.srpManage", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "SrpManage", Menu: Menu{Type: MenuTypeButton, Name: "SrpManageReview", Permission: "srp:manage:review", Title: "审批", Sort: 100, Status: 1}},
+		{ParentName: "SRP", Menu: Menu{Type: MenuTypeMenu, Name: "SrpPrices", Path: "srp-prices", Component: "/srp/prices", Title: "menus.srp.srpPrices", Sort: 80, KeepAlive: true, Status: 1}},
+		{ParentName: "SrpPrices", Menu: Menu{Type: MenuTypeButton, Name: "SrpPriceAdd", Permission: "srp:price:add", Title: "新增价格", Sort: 100, Status: 1}},
+		{ParentName: "SrpPrices", Menu: Menu{Type: MenuTypeButton, Name: "SrpPriceDelete", Permission: "srp:price:delete", Title: "删除价格", Sort: 90, Status: 1}},
+
+		// ── System ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", Sort: 70, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "User", Path: "user", Component: "/system/user", Title: "menus.system.user", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "User", Menu: Menu{Type: MenuTypeButton, Name: "UserDelete", Permission: "system:user:delete", Title: "删除用户", Sort: 100, Status: 1}},
+		{ParentName: "User", Menu: Menu{Type: MenuTypeButton, Name: "UserSetRole", Permission: "system:user:role", Title: "分配角色", Sort: 90, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "RoleManage", Path: "role", Component: "/system/role", Title: "menus.system.role", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "RoleManage", Menu: Menu{Type: MenuTypeButton, Name: "RoleAdd", Permission: "system:role:add", Title: "新增角色", Sort: 100, Status: 1}},
+		{ParentName: "RoleManage", Menu: Menu{Type: MenuTypeButton, Name: "RoleEdit", Permission: "system:role:edit", Title: "编辑角色", Sort: 90, Status: 1}},
+		{ParentName: "RoleManage", Menu: Menu{Type: MenuTypeButton, Name: "RoleDelete", Permission: "system:role:delete", Title: "删除角色", Sort: 80, Status: 1}},
+		{ParentName: "RoleManage", Menu: Menu{Type: MenuTypeButton, Name: "RolePermission", Permission: "system:role:permission", Title: "权限设置", Sort: 70, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "Menus", Path: "menu", Component: "/system/menu", Title: "menus.system.menu", Sort: 80, KeepAlive: true, Status: 1}},
+		{ParentName: "Menus", Menu: Menu{Type: MenuTypeButton, Name: "MenuAdd", Permission: "system:menu:add", Title: "新增菜单", Sort: 100, Status: 1}},
+		{ParentName: "Menus", Menu: Menu{Type: MenuTypeButton, Name: "MenuEdit", Permission: "system:menu:edit", Title: "编辑菜单", Sort: 90, Status: 1}},
+		{ParentName: "Menus", Menu: Menu{Type: MenuTypeButton, Name: "MenuDelete", Permission: "system:menu:delete", Title: "删除菜单", Sort: 80, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "ESIRefresh", Path: "esi-refresh", Component: "/system/esi-refresh", Title: "menus.system.esiRefresh", Sort: 70, KeepAlive: true, Status: 1}},
+		{ParentName: "ESIRefresh", Menu: Menu{Type: MenuTypeButton, Name: "ESIRun", Permission: "system:esi:run", Title: "执行任务", Sort: 100, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", Sort: 60, IsHide: true, KeepAlive: true, IsHideTab: true, Status: 1}},
+
+		// ── Result ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", Sort: 10, IsHide: true, Status: 1}},
+		{ParentName: "Result", Menu: Menu{Type: MenuTypeMenu, Name: "ResultSuccess", Path: "success", Component: "/result/success", Title: "menus.result.success", Sort: 100, IsHide: true, Status: 1}},
+		{ParentName: "Result", Menu: Menu{Type: MenuTypeMenu, Name: "ResultFail", Path: "fail", Component: "/result/fail", Title: "menus.result.fail", Sort: 90, IsHide: true, Status: 1}},
+	}
+}
+
+// DefaultRoleMenuMap 默认角色-菜单映射（角色Code -> 菜单Name列表）
+// super_admin 不在这里定义，代码中直接赋予所有权限
+func DefaultRoleMenuMap() map[string][]string {
+	return map[string][]string{
+		RoleAdmin: {
+			"Dashboard", "Console", "Characters",
+			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
+			"System", "User", "UserDelete", "UserSetRole",
+			"RoleManage", "RoleAdd", "RoleEdit", "RoleDelete", "RolePermission",
+			"Menus", "MenuAdd", "MenuEdit", "MenuDelete",
+			"ESIRefresh", "ESIRun", "UserCenter",
+			"Result", "ResultSuccess", "ResultFail",
+		},
+		RoleFC: {
+			"Dashboard", "Console", "Characters",
+			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
+			"Result", "ResultSuccess", "ResultFail",
+		},
+		RoleSRP: {
+			"Dashboard", "Console", "Characters",
+			"Operation", "MyPap", "Wallet", "JoinFleet",
+			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
+			"Result", "ResultSuccess", "ResultFail",
+		},
+		RoleUser: {
+			"Dashboard", "Console", "Characters",
+			"Operation", "MyPap", "Wallet", "JoinFleet",
+			"SRP", "SrpApply",
+			"Result", "ResultSuccess", "ResultFail",
+			"UserCenter",
+		},
+		RoleGuest: {
+			"Dashboard", "Console",
+			"Result", "ResultSuccess", "ResultFail",
+		},
+	}
 }

@@ -1,22 +1,6 @@
 import request from '@/utils/http'
 
 /**
- * 后端角色 -> 前端角色标识映射
- */
-const ROLE_MAP: Record<string, string> = {
-  super_admin: 'R_SUPER',
-  admin: 'R_ADMIN',
-  srp: 'R_SRP',
-  fc: 'R_FC',
-  user: 'R_USER',
-  guest: 'R_GUEST'
-}
-
-function mapRole(backendRole: string): string {
-  return ROLE_MAP[backendRole] ?? 'R_GUEST'
-}
-
-/**
  * 获取 EVE SSO 授权 URL（通过后端接口获取，前端直接跳转）
  * @param scopes 额外 ESI scopes（可选）
  */
@@ -98,18 +82,21 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
     url: '/api/v1/me'
   })
 
-  const { user, characters } = data
+  const { user, characters, roles: backendRoles, permissions } = data
 
   // 主角色：根据 primary_character_id 查找，找不到则用第一个，再 fallback 到用户信息
   const primaryChar =
     characters?.find((c) => c.character_id === user.primary_character_id) ?? characters?.[0]
 
+  // 直接使用后端角色编码，回退到 user.role
+  const roles = backendRoles && backendRoles.length > 0 ? backendRoles : [user.role ?? 'user']
+
   return {
     userId: user.id,
     userName: primaryChar?.character_name ?? user.nickname ?? `Capsuleer#${user.id}`,
     avatar: primaryChar?.portrait_url ?? user.avatar ?? '',
-    roles: [mapRole(user.role ?? 'user')],
-    buttons: [],
+    roles,
+    buttons: permissions ?? [],
     characters: characters ?? [],
     primaryCharacterId: user.primary_character_id ?? 0
   }

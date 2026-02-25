@@ -106,6 +106,7 @@ type stateData struct {
 type EveSSOService struct {
 	charRepo  *repository.EveCharacterRepository
 	userRepo  *repository.UserRepository
+	roleSvc   *RoleService
 	eveClient *eve.Client
 }
 
@@ -114,6 +115,7 @@ func NewEveSSOService() *EveSSOService {
 	return &EveSSOService{
 		charRepo:  repository.NewEveCharacterRepository(),
 		userRepo:  repository.NewUserRepository(),
+		roleSvc:   NewRoleService(),
 		eveClient: eve.NewClient(cfg.ClientID, cfg.ClientSecret, cfg.CallbackURL),
 	}
 }
@@ -262,6 +264,9 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		if err := s.userRepo.Create(user); err != nil {
 			return nil, err
 		}
+
+		// 确保新用户拥有默认角色（写入 user_roles 表）
+		s.roleSvc.EnsureUserHasDefaultRole(context.Background(), user.ID)
 
 		char = &model.EveCharacter{
 			CharacterID:   characterID,

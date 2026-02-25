@@ -10,234 +10,162 @@ import (
 
 // RegisterRoutes 注册所有业务路由
 func RegisterRoutes(r *gin.Engine) {
-	// 健康检查
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
+	api := r.Group("/api/v1")
 
-	// API v1 路由组
-	v1 := r.Group("/api/v1")
+	// ─── 无需认证 ───
+	ssoH := handler.NewEveSSOHandler()
+	sso := api.Group("/sso/eve")
 	{
-		registerSSORoutes(v1)
-		registerUserRoutes(v1)
-		registerSdeRoutes(v1)
-		registerESIRefreshRoutes(v1)
-		registerMenuRoutes(v1)
-		registerOperationRoutes(v1)
-		registerSrpRoutes(v1)
+		sso.GET("/login", ssoH.Login)
+		sso.GET("/callback", ssoH.Callback)
 	}
-}
 
-// registerSSORoutes EVE SSO 登录相关路由
-func registerSSORoutes(rg *gin.RouterGroup) {
-	ssoHandler := handler.NewEveSSOHandler()
-	sso := rg.Group("/sso/eve")
+	// ─── SDE 公开查询（API Key 鉴权）───
+	sdeH := handler.NewSdeHandler()
+	sde := api.Group("/sde", middleware.APIKeyAuth())
 	{
-		// 登录入口：重定向到 EVE 授权页
-		sso.GET("/login", ssoHandler.Login)
-		// EVE SSO 回调地址
-		sso.GET("/callback", ssoHandler.Callback)
-		// 获取已注册的 ESI Scope 列表（公开）
-		sso.GET("/scopes", ssoHandler.GetScopes)
-		// 获取当前用户绑定的所有角色（需要登录）
-		sso.GET("/characters", middleware.JWTAuth(), ssoHandler.GetMyCharacters)
-		// 绑定新角色：发起 EVE SSO 授权（需要登录）
-		sso.GET("/bind", middleware.JWTAuth(), ssoHandler.BindLogin)
-		// 设置主角色（需要登录）
-		sso.PUT("/primary/:character_id", middleware.JWTAuth(), ssoHandler.SetPrimary)
-		// 解绑角色（需要登录）
-		sso.DELETE("/characters/:character_id", middleware.JWTAuth(), ssoHandler.Unbind)
+		sde.GET("/version", sdeH.GetVersion)
+		sde.POST("/update", sdeH.TriggerUpdate)
+		sde.GET("/translation/:type_id/:language", sdeH.GetTranslation)
+		sde.GET("/translations/:key", sdeH.GetTranslationsByKey)
+		sde.GET("/search", sdeH.SearchByName)
+		sde.GET("/type/:type_id", sdeH.GetTypeDetail)
 	}
-}
 
-// registerSdeRoutes SDE 数据资产路由
-//
-//	GET  /sde/version       - 查看当前 SDE 版本
-//	POST /sde/update        - 手动触发更新（需要 Admin+）
-//	GET  /sde/translation   - 精确查询翻译（需要 API Key）
-//	GET  /sde/translations  - 查询 key 所有语言（需要 API Key）
-//	GET  /sde/search        - 名称模糊搜索（需要 API Key）
-//	GET  /sde/type/:type_id - typeID 详情（需要 API Key）
-func registerSdeRoutes(rg *gin.RouterGroup) {
-	sdeHandler := handler.NewSdeHandler()
-	sde := rg.Group("/sde")
+	// ─── 需要登录 ───
+	auth := api.Group("", middleware.JWTAuth())
+
+	// SSO 角色管理（绑定/解绑/设主角色）
+	ssoAuth := auth.Group("/sso/eve")
 	{
-		// 公开接口：查看版本
-		sde.GET("/version", sdeHandler.GetVersion)
+		ssoAuth.GET("/scopes", ssoH.GetScopes)
+		ssoAuth.GET("/characters", ssoH.GetMyCharacters)
+		ssoAuth.GET("/bind", ssoH.BindLogin)
+		ssoAuth.PUT("/primary/:character_id", ssoH.SetPrimary)
+		ssoAuth.DELETE("/characters/:character_id", ssoH.Unbind)
+	}
 
-		// 管理接口：手动触发更新（需要 JWT + Admin）
-		sde.POST("/update",
-			middleware.JWTAuth(),
-			middleware.RequireRole(model.RoleAdmin),
-			sdeHandler.TriggerUpdate,
-		)
+	// ─── 当前用户 ───
+	meH := handler.NewMeHandler()
+	auth.GET("/me", meH.GetMe)
 
-		// 数据查询接口：需要 API Key
-		apiRoutes := sde.Group("", middleware.APIKeyAuth())
+	// ─── 菜单 ───
+	menuH := handler.NewMenuHandler()
+	auth.GET("/menu/list", menuH.GetMenuList) // 当前用户可用菜单
+
+	// ─── 舰队 ───
+	fleetH := handler.NewFleetHandler()
+	operation := auth.Group("/operation")
+	fleet := operation.Group("/fleets")
+	{
+		fleet.POST("", fleetH.CreateFleet)
+		fleet.GET("", fleetH.ListFleets)
+		fleet.GET("/:id", fleetH.GetFleet)
+		fleet.PUT("/:id", fleetH.UpdateFleet)
+		fleet.DELETE("/:id", fleetH.DeleteFleet)
+		fleet.POST("/:id/refresh-esi", fleetH.RefreshFleetESI)
+
+		// 成员
+		fleet.GET("/:id/members", fleetH.GetMembers)
+		fleet.POST("/:id/members/sync", fleetH.SyncESIMembers)
+
+		// PAP
+		fleet.POST("/:id/pap", fleetH.IssuePap)
+		fleet.GET("/:id/pap", fleetH.GetPapLogs)
+		fleet.GET("/pap/me", fleetH.GetMyPapLogs)
+
+		// 邀请
+		fleet.POST("/:id/invites", fleetH.CreateInvite)
+		fleet.GET("/:id/invites", fleetH.GetInvites)
+		fleet.DELETE("/invites/:invite_id", fleetH.DeactivateInvite)
+		fleet.POST("/join", fleetH.JoinFleet)
+
+		// 查角色所在舰队
+		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
+	}
+
+	// ─── 钱包 ───
+	wallet := operation.Group("/wallet")
+	{
+		wallet.GET("", fleetH.GetWallet)
+		wallet.GET("/transactions", fleetH.GetWalletTransactions)
+	}
+
+	// ─── SRP 补损 ───
+	srpH := handler.NewSrpHandler()
+	srp := auth.Group("/srp")
+	{
+		// 价格表（查看公开，修改需权限）
+		srp.GET("/prices", srpH.ListShipPrices)
+		srp.POST("/prices", middleware.RequirePermission("srp:price:edit"), srpH.UpsertShipPrice)
+		srp.DELETE("/prices/:id", middleware.RequirePermission("srp:price:edit"), srpH.DeleteShipPrice)
+
+		// 个人申请
+		srp.POST("/applications", srpH.SubmitApplication)
+		srp.GET("/applications/me", srpH.ListMyApplications)
+		srp.GET("/killmails/me", srpH.GetMyKillmails)
+		srp.GET("/killmails/fleet/:fleet_id", srpH.GetFleetKillmails)
+
+		// 审核（需权限）
+		srpAdmin := srp.Group("", middleware.RequirePermission("srp:review"))
 		{
-			apiRoutes.GET("/translation", sdeHandler.GetTranslation)
-			apiRoutes.GET("/translations", sdeHandler.GetTranslationsByKey)
-			apiRoutes.GET("/search", sdeHandler.SearchByName)
-			apiRoutes.GET("/type/:type_id", sdeHandler.GetTypeDetail)
+			srpAdmin.GET("/applications", srpH.ListApplications)
+			srpAdmin.GET("/applications/:id", srpH.GetApplication)
+			srpAdmin.PUT("/applications/:id/review", srpH.ReviewApplication)
+			srpAdmin.PUT("/applications/:id/payout", srpH.Payout)
 		}
 	}
-}
 
-// registerUserRoutes 用户管理路由
-//
-//	GET    /users           - 查看用户列表  需要 Admin 或以上
-//	GET    /users/:id       - 查看用户详情  需要 Admin 或以上
-//	DELETE /users/:id       - 删除用户      需要 Admin 或以上
-//	PATCH  /users/:id/role  - 修改用户角色 需要 Admin 或以上
-//	GET    /me              - 获取当前登录用户信息（需要 JWT）
-func registerUserRoutes(rg *gin.RouterGroup) {
-	userHandler := handler.NewUserHandler()
-
-	// 当前登录用户信息（任意已登录用户可访问）
-	rg.GET("/me", middleware.JWTAuth(), userHandler.GetMe)
-
-	// 所有用户管理接口先通过 JWT 鉴权
-	users := rg.Group("/users", middleware.JWTAuth())
+	// ─── ESI 刷新队列 ───
+	esiH := handler.NewESIRefreshHandler()
+	esiRefresh := auth.Group("/esi/refresh", middleware.RequireRole(model.RoleAdmin))
 	{
-		// Admin 及以上可访问
-		adminRoutes := users.Group("", middleware.RequireRole(model.RoleAdmin))
-		{
-			adminRoutes.GET("", userHandler.List)
-			adminRoutes.GET("/:id", userHandler.Get)
-			adminRoutes.DELETE("/:id", userHandler.Delete)
-			adminRoutes.PATCH("/:id/role", userHandler.UpdateRole)
-		}
+		esiRefresh.GET("/tasks", esiH.GetTasks)
+		esiRefresh.GET("/statuses", esiH.GetStatuses)
+		esiRefresh.POST("/run", esiH.RunTask)
+		esiRefresh.POST("/run-task", esiH.RunTaskByName)
+		esiRefresh.POST("/run-all", esiH.RunAll)
 	}
-}
 
-// registerMenuRoutes 动态菜单路由
-//
-//	GET /menu - 获取当前登录用户的菜单列表（需要 JWT）
-func registerMenuRoutes(rg *gin.RouterGroup) {
-	menuHandler := handler.NewMenuHandler()
-	rg.GET("/menu", middleware.JWTAuth(), menuHandler.GetMenuList)
-}
+	// ─── 系统管理（需要 admin 角色）───
+	admin := auth.Group("/system", middleware.RequireRole(model.RoleAdmin))
 
-// registerESIRefreshRoutes ESI 数据刷新队列路由
-//
-//	GET  /esi/refresh/tasks      - 获取所有任务定义
-//	GET  /esi/refresh/statuses   - 获取任务运行状态（分页）
-//	POST /esi/refresh/run        - 手动触发指定任务（单角色）
-//	POST /esi/refresh/run-task   - 手动触发指定任务（所有角色）
-//	POST /esi/refresh/run-all    - 手动触发全量刷新
-func registerESIRefreshRoutes(rg *gin.RouterGroup) {
-	h := handler.NewESIRefreshHandler()
-	esi := rg.Group("/esi/refresh", middleware.JWTAuth(), middleware.RequireRole(model.RoleAdmin))
+	// 菜单管理
+	adminMenu := admin.Group("/menu")
 	{
-		esi.GET("/tasks", h.GetTasks)
-		esi.GET("/statuses", h.GetStatuses)
-		esi.POST("/run", h.RunTask)
-		esi.POST("/run-task", h.RunTaskByName)
-		esi.POST("/run-all", h.RunAll)
+		adminMenu.GET("/tree", menuH.GetMenuTree)
+		adminMenu.POST("", menuH.CreateMenu)
+		adminMenu.PUT("/:id", menuH.UpdateMenu)
+		adminMenu.DELETE("/:id", menuH.DeleteMenu)
 	}
-}
 
-// registerOperationRoutes 舰队行动管理路由
-//
-//	POST   /operation/fleets                    - 创建舰队（FC+）
-//	GET    /operation/fleets                    - 查看舰队列表（FC+）
-//	GET    /operation/fleets/:id                - 舰队详情（FC+）
-//	PUT    /operation/fleets/:id                - 更新舰队（FC+）
-//	DELETE /operation/fleets/:id                - 删除舰队（FC+）
-//	GET    /operation/fleets/:id/members        - 获取成员列表（FC+）
-//	POST   /operation/fleets/:id/members/sync   - ESI 成员同步（FC+）
-//	POST   /operation/fleets/:id/pap            - 发放 PAP（FC+）
-//	GET    /operation/fleets/:id/pap            - PAP 发放记录（FC+）
-//	POST   /operation/fleets/:id/invites        - 创建邀请链接（FC+）
-//	GET    /operation/fleets/:id/invites        - 获取邀请链接（FC+）
-//	DELETE /operation/fleets/invites/:invite_id - 禁用邀请链接（FC+）
-//	POST   /operation/fleets/join               - 通过邀请码加入（已登录）
-//	GET    /operation/fleets/pap/me             - 我的 PAP 记录（已登录）
-//	GET    /operation/fleets/esi/:character_id  - 角色 ESI 舰队信息（已登录）
-//	GET    /operation/wallet                    - 我的钱包（已登录）
-//	GET    /operation/wallet/transactions       - 我的钱包流水（已登录）
-func registerOperationRoutes(rg *gin.RouterGroup) {
-	h := handler.NewFleetHandler()
-	op := rg.Group("/operation", middleware.JWTAuth())
+	// 角色管理
+	roleH := handler.NewRoleHandler()
+	adminRole := admin.Group("/role")
 	{
-		// ── 需要 FC 或更高权限 ──
-		fleets := op.Group("/fleets", middleware.RequireRole(model.RoleFC))
-		{
-			fleets.POST("", h.CreateFleet)
-			fleets.GET("", h.ListFleets)
-			fleets.GET("/:id", h.GetFleet)
-			fleets.PUT("/:id", h.UpdateFleet)
-			fleets.DELETE("/:id", h.DeleteFleet)
-			fleets.POST("/:id/refresh-esi", h.RefreshFleetESI)
+		adminRole.GET("", roleH.ListRoles)
+		adminRole.GET("/all", roleH.ListAllRoles)
+		adminRole.GET("/:id", roleH.GetRole)
+		adminRole.POST("", roleH.CreateRole)
+		adminRole.PUT("/:id", roleH.UpdateRole)
+		adminRole.DELETE("/:id", roleH.DeleteRole)
 
-			// 成员
-			fleets.GET("/:id/members", h.GetMembers)
-			fleets.POST("/:id/members/sync", h.SyncESIMembers)
-
-			// PAP
-			fleets.POST("/:id/pap", h.IssuePap)
-			fleets.GET("/:id/pap", h.GetPapLogs)
-
-			// 邀请链接
-			fleets.POST("/:id/invites", h.CreateInvite)
-			fleets.GET("/:id/invites", h.GetInvites)
-			fleets.DELETE("/invites/:invite_id", h.DeactivateInvite)
-		}
-
-		// ── 已登录用户可访问 ──
-		op.POST("/fleets/join", h.JoinFleet)
-		op.GET("/fleets/pap/me", h.GetMyPapLogs)
-		op.GET("/fleets/esi/:character_id", h.GetCharacterFleetInfo)
-
-		// 钱包
-		op.GET("/wallet", h.GetWallet)
-		op.GET("/wallet/transactions", h.GetWalletTransactions)
+		// 角色权限
+		adminRole.GET("/:id/menus", roleH.GetRoleMenus)
+		adminRole.PUT("/:id/menus", roleH.SetRoleMenus)
 	}
-}
 
-// registerSrpRoutes 补损管理路由
-//
-//	GET    /srp/prices                           - 查看舰船价格表（已登录）
-//	POST   /srp/prices                           - 新增/更新价格（SRP+）
-//	DELETE /srp/prices/:id                       - 删除价格（SRP+）
-//	GET    /srp/fleet-killmails                  - 获取舰队范围内我的 KM 列表（已登录）
-//	GET    /srp/my-killmails                     - 获取我的全部 KM（已登录，不限舰队）
-//	POST   /srp/applications                     - 提交补损申请（已登录）
-//	GET    /srp/applications/my                  - 我的补损申请（已登录）
-//	GET    /srp/manage/applications              - 查看全部申请（FC+）
-//	GET    /srp/manage/applications/:id          - 申请详情（FC+）
-//	PATCH  /srp/manage/applications/:id/review   - 审批（FC+）
-//	PATCH  /srp/manage/applications/:id/payout   - 发放（SRP+）
-func registerSrpRoutes(rg *gin.RouterGroup) {
-	h := handler.NewSrpHandler()
-	srp := rg.Group("/srp", middleware.JWTAuth())
+	// 用户管理
+	userH := handler.NewUserHandler()
+	adminUser := admin.Group("/user")
 	{
-		// ── 已登录用户可访问 ──
-		srp.GET("/prices", h.ListShipPrices)
-		srp.GET("/fleet-killmails", h.GetFleetKillmails)
-		srp.GET("/my-killmails", h.GetMyKillmails)
-		srp.POST("/applications", h.SubmitApplication)
-		srp.GET("/applications/my", h.ListMyApplications)
+		adminUser.GET("", userH.ListUsers)
+		adminUser.GET("/:id", userH.GetUser)
+		adminUser.PUT("/:id", userH.UpdateUser)
+		adminUser.DELETE("/:id", userH.DeleteUser)
 
-		// ── 舰船价格表管理（SRP+） ──
-		srpAdmin := srp.Group("", middleware.RequireRole(model.RoleSRP))
-		{
-			srpAdmin.POST("/prices", h.UpsertShipPrice)
-			srpAdmin.DELETE("/prices/:id", h.DeleteShipPrice)
-		}
-
-		// ── 审批（FC+） ──
-		manage := srp.Group("/manage", middleware.RequireRole(model.RoleFC))
-		{
-			manage.GET("/applications", h.ListApplications)
-			manage.GET("/applications/:id", h.GetApplication)
-			manage.PATCH("/applications/:id/review", h.ReviewApplication)
-		}
-
-		// ── 发放（SRP+） ──
-		srpPayout := srp.Group("/manage", middleware.RequireRole(model.RoleSRP))
-		{
-			srpPayout.PATCH("/applications/:id/payout", h.Payout)
-		}
+		// 用户角色分配
+		adminUser.GET("/:id/roles", roleH.GetUserRoles)
+		adminUser.PUT("/:id/roles", roleH.SetUserRoles)
 	}
 }
