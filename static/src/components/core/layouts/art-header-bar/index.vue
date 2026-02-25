@@ -61,32 +61,6 @@
       </div>
 
       <div class="flex-c gap-2.5">
-        <!-- 搜索 -->
-        <div
-          v-if="shouldShowGlobalSearch"
-          class="flex-cb w-40 h-9 px-2.5 c-p border border-g-400 rounded-custom-sm max-md:!hidden"
-          @click="openSearchDialog"
-        >
-          <div class="flex-c">
-            <ArtSvgIcon icon="ri:search-line" class="text-sm text-g-500" />
-            <span class="ml-1 text-xs font-normal text-g-500">{{ $t('topBar.search.title') }}</span>
-          </div>
-          <div class="flex-c h-5 px-1.5 text-g-500/80 border border-g-400 rounded">
-            <ArtSvgIcon v-if="isWindows" icon="vaadin:ctrl-a" class="text-sm" />
-            <ArtSvgIcon v-else icon="ri:command-fill" class="text-xs" />
-            <span class="ml-0.5 text-xs">k</span>
-          </div>
-        </div>
-
-        <!-- 全屏按钮 -->
-        <ArtIconButton
-          v-if="shouldShowFullscreen"
-          :icon="isFullscreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-fill'"
-          :class="[!isFullscreen ? 'full-screen-btn' : 'exit-full-screen-btn', 'ml-3']"
-          class="max-md:!hidden"
-          @click="toggleFullScreen"
-        />
-
         <!-- 国际化按钮 -->
         <ElDropdown
           @command="changeLanguage"
@@ -118,35 +92,6 @@
         >
           <div class="absolute top-2 right-2 size-1.5 !bg-danger rounded-full"></div>
         </ArtIconButton>
-
-        <!-- 聊天按钮 -->
-        <ArtIconButton
-          v-if="shouldShowChat"
-          icon="ri:message-3-line"
-          class="chat-button relative"
-          @click="openChat"
-        >
-          <div class="breathing-dot absolute top-2 right-2 size-1.5 !bg-success rounded-full"></div>
-        </ArtIconButton>
-
-        <!-- 设置按钮 -->
-        <div v-if="shouldShowSettings">
-          <ElPopover :visible="showSettingGuide" placement="bottom-start" :width="190" :offset="0">
-            <template #reference>
-              <div class="flex-cc">
-                <ArtIconButton icon="ri:settings-line" class="setting-btn" @click="openSetting" />
-              </div>
-            </template>
-            <template #default>
-              <p
-                >{{ $t('topBar.guide.title')
-                }}<span :style="{ color: systemThemeColor }"> {{ $t('topBar.guide.theme') }} </span
-                >、 <span :style="{ color: systemThemeColor }"> {{ $t('topBar.guide.menu') }} </span
-                >{{ $t('topBar.guide.description') }}
-              </p>
-            </template>
-          </ElPopover>
-        </div>
 
         <!-- 主题切换按钮 -->
         <ArtIconButton

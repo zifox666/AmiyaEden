@@ -30,51 +30,30 @@
   })
 
   // 校验规则
-  const rules = {
-    // userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }]
-  }
+  const rules = {}
 
-  // 动态 options
-  const statusOptions = ref<{ label: string; value: string; disabled?: boolean }[]>([])
+  // 角色选项
+  const roleOptions = [
+    { label: '超级管理员', value: 'super_admin' },
+    { label: '管理员', value: 'admin' },
+    { label: '已认证用户', value: 'user' },
+    { label: '访客', value: 'guest' }
+  ]
 
-  // 模拟接口返回状态数据
-  function fetchStatusOptions(): Promise<typeof statusOptions.value> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          { label: '在线', value: '1' },
-          { label: '离线', value: '2' },
-          { label: '异常', value: '3' },
-          { label: '注销', value: '4' }
-        ])
-      }, 1000)
-    })
-  }
-
-  onMounted(async () => {
-    statusOptions.value = await fetchStatusOptions()
-  })
+  // 状态选项
+  const statusOptions = [
+    { label: '正常', value: 1 },
+    { label: '禁用', value: 0 }
+  ]
 
   // 表单配置
   const formItems = computed(() => [
     {
-      label: '用户名',
-      key: 'userName',
+      label: '昵称',
+      key: 'nickname',
       type: 'input',
-      placeholder: '请输入用户名',
+      placeholder: '请输入昵称',
       clearable: true
-    },
-    {
-      label: '手机号',
-      key: 'userPhone',
-      type: 'input',
-      props: { placeholder: '请输入手机号', maxlength: '11' }
-    },
-    {
-      label: '邮箱',
-      key: 'userEmail',
-      type: 'input',
-      props: { placeholder: '请输入邮箱' }
     },
     {
       label: '状态',
@@ -82,31 +61,29 @@
       type: 'select',
       props: {
         placeholder: '请选择状态',
-        options: statusOptions.value
+        options: statusOptions,
+        clearable: true
       }
     },
     {
-      label: '性别',
-      key: 'userGender',
-      type: 'radiogroup',
+      label: '角色',
+      key: 'role',
+      type: 'select',
       props: {
-        options: [
-          { label: '男', value: '1' },
-          { label: '女', value: '2' }
-        ]
+        placeholder: '请选择角色',
+        options: roleOptions,
+        clearable: true
       }
     }
   ])
 
   // 事件
   function handleReset() {
-    console.log('重置表单')
     emit('reset')
   }
 
   async function handleSearch() {
     await searchBarRef.value.validate()
     emit('search', formData.value)
-    console.log('表单数据', formData.value)
   }
 </script>

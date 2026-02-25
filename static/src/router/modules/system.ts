@@ -31,6 +31,16 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'esi-refresh',
+      name: 'ESIRefresh',
+      component: '/system/esi-refresh',
+      meta: {
+        title: 'menus.system.esiRefresh',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
       path: 'user-center',
       name: 'UserCenter',
       component: '/system/user-center',

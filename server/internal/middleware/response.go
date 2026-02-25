@@ -71,17 +71,17 @@ func ResponseWrapper() gin.HandlerFunc {
 			// 对 404/405 等框架级错误包装为标准格式
 			if statusCode == http.StatusNotFound {
 				writeJSON(c, statusCode, response.Response{
-					Code:    response.CodeNotFound,
-					Message: "资源不存在",
-					Data:    nil,
+					Code: response.CodeNotFound,
+					Msg:  "资源不存在",
+					Data: nil,
 				})
 				return
 			}
 			if statusCode == http.StatusMethodNotAllowed {
 				writeJSON(c, statusCode, response.Response{
-					Code:    response.CodeBizError,
-					Message: "方法不允许",
-					Data:    nil,
+					Code: response.CodeBizError,
+					Msg:  "方法不允许",
+					Data: nil,
 				})
 				return
 			}
@@ -117,9 +117,9 @@ func ResponseWrapper() gin.HandlerFunc {
 		// ---- 自动包装裸 JSON ----
 		c.Set(CtxKeyBizCode, response.CodeOK)
 		wrapped, _ := json.Marshal(response.Response{
-			Code:    response.CodeOK,
-			Message: "success",
-			Data:    json.RawMessage(body),
+			Code: response.CodeOK,
+			Msg:  "success",
+			Data: json.RawMessage(body),
 		})
 		c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		c.Writer.WriteHeader(statusCode)

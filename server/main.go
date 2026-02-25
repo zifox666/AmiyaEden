@@ -3,6 +3,7 @@ package main
 import (
 	"amiya-eden/bootstrap"
 	"amiya-eden/global"
+	"amiya-eden/jobs"
 	"amiya-eden/pkg/jwt"
 	"context"
 	"net/http"
@@ -32,6 +33,12 @@ func main() {
 
 	// 初始化定时任务
 	bootstrap.InitCron()
+
+	// 启动时异步检查 SDE 是否有新版本
+	go jobs.SdeCheckOnStartup()
+
+	// 将 ESI 任务模块的 scope 注册到 SSO 服务
+	bootstrap.InitScopes()
 
 	// 初始化路由
 	r := bootstrap.InitRouter()

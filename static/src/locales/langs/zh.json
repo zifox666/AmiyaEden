@@ -1,4 +1,4 @@
-{
+﻿{
   "httpMsg": {
     "unauthorized": "未授权访问，请重新登录",
     "forbidden": "禁止访问该资源",
@@ -36,6 +36,13 @@
     "tips": "提示",
     "cancel": "取消",
     "confirm": "确定",
+    "refresh": "刷新",
+    "operation": "操作",
+    "detail": "详情",
+    "edit": "编辑",
+    "delete": "删除",
+    "status": "状态",
+    "updatedAt": "更新时间",
     "logOutTips": "您是否要退出登录?"
   },
   "search": {
@@ -150,28 +157,22 @@
   },
   "login": {
     "leftView": {
-      "title": "一款兼具设计美学与高效开发的后台系统",
-      "subTitle": "美观实用的界面，经过视觉优化，确保卓越的用户体验"
+      "title": "AmiyaEden - EVE Online 工具与社区平台",
+      "subTitle": "使用您的 EVE Online 角色登录，安全且便捷"
     },
-    "title": "欢迎回来",
-    "subTitle": "输入您的账号和密码登录",
-    "roles": {
-      "super": "超级管理员",
-      "admin": "管理员",
-      "user": "普通用户"
+    "title": "欢迎登录",
+    "subTitle": "使用您的 EVE Online 身份进行登录",
+    "btnText": "使用 EVE Online 登录",
+    "redirecting": "正在跳转到 EVE Online...",
+    "hint": "登录将跳转到 EVE Online 官方授权页面，授权后自动返回",
+    "callback": {
+      "loading": "正在验证登录...",
+      "loadingSub": "正在处理 EVE Online 授权，请稍候",
+      "success": "登录成功",
+      "successSub": "欢迎回来，{name}！正在跳转...",
+      "error": "登录失败",
+      "retry": "重新登录"
     },
-    "placeholder": {
-      "username": "请输入账号",
-      "password": "请输入密码",
-      "slider": "请拖动滑块完成验证"
-    },
-    "sliderText": "按住滑块拖动",
-    "sliderSuccessText": "验证成功",
-    "rememberPwd": "记住密码",
-    "forgetPwd": "忘记密码",
-    "btnText": "登录",
-    "noAccount": "还没有账号？",
-    "register": "注册",
     "success": {
       "title": "登录成功",
       "message": "欢迎回来"
@@ -261,8 +262,246 @@
       "title": "系统管理",
       "user": "用户管理",
       "role": "角色管理",
+      "characters": "角色管理",
       "userCenter": "个人中心",
-      "menu": "菜单管理"
+      "menu": "菜单管理",
+      "esiRefresh": "定时任务"
+    },
+    "characters": {
+      "title": "EVE 角色管理"
+    },
+    "operation": {
+      "title": "舰队行动",
+      "fleets": "舰队管理",
+      "fleetDetail": "舰队详情",
+      "pap": "我的 PAP",
+      "wallet": "我的钱包",
+      "join": "加入舰队",
+      "srpApply": "申请补损",
+      "srpManage": "补损审批",
+      "srpPrices": "补损价格表"
+    },
+    "srp": {
+      "title": "补损 SRP",
+      "srpApply": "申请补损",
+      "srpManage": "补损审批",
+      "srpPrices": "补损价格表"
+    }
+  },
+  "fleet": {
+    "title": "舰队管理",
+    "subTitle": "创建和管理 EVE 舰队行动",
+    "create": "创建舰队",
+    "edit": "编辑舰队",
+    "delete": "删除舰队",
+    "deleteConfirm": "确定要删除舰队「{name}」吗？此操作不可恢复。",
+    "deleteSuccess": "舰队已删除",
+    "createSuccess": "舰队创建成功",
+    "updateSuccess": "舰队更新成功",
+    "fields": {
+      "title": "标题",
+      "titlePlaceholder": "行动名称",
+      "importance": "等级",
+      "papCount": "PAP 数量",
+      "timeRange": "起止时间",
+      "startAt": "开始时间",
+      "endAt": "结束时间",
+      "fc": "舰队指挥",
+      "fcPlaceholder": "选择一个角色作为舰队指挥",
+      "description": "详细信息",
+      "descriptionPlaceholder": "关于此行动的额外信息",
+      "esiFleetId": "ESI 舰队 ID"
+    },
+    "importance": {
+      "strat_op": "Strat Op",
+      "cta": "CTA",
+      "other": "Other"
+    },
+    "members": {
+      "title": "舰队成员",
+      "empty": "暂无成员",
+      "syncESI": "从 ESI 同步",
+      "syncSuccess": "成员同步成功",
+      "characterName": "角色名",
+      "shipType": "舰船",
+      "joinedAt": "加入时间"
+    },
+    "pap": {
+      "title": "PAP 发放",
+      "issue": "发放 PAP",
+      "issueConfirm": "确定要向所有成员发放 PAP 吗？",
+      "issueSuccess": "PAP 已发放",
+      "myTitle": "我的 PAP 记录",
+      "count": "PAP 数量",
+      "issuedBy": "发放人",
+      "issuedAt": "发放时间",
+      "empty": "暂无 PAP 记录"
+    },
+    "invite": {
+      "title": "邀请链接",
+      "create": "生成邀请链接",
+      "createSuccess": "邀请链接已创建",
+      "deactivate": "禁用",
+      "deactivateConfirm": "确定禁用此邀请链接吗？",
+      "deactivateSuccess": "邀请链接已禁用",
+      "code": "邀请码",
+      "active": "有效",
+      "inactive": "已失效",
+      "expiresAt": "过期时间",
+      "copyLink": "复制链接",
+      "copied": "已复制到剪贴板"
+    },
+    "join": {
+      "title": "加入舰队",
+      "selectCharacter": "选择角色",
+      "selectCharacterPlaceholder": "选择一个角色加入舰队",
+      "joinSuccess": "已成功加入舰队",
+      "invalidCode": "无效的邀请码"
+    },
+    "wallet": {
+      "title": "我的钱包",
+      "balance": "余额",
+      "transactions": "交易记录",
+      "amount": "金额",
+      "reason": "说明",
+      "time": "时间",
+      "empty": "暂无交易记录"
+    }
+  },
+  "characters": {
+    "title": "EVE 角色管理",
+    "subTitle": "管理账号下绑定的 EVE Online 角色，可绑定多个角色并切换主角色",
+    "bind": "绑定新角色",
+    "primary": "主角色",
+    "setPrimary": "设为主角色",
+    "unbind": "解绑",
+    "empty": "暂无绑定角色",
+    "noScopes": "无额外权限",
+    "scopeCount": "项权限",
+    "bindFailed": "获取绑定链接失败",
+    "setPrimarySuccess": "已将 {name} 设为主角色",
+    "setPrimaryFailed": "设置主角色失败",
+    "unbindConfirm": "确定要解绑角色 {name} 吗？解绑后该角色的授权数据将被清除。",
+    "unbindSuccess": "已成功解绑 {name}",
+    "unbindFailed": "解绑失败"
+  },
+  "srp": {
+    "apply": {
+      "title": "我的补损申请",
+      "dialogTitle": "提交补损申请",
+      "submitBtn": "提交补损申请",
+      "selectCharacter": "选择受损角色",
+      "associatedFleet": "关联舰队",
+      "selectFleet": "可选：关联舰队",
+      "killmail": "KillMail",
+      "selectKillmail": "选择一个 KillMail",
+      "loadingKm": "加载 KM 中...",
+      "noKmHint": "请先选择角色以加载 KM",
+      "recommendedAmount": "推荐金额",
+      "finalAmount": "申请金额",
+      "finalAmountHint": "填 0 则使用推荐金额",
+      "note": "备注",
+      "notePlaceholder": "可选",
+      "noteRequired": "无关联舰队时必填",
+      "cancelBtn": "取消",
+      "confirmSubmitBtn": "提交申请",
+      "submitSuccess": "申请提交成功",
+      "noKmFound": "未找到符合条件的 KM",
+      "columns": {
+        "character": "角色",
+        "ship": "舰船",
+        "system": "星系",
+        "killId": "KillID",
+        "time": "时间",
+        "recommendedAmount": "推荐金额",
+        "finalAmount": "最终金额",
+        "reviewStatus": "审批状态",
+        "payoutStatus": "发放状态",
+        "note": "备注"
+      }
+    },
+    "manage": {
+      "title": "补损申请列表",
+      "refresh": "刷新",
+      "selectFleet": "按舰队筛选",
+      "searchBtn": "查询",
+      "resetBtn": "重置",
+      "approveBtn": "批准",
+      "rejectBtn": "拒绝",
+      "payoutBtn": "发放",
+      "approveDialog": "批准申请",
+      "rejectDialog": "拒绝申请",
+      "payoutDialog": "确认发放补损",
+      "finalAmount": "最终金额",
+      "finalAmountHint": "填 0 则保持原申请金额",
+      "reviewNote": "审批备注",
+      "rejectNotePlaceholder": "拒绝时必须填写备注",
+      "optionalPlaceholder": "可选",
+      "overrideAmount": "覆盖金额",
+      "overrideAmountHint": "填 0 则使用现有最终金额",
+      "payoutCharacter": "角色：",
+      "payoutAmount": "最终金额：",
+      "confirmApprove": "确认批准",
+      "confirmReject": "确认拒绝",
+      "confirmPayout": "确认发放",
+      "approveSuccess": "已批准",
+      "rejectSuccess": "已拒绝",
+      "payoutSuccess": "发放成功",
+      "rejectRequired": "拒绝时必须填写审批备注",
+      "columns": {
+        "id": "#",
+        "character": "角色",
+        "ship": "舰船",
+        "system": "星系",
+        "killId": "KillID",
+        "kmTime": "KM 时间",
+        "corporation": "军团",
+        "alliance": "联盟",
+        "recommendedAmount": "推荐金额",
+        "finalAmount": "最终金额",
+        "review": "审批",
+        "payout": "发放",
+        "action": "操作"
+      }
+    },
+    "prices": {
+      "title": "舰船补损价格表",
+      "searchPlaceholder": "按舰船名搜索",
+      "refresh": "刷新",
+      "addPrice": "新增价格",
+      "addDialog": "新增舰船价格",
+      "editDialog": "编辑舰船价格",
+      "saveBtn": "保存",
+      "cancelBtn": "取消",
+      "deleteConfirm": "确认删除该条记录？",
+      "updateSuccess": "更新成功",
+      "addSuccess": "新增成功",
+      "deleteSuccess": "已删除",
+      "editBtn": "编辑",
+      "deleteBtn": "删除",
+      "validTypeId": "请填写有效的 TypeID",
+      "validName": "请填写舰船名称",
+      "validAmount": "金额不能为负",
+      "fields": {
+        "typeId": "舰船 TypeID",
+        "name": "舰船名称",
+        "namePlaceholder": "舰船名称（中文或英文）",
+        "amount": "补损金额 (ISK)"
+      },
+      "columns": {
+        "typeId": "TypeID",
+        "name": "舰船名称",
+        "amount": "标准补损金额",
+        "updatedAt": "最后更新",
+        "action": "操作"
+      }
+    },
+    "status": {
+      "pending": "待审批",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "paid": "已发放",
+      "unpaid": "待发放"
     }
   },
   "table": {
