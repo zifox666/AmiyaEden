@@ -25,7 +25,7 @@ export const srpRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.srp.srpManage',
         keepAlive: true,
-        roles: ['R_SUPER', 'R_ADMIN', 'R_SRP', 'R_FC']
+        roles: ['super_admin', 'admin', 'srp', 'fc']
       }
     },
     {
@@ -35,7 +35,7 @@ export const srpRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.srp.srpPrices',
         keepAlive: true,
-        roles: ['R_SUPER', 'R_ADMIN', 'R_SRP']
+        roles: ['super_admin', 'admin', 'srp']
       }
     }
   ]

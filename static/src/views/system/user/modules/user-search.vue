@@ -32,14 +32,6 @@
   // 校验规则
   const rules = {}
 
-  // 角色选项
-  const roleOptions = [
-    { label: '超级管理员', value: 'super_admin' },
-    { label: '管理员', value: 'admin' },
-    { label: '已认证用户', value: 'user' },
-    { label: '访客', value: 'guest' }
-  ]
-
   // 状态选项
   const statusOptions = [
     { label: '正常', value: 1 },
@@ -62,16 +54,6 @@
       props: {
         placeholder: '请选择状态',
         options: statusOptions,
-        clearable: true
-      }
-    },
-    {
-      label: '角色',
-      key: 'role',
-      type: 'select',
-      props: {
-        placeholder: '请选择角色',
-        options: roleOptions,
         clearable: true
       }
     }

@@ -20,11 +20,11 @@
       >
       </ArtTable>
 
-      <!-- 角色编辑弹窗 -->
+      <!-- 角色分配弹窗 -->
       <UserRoleDialog
         v-model:visible="dialogVisible"
         :user-data="currentUserData"
-        @submit="handleRoleSubmit"
+        @saved="refreshData"
       />
     </ElCard>
   </div>
@@ -33,7 +33,7 @@
 <script setup lang="ts">
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetUserList, fetchDeleteUser, fetchUpdateUserRole } from '@/api/system-manage'
+  import { fetchGetUserList, fetchDeleteUser } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserRoleDialog from './modules/user-role-dialog.vue'
   import { ElTag, ElMessageBox, ElAvatar } from 'element-plus'
@@ -49,14 +49,15 @@
   // 搜索表单
   const searchForm = ref({
     nickname: undefined,
-    status: undefined,
-    role: undefined
+    status: undefined
   })
 
   // 角色显示配置
   const ROLE_CONFIG: Record<string, { type: string; text: string }> = {
     super_admin: { type: 'danger', text: '超级管理员' },
     admin: { type: 'warning', text: '管理员' },
+    srp: { type: 'success', text: 'SRP管理员' },
+    fc: { type: 'warning', text: 'FC' },
     user: { type: 'success', text: '已认证用户' },
     guest: { type: 'info', text: '访客' }
   }
@@ -181,20 +182,6 @@
     nextTick(() => {
       dialogVisible.value = true
     })
-  }
-
-  /** 角色修改提交 */
-  const handleRoleSubmit = async (role: string) => {
-    try {
-      const id = currentUserData.value.id
-      if (!id) return
-      await fetchUpdateUserRole(id, role)
-      ElMessage.success('角色修改成功')
-      dialogVisible.value = false
-      refreshData()
-    } catch (error) {
-      console.error('角色修改失败:', error)
-    }
   }
 
   /** 删除用户 */

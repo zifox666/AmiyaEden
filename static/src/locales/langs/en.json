@@ -281,6 +281,13 @@
       "srpManage": "SRP Review",
       "srpPrices": "SRP Price List"
     },
+    "role": {
+      "title": "Roles",
+      "explore": "Role Explorer",
+      "myRoles": "My Roles",
+      "applications": "My Applications",
+      "manage": "Role Admin"
+    },
     "srp": {
       "title": "SRP",
       "srpApply": "SRP Apply",

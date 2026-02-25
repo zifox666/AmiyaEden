@@ -106,6 +106,10 @@ declare namespace Api {
         last_login_ip: string
       }
       characters: EveCharacter[]
+      /** 用户所有活跃角色编码列表 */
+      roles: string[]
+      /** 用户所有权限标识列表 */
+      permissions: string[]
     }
 
     /** 用户信息（路由守卫和权限指令使用） */
@@ -131,7 +135,7 @@ declare namespace Api {
       nickname: string
       avatar: string
       status: number // 1:正常 0:禁用
-      role: string // super_admin | admin | user | guest
+      role: string // 历史兼容字段
       last_login_at: string | null
       last_login_ip: string
       created_at: string
@@ -142,28 +146,105 @@ declare namespace Api {
     type UserSearchParams = Partial<{
       nickname: string
       status: number
-      role: string
     }> &
       Partial<Api.Common.CommonSearchParams>
 
-    /** 角色列表 */
-    type RoleList = Api.Common.PaginatedResponse<RoleListItem>
+    /** 角色列表（分页） */
+    type RoleList = Api.Common.PaginatedResponse<RoleItem>
 
-    /** 角色列表项 */
-    interface RoleListItem {
-      roleId: number
-      roleName: string
-      roleCode: string
+    /** 角色（匹配后端 model.Role） */
+    interface RoleItem {
+      id: number
+      code: string
+      name: string
       description: string
-      enabled: boolean
-      createTime: string
+      is_system: boolean
+      sort: number
+      status: number
+      menu_ids?: number[]
+      created_at: string
+      updated_at: string
+    }
+
+    /** 创建角色请求 */
+    interface CreateRoleParams {
+      code: string
+      name: string
+      description?: string
+      sort?: number
+    }
+
+    /** 更新角色请求 */
+    interface UpdateRoleParams {
+      name?: string
+      description?: string
+      sort?: number
     }
 
     /** 角色搜索参数 */
-    type RoleSearchParams = Partial<
-      Pick<RoleListItem, 'roleId' | 'roleName' | 'roleCode' | 'description' | 'enabled'> &
-        Api.Common.CommonSearchParams
-    >
+    type RoleSearchParams = Partial<Api.Common.CommonSearchParams>
+
+    /** 菜单项（后端 model.Menu） */
+    interface MenuItem {
+      id: number
+      parent_id: number
+      type: 'dir' | 'menu' | 'button'
+      name: string
+      path: string
+      component: string
+      permission: string
+      title: string
+      icon: string
+      sort: number
+      is_hide: boolean
+      keep_alive: boolean
+      is_hide_tab: boolean
+      fixed_tab: boolean
+      status: number
+      children?: MenuItem[]
+      created_at: string
+      updated_at: string
+    }
+
+    /** 创建菜单请求 */
+    interface CreateMenuParams {
+      parent_id?: number
+      type: 'dir' | 'menu' | 'button'
+      name: string
+      path?: string
+      component?: string
+      permission?: string
+      title: string
+      icon?: string
+      sort?: number
+      is_hide?: boolean
+      keep_alive?: boolean
+      is_hide_tab?: boolean
+      fixed_tab?: boolean
+    }
+
+    /** 更新菜单请求 */
+    interface UpdateMenuParams {
+      parent_id?: number
+      type?: 'dir' | 'menu' | 'button'
+      name?: string
+      path?: string
+      component?: string
+      permission?: string
+      title?: string
+      icon?: string
+      sort?: number
+      is_hide?: boolean
+      keep_alive?: boolean
+      is_hide_tab?: boolean
+      fixed_tab?: boolean
+    }
+
+    /** 用户角色关联 */
+    interface UserRoleInfo {
+      role_ids: number[]
+      roles: RoleItem[]
+    }
   }
 
   /** ESI 刷新队列类型 */

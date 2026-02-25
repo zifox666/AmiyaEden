@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"amiya-eden/internal/service"
 	"fmt"
 	"time"
 
@@ -82,7 +83,28 @@ func autoMigrate(db *gorm.DB) {
 		// SRP 补损相关表
 		&model.SrpShipPrice{},
 		&model.SrpApplication{},
+		// RBAC 权限相关表
+		&model.Role{},
+		&model.Menu{},
+		&model.RoleMenu{},
+		&model.UserRole{},
 	); err != nil {
 		global.Logger.Fatal("数据库迁移失败", zap.Error(err))
 	}
+
+	// 清理旧 role 表废弃列（来自旧模型）
+	deprecatedCols := []string{"module", "type", "visibility", "access_type", "priority"}
+	for _, col := range deprecatedCols {
+		if db.Migrator().HasColumn(&model.Role{}, col) {
+			if err := db.Migrator().DropColumn(&model.Role{}, col); err != nil {
+				global.Logger.Warn("删除废弃列失败", zap.String("column", col), zap.Error(err))
+			}
+		}
+	}
+
+	// 种子数据：系统角色 → 系统菜单 → 默认角色权限 → 迁移已有用户
+	roleSvc := service.NewRoleService()
+	roleSvc.SeedSystemRoles()
+	roleSvc.SeedSystemMenus()
+	roleSvc.MigrateExistingUsers()
 }

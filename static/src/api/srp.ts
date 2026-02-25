@@ -38,7 +38,7 @@ export function submitApplication(data: Api.Srp.SubmitApplicationParams) {
 /** 获取我的补损申请列表 */
 export function fetchMyApplications(params?: Partial<Api.Common.CommonSearchParams>) {
   return request.get<Api.Srp.ApplicationList>({
-    url: '/api/v1/srp/applications/my',
+    url: '/api/v1/srp/applications/me',
     params
   })
 }
@@ -46,15 +46,14 @@ export function fetchMyApplications(params?: Partial<Api.Common.CommonSearchPara
 /** 获取舰队范围内可用的 KM 列表（快捷申请） */
 export function fetchFleetKillmails(fleetId: string) {
   return request.get<Api.Srp.FleetKillmailItem[]>({
-    url: '/api/v1/srp/fleet-killmails',
-    params: { fleet_id: fleetId }
+    url: `/api/v1/srp/killmails/fleet/${fleetId}`
   })
 }
 
 /** 获取当前用户所有角色的全部 KM 列表（不限舰队；可按 characterId 筛选） */
 export function fetchMyKillmails(characterId?: number) {
   return request.get<Api.Srp.FleetKillmailItem[]>({
-    url: '/api/v1/srp/my-killmails',
+    url: '/api/v1/srp/killmails/me',
     params: characterId ? { character_id: characterId } : undefined
   })
 }
@@ -64,7 +63,7 @@ export function fetchMyKillmails(characterId?: number) {
 /** 获取全部申请列表（管理端） */
 export function fetchApplicationList(params?: Api.Srp.ApplicationSearchParams) {
   return request.get<Api.Srp.ApplicationList>({
-    url: '/api/v1/srp/manage/applications',
+    url: '/api/v1/srp/applications',
     params
   })
 }
@@ -72,24 +71,22 @@ export function fetchApplicationList(params?: Api.Srp.ApplicationSearchParams) {
 /** 获取单条申请详情 */
 export function fetchApplicationDetail(id: number) {
   return request.get<Api.Srp.Application>({
-    url: `/api/v1/srp/manage/applications/${id}`
+    url: `/api/v1/srp/applications/${id}`
   })
 }
 
 /** 审批补损申请 */
 export function reviewApplication(id: number, data: Api.Srp.ReviewParams) {
-  return request.request<Api.Srp.Application>({
-    url: `/api/v1/srp/manage/applications/${id}/review`,
-    method: 'PATCH',
+  return request.put<Api.Srp.Application>({
+    url: `/api/v1/srp/applications/${id}/review`,
     data
   })
 }
 
 /** 发放补损 */
 export function payoutApplication(id: number, data?: Api.Srp.PayoutParams) {
-  return request.request<Api.Srp.Application>({
-    url: `/api/v1/srp/manage/applications/${id}/payout`,
-    method: 'PATCH',
+  return request.put<Api.Srp.Application>({
+    url: `/api/v1/srp/applications/${id}/payout`,
     data: data ?? {}
   })
 }
