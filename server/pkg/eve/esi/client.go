@@ -19,8 +19,9 @@ const (
 
 // Client ESI HTTP 客户端
 type Client struct {
-	baseURL    string
-	httpClient *http.Client
+	baseURL     string
+	httpClient  *http.Client
+	rateLimiter *RateLimiter
 }
 
 // NewClient 创建 ESI 客户端
@@ -30,6 +31,7 @@ func NewClient() *Client {
 		httpClient: &http.Client{
 			Timeout: DefaultTimeout,
 		},
+		rateLimiter: NewRateLimiter(),
 	}
 }
 

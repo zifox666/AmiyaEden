@@ -28,5 +28,8 @@ export { useHeaderBar } from './core/useHeaderBar'
 // 图表相关
 export { useChart, useChartComponent, useChartOps } from './core/useChart'
 
+// ID → 名称批量解析
+export { useNameResolver } from './core/useNameResolver'
+
 // 布局高度
 export { useLayoutHeight, useAutoLayoutHeight } from './core/useLayoutHeight'

@@ -2,8 +2,10 @@ package handler
 
 import (
 	"amiya-eden/internal/service"
+	"amiya-eden/pkg/eve/esi"
 	"amiya-eden/pkg/response"
-	"strconv"
+	"context"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,52 +35,30 @@ func (h *SdeHandler) GetVersion(c *gin.Context) {
 	response.OK(c, v)
 }
 
-// TriggerUpdate godoc
-// POST /api/v1/sde/update
-// 手动触发 SDE 更新（Admin 或以上权限）
-func (h *SdeHandler) TriggerUpdate(c *gin.Context) {
-	version, err := h.svc.TriggerManualUpdate()
-	if err != nil {
-		response.Fail(c, response.CodeBizError, "SDE 更新失败: "+err.Error())
-		return
-	}
-	response.OK(c, gin.H{"version": version, "message": "SDE 导入成功"})
+// GetTypes godoc
+// POST /api/v1/sde/types
+// 批量查询物品信息（含 group + category + market_group 翻译）
+type GetTypesRequest struct {
+	TypeIDs    []int  `json:"type_ids"`
+	Published  *bool  `json:"published"`
+	LanguageID string `json:"language_id"`
 }
 
-// GetTranslation godoc
-// GET /api/v1/sde/translation?tc_id=8&key_id=34&language_id=zh
-// 查询单条翻译
-func (h *SdeHandler) GetTranslation(c *gin.Context) {
-	tcID, err1 := strconv.Atoi(c.Query("tc_id"))
-	keyID, err2 := strconv.Atoi(c.Query("key_id"))
-	languageID := c.Query("language_id")
-
-	if err1 != nil || err2 != nil || languageID == "" {
-		response.Fail(c, response.CodeParamError, "参数错误：tc_id, key_id, language_id 均为必填")
+func (h *SdeHandler) GetTypes(c *gin.Context) {
+	var req GetTypesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "参数错误: "+err.Error())
 		return
 	}
-
-	t, err := h.svc.GetTranslation(tcID, keyID, languageID)
-	if err != nil {
-		response.Fail(c, response.CodeNotFound, "翻译记录不存在")
+	if len(req.TypeIDs) == 0 {
+		response.Fail(c, response.CodeParamError, "type_ids 不能为空")
 		return
 	}
-	response.OK(c, t)
-}
-
-// GetTranslationsByKey godoc
-// GET /api/v1/sde/translations?tc_id=8&key_id=34
-// 查询一个 key 的所有语言翻译
-func (h *SdeHandler) GetTranslationsByKey(c *gin.Context) {
-	tcID, err1 := strconv.Atoi(c.Query("tc_id"))
-	keyID, err2 := strconv.Atoi(c.Query("key_id"))
-
-	if err1 != nil || err2 != nil {
-		response.Fail(c, response.CodeParamError, "参数错误：tc_id 和 key_id 均为必填整数")
-		return
+	if req.LanguageID == "" {
+		req.LanguageID = "en"
 	}
 
-	list, err := h.svc.GetTranslationsByKey(tcID, keyID)
+	list, err := h.svc.GetTypes(req.TypeIDs, req.Published, req.LanguageID)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, "查询失败: "+err.Error())
 		return
@@ -86,39 +66,74 @@ func (h *SdeHandler) GetTranslationsByKey(c *gin.Context) {
 	response.OK(c, list)
 }
 
-// SearchByName godoc
-// GET /api/v1/sde/search?keyword=Tritanium&limit=20
-// 名称模糊搜索
-func (h *SdeHandler) SearchByName(c *gin.Context) {
-	keyword := c.Query("keyword")
-	if keyword == "" {
-		response.Fail(c, response.CodeParamError, "keyword 不能为空")
-		return
-	}
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	list, err := h.svc.FuzzySearchByName(keyword, limit)
-	if err != nil {
-		response.Fail(c, response.CodeBizError, "搜索失败: "+err.Error())
-		return
-	}
-	response.OK(c, list)
+// GetNames godoc
+// POST /api/v1/sde/names
+// 批量查询 id -> name 映射
+type GetNamesRequest struct {
+	Language string           `json:"language"`
+	IDs      map[string][]int `json:"ids"` // key 为 tcID 名称：type/group/category/region/constellation/solar_system/market_group/tech/description
+	ESI      []int32          `json:"esi"` // character/corporation/alliance id，调用 ESI /universe/names
 }
 
-// GetTypeDetail godoc
-// GET /api/v1/sde/type/:type_id
-// 查询 typeID 详情（含 group + category）
-func (h *SdeHandler) GetTypeDetail(c *gin.Context) {
-	typeID, err := strconv.Atoi(c.Param("type_id"))
-	if err != nil {
-		response.Fail(c, response.CodeParamError, "无效的 type_id")
+func (h *SdeHandler) GetNames(c *gin.Context) {
+	var req GetNamesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "参数错误: "+err.Error())
+		return
+	}
+	// language 优先 body，其次 Accept-Language header，其次 cookie，最后默认 en
+	if req.Language == "" {
+		req.Language = c.GetHeader("Accept-Language")
+	}
+	if req.Language == "" {
+		if lang, err := c.Cookie("language"); err == nil && lang != "" {
+			req.Language = lang
+		}
+	}
+	if req.Language == "" {
+		req.Language = "en"
+	}
+	if len(req.IDs) == 0 && len(req.ESI) == 0 {
+		response.Fail(c, response.CodeParamError, "ids 和 esi 不能同时为空")
 		return
 	}
 
-	detail, err := h.svc.GetTypeDetail(typeID)
-	if err != nil {
-		response.Fail(c, response.CodeNotFound, "type_id 不存在")
-		return
+	result := make(map[int]string)
+
+	// 查数据库翻译
+	if len(req.IDs) > 0 {
+		dbNames, err := h.svc.GetNames(req.IDs, req.Language)
+		if err != nil {
+			response.Fail(c, response.CodeBizError, "查询失败: "+err.Error())
+			return
+		}
+		for k, v := range dbNames {
+			result[k] = v
+		}
 	}
-	response.OK(c, detail)
+
+	// 调用 ESI /universe/names 查询 character/corporation/alliance
+	if len(req.ESI) > 0 {
+		type esiEntry struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		}
+		var esiResult []esiEntry
+		client := esi.NewClient()
+		if err := client.PostJSON(
+			context.Background(),
+			"/universe/names?datasource=tranquility",
+			"",
+			req.ESI,
+			&esiResult,
+		); err != nil {
+			response.Fail(c, response.CodeBizError, fmt.Sprintf("ESI 查询失败: %v", err))
+			return
+		}
+		for _, e := range esiResult {
+			result[e.ID] = e.Name
+		}
+	}
+
+	response.OK(c, result)
 }

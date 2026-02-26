@@ -90,10 +90,10 @@ type ContractItem struct {
 func (t *ContractsTask) Execute(ctx *TaskContext) error {
 	bgCtx := context.Background()
 
-	// 1. 获取合同列表
+	// 1. 获取合同列表（自动分页）
 	contractPath := fmt.Sprintf("/characters/%d/contracts/", ctx.CharacterID)
 	var contracts []Contract
-	if err := ctx.Client.Get(bgCtx, contractPath, ctx.AccessToken, &contracts); err != nil {
+	if _, err := ctx.Client.GetPaginated(bgCtx, contractPath, ctx.AccessToken, &contracts); err != nil {
 		return fmt.Errorf("fetch contracts: %w", err)
 	}
 

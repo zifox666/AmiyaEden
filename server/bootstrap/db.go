@@ -69,10 +69,20 @@ func autoMigrate(db *gorm.DB) {
 		&model.EveCharacterNotification{},
 		&model.EveCharacterTitle{},
 		&model.EveCharacterClone{},
+
 		&model.EveKillmailList{},
 		&model.EveKillmailItem{},
 		&model.EveCharacterKillmail{},
+
 		&model.EveCharacterContract{},
+
+		&model.EVECharacterWallet{},
+		&model.EVECharacterWalletJournal{},
+		&model.EVECharacterWalletTransaction{},
+
+		&model.EveCharacterSkill{},
+		&model.EveCharacterSkills{},
+		&model.EveCharacterSkillQueue{},
 		// Fleet / Operation 相关表
 		&model.Fleet{},
 		&model.FleetMember{},
@@ -90,16 +100,6 @@ func autoMigrate(db *gorm.DB) {
 		&model.UserRole{},
 	); err != nil {
 		global.Logger.Fatal("数据库迁移失败", zap.Error(err))
-	}
-
-	// 清理旧 role 表废弃列（来自旧模型）
-	deprecatedCols := []string{"module", "type", "visibility", "access_type", "priority"}
-	for _, col := range deprecatedCols {
-		if db.Migrator().HasColumn(&model.Role{}, col) {
-			if err := db.Migrator().DropColumn(&model.Role{}, col); err != nil {
-				global.Logger.Warn("删除废弃列失败", zap.String("column", col), zap.Error(err))
-			}
-		}
 	}
 
 	// 种子数据：系统角色 → 系统菜单 → 默认角色权限 → 迁移已有用户

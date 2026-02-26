@@ -623,47 +623,12 @@ func truncate(s string, n int) string {
 
 // ---- 数据查询 ----
 
-// GetTranslation 查询翻译
-func (s *SdeService) GetTranslation(tcID, keyID int, languageID string) (*model.TrnTranslation, error) {
-	return s.repo.GetTranslation(tcID, keyID, languageID)
+// GetTypes 批量查询物品信息（含 group + category + market_group 翻译）
+func (s *SdeService) GetTypes(typeIDs []int, published *bool, languageID string) ([]repository.TypeInfo, error) {
+	return s.repo.GetTypes(typeIDs, published, languageID)
 }
 
-// GetTranslationsByKey 查询某 key 全部语言翻译
-func (s *SdeService) GetTranslationsByKey(tcID, keyID int) ([]model.TrnTranslation, error) {
-	return s.repo.GetTranslationsByKey(tcID, keyID)
-}
-
-// FuzzySearchByName 模糊搜索物品名称
-func (s *SdeService) FuzzySearchByName(keyword string, limit int) ([]model.InvType, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	return s.repo.FuzzySearchTypesByName(keyword, limit)
-}
-
-// GetTypeDetail 根据 typeID 查询物品详情（含 group + category 信息）
-func (s *SdeService) GetTypeDetail(typeID int) (*TypeDetailResult, error) {
-	t, err := s.repo.GetTypeByID(typeID)
-	if err != nil {
-		return nil, err
-	}
-
-	group, _ := s.repo.GetGroupByID(t.GroupID)
-	var category *model.InvCategory
-	if group != nil {
-		category, _ = s.repo.GetCategoryByID(group.CategoryID)
-	}
-
-	return &TypeDetailResult{
-		InvType:  t,
-		Group:    group,
-		Category: category,
-	}, nil
-}
-
-// TypeDetailResult typeID 详情返回结构
-type TypeDetailResult struct {
-	*model.InvType
-	Group    *model.InvGroup    `json:"group"`
-	Category *model.InvCategory `json:"category"`
+// GetNames 批量查询 id -> name 映射（仅查数据库翻译表）
+func (s *SdeService) GetNames(ids map[string][]int, languageID string) (map[int]string, error) {
+	return s.repo.GetNames(ids, languageID)
 }

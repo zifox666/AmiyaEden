@@ -91,10 +91,10 @@ type KillmailDetail struct {
 func (t *KillmailsTask) Execute(ctx *TaskContext) error {
 	bgCtx := context.Background()
 
-	// 1. 获取最近的 killmail 列表
+	// 1. 获取最近的 killmail 列表（自动分页）
 	recentPath := fmt.Sprintf("/characters/%d/killmails/recent/", ctx.CharacterID)
 	var refs []KillmailRef
-	if err := ctx.Client.Get(bgCtx, recentPath, ctx.AccessToken, &refs); err != nil {
+	if _, err := ctx.Client.GetPaginated(bgCtx, recentPath, ctx.AccessToken, &refs); err != nil {
 		return fmt.Errorf("fetch recent killmails: %w", err)
 	}
 

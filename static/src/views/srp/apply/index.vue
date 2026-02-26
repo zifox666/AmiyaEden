@@ -15,14 +15,14 @@
 
       <ElTable v-loading="loading" :data="applications" stripe border style="width: 100%">
         <ElTableColumn prop="character_name" :label="$t('srp.apply.columns.character')" width="150" />
-        <ElTableColumn prop="ship_name" :label="$t('srp.apply.columns.ship')" width="180">
+        <ElTableColumn prop="ship_type_id" :label="$t('srp.apply.columns.ship')" width="180">
           <template #default="{ row }">
-            <span>{{ row.ship_name || `TypeID: ${row.ship_type_id}` }}</span>
+            <span>{{ getName(row.ship_type_id, `TypeID: ${row.ship_type_id}`) }}</span>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="solar_system_name" :label="$t('srp.apply.columns.system')" width="140">
+        <ElTableColumn prop="solar_system_id" :label="$t('srp.apply.columns.system')" width="140">
           <template #default="{ row }">
-            {{ row.solar_system_name || row.solar_system_id }}
+            {{ getName(row.solar_system_id, String(row.solar_system_id)) }}
           </template>
         </ElTableColumn>
         <ElTableColumn prop="killmail_id" :label="$t('srp.apply.columns.killId')" width="110" align="center">
@@ -102,7 +102,7 @@
               v-for="km in fleetKillmails"
               :key="km.killmail_id"
               :value="km.killmail_id"
-              :label="`#${km.killmail_id}  ${km.victim_name} (TypeID: ${km.ship_type_id})`"
+              :label="`#${km.killmail_id}  ${km.victim_name} (${getName(km.ship_type_id, `TypeID: ${km.ship_type_id}`)})`"
             />
           </ElSelect>
         </ElFormItem>
@@ -141,15 +141,33 @@
   import { fetchMyCharacters } from '@/api/auth'
   import { fetchFleetList } from '@/api/fleet'
   import { submitApplication, fetchMyApplications, fetchFleetKillmails, fetchMyKillmails } from '@/api/srp'
+  import { useNameResolver } from '@/hooks'
 
   defineOptions({ name: 'SrpApply' })
 
   const route = useRoute()
   const { t } = useI18n()
+  const { getName, resolve: resolveNames } = useNameResolver()
 
   const applications = ref<Api.Srp.Application[]>([])
   const loading = ref(false)
   const pagination = reactive({ current: 1, size: 20, total: 0 })
+
+  /** 从列表数据中收集所有需要解析的 ID，一次性调 SDE /names */
+  const resolveApplicationNames = async (list: Api.Srp.Application[]) => {
+    const typeIds = new Set<number>()
+    const solarIds = new Set<number>()
+    for (const app of list) {
+      if (app.ship_type_id) typeIds.add(app.ship_type_id)
+      if (app.solar_system_id) solarIds.add(app.solar_system_id)
+    }
+    await resolveNames({
+      ids: {
+        ...(typeIds.size ? { type: [...typeIds] } : {}),
+        ...(solarIds.size ? { solar_system: [...solarIds] } : {})
+      }
+    })
+  }
 
   const loadApplications = async () => {
     loading.value = true
@@ -157,6 +175,7 @@
       const res = await fetchMyApplications({ current: pagination.current, size: pagination.size })
       applications.value = res?.records ?? []
       pagination.total = res?.total ?? 0
+      if (applications.value.length) await resolveApplicationNames(applications.value)
     } catch { applications.value = [] }
     finally { loading.value = false }
   }
@@ -214,6 +233,11 @@
       } else {
         const list = await fetchMyKillmails(form.character_id)
         fleetKillmails.value = list ?? []
+      }
+      // 解析 KM 列表中的舰船名
+      if (fleetKillmails.value.length) {
+        const typeIds = [...new Set(fleetKillmails.value.map((km) => km.ship_type_id).filter(Boolean))]
+        if (typeIds.length) await resolveNames({ ids: { type: typeIds } })
       }
     } catch { fleetKillmails.value = [] }
     finally { kmLoading.value = false }

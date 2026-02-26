@@ -123,7 +123,7 @@ func (h *SrpHandler) GetMyKillmails(c *gin.Context) {
 
 // GetFleetKillmails GET /srp/fleet-killmails?fleet_id=xxx
 func (h *SrpHandler) GetFleetKillmails(c *gin.Context) {
-	fleetID := c.Query("fleet_id")
+	fleetID := c.Param("fleet_id")
 	if fleetID == "" {
 		response.Fail(c, response.CodeParamError, "缺少 fleet_id 参数")
 		return

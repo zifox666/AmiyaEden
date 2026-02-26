@@ -55,12 +55,12 @@
           <ElTableColumn prop="character_id" label="角色 ID" width="120" align="center" />
           <ElTableColumn prop="ship_type_id" :label="$t('fleet.members.shipType')" width="120" align="center">
             <template #default="{ row }">
-              {{ row.ship_type_id ?? '-' }}
+              {{ getName(row.ship_type_id) }}
             </template>
           </ElTableColumn>
-          <ElTableColumn prop="solar_system_id" label="星系ID" width="120" align="center">
+          <ElTableColumn prop="solar_system_id" label="星系" width="120" align="center">
             <template #default="{ row }">
-              {{ row.solar_system_id ?? '-' }}
+              {{ getName(row.solar_system_id) }}
             </template>
           </ElTableColumn>
           <ElTableColumn prop="joined_at" :label="$t('fleet.members.joinedAt')" width="180">
@@ -178,6 +178,7 @@
     deactivateFleetInvite,
     refreshFleetESI
   } from '@/api/fleet'
+  import { useNameResolver } from '@/hooks'
 
   defineOptions({ name: 'FleetDetail' })
 
@@ -185,6 +186,7 @@
   const route = useRoute()
   const router = useRouter()
   const fleetId = computed(() => route.params.id as string)
+  const { getName, resolve: resolveNames } = useNameResolver()
 
   // ---- 数据 ----
   const fleet = ref<Api.Fleet.FleetItem | null>(null)
@@ -233,11 +235,28 @@
     membersLoading.value = true
     try {
       members.value = (await fetchFleetMembers(fleetId.value)) ?? []
+      if (members.value.length) await resolveMemberNames(members.value)
     } catch {
       members.value = []
     } finally {
       membersLoading.value = false
     }
+  }
+
+  /** 收集舰队成员中的 ship_type_id / solar_system_id 并解析 */
+  const resolveMemberNames = async (list: Api.Fleet.FleetMember[]) => {
+    const typeIds = new Set<number>()
+    const solarIds = new Set<number>()
+    for (const m of list) {
+      if (m.ship_type_id) typeIds.add(m.ship_type_id)
+      if (m.solar_system_id) solarIds.add(m.solar_system_id)
+    }
+    await resolveNames({
+      ids: {
+        ...(typeIds.size ? { type: [...typeIds] } : {}),
+        ...(solarIds.size ? { solar_system: [...solarIds] } : {})
+      }
+    })
   }
 
   const loadPap = async () => {

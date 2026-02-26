@@ -1,6 +1,6 @@
 <!-- ESI 定时任务管理页面 -->
 <template>
-  <div class="esi-refresh-page art-full-height">
+  <div class="esi-refresh-page">
     <!-- 任务定义列表 -->
     <ElCard class="art-table-card" shadow="never">
       <template #header>
@@ -13,48 +13,50 @@
         </div>
       </template>
 
-      <ElTable v-loading="tasksLoading" :data="tasks" stripe border style="width: 100%">
-        <ElTableColumn prop="name" label="任务名称" width="200" />
-        <ElTableColumn prop="description" label="描述" min-width="200" />
-        <ElTableColumn prop="priority" label="优先级" width="100" align="center">
-          <template #default="{ row }">
-            <ElTag :type="priorityType(row.priority)" size="small">
-              {{ priorityLabel(row.priority) }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="active_interval" label="活跃间隔" width="120" align="center" />
-        <ElTableColumn prop="inactive_interval" label="非活跃间隔" width="120" align="center" />
-        <ElTableColumn prop="required_scopes" label="所需权限" min-width="260">
-          <template #default="{ row }">
-            <template v-if="row.required_scopes?.length">
-              <ElTag
-                v-for="scope in row.required_scopes"
-                :key="scope"
-                size="small"
-                class="scope-tag"
-                effect="plain"
-              >
-                {{ scope }}
+      <div class="table-container">
+        <ElTable v-loading="tasksLoading" :data="tasks" stripe border>
+          <ElTableColumn prop="name" label="任务名称" width="200" />
+          <ElTableColumn prop="description" label="描述" min-width="200" />
+          <ElTableColumn prop="priority" label="优先级" width="100" align="center">
+            <template #default="{ row }">
+              <ElTag :type="priorityType(row.priority)" size="small">
+                {{ priorityLabel(row.priority) }}
               </ElTag>
             </template>
-            <span v-else class="text-gray-400">无需权限</span>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn label="操作" width="100" fixed="right" align="center">
-          <template #default="{ row }">
-            <ElButton
-              type="primary"
-              link
-              size="small"
-              :loading="runningByName.has(row.name)"
-              @click="handleRunTaskByName(row)"
-            >
-              执行
-            </ElButton>
-          </template>
-        </ElTableColumn>
-      </ElTable>
+          </ElTableColumn>
+          <ElTableColumn prop="active_interval" label="活跃间隔" width="120" align="center" />
+          <ElTableColumn prop="inactive_interval" label="非活跃间隔" width="120" align="center" />
+          <ElTableColumn prop="required_scopes" label="所需权限" min-width="260">
+            <template #default="{ row }">
+              <template v-if="row.required_scopes?.length">
+                <ElTag
+                  v-for="scope in row.required_scopes"
+                  :key="scope"
+                  size="small"
+                  class="scope-tag"
+                  effect="plain"
+                >
+                  {{ scope }}
+                </ElTag>
+              </template>
+              <span v-else class="text-gray-400">无需权限</span>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn label="操作" width="100" fixed="right" align="center">
+            <template #default="{ row }">
+              <ElButton
+                type="primary"
+                link
+                size="small"
+                :loading="runningByName.has(row.name)"
+                @click="handleRunTaskByName(row)"
+              >
+                执行
+              </ElButton>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+      </div>
     </ElCard>
 
     <!-- 运行状态列表 -->
@@ -93,54 +95,56 @@
         </div>
       </template>
 
-      <ElTable v-loading="statusLoading" :data="statuses" stripe border style="width: 100%">
-        <ElTableColumn prop="task_name" label="任务名称" width="200" />
-        <ElTableColumn prop="description" label="描述" min-width="160" />
-        <ElTableColumn prop="character_id" label="角色 ID" width="120" align="center" />
-        <ElTableColumn prop="priority" label="优先级" width="100" align="center">
-          <template #default="{ row }">
-            <ElTag :type="priorityType(row.priority)" size="small">
-              {{ priorityLabel(row.priority) }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="status" label="状态" width="100" align="center">
-          <template #default="{ row }">
-            <ElTag :type="statusType(row.status)" size="small">
-              {{ statusLabel(row.status) }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="last_run" label="上次运行" width="180">
-          <template #default="{ row }">
-            {{ row.last_run || '-' }}
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="next_run" label="下次运行" width="180">
-          <template #default="{ row }">
-            {{ row.next_run || '-' }}
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="error" label="错误信息" min-width="200">
-          <template #default="{ row }">
-            <span v-if="row.error" class="text-red-500">{{ row.error }}</span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn label="操作" width="100" fixed="right" align="center">
-          <template #default="{ row }">
-            <ElButton
-              type="primary"
-              link
-              size="small"
-              :loading="runningTasks.has(`${row.task_name}_${row.character_id}`)"
-              @click="handleRunTask(row)"
-            >
-              执行
-            </ElButton>
-          </template>
-        </ElTableColumn>
-      </ElTable>
+      <div class="table-container">
+        <ElTable v-loading="statusLoading" :data="statuses" stripe border>
+          <ElTableColumn prop="task_name" label="任务名称" width="200" />
+          <ElTableColumn prop="description" label="描述" min-width="160" />
+          <ElTableColumn prop="character_id" label="角色 ID" width="120" align="center" />
+          <ElTableColumn prop="priority" label="优先级" width="100" align="center">
+            <template #default="{ row }">
+              <ElTag :type="priorityType(row.priority)" size="small">
+                {{ priorityLabel(row.priority) }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="status" label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <ElTag :type="statusType(row.status)" size="small">
+                {{ statusLabel(row.status) }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="last_run" label="上次运行" width="180">
+            <template #default="{ row }">
+              {{ row.last_run || '-' }}
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="next_run" label="下次运行" width="180">
+            <template #default="{ row }">
+              {{ row.next_run || '-' }}
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="error" label="错误信息" min-width="200">
+            <template #default="{ row }">
+              <span v-if="row.error" class="text-red-500">{{ row.error }}</span>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn label="操作" width="100" fixed="right" align="center">
+            <template #default="{ row }">
+              <ElButton
+                type="primary"
+                link
+                size="small"
+                :loading="runningTasks.has(`${row.task_name}_${row.character_id}`)"
+                @click="handleRunTask(row)"
+              >
+                执行
+              </ElButton>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+      </div>
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
@@ -358,7 +362,25 @@
 
 <style scoped lang="scss">
   .esi-refresh-page {
-    padding: 0;
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .art-table-card {
+    flex-shrink: 0;
+  }
+
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .table-container :deep(.el-table) {
+    width: 100%;
+    min-width: 1200px;
   }
 
   .card-header {
@@ -390,6 +412,7 @@
     justify-content: flex-end;
     padding: 16px 0 4px;
   }
+
   .mr-1 {
     margin-right: 4px;
   }

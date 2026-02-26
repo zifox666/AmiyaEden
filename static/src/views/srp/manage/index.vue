@@ -34,11 +34,11 @@
       <ElTable v-loading="loading" :data="applications" stripe border style="width: 100%">
         <ElTableColumn prop="id" :label="$t('srp.manage.columns.id')" width="70" align="center" />
         <ElTableColumn prop="character_name" :label="$t('srp.manage.columns.character')" width="150" />
-        <ElTableColumn prop="ship_name" :label="$t('srp.manage.columns.ship')" width="180">
-          <template #default="{ row }">{{ row.ship_name || `TypeID: ${row.ship_type_id}` }}</template>
+        <ElTableColumn prop="ship_type_id" :label="$t('srp.manage.columns.ship')" width="180">
+          <template #default="{ row }">{{ getName(row.ship_type_id, `TypeID: ${row.ship_type_id}`) }}</template>
         </ElTableColumn>
-        <ElTableColumn prop="solar_system_name" :label="$t('srp.manage.columns.system')" width="140">
-          <template #default="{ row }">{{ row.solar_system_name || row.solar_system_id }}</template>
+        <ElTableColumn prop="solar_system_id" :label="$t('srp.manage.columns.system')" width="140">
+          <template #default="{ row }">{{ getName(row.solar_system_id, String(row.solar_system_id)) }}</template>
         </ElTableColumn>
         <ElTableColumn prop="killmail_id" :label="$t('srp.manage.columns.killId')" width="110" align="center">
           <template #default="{ row }">
@@ -48,11 +48,11 @@
         <ElTableColumn prop="killmail_time" :label="$t('srp.manage.columns.kmTime')" width="175">
           <template #default="{ row }">{{ formatTime(row.killmail_time) }}</template>
         </ElTableColumn>
-        <ElTableColumn prop="corporation_name" :label="$t('srp.manage.columns.corporation')" width="180" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.corporation_name || `ID: ${row.corporation_id}` }}</template>
+        <ElTableColumn prop="corporation_id" :label="$t('srp.manage.columns.corporation')" width="180" show-overflow-tooltip>
+          <template #default="{ row }">{{ getName(row.corporation_id, row.corporation_id ? `ID: ${row.corporation_id}` : '-') }}</template>
         </ElTableColumn>
-        <ElTableColumn prop="alliance_name" :label="$t('srp.manage.columns.alliance')" width="180" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.alliance_name || (row.alliance_id ? `ID: ${row.alliance_id}` : '-') }}</template>
+        <ElTableColumn prop="alliance_id" :label="$t('srp.manage.columns.alliance')" width="180" show-overflow-tooltip>
+          <template #default="{ row }">{{ getName(row.alliance_id, row.alliance_id ? `ID: ${row.alliance_id}` : '-') }}</template>
         </ElTableColumn>
         <ElTableColumn prop="recommended_amount" :label="$t('srp.manage.columns.recommendedAmount')" width="140" align="right">
           <template #default="{ row }">{{ formatISK(row.recommended_amount) }}</template>
@@ -136,10 +136,12 @@
   } from 'element-plus'
   import { fetchFleetList } from '@/api/fleet'
   import { fetchApplicationList, reviewApplication, payoutApplication } from '@/api/srp'
+  import { useNameResolver } from '@/hooks'
 
   defineOptions({ name: 'SrpManage' })
 
   const { t } = useI18n()
+  const { getName, resolve: resolveNames } = useNameResolver()
 
   const applications = ref<Api.Srp.Application[]>([])
   const loading = ref(false)
@@ -166,8 +168,29 @@
       })
       applications.value = res?.records ?? []
       pagination.total = res?.total ?? 0
+      if (applications.value.length) await resolveManageNames(applications.value)
     } catch { applications.value = [] }
     finally { loading.value = false }
+  }
+
+  /** 收集申请列表中所有需要解析的 ID，一次性查询 */
+  const resolveManageNames = async (list: Api.Srp.Application[]) => {
+    const typeIds = new Set<number>()
+    const solarIds = new Set<number>()
+    const esiIds = new Set<number>()
+    for (const app of list) {
+      if (app.ship_type_id) typeIds.add(app.ship_type_id)
+      if (app.solar_system_id) solarIds.add(app.solar_system_id)
+      if (app.corporation_id) esiIds.add(app.corporation_id)
+      if (app.alliance_id) esiIds.add(app.alliance_id)
+    }
+    await resolveNames({
+      ids: {
+        ...(typeIds.size ? { type: [...typeIds] } : {}),
+        ...(solarIds.size ? { solar_system: [...solarIds] } : {})
+      },
+      esi: esiIds.size ? [...esiIds] : undefined
+    })
   }
 
   const handleSearch = () => { pagination.current = 1; loadApplications() }

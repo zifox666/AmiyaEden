@@ -40,14 +40,14 @@ type SrpApplication struct {
 	Note          string  `gorm:"size:512"                                json:"note"`
 	// 冗余 KM 信息（提交时从 EveKillmail 快照）
 	ShipTypeID      int64     `gorm:"not null"                               json:"ship_type_id"`
-	ShipName        string    `gorm:"size:256"                               json:"ship_name"`
+	ShipName        string    `gorm:"size:256"                               json:"ship_name,omitempty"`
 	SolarSystemID   int64     `gorm:"not null"                               json:"solar_system_id"`
-	SolarSystemName string    `gorm:"size:128"                               json:"solar_system_name"`
+	SolarSystemName string    `gorm:"size:128"                               json:"solar_system_name,omitempty"`
 	KillmailTime    time.Time `gorm:"not null"                               json:"killmail_time"`
 	CorporationID   int64     `gorm:"default:0"                              json:"corporation_id"`
-	CorporationName string    `gorm:"size:256"                               json:"corporation_name"`
+	CorporationName string    `gorm:"size:256"                               json:"corporation_name,omitempty"`
 	AllianceID      int64     `gorm:"default:0"                              json:"alliance_id"`
-	AllianceName    string    `gorm:"size:256"                               json:"alliance_name"`
+	AllianceName    string    `gorm:"size:256"                               json:"alliance_name,omitempty"`
 	// 金额
 	RecommendedAmount float64 `gorm:"not null;default:0"                     json:"recommended_amount"`
 	FinalAmount       float64 `gorm:"not null;default:0"                     json:"final_amount"`

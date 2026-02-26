@@ -73,10 +73,10 @@ type AssetName struct {
 func (t *AssetsTask) Execute(ctx *TaskContext) error {
 	bgCtx := context.Background()
 
-	// 1. 获取资产列表
+	// 1. 获取资产列表（自动分页）
 	path := fmt.Sprintf("/characters/%d/assets/", ctx.CharacterID)
 	var assets []AssetItem
-	if err := ctx.Client.Get(bgCtx, path, ctx.AccessToken, &assets); err != nil {
+	if _, err := ctx.Client.GetPaginated(bgCtx, path, ctx.AccessToken, &assets); err != nil {
 		return fmt.Errorf("fetch assets: %w", err)
 	}
 

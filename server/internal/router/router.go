@@ -22,14 +22,11 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// ─── SDE 公开查询（API Key 鉴权）───
 	sdeH := handler.NewSdeHandler()
-	sde := api.Group("/sde", middleware.APIKeyAuth())
+	sde := api.Group("/sde")
 	{
 		sde.GET("/version", sdeH.GetVersion)
-		sde.POST("/update", sdeH.TriggerUpdate)
-		sde.GET("/translation/:type_id/:language", sdeH.GetTranslation)
-		sde.GET("/translations/:key", sdeH.GetTranslationsByKey)
-		sde.GET("/search", sdeH.SearchByName)
-		sde.GET("/type/:type_id", sdeH.GetTypeDetail)
+		sde.POST("/types", sdeH.GetTypes)
+		sde.POST("/names", sdeH.GetNames)
 	}
 
 	// ─── 需要登录 ───
