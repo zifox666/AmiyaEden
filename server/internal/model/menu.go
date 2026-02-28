@@ -113,6 +113,15 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "Wallet", Path: "wallet", Component: "/operation/wallet", Title: "menus.operation.wallet", Sort: 70, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "JoinFleet", Path: "join", Component: "/operation/join", Title: "menus.operation.join", Sort: 60, IsHide: true, Status: 1}},
 
+		// ── Shop ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "ShopRoot", Path: "/shop", Component: "/index/index", Title: "menus.shop.title", Icon: "ri:shopping-bag-line", Sort: 85, Status: 1}},
+		{ParentName: "ShopRoot", Menu: Menu{Type: MenuTypeMenu, Name: "Shop", Path: "browse", Component: "/shop/browse", Title: "menus.shop.browse", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "ShopRoot", Menu: Menu{Type: MenuTypeMenu, Name: "ShopManage", Path: "manage", Component: "/shop/manage", Title: "menus.shop.manage", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopProductAdd", Permission: "system:shop:product:add", Title: "新增商品", Sort: 100, Status: 1}},
+		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopProductEdit", Permission: "system:shop:product:edit", Title: "编辑商品", Sort: 90, Status: 1}},
+		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopProductDelete", Permission: "system:shop:product:delete", Title: "删除商品", Sort: 80, Status: 1}},
+		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopOrderReview", Permission: "system:shop:order:review", Title: "审批订单", Sort: 70, Status: 1}},
+
 		// ── SRP ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "SRP", Path: "/srp", Component: "/index/index", Title: "menus.srp.title", Icon: "ri:money-dollar-box-line", Sort: 80, Status: 1}},
 		{ParentName: "SRP", Menu: Menu{Type: MenuTypeMenu, Name: "SrpApply", Path: "srp-apply", Component: "/srp/apply", Title: "menus.srp.srpApply", Sort: 100, KeepAlive: true, Status: 1}},
@@ -138,6 +147,9 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "Menus", Menu: Menu{Type: MenuTypeButton, Name: "MenuDelete", Permission: "system:menu:delete", Title: "删除菜单", Sort: 80, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "ESIRefresh", Path: "esi-refresh", Component: "/system/esi-refresh", Title: "menus.system.esiRefresh", Sort: 70, KeepAlive: true, Status: 1}},
 		{ParentName: "ESIRefresh", Menu: Menu{Type: MenuTypeButton, Name: "ESIRun", Permission: "system:esi:run", Title: "执行任务", Sort: 100, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "SystemWallet", Path: "wallet", Component: "/system/wallet", Title: "menus.system.wallet", Sort: 65, KeepAlive: true, Status: 1}},
+		{ParentName: "SystemWallet", Menu: Menu{Type: MenuTypeButton, Name: "WalletAdjust", Permission: "system:wallet:adjust", Title: "调整余额", Sort: 100, Status: 1}},
+		{ParentName: "SystemWallet", Menu: Menu{Type: MenuTypeButton, Name: "WalletViewLog", Permission: "system:wallet:log", Title: "查看日志", Sort: 90, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", Sort: 60, IsHide: true, KeepAlive: true, IsHideTab: true, Status: 1}},
 
 		// ── Result ──
@@ -154,28 +166,34 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleAdmin: {
 			"Dashboard", "Console", "Characters",
 			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"ShopRoot", "Shop", "ShopManage", "ShopProductAdd", "ShopProductEdit", "ShopProductDelete", "ShopOrderReview",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
 			"System", "User", "UserDelete", "UserSetRole",
 			"RoleManage", "RoleAdd", "RoleEdit", "RoleDelete", "RolePermission",
 			"Menus", "MenuAdd", "MenuEdit", "MenuDelete",
-			"ESIRefresh", "ESIRun", "UserCenter",
+			"ESIRefresh", "ESIRun",
+			"SystemWallet", "WalletAdjust", "WalletViewLog",
+			"UserCenter",
 			"Result", "ResultSuccess", "ResultFail",
 		},
 		RoleFC: {
 			"Dashboard", "Console", "Characters",
 			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
 			"Result", "ResultSuccess", "ResultFail",
 		},
 		RoleSRP: {
 			"Dashboard", "Console", "Characters",
 			"Operation", "MyPap", "Wallet", "JoinFleet",
+			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
 			"Result", "ResultSuccess", "ResultFail",
 		},
 		RoleUser: {
 			"Dashboard", "Console", "Characters",
 			"Operation", "MyPap", "Wallet", "JoinFleet",
+			"ShopRoot", "Shop",
 			"SRP", "SrpApply",
 			"Result", "ResultSuccess", "ResultFail",
 			"UserCenter",

@@ -90,6 +90,11 @@ func autoMigrate(db *gorm.DB) {
 		&model.FleetInvite{},
 		&model.SystemWallet{},
 		&model.WalletTransaction{},
+		&model.WalletLog{},
+		// 商店相关表
+		&model.ShopProduct{},
+		&model.ShopOrder{},
+		&model.ShopRedeemCode{},
 		// SRP 补损相关表
 		&model.SrpShipPrice{},
 		&model.SrpApplication{},

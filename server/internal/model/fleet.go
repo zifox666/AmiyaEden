@@ -67,27 +67,3 @@ type FleetInvite struct {
 }
 
 func (FleetInvite) TableName() string { return "fleet_invite" }
-
-// SystemWallet 用户系统钱包（用于发放/兑换奖励）
-type SystemWallet struct {
-	ID        uint      `gorm:"primarykey"                 json:"id"`
-	UserID    uint      `gorm:"uniqueIndex;not null"       json:"user_id"`
-	Balance   float64   `gorm:"default:0"                  json:"balance"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"             json:"updated_at"`
-}
-
-func (SystemWallet) TableName() string { return "system_wallet" }
-
-// WalletTransaction 钱包流水
-type WalletTransaction struct {
-	ID           uint      `gorm:"primarykey"                 json:"id"`
-	UserID       uint      `gorm:"not null;index"             json:"user_id"`
-	Amount       float64   `gorm:"not null"                   json:"amount"` // 正数=收入 负数=支出
-	Reason       string    `gorm:"size:256"                   json:"reason"`
-	RefType      string    `gorm:"size:64;index"              json:"ref_type"` // pap_reward / manual / redeem
-	RefID        string    `gorm:"size:64"                    json:"ref_id"`   // 关联 ID（如 fleet_id）
-	BalanceAfter float64   `gorm:"not null"                   json:"balance_after"`
-	CreatedAt    time.Time `gorm:"autoCreateTime;index"       json:"created_at"`
-}
-
-func (WalletTransaction) TableName() string { return "wallet_transaction" }

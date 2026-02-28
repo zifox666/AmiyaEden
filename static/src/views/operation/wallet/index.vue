@@ -89,13 +89,13 @@
     ElPagination,
     ElEmpty
   } from 'element-plus'
-  import { fetchMyWallet, fetchWalletTransactions } from '@/api/fleet'
+  import { fetchMyWallet, fetchMyWalletTransactions } from '@/api/sys-wallet'
 
   defineOptions({ name: 'Wallet' })
 
   // ---- 数据 ----
-  const wallet = ref<Api.Fleet.Wallet | null>(null)
-  const transactions = ref<Api.Fleet.WalletTransaction[]>([])
+  const wallet = ref<Api.SysWallet.Wallet | null>(null)
+  const transactions = ref<Api.SysWallet.WalletTransaction[]>([])
   const walletLoading = ref(false)
   const txLoading = ref(false)
 
@@ -130,15 +130,15 @@
   const loadTransactions = async () => {
     txLoading.value = true
     try {
-      const res = await fetchWalletTransactions({
+      const res = await fetchMyWalletTransactions({
         current: txPagination.current,
         size: txPagination.size
       })
       if (res) {
-        transactions.value = res.records ?? []
+        transactions.value = res.list ?? []
         txPagination.total = res.total ?? 0
-        txPagination.current = res.current ?? 1
-        txPagination.size = res.size ?? 20
+        txPagination.current = res.page ?? 1
+        txPagination.size = res.pageSize ?? 20
       } else {
         transactions.value = []
         txPagination.total = 0

@@ -298,40 +298,6 @@ func (h *FleetHandler) JoinFleet(c *gin.Context) {
 }
 
 // ─────────────────────────────────────────────
-//  钱包
-// ─────────────────────────────────────────────
-
-// GetWallet 获取当前用户钱包
-func (h *FleetHandler) GetWallet(c *gin.Context) {
-	userID := middleware.GetUserID(c)
-	wallet, err := h.svc.GetWallet(userID)
-	if err != nil {
-		response.Fail(c, response.CodeBizError, err.Error())
-		return
-	}
-	response.OK(c, wallet)
-}
-
-// GetWalletTransactions 获取当前用户钱包流水
-func (h *FleetHandler) GetWalletTransactions(c *gin.Context) {
-	userID := middleware.GetUserID(c)
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-
-	records, total, err := h.svc.GetWalletTransactions(userID, page, size)
-	if err != nil {
-		response.Fail(c, response.CodeBizError, err.Error())
-		return
-	}
-	response.OK(c, gin.H{
-		"records": records,
-		"current": page,
-		"size":    size,
-		"total":   total,
-	})
-}
-
-// ─────────────────────────────────────────────
 //  ESI 角色舰队信息
 // ─────────────────────────────────────────────
 

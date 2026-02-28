@@ -373,11 +373,100 @@ func (s *RoleService) seedDefaultRoleMenus(nameToID map[string]uint) {
 	global.Logger.Info("默认角色菜单映射完成")
 }
 
+// CheckCorpAccessAndAdjustRole 检查用户名下所有角色的军团归属是否在准入列表内
+// 规则：
+//   - AllowCorporations 为空 → 不限制，直接返回
+//   - admin / super_admin → 不受影响
+//   - 至少有一个角色的 CorporationID 在允许列表内 → 确保拥有 user 角色（从 guest 升级）
+//   - 没有符合条件的角色 → 降级为 guest（清除所有非高级角色）
+func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID uint) error {
+	allowCorps := global.Config.App.AllowCorporations
+	if len(allowCorps) == 0 {
+		return nil
+	}
+
+	allowSet := make(map[int64]struct{}, len(allowCorps))
+	for _, id := range allowCorps {
+		allowSet[id] = struct{}{}
+	}
+
+	// 查询该用户绑定的所有 EVE 角色
+	charRepo := repository.NewEveCharacterRepository()
+	chars, err := charRepo.ListByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	// 检查是否有角色属于允许军团
+	hasAccess := false
+	for _, c := range chars {
+		if c.CorporationID != 0 {
+			if _, ok := allowSet[c.CorporationID]; ok {
+				hasAccess = true
+				break
+			}
+		}
+	}
+
+	// 获取用户当前拥有的角色
+	rollCodes, err := s.repo.GetUserRoleCodes(userID)
+	if err != nil {
+		return err
+	}
+
+	// admin / super_admin 不受军团限制影响
+	if model.ContainsAnyRole(rollCodes, model.RoleAdmin, model.RoleSuperAdmin) {
+		return nil
+	}
+
+	if hasAccess {
+		// 已有 user 或更高普通权限则无需变更
+		if model.ContainsRole(rollCodes, model.RoleUser) {
+			return nil
+		}
+		// 从 guest 升级为 user：先移除 guest，再添加 user
+		userRole, err := s.repo.GetByCode(model.RoleUser)
+		if err != nil {
+			return err
+		}
+		if guestRole, err := s.repo.GetByCode(model.RoleGuest); err == nil {
+			_ = s.repo.RemoveUserRole(userID, guestRole.ID)
+		}
+		if err := s.repo.AddUserRole(userID, userRole.ID); err != nil {
+			return err
+		}
+		s.InvalidateUserCache(ctx, userID)
+		global.Logger.Info("[CorpCheck] 用户升级为 user",
+			zap.Uint("user_id", userID))
+	} else {
+		// 已经是纯 guest 则无需变更
+		if len(rollCodes) == 1 && rollCodes[0] == model.RoleGuest {
+			return nil
+		}
+		// 清除所有角色，降级为 guest
+		guestRole, err := s.repo.GetByCode(model.RoleGuest)
+		if err != nil {
+			return err
+		}
+		roleIDs, _ := s.repo.GetUserRoleIDs(userID)
+		for _, rid := range roleIDs {
+			_ = s.repo.RemoveUserRole(userID, rid)
+		}
+		if err := s.repo.AddUserRole(userID, guestRole.ID); err != nil {
+			return err
+		}
+		s.InvalidateUserCache(ctx, userID)
+		global.Logger.Info("[CorpCheck] 用户降级为 guest",
+			zap.Uint("user_id", userID))
+	}
+	return nil
+}
+
 // EnsureUserHasDefaultRole 确保用户拥有默认角色
 func (s *RoleService) EnsureUserHasDefaultRole(ctx context.Context, userID uint) {
 	codes, err := s.repo.GetUserRoleCodes(userID)
 	if err != nil || len(codes) == 0 {
-		role, err := s.repo.GetByCode(model.RoleUser)
+		role, err := s.repo.GetByCode(model.RoleGuest)
 		if err != nil {
 			global.Logger.Error("查找默认角色失败", zap.Error(err))
 			return
@@ -403,7 +492,7 @@ func (s *RoleService) MigrateExistingUsers() {
 		}
 		roleName := u.Role
 		if roleName == "" {
-			roleName = model.RoleUser
+			roleName = model.RoleGuest
 		}
 		role, err := s.repo.GetByCode(roleName)
 		if err != nil {

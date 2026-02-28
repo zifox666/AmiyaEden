@@ -405,6 +405,7 @@ declare namespace Api {
       ref_type: string
       ref_id: string
       balance_after: number
+      operator_id: number
       created_at: string
     }
 
@@ -431,6 +432,68 @@ declare namespace Api {
       squad_id: number
       wing_id: number
     }
+  }
+
+  /** 系统钱包类型（独立于 EVE Wallet） */
+  namespace SysWallet {
+    /** 钱包信息 */
+    interface Wallet {
+      id: number
+      user_id: number
+      balance: number
+      updated_at: string
+    }
+
+    /** 钱包流水 */
+    interface WalletTransaction {
+      id: number
+      user_id: number
+      amount: number
+      reason: string
+      ref_type: string
+      ref_id: string
+      balance_after: number
+      operator_id: number
+      created_at: string
+    }
+
+    /** 钱包操作日志 */
+    interface WalletLog {
+      id: number
+      operator_id: number
+      target_uid: number
+      action: 'add' | 'deduct' | 'set'
+      amount: number
+      before: number
+      after: number
+      reason: string
+      created_at: string
+    }
+
+    /** 管理员调整余额请求 */
+    interface AdjustParams {
+      target_uid: number
+      action: 'add' | 'deduct' | 'set'
+      amount: number
+      reason: string
+    }
+
+    /** 流水查询参数 */
+    type TransactionSearchParams = Partial<{
+      current: number
+      size: number
+      user_id: number
+      ref_type: string
+    }>
+
+    /** 操作日志查询参数 */
+    type LogSearchParams = Partial<{
+      current: number
+      size: number
+      operator_id: number
+      target_uid: number
+      action: string
+    }>
   }
 
   /** SRP 补损管理类型 */
@@ -527,5 +590,128 @@ declare namespace Api {
       solar_system_id: number
       victim_name: string
     }
+  }
+
+  /** 商店系统类型 */
+  namespace Shop {
+    /** 商品 */
+    interface Product {
+      id: number
+      name: string
+      description: string
+      image: string
+      price: number
+      stock: number
+      max_per_user: number
+      type: 'normal' | 'redeem'
+      need_approval: boolean
+      status: number
+      sort_order: number
+      created_at: string
+      updated_at: string
+    }
+
+    /** 订单 */
+    interface Order {
+      id: number
+      order_no: string
+      user_id: number
+      product_id: number
+      product_name: string
+      product_type: string
+      quantity: number
+      unit_price: number
+      total_price: number
+      status: string
+      transaction_id: number | null
+      remark: string
+      reviewed_by: number | null
+      reviewed_at: string | null
+      review_remark: string
+      created_at: string
+      updated_at: string
+    }
+
+    /** 兑换码 */
+    interface RedeemCode {
+      id: number
+      order_id: number
+      product_id: number
+      user_id: number
+      code: string
+      status: 'unused' | 'used' | 'expired'
+      used_at: string | null
+      expires_at: string | null
+      created_at: string
+      updated_at: string
+    }
+
+    /** 购买请求 */
+    interface BuyParams {
+      product_id: number
+      quantity: number
+      remark?: string
+    }
+
+    /** 商品创建请求 */
+    interface ProductCreateParams {
+      name: string
+      description?: string
+      image?: string
+      price: number
+      stock?: number
+      max_per_user?: number
+      type: 'normal' | 'redeem'
+      need_approval?: boolean
+      status?: number
+      sort_order?: number
+    }
+
+    /** 商品更新请求 */
+    interface ProductUpdateParams {
+      id: number
+      name?: string
+      description?: string
+      image?: string
+      price?: number
+      stock?: number
+      max_per_user?: number
+      type?: string
+      need_approval?: boolean
+      status?: number
+      sort_order?: number
+    }
+
+    /** 商品查询参数 */
+    type ProductSearchParams = Partial<{
+      current: number
+      size: number
+      status: number
+      type: string
+      name: string
+    }>
+
+    /** 订单查询参数 */
+    type OrderSearchParams = Partial<{
+      current: number
+      size: number
+      user_id: number
+      product_id: number
+      status: string
+    }>
+
+    /** 订单审批请求 */
+    interface OrderReviewParams {
+      order_id: number
+      remark?: string
+    }
+
+    /** 兑换码查询参数 */
+    type RedeemSearchParams = Partial<{
+      current: number
+      size: number
+      product_id: number
+      status: string
+    }>
   }
 }

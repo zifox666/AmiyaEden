@@ -95,6 +95,14 @@ const (
 	stateCacheTTL    = 10 * time.Minute
 )
 
+// OnNewCharacterFunc 新角色首次出现时触发的钩子（由 jobs 层注入以避免循环依赖）
+var OnNewCharacterFunc func(characterID int64)
+
+// OnCharacterBindFunc 已有角色完成绑定/重新登录时触发的钩子
+// 此时角色的 CorporationID 已存在于数据库，可立即进行军团准入检查
+// 注入示例：service.OnCharacterBindFunc = func(userID uint) { roleSvc.CheckCorpAccessAndAdjustRole(ctx, userID) }
+var OnCharacterBindFunc func(userID uint)
+
 // stateData OAuth state 中存储的数据
 type stateData struct {
 	ExtraScopes  []string `json:"extra_scopes,omitempty"`
@@ -236,6 +244,11 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 				return nil, err
 			}
 
+			// 触发新角色全量刷新钩子
+			if OnNewCharacterFunc != nil {
+				go OnNewCharacterFunc(characterID)
+			}
+
 			// 如果用户还没有主角色，自动设为主角色
 			if user.PrimaryCharacterID == 0 {
 				user.PrimaryCharacterID = characterID
@@ -282,6 +295,11 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 			return nil, err
 		}
 
+		// 触发新角色全量刷新钩子
+		if OnNewCharacterFunc != nil {
+			go OnNewCharacterFunc(characterID)
+		}
+
 		jwtToken, err := jwt.GenerateToken(user.ID, characterID, user.Role, global.Config.JWT.ExpireDay)
 		if err != nil {
 			return nil, err
@@ -309,6 +327,10 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		user, err := s.userRepo.GetByID(sd.BindToUserID)
 		if err != nil {
 			return nil, err
+		}
+		// 已有角色，corp_id 有历史数据，立即触发军团准入检查
+		if OnCharacterBindFunc != nil {
+			go OnCharacterBindFunc(user.ID)
 		}
 		jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
 		if err != nil {
@@ -344,6 +366,11 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	user.Nickname = claims.Name
 	if err := s.userRepo.Update(user); err != nil {
 		return nil, err
+	}
+
+	// 已有角色重新登录，corp_id 有历史数据，立即触发军团准入检查
+	if OnCharacterBindFunc != nil {
+		go OnCharacterBindFunc(user.ID)
 	}
 
 	jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)

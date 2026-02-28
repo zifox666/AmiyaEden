@@ -71,6 +71,7 @@ func (s *SdeService) CheckAndUpdate() (bool, string, error) {
 	version := release.TagName
 	exists, err := s.repo.VersionExists(version)
 	if err != nil {
+		global.Logger.Error("[SDE] 查询版本记录失败", zap.String("version", version), zap.Error(err))
 		return false, version, fmt.Errorf("查询版本记录失败: %w", err)
 	}
 	if exists {
@@ -80,6 +81,7 @@ func (s *SdeService) CheckAndUpdate() (bool, string, error) {
 
 	global.Logger.Info("[SDE] 发现新版本，开始更新", zap.String("version", version))
 	if err := s.doImport(release); err != nil {
+		global.Logger.Error("[SDE] 更新失败", zap.String("version", version), zap.Error(err))
 		return false, version, fmt.Errorf("导入 SDE 失败: %w", err)
 	}
 
@@ -87,6 +89,7 @@ func (s *SdeService) CheckAndUpdate() (bool, string, error) {
 		Version: version,
 		Note:    "auto import from " + release.TagName,
 	}); err != nil {
+		global.Logger.Error("[SDE] 记录版本信息失败", zap.String("version", version), zap.Error(err))
 		return true, version, fmt.Errorf("记录版本失败: %w", err)
 	}
 
@@ -451,6 +454,14 @@ func importSQL(sqlPath string) error {
 		txCount = 0
 	}
 
+	// commitFinalTx 仅提交最后一个事务，不再开启新事务（避免 conn.Close 时遗留 dangling transaction 阻塞连接池）
+	commitFinalTx := func() {
+		if err := tx.Commit(); err != nil {
+			global.Logger.Warn("[SDE] 最终事务提交失败，尝试回滚", zap.Error(err))
+			_ = tx.Rollback()
+		}
+	}
+
 	// rollbackTx 回滚当前事务并立即开启下一个（DML 失败时调用）
 	rollbackTx := func() {
 		_ = tx.Rollback()
@@ -523,8 +534,8 @@ func importSQL(sqlPath string) error {
 		}
 	}
 
-	// 提交剩余事务
-	commitTx()
+	// 提交剩余事务（最后一次不再开启新事务）
+	commitFinalTx()
 
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("读取 SQL 文件失败: %w", err)

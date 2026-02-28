@@ -29,6 +29,13 @@ func (r *UserRepository) Update(user *model.User) error {
 	return global.DB.Save(user).Error
 }
 
+// ListAllIDs 返回所有用户 ID（供定时任务批量处理使用）
+func (r *UserRepository) ListAllIDs() ([]uint, error) {
+	var ids []uint
+	err := global.DB.Model(&model.User{}).Pluck("id", &ids).Error
+	return ids, err
+}
+
 // Delete 软删除用户
 func (r *UserRepository) Delete(id uint) error {
 	return global.DB.Delete(&model.User{}, id).Error

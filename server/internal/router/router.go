@@ -81,11 +81,23 @@ func RegisterRoutes(r *gin.Engine) {
 		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
 	}
 
-	// ─── 钱包 ───
+	// ─── 系统钱包（用户端）───
+	walletH := handler.NewSysWalletHandler()
 	wallet := operation.Group("/wallet")
 	{
-		wallet.GET("", fleetH.GetWallet)
-		wallet.GET("/transactions", fleetH.GetWalletTransactions)
+		wallet.POST("/my", walletH.GetMyWallet)
+		wallet.POST("/my/transactions", walletH.GetMyTransactions)
+	}
+
+	// ─── 商店（用户端）───
+	shopH := handler.NewShopHandler()
+	shop := auth.Group("/shop")
+	{
+		shop.POST("/products", shopH.ListProducts)
+		shop.POST("/product/detail", shopH.GetProductDetail)
+		shop.POST("/buy", shopH.BuyProduct)
+		shop.POST("/orders", shopH.GetMyOrders)
+		shop.POST("/redeem/list", shopH.GetMyRedeemCodes)
 	}
 
 	// ─── SRP 补损 ───
@@ -164,5 +176,36 @@ func RegisterRoutes(r *gin.Engine) {
 		// 用户角色分配
 		adminUser.GET("/:id/roles", roleH.GetUserRoles)
 		adminUser.PUT("/:id/roles", roleH.SetUserRoles)
+	}
+
+	// 系统钱包管理（管理员）
+	adminWalletH := handler.NewSysWalletHandler()
+	adminWallet := admin.Group("/wallet")
+	{
+		adminWallet.POST("/list", adminWalletH.AdminListWallets)
+		adminWallet.POST("/detail", adminWalletH.AdminGetWallet)
+		adminWallet.POST("/adjust", adminWalletH.AdminAdjust)
+		adminWallet.POST("/transactions", adminWalletH.AdminListTransactions)
+		adminWallet.POST("/logs", adminWalletH.AdminListLogs)
+	}
+
+	// 商店管理（管理员）
+	adminShopH := handler.NewShopHandler()
+	adminShopProduct := admin.Group("/shop/product")
+	{
+		adminShopProduct.POST("/list", adminShopH.AdminListProducts)
+		adminShopProduct.POST("/add", adminShopH.AdminCreateProduct)
+		adminShopProduct.POST("/edit", adminShopH.AdminUpdateProduct)
+		adminShopProduct.POST("/delete", adminShopH.AdminDeleteProduct)
+	}
+	adminShopOrder := admin.Group("/shop/order")
+	{
+		adminShopOrder.POST("/list", adminShopH.AdminListOrders)
+		adminShopOrder.POST("/approve", adminShopH.AdminApproveOrder)
+		adminShopOrder.POST("/reject", adminShopH.AdminRejectOrder)
+	}
+	adminShopRedeem := admin.Group("/shop/redeem")
+	{
+		adminShopRedeem.POST("/list", adminShopH.AdminListRedeemCodes)
 	}
 }

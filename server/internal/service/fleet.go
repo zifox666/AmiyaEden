@@ -23,18 +23,20 @@ const esiBaseURL = "https://esi.evetech.net/latest"
 
 // FleetService 舰队业务逻辑层
 type FleetService struct {
-	repo     *repository.FleetRepository
-	charRepo *repository.EveCharacterRepository
-	ssoSvc   *EveSSOService
-	http     *http.Client
+	repo      *repository.FleetRepository
+	charRepo  *repository.EveCharacterRepository
+	ssoSvc    *EveSSOService
+	walletSvc *SysWalletService
+	http      *http.Client
 }
 
 func NewFleetService() *FleetService {
 	return &FleetService{
-		repo:     repository.NewFleetRepository(),
-		charRepo: repository.NewEveCharacterRepository(),
-		ssoSvc:   NewEveSSOService(),
-		http:     &http.Client{Timeout: 30 * time.Second},
+		repo:      repository.NewFleetRepository(),
+		charRepo:  repository.NewEveCharacterRepository(),
+		ssoSvc:    NewEveSSOService(),
+		walletSvc: NewSysWalletService(),
+		http:      &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -109,7 +111,7 @@ func (s *FleetService) CreateFleet(userID uint, req *CreateFleetRequest) (*model
 	}
 
 	// 确保 FC 用户有钱包
-	_, _ = s.repo.GetOrCreateWallet(userID)
+	_, _ = s.walletSvc.GetMyWallet(userID)
 
 	return fleet, nil
 }
@@ -543,26 +545,6 @@ func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRole str
 		return errors.New("权限不足")
 	}
 	return s.repo.DeactivateInvite(inviteID)
-}
-
-// ─────────────────────────────────────────────
-//  钱包
-// ─────────────────────────────────────────────
-
-// GetWallet 获取用户钱包
-func (s *FleetService) GetWallet(userID uint) (*model.SystemWallet, error) {
-	return s.repo.GetOrCreateWallet(userID)
-}
-
-// GetWalletTransactions 获取用户钱包流水
-func (s *FleetService) GetWalletTransactions(userID uint, page, pageSize int) ([]model.WalletTransaction, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-	}
-	return s.repo.ListWalletTransactions(userID, page, pageSize)
 }
 
 // ─────────────────────────────────────────────

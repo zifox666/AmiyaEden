@@ -55,6 +55,16 @@ export const systemRoutes: AppRouteRecord = {
           { title: '删除', authMark: 'delete' }
         ]
       }
+    },
+    {
+      path: 'wallet',
+      name: 'SystemWallet',
+      component: '/system/wallet',
+      meta: {
+        title: 'menus.system.wallet',
+        keepAlive: true,
+        roles: ['super_admin', 'admin']
+      }
     }
   ]
 }

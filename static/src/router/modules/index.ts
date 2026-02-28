@@ -5,6 +5,7 @@ import { operationRoutes } from './operation'
 import { resultRoutes } from './result'
 import { exceptionRoutes } from './exception'
 import { srpRoutes } from './srp'
+import { shopRoutes } from './shop'
 
 /**
  * 导出所有模块化路由
@@ -12,6 +13,7 @@ import { srpRoutes } from './srp'
 export const routeModules: AppRouteRecord[] = [
   dashboardRoutes,
   operationRoutes,
+  shopRoutes,
   systemRoutes,
   resultRoutes,
   exceptionRoutes,

@@ -117,23 +117,6 @@ export function joinFleet(data: Api.Fleet.JoinFleetParams) {
   })
 }
 
-// ─── 钱包 ───
-
-/** 获取我的钱包 */
-export function fetchMyWallet() {
-  return request.get<Api.Fleet.Wallet>({
-    url: '/api/v1/operation/wallet'
-  })
-}
-
-/** 获取钱包流水 */
-export function fetchWalletTransactions(params?: Partial<Api.Common.CommonSearchParams>) {
-  return request.get<Api.Fleet.WalletTransactionList>({
-    url: '/api/v1/operation/wallet/transactions',
-    params
-  })
-}
-
 // ─── ESI 舰队 ───
 
 /** 获取角色当前 ESI 舰队信息 */

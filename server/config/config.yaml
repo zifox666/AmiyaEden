@@ -6,7 +6,7 @@ database:
   host: "127.0.0.1"
   port: 5432
   user: "postgres"
-  password: ""
+  password: "Wy050427!"
   dbname: "amiya-eden"
   sslmode: "disable"
   max_idle_conns: 10
@@ -31,8 +31,8 @@ redis:
   pool_size: 10         # 连接池大小
 
 eve_sso:
-  client_id: ""          # EVE 开发者控制台申请的 Client ID
-  client_secret: ""  # EVE 开发者控制台申请的 Client Secret
+  client_id: "44fbbf1270ce427e8df49903b7e83729"          # EVE 开发者控制台申请的 Client ID
+  client_secret: "TD70Lr81Ql7o3Sq7E56YitgRBTKQQKcxDmqhenoA"  # EVE 开发者控制台申请的 Client Secret
   callback_url: "http://localhost:8080/api/v1/sso/eve/callback"
 
 sde:
@@ -41,4 +41,4 @@ sde:
   download_url: "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"  # SDE 数据下载 URL，默认为 GitHub API 获取最新 release 信息
 
 app:
-  allow_corporations: [] # 允许访问的公司 ID 列表，空表示不限制
+  allow_corporations: [98575144] # 允许访问的公司 ID 列表，空表示不限制

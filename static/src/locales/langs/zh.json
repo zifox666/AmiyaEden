@@ -265,7 +265,13 @@
       "characters": "角色管理",
       "userCenter": "个人中心",
       "menu": "菜单管理",
-      "esiRefresh": "定时任务"
+      "esiRefresh": "定时任务",
+      "wallet": "钱包管理"
+    },
+    "shop": {
+      "title": "商店",
+      "browse": "浏览商品",
+      "manage": "商店管理"
     },
     "characters": {
       "title": "EVE 角色管理"
@@ -294,6 +300,39 @@
       "srpManage": "补损审批",
       "srpPrices": "补损价格表"
     }
+  },
+  "shop": {
+    "products": "商品列表",
+    "allTypes": "全部类型",
+    "typeNormal": "普通商品",
+    "typeRedeem": "兑换码",
+    "myBalance": "我的余额",
+    "unlimitedStock": "库存充足",
+    "stockRemaining": "库存: {n}",
+    "limitPerUser": "限购 {n} 件",
+    "needApproval": "需审批",
+    "soldOut": "已售罄",
+    "buy": "购买",
+    "noProducts": "暂无商品",
+    "myOrders": "我的订单",
+    "allStatuses": "全部状态",
+    "orderNo": "订单号",
+    "productName": "商品名称",
+    "quantity": "数量",
+    "unitPrice": "单价",
+    "totalPrice": "总价",
+    "status": "状态",
+    "orderTime": "下单时间",
+    "noOrders": "暂无订单",
+    "myRedeemCodes": "我的兑换码",
+    "redeemCode": "兑换码",
+    "expiresAt": "过期时间",
+    "noRedeemCodes": "暂无兑换码",
+    "buyTitle": "购买商品",
+    "remark": "备注",
+    "remarkPlaceholder": "备注信息（可选）",
+    "approvalNotice": "此商品需管理员审批后才会扣款",
+    "confirmBuy": "确认购买"
   },
   "fleet": {
     "title": "舰队管理",

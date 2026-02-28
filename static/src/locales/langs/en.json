@@ -265,7 +265,13 @@
       "characters": "Characters",
       "userCenter": "User Center",
       "menu": "Menu Manage",
-      "esiRefresh": "Scheduled Tasks"
+      "esiRefresh": "Scheduled Tasks",
+      "wallet": "Wallet Management"
+    },
+    "shop": {
+      "title": "Shop",
+      "browse": "Browse Products",
+      "manage": "Shop Management"
     },
     "characters": {
       "title": "EVE Characters"
@@ -294,6 +300,39 @@
       "srpManage": "SRP Review",
       "srpPrices": "SRP Prices"
     }
+  },
+  "shop": {
+    "products": "Products",
+    "allTypes": "All Types",
+    "typeNormal": "Normal",
+    "typeRedeem": "Redeem Code",
+    "myBalance": "My Balance",
+    "unlimitedStock": "In Stock",
+    "stockRemaining": "Stock: {n}",
+    "limitPerUser": "Limit {n} per person",
+    "needApproval": "Requires Approval",
+    "soldOut": "Sold Out",
+    "buy": "Buy",
+    "noProducts": "No products available",
+    "myOrders": "My Orders",
+    "allStatuses": "All Statuses",
+    "orderNo": "Order No.",
+    "productName": "Product",
+    "quantity": "Qty",
+    "unitPrice": "Unit Price",
+    "totalPrice": "Total",
+    "status": "Status",
+    "orderTime": "Order Time",
+    "noOrders": "No orders yet",
+    "myRedeemCodes": "My Redeem Codes",
+    "redeemCode": "Redeem Code",
+    "expiresAt": "Expires At",
+    "noRedeemCodes": "No redeem codes",
+    "buyTitle": "Purchase",
+    "remark": "Remark",
+    "remarkPlaceholder": "Optional remark",
+    "approvalNotice": "This product requires admin approval before payment",
+    "confirmBuy": "Confirm Purchase"
   },
   "fleet": {
     "title": "Fleet Management",

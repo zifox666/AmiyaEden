@@ -160,6 +160,41 @@ func (q *Queue) RunTask(taskName string, characterID int64) error {
 	return nil
 }
 
+// RunAllForCharacter 对指定角色执行全部任务，忽略刷新间隔（用于新角色首次登录时的全量初始化）
+func (q *Queue) RunAllForCharacter(ctx context.Context, characterID int64) {
+	char, err := q.charRepo.GetByCharacterID(characterID)
+	if err != nil {
+		global.Logger.Error("[ESI Queue] RunAllForCharacter: 角色不存在",
+			zap.Int64("character_id", characterID),
+			zap.Error(err),
+		)
+		return
+	}
+
+	isActive := q.checkSingleActivity(ctx, *char)
+	allTasks := AllTasks()
+	sortedTasks := sortTasksByPriority(allTasks)
+
+	sem := make(chan struct{}, q.concurrency)
+	var wg sync.WaitGroup
+
+	for _, task := range sortedTasks {
+		if !q.hasRequiredScopes(*char, task) {
+			continue
+		}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(t RefreshTask) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			q.executeTask(ctx, t, *char, isActive)
+		}(task)
+	}
+
+	wg.Wait()
+	global.Logger.Info("[ESI Queue] 新角色全量刷新完成", zap.Int64("character_id", characterID))
+}
+
 // RunTaskByName 对所有拥有所需 scope 的角色执行指定任务
 func (q *Queue) RunTaskByName(taskName string) error {
 	task, ok := GetTask(taskName)

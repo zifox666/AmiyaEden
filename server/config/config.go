@@ -9,6 +9,7 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	EveSSO   EveSSOConfig   `mapstructure:"eve_sso"`
 	SDE      SDEConfig      `mapstructure:"sde"`
+	App      AppConfig      `mapstructure:"app"`
 }
 
 // ServerConfig HTTP 服务配置
@@ -65,4 +66,9 @@ type SDEConfig struct {
 	APIKey      string `mapstructure:"api_key"`      // 用于保护数据查询接口的 API Key
 	Proxy       string `mapstructure:"proxy"`        // 下载 SDE 时使用的 HTTP/SOCKS5 代理，留空则不使用
 	DownloadURL string `mapstructure:"download_url"` // SDE GitHub Release API 地址
+}
+
+// AppConfig 全局应用配置实例
+type AppConfig struct {
+	AllowCorporations []int64 `mapstructure:"allow_corporations"` // 允许访问的公司 ID 列表，空表示不限制
 }
