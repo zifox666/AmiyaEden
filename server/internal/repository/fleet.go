@@ -123,6 +123,35 @@ func (r *FleetRepository) ListPapLogsByUser(userID uint) ([]model.FleetPapLog, e
 	return logs, err
 }
 
+// ListFleetsByMemberUserID 查询用户参与过的舰队（通过成员记录关联）
+func (r *FleetRepository) ListFleetsByMemberUserID(userID uint, limit int) ([]model.Fleet, error) {
+	var fleets []model.Fleet
+	subQuery := global.DB.Model(&model.FleetMember{}).Select("DISTINCT fleet_id").Where("user_id = ?", userID)
+	err := global.DB.Where("id IN (?) AND deleted_at IS NULL", subQuery).
+		Order("start_at DESC").Limit(limit).Find(&fleets).Error
+	return fleets, err
+}
+
+// MonthlyPapStat 月度 PAP 汇总
+type MonthlyPapStat struct {
+	Year     int     `json:"year"`
+	Month    int     `json:"month"`
+	TotalPap float64 `json:"total_pap"`
+}
+
+// SumPapByUserGroupedByMonth 按月汇总用户 PAP
+func (r *FleetRepository) SumPapByUserGroupedByMonth(userID uint) ([]MonthlyPapStat, error) {
+	var stats []MonthlyPapStat
+	err := global.DB.Model(&model.FleetPapLog{}).
+		Select("YEAR(issued_at) as year, MONTH(issued_at) as month, COALESCE(SUM(pap_count), 0) as total_pap").
+		Where("user_id = ?", userID).
+		Group("YEAR(issued_at), MONTH(issued_at)").
+		Order("year DESC, month DESC").
+		Limit(12).
+		Scan(&stats).Error
+	return stats, err
+}
+
 // ─────────────────────────────────────────────
 //  Fleet Invite
 // ─────────────────────────────────────────────

@@ -714,4 +714,106 @@ declare namespace Api {
       status: string
     }>
   }
+
+  /** 通知相关类型 */
+  namespace Notification {
+    /** 通知项 */
+    interface NotificationItem {
+      id: number
+      character_id: number
+      notification_id: number
+      sender_id: number
+      sender_type: string
+      text?: string
+      timestamp: string
+      type: string
+      is_read?: boolean
+    }
+
+    /** 通知列表请求参数 */
+    interface ListParams {
+      page?: number
+      page_size?: number
+      type?: string
+      is_read?: boolean
+    }
+
+    /** 通知列表响应 */
+    interface NotificationSummary {
+      list: NotificationItem[]
+      total: number
+      page: number
+      page_size: number
+      unread_count: number
+    }
+
+    /** 未读数响应 */
+    interface UnreadCountResponse {
+      unread_count: number
+    }
+
+    /** 标记已读请求 */
+    interface MarkAsReadParams {
+      notification_ids: number[]
+    }
+  }
+
+  /** 工作台类型 */
+  namespace Dashboard {
+    /** 卡片统计数据 */
+    interface Cards {
+      eve_wallet_balance: number
+      eve_skill_points: number
+      system_wallet_balance: number
+      alliance_pap: number
+    }
+
+    /** 统一舰队参与记录 */
+    interface FleetItem {
+      source: 'internal' | 'alliance'
+      id: string
+      title: string
+      start_at: string
+      end_at?: string
+      importance?: string
+      pap_count: number
+      ship_type_name?: string
+      character_name?: string
+    }
+
+    /** 月度 PAP 统计项 */
+    interface PapMonthly {
+      year: number
+      month: number
+      total_pap: number
+    }
+
+    /** PAP 统计数据 */
+    interface PapStats {
+      alliance: PapMonthly[]
+      internal: PapMonthly[]
+    }
+
+    /** 补损列表项 */
+    interface SrpItem {
+      id: number
+      character_name: string
+      ship_name: string
+      solar_system_name: string
+      killmail_time: string
+      recommended_amount: number
+      final_amount: number
+      review_status: string
+      payout_status: string
+      created_at: string
+    }
+
+    /** 工作台完整响应 */
+    interface DashboardResult {
+      cards: Cards
+      fleets: FleetItem[]
+      pap_stats: PapStats
+      srp_list: SrpItem[]
+    }
+  }
 }

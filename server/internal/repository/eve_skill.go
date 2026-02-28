@@ -28,3 +28,16 @@ func (r *EveSkillRepository) GetSkillList(characterID int) (*model.EveCharacterS
 	}
 	return &skills, nil
 }
+
+// SumTotalSPByCharacterIDs 汇总多个角色的总技能点
+func (r *EveSkillRepository) SumTotalSPByCharacterIDs(characterIDs []int64) (int64, error) {
+	if len(characterIDs) == 0 {
+		return 0, nil
+	}
+	var total int64
+	err := global.DB.Model(&model.EveCharacterSkill{}).
+		Where("character_id IN ?", characterIDs).
+		Select("COALESCE(SUM(total_sp), 0)").
+		Scan(&total).Error
+	return total, err
+}

@@ -2,16 +2,17 @@
   <ElRow :gutter="20" class="flex">
     <ElCol v-for="(item, index) in dataList" :key="index" :sm="12" :md="6" :lg="6">
       <div class="art-card relative flex flex-col justify-center h-35 px-5 mb-5 max-sm:mb-4">
-        <span class="text-g-700 text-sm">{{ item.des }}</span>
-        <ArtCountTo class="text-[26px] font-medium mt-2" :target="item.num" :duration="1300" />
+        <span class="text-g-700 text-sm">{{ item.label }}</span>
+        <ArtCountTo
+          class="text-[26px] font-medium mt-2"
+          :target="item.value"
+          :duration="1300"
+          :decimals="item.decimals"
+          :suffix="item.suffix"
+          separator=","
+        />
         <div class="flex-c mt-1">
-          <span class="text-xs text-g-600">较上周</span>
-          <span
-            class="ml-1 text-xs font-semibold"
-            :class="[item.change.indexOf('+') === -1 ? 'text-danger' : 'text-success']"
-          >
-            {{ item.change }}
-          </span>
+          <span class="text-xs text-g-600">{{ item.desc }}</span>
         </div>
         <div
           class="absolute top-0 bottom-0 right-5 m-auto size-12.5 rounded-xl flex-cc bg-theme/10"
@@ -24,51 +25,56 @@
 </template>
 
 <script setup lang="ts">
+  import { humanizeNumber } from '@/utils/common/text'
+
+  const props = defineProps<{
+    cards?: Api.Dashboard.Cards
+  }>()
+
   interface CardDataItem {
-    des: string
+    label: string
     icon: string
-    startVal: number
-    duration: number
-    num: number
-    change: string
+    value: number
+    decimals: number
+    suffix: string
+    desc: string
   }
 
-  /**
-   * 卡片统计数据列表
-   * 展示总访问次数、在线访客数、点击量和新用户等核心数据指标
-   */
-  const dataList = reactive<CardDataItem[]>([
-    {
-      des: '总访问次数',
-      icon: 'ri:pie-chart-line',
-      startVal: 0,
-      duration: 1000,
-      num: 9120,
-      change: '+20%'
-    },
-    {
-      des: '在线访客数',
-      icon: 'ri:group-line',
-      startVal: 0,
-      duration: 1000,
-      num: 182,
-      change: '+10%'
-    },
-    {
-      des: '点击量',
-      icon: 'ri:fire-line',
-      startVal: 0,
-      duration: 1000,
-      num: 9520,
-      change: '-12%'
-    },
-    {
-      des: '新用户',
-      icon: 'ri:progress-2-line',
-      startVal: 0,
-      duration: 1000,
-      num: 156,
-      change: '+30%'
-    }
-  ])
+  const dataList = computed<CardDataItem[]>(() => {
+    const c = props.cards
+    return [
+      {
+        label: 'EVE 钱包余额',
+        icon: 'ri:wallet-3-line',
+        value: c?.eve_wallet_balance ?? 0,
+        decimals: 2,
+        suffix: '',
+        desc: humanizeNumber(c?.eve_wallet_balance ?? 0)
+      },
+      {
+        label: 'EVE 技能点',
+        icon: 'ri:brain-line',
+        value: c?.eve_skill_points ?? 0,
+        decimals: 0,
+        suffix: '',
+        desc: humanizeNumber(c?.eve_skill_points ?? 0)
+      },
+      {
+        label: '系统钱包',
+        icon: 'ri:money-cny-circle-line',
+        value: c?.system_wallet_balance ?? 0,
+        decimals: 2,
+        suffix: '',
+        desc: ''
+      },
+      {
+        label: '当月联盟 PAP',
+        icon: 'ri:shield-star-line',
+        value: c?.alliance_pap ?? 0,
+        decimals: 1,
+        suffix: '',
+        desc: ''
+      }
+    ]
+  })
 </script>

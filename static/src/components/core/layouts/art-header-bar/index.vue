@@ -90,7 +90,10 @@
           class="notice-button relative"
           @click="visibleNotice"
         >
-          <div class="absolute top-2 right-2 size-1.5 !bg-danger rounded-full"></div>
+          <div
+            v-if="hasUnread"
+            class="absolute top-2 right-2 size-1.5 !bg-danger rounded-full"
+          ></div>
         </ArtIconButton>
 
         <!-- 主题切换按钮 -->
@@ -109,7 +112,7 @@
     <ArtWorkTab />
 
     <!-- 通知 -->
-    <ArtNotification v-model:value="showNotice" ref="notice" />
+    <ArtNotification v-model:value="showNotice" ref="notice" @unread-change="onUnreadChange" />
   </div>
 </template>
 
@@ -127,6 +130,7 @@
   import { themeAnimation } from '@/utils/ui/animation'
   import { useCommon } from '@/hooks/core/useCommon'
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
+  import { fetchUnreadCount } from '@/api/notification'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
 
   defineOptions({ name: 'ArtHeaderBar' })
@@ -166,6 +170,7 @@
 
   const showNotice = ref(false)
   const notice = ref(null)
+  const hasUnread = ref(false)
 
   // 菜单类型判断
   const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT)
@@ -177,12 +182,32 @@
 
   onMounted(() => {
     initLanguage()
+    loadUnreadCount()
     document.addEventListener('click', bodyCloseNotice)
   })
 
   onUnmounted(() => {
     document.removeEventListener('click', bodyCloseNotice)
   })
+
+  /**
+   * 加载未读通知数量
+   */
+  const loadUnreadCount = async (): Promise<void> => {
+    try {
+      const data = await fetchUnreadCount()
+      hasUnread.value = (data?.unread_count ?? 0) > 0
+    } catch {
+      // 静默失败
+    }
+  }
+
+  /**
+   * 通知未读数变化回调
+   */
+  const onUnreadChange = (count: number): void => {
+    hasUnread.value = count > 0
+  }
 
   /**
    * 切换全屏状态
