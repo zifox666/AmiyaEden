@@ -4,11 +4,11 @@ server:
 
 database:
   host: "127.0.0.1"
-  port: 3306
-  user: "root"
-  password: "123456"
+  port: 5432
+  user: "postgres"
+  password: ""
   dbname: "amiya-eden"
-  charset: "utf8mb4"
+  sslmode: "disable"
   max_idle_conns: 10
   max_open_conns: 100
 
@@ -31,10 +31,11 @@ redis:
   pool_size: 10         # 连接池大小
 
 eve_sso:
-  client_id: "44fbbf1270ce427e8df49903b7e83729"          # EVE 开发者控制台申请的 Client ID
-  client_secret: "TD70Lr81Ql7o3Sq7E56YitgRBTKQQKcxDmqhenoA"  # EVE 开发者控制台申请的 Client Secret
+  client_id: ""          # EVE 开发者控制台申请的 Client ID
+  client_secret: ""  # EVE 开发者控制台申请的 Client Secret
   callback_url: "http://localhost:8080/api/v1/sso/eve/callback"
 
 sde:
   api_key: "change_me_sde_api_key"  # 用于保护 SDE 数据查询接口的 API Key
   proxy: "http://127.0.0.1:7890"    # 下载 SDE 时使用的代理，例如 http://127.0.0.1:7890 或 socks5://127.0.0.1:1080，留空不使用
+  download_url: "https://api.github.com/repos/zifox666/eve-sde-converter/releases/latest"  # SDE 数据下载 URL，默认为 GitHub API 获取最新 release 信息

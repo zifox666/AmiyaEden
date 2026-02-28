@@ -83,6 +83,9 @@ declare namespace Api {
       user_id: number
       scopes: string
       token_expiry: string
+      token_valid: boolean
+      corporation_id: number
+      alliance_id: number
     }
 
     /** 已注册的 ESI Scope */

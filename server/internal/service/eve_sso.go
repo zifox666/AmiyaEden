@@ -361,8 +361,13 @@ func (s *EveSSOService) GetValidToken(ctx context.Context, characterID int64) (s
 		return "", err
 	}
 
-	// Token 有效期剩余 < 5 分钟则刷新
-	if time.Until(char.TokenExpiry) < 5*time.Minute {
+	// Token 已标记为失效
+	if char.TokenInvalid {
+		return "", errors.New("该角色的 token 已失效，请重新授权")
+	}
+
+	// Token 有效期剩余 < 3 分钟则刷新
+	if time.Until(char.TokenExpiry) < 3*time.Minute {
 		if err := s.refreshCharacterToken(ctx, char); err != nil {
 			return "", err
 		}
@@ -375,11 +380,15 @@ func (s *EveSSOService) GetValidToken(ctx context.Context, characterID int64) (s
 func (s *EveSSOService) refreshCharacterToken(ctx context.Context, char *model.EveCharacter) error {
 	tokenResp, err := s.eveClient.RefreshAccessToken(ctx, char.RefreshToken)
 	if err != nil {
+		char.TokenInvalid = true
+		_ = s.charRepo.Update(char)
 		return err
 	}
 
 	claims, err := eve.ParseAccessToken(tokenResp.AccessToken)
 	if err != nil {
+		char.TokenInvalid = true
+		_ = s.charRepo.Update(char)
 		return err
 	}
 
@@ -387,6 +396,7 @@ func (s *EveSSOService) refreshCharacterToken(ctx context.Context, char *model.E
 	char.RefreshToken = tokenResp.RefreshToken
 	char.TokenExpiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 	char.Scopes = strings.Join(claims.GetScopes(), " ")
+	char.TokenInvalid = false
 
 	return s.charRepo.Update(char)
 }

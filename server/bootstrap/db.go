@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
-// InitDB 初始化 GORM MySQL 数据库连接
+// InitDB 初始化 GORM PostgreSQL 数据库连接
 func InitDB() {
 	cfg := global.Config.Database
 
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.Charset,
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=Asia/Shanghai",
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode,
 	)
 
 	// GORM 日志级别
@@ -29,7 +29,7 @@ func InitDB() {
 		gormLogLevel = logger.Info
 	}
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(gormLogLevel),
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // 禁用表名复数

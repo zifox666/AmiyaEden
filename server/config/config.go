@@ -24,7 +24,7 @@ type DatabaseConfig struct {
 	User         string `mapstructure:"user"`
 	Password     string `mapstructure:"password"`
 	DBName       string `mapstructure:"dbname"`
-	Charset      string `mapstructure:"charset"`
+	SSLMode      string `mapstructure:"sslmode"`
 	MaxIdleConns int    `mapstructure:"max_idle_conns"`
 	MaxOpenConns int    `mapstructure:"max_open_conns"`
 }
@@ -62,6 +62,7 @@ type EveSSOConfig struct {
 
 // SDEConfig SDE 模块配置
 type SDEConfig struct {
-	APIKey string `mapstructure:"api_key"` // 用于保护数据查询接口的 API Key
-	Proxy  string `mapstructure:"proxy"`   // 下载 SDE 时使用的 HTTP/SOCKS5 代理，留空则不使用
+	APIKey      string `mapstructure:"api_key"`      // 用于保护数据查询接口的 API Key
+	Proxy       string `mapstructure:"proxy"`        // 下载 SDE 时使用的 HTTP/SOCKS5 代理，留空则不使用
+	DownloadURL string `mapstructure:"download_url"` // SDE GitHub Release API 地址
 }

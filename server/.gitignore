@@ -38,3 +38,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+config.yml
+tmp/*

@@ -40,12 +40,18 @@
             :src="char.portrait_url"
             :alt="char.character_name"
             class="w-14 h-14 rounded-full object-cover border-2"
-            :class="isPrimary(char) ? 'border-primary' : 'border-g-200'"
+            :class="[
+              isPrimary(char) ? 'border-primary' : 'border-g-200',
+              char.token_valid ? 'grayscale opacity-50' : ''
+            ]"
           />
 
           <!-- 信息 -->
           <div class="flex-1 min-w-0">
-            <h3 class="text-base font-medium truncate">{{ char.character_name }}</h3>
+            <h3 class="text-base font-medium truncate">
+              {{ char.character_name }}
+              <span v-if="char.token_valid">(已失效)</span>
+            </h3>
             <p class="mt-0.5 text-xs text-g-500">ID: {{ char.character_id }}</p>
             <p class="mt-0.5 text-xs text-g-400 truncate" :title="char.scopes">
               {{ scopeSummary(char) }}
