@@ -98,6 +98,9 @@ func autoMigrate(db *gorm.DB) {
 		// SRP 补损相关表
 		&model.SrpShipPrice{},
 		&model.SrpApplication{},
+		// 联盟 PAP 相关表
+		&model.AlliancePAPRecord{},
+		&model.AlliancePAPSummary{},
 		// RBAC 权限相关表
 		&model.Role{},
 		&model.Menu{},

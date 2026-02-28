@@ -65,6 +65,16 @@ export const systemRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['super_admin', 'admin']
       }
+    },
+    {
+      path: 'pap',
+      name: 'AlliancePAP',
+      component: '/system/pap',
+      meta: {
+        title: 'menus.system.alliancePap',
+        keepAlive: true,
+        roles: ['super_admin', 'admin']
+      }
     }
   ]
 }

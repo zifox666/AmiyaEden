@@ -46,6 +46,19 @@ func RegisterRoutes(r *gin.Engine) {
 	meH := handler.NewMeHandler()
 	auth.GET("/me", meH.GetMe)
 
+	dashboardH := handler.NewDashboardHandler()
+	auth.POST("/dashboard", dashboardH.GetDashboard)
+
+	// ─── 通知 ───
+	notifH := handler.NewNotificationHandler()
+	notification := auth.Group("/notification")
+	{
+		notification.POST("/list", notifH.ListNotifications)
+		notification.POST("/unread-count", notifH.GetUnreadCount)
+		notification.POST("/read", notifH.MarkAsRead)
+		notification.POST("/read-all", notifH.MarkAllAsRead)
+	}
+
 	// ─── 菜单 ───
 	menuH := handler.NewMenuHandler()
 	auth.GET("/menu/list", menuH.GetMenuList) // 当前用户可用菜单
@@ -66,10 +79,14 @@ func RegisterRoutes(r *gin.Engine) {
 		fleet.GET("/:id/members", fleetH.GetMembers)
 		fleet.POST("/:id/members/sync", fleetH.SyncESIMembers)
 
-		// PAP
+		// ――― PAP
 		fleet.POST("/:id/pap", fleetH.IssuePap)
 		fleet.GET("/:id/pap", fleetH.GetPapLogs)
 		fleet.GET("/pap/me", fleetH.GetMyPapLogs)
+
+		// ――― 联盟 PAP
+		alliancePAPH := handler.NewAlliancePAPHandler()
+		fleet.GET("/pap/alliance", alliancePAPH.GetMyAlliancePAP)
 
 		// 邀请
 		fleet.POST("/:id/invites", fleetH.CreateInvite)
@@ -138,6 +155,14 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// ─── 系统管理（需要 admin 角色）───
 	admin := auth.Group("/system", middleware.RequireRole(model.RoleAdmin))
+
+	// 联盟 PAP 管理（管理员）
+	alliancePAPAdminH := handler.NewAlliancePAPHandler()
+	alliancePAPAdmin := admin.Group("/pap")
+	{
+		alliancePAPAdmin.GET("", alliancePAPAdminH.GetAllAlliancePAP)
+		alliancePAPAdmin.POST("/fetch", alliancePAPAdminH.TriggerFetch)
+	}
 
 	// 菜单管理
 	adminMenu := admin.Group("/menu")

@@ -42,3 +42,7 @@ sde:
 
 app:
   allow_corporations: [98575144] # 允许访问的公司 ID 列表，空表示不限制
+
+alliance_pap:
+  base_url: "http://jp.newdoublex.space:25220"  # 联盟 PAP API 地址
+  api_key: "n4QTCroEePpRaEUyVaHAd161hNmhRD"       # 联盟 PAP API Key

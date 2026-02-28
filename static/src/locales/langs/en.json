@@ -266,12 +266,14 @@
       "userCenter": "User Center",
       "menu": "Menu Manage",
       "esiRefresh": "Scheduled Tasks",
-      "wallet": "Wallet Management"
+      "wallet": "Wallet Management",
+      "alliancePap": "Alliance PAP"
     },
     "shop": {
       "title": "Shop",
       "browse": "Browse Products",
-      "manage": "Shop Management"
+      "manage": "Shop Management",
+      "wallet": "My Wallet"
     },
     "characters": {
       "title": "EVE Characters"
@@ -281,7 +283,6 @@
       "fleets": "Fleet Management",
       "fleetDetail": "Fleet Detail",
       "pap": "My PAP",
-      "wallet": "My Wallet",
       "join": "Join Fleet",
       "srpApply": "SRP Apply",
       "srpManage": "SRP Review",

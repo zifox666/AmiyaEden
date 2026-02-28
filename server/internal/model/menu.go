@@ -110,13 +110,13 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "Fleets", Path: "fleets", Component: "/operation/fleets", Title: "menus.operation.fleets", Sort: 100, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "FleetDetail", Path: "fleet-detail/:id", Component: "/operation/fleet-detail", Title: "menus.operation.fleetDetail", Sort: 90, IsHide: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "MyPap", Path: "pap", Component: "/operation/pap", Title: "menus.operation.pap", Sort: 80, KeepAlive: true, Status: 1}},
-		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "Wallet", Path: "wallet", Component: "/operation/wallet", Title: "menus.operation.wallet", Sort: 70, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "JoinFleet", Path: "join", Component: "/operation/join", Title: "menus.operation.join", Sort: 60, IsHide: true, Status: 1}},
 
 		// ── Shop ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "ShopRoot", Path: "/shop", Component: "/index/index", Title: "menus.shop.title", Icon: "ri:shopping-bag-line", Sort: 85, Status: 1}},
 		{ParentName: "ShopRoot", Menu: Menu{Type: MenuTypeMenu, Name: "Shop", Path: "browse", Component: "/shop/browse", Title: "menus.shop.browse", Sort: 100, KeepAlive: true, Status: 1}},
 		{ParentName: "ShopRoot", Menu: Menu{Type: MenuTypeMenu, Name: "ShopManage", Path: "manage", Component: "/shop/manage", Title: "menus.shop.manage", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "ShopRoot", Menu: Menu{Type: MenuTypeMenu, Name: "Wallet", Path: "wallet", Component: "/shop/wallet", Title: "menus.shop.wallet", Sort: 70, KeepAlive: true, Status: 1}},
 		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopProductAdd", Permission: "system:shop:product:add", Title: "新增商品", Sort: 100, Status: 1}},
 		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopProductEdit", Permission: "system:shop:product:edit", Title: "编辑商品", Sort: 90, Status: 1}},
 		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopProductDelete", Permission: "system:shop:product:delete", Title: "删除商品", Sort: 80, Status: 1}},
@@ -150,6 +150,8 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "SystemWallet", Path: "wallet", Component: "/system/wallet", Title: "menus.system.wallet", Sort: 65, KeepAlive: true, Status: 1}},
 		{ParentName: "SystemWallet", Menu: Menu{Type: MenuTypeButton, Name: "WalletAdjust", Permission: "system:wallet:adjust", Title: "调整余额", Sort: 100, Status: 1}},
 		{ParentName: "SystemWallet", Menu: Menu{Type: MenuTypeButton, Name: "WalletViewLog", Permission: "system:wallet:log", Title: "查看日志", Sort: 90, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "AlliancePAP", Path: "pap", Component: "/system/pap", Title: "menus.system.alliancePap", Sort: 63, KeepAlive: true, Status: 1}},
+		{ParentName: "AlliancePAP", Menu: Menu{Type: MenuTypeButton, Name: "AlliancePAPFetch", Permission: "system:pap:fetch", Title: "手动拉取", Sort: 100, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", Sort: 60, IsHide: true, KeepAlive: true, IsHideTab: true, Status: 1}},
 
 		// ── Result ──
@@ -173,6 +175,7 @@ func DefaultRoleMenuMap() map[string][]string {
 			"Menus", "MenuAdd", "MenuEdit", "MenuDelete",
 			"ESIRefresh", "ESIRun",
 			"SystemWallet", "WalletAdjust", "WalletViewLog",
+			"AlliancePAP", "AlliancePAPFetch",
 			"UserCenter",
 			"Result", "ResultSuccess", "ResultFail",
 		},
@@ -199,7 +202,7 @@ func DefaultRoleMenuMap() map[string][]string {
 			"UserCenter",
 		},
 		RoleGuest: {
-			"Dashboard", "Console",
+			"Dashboard", "Console", "Characters",
 			"Result", "ResultSuccess", "ResultFail",
 		},
 	}

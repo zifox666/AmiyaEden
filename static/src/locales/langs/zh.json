@@ -266,12 +266,14 @@
       "userCenter": "个人中心",
       "menu": "菜单管理",
       "esiRefresh": "定时任务",
-      "wallet": "钱包管理"
+      "wallet": "錢包管理",
+      "alliancePap": "联盟 PAP"
     },
     "shop": {
       "title": "商店",
       "browse": "浏览商品",
-      "manage": "商店管理"
+      "manage": "商店管理",
+      "wallet": "我的钱包"
     },
     "characters": {
       "title": "EVE 角色管理"
@@ -281,7 +283,6 @@
       "fleets": "舰队管理",
       "fleetDetail": "舰队详情",
       "pap": "我的 PAP",
-      "wallet": "我的钱包",
       "join": "加入舰队",
       "srpApply": "申请补损",
       "srpManage": "补损审批",
@@ -377,7 +378,7 @@
       "issue": "发放 PAP",
       "issueConfirm": "确定要向所有成员发放 PAP 吗？",
       "issueSuccess": "PAP 已发放",
-      "myTitle": "我的 PAP 记录",
+      "myTitle": "军团 PAP",
       "count": "PAP 数量",
       "issuedBy": "发放人",
       "issuedAt": "发放时间",

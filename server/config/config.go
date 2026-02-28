@@ -2,14 +2,15 @@ package config
 
 // Config 全局配置根结构
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Log      LogConfig      `mapstructure:"log"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	EveSSO   EveSSOConfig   `mapstructure:"eve_sso"`
-	SDE      SDEConfig      `mapstructure:"sde"`
-	App      AppConfig      `mapstructure:"app"`
+	Server      ServerConfig      `mapstructure:"server"`
+	Database    DatabaseConfig    `mapstructure:"database"`
+	Log         LogConfig         `mapstructure:"log"`
+	JWT         JWTConfig         `mapstructure:"jwt"`
+	Redis       RedisConfig       `mapstructure:"redis"`
+	EveSSO      EveSSOConfig      `mapstructure:"eve_sso"`
+	SDE         SDEConfig         `mapstructure:"sde"`
+	App         AppConfig         `mapstructure:"app"`
+	AlliancePAP AlliancePAPConfig `mapstructure:"alliance_pap"`
 }
 
 // ServerConfig HTTP 服务配置
@@ -71,4 +72,10 @@ type SDEConfig struct {
 // AppConfig 全局应用配置实例
 type AppConfig struct {
 	AllowCorporations []int64 `mapstructure:"allow_corporations"` // 允许访问的公司 ID 列表，空表示不限制
+}
+
+// AlliancePAPConfig 联盟 PAP 外部 API 配置
+type AlliancePAPConfig struct {
+	BaseURL string `mapstructure:"base_url"` // 联盟 PAP API 基础地址
+	APIKey  string `mapstructure:"api_key"`  // 联盟 PAP API Key
 }
