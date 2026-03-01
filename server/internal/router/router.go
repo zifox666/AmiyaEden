@@ -98,6 +98,14 @@ func RegisterRoutes(r *gin.Engine) {
 		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
 	}
 
+	// ─── EVE 角色信息 ───
+	infoH := handler.NewEveInfoHandler()
+	info := auth.Group("/info")
+	{
+		info.POST("/wallet", infoH.GetWalletJournal)
+		info.POST("/skills", infoH.GetCharacterSkills)
+	}
+
 	// ─── 系统钱包（用户端）───
 	walletH := handler.NewSysWalletHandler()
 	wallet := operation.Group("/wallet")

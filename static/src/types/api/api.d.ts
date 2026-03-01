@@ -816,4 +816,75 @@ declare namespace Api {
       srp_list: SrpItem[]
     }
   }
+
+  /** EVE 角色信息类型 */
+  namespace EveInfo {
+    /** 钱包流水请求参数 */
+    interface WalletRequest {
+      character_id: number
+      page: number
+      page_size: number
+    }
+
+    /** 钱包流水条目 */
+    interface WalletJournal {
+      id: number
+      amount: number
+      balance: number
+      date: string
+      description: string
+      first_party_id: number
+      second_party_id: number
+      ref_type: string
+      reason: string
+    }
+
+    /** 钱包流水响应 */
+    interface WalletResponse {
+      balance: number
+      journals: WalletJournal[]
+      total: number
+      page: number
+      page_size: number
+    }
+
+    /** 技能请求参数 */
+    interface SkillRequest {
+      character_id: number
+      language?: string
+    }
+
+    /** 技能条目 */
+    interface SkillItem {
+      skill_id: number
+      skill_name: string
+      group_id: number
+      group_name: string
+      active_level: number
+      trained_level: number
+      skillpoints_in_skill: number
+    }
+
+    /** 技能队列条目 */
+    interface SkillQueueItem {
+      queue_position: number
+      skill_id: number
+      skill_name: string
+      finished_level: number
+      level_start_sp: number
+      level_end_sp: number
+      training_start_sp: number
+      start_date: number
+      finish_date: number
+    }
+
+    /** 技能列表响应 */
+    interface SkillResponse {
+      total_sp: number
+      unallocated_sp: number
+      skill_count: number
+      skills: SkillItem[]
+      skill_queue: SkillQueueItem[]
+    }
+  }
 }

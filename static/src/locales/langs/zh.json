@@ -300,7 +300,40 @@
       "srpApply": "申请补损",
       "srpManage": "补损审批",
       "srpPrices": "补损价格表"
+    },
+    "info": {
+      "title": "EVE 角色信息",
+      "wallet": "钱包流水",
+      "skill": "技能列表"
     }
+  },
+  "info": {
+    "selectCharacter": "选择角色",
+    "selectCharacterPlaceholder": "请选择一个角色",
+    "walletBalance": "钱包余额",
+    "walletJournal": "钱包流水",
+    "journalDate": "时间",
+    "journalType": "类型",
+    "journalAmount": "金额",
+    "journalBalance": "余额",
+    "journalDescription": "描述",
+    "journalReason": "备注",
+    "noJournalData": "暂无钱包流水记录",
+    "totalSP": "总技能点",
+    "unallocatedSP": "未分配 SP",
+    "skillCount": "技能数量",
+    "skillQueue": "技能队列",
+    "inQueue": "队列中",
+    "inTraining": "正在训练",
+    "skillList": "技能列表",
+    "searchSkill": "搜索技能",
+    "skillGroup": "技能组",
+    "skillName": "技能名称",
+    "activeLevel": "激活等级",
+    "trainedLevel": "训练等级",
+    "skillSP": "技能点",
+    "noSkillQueue": "没有正在学习的技能",
+    "noSkillData": "暂无技能数据"
   },
   "shop": {
     "products": "商品列表",

@@ -300,7 +300,39 @@
       "srpApply": "SRP Apply",
       "srpManage": "SRP Review",
       "srpPrices": "SRP Prices"
+    },
+    "info": {
+      "title": "EVE Character Info",
+      "wallet": "Wallet Journal",
+      "skill": "Skill List"
     }
+  },
+  "info": {
+    "selectCharacter": "Select Character",
+    "selectCharacterPlaceholder": "Choose a character",
+    "walletBalance": "Wallet Balance",
+    "walletJournal": "Wallet Journal",
+    "journalDate": "Date",
+    "journalType": "Type",
+    "journalAmount": "Amount",
+    "journalBalance": "Balance",
+    "journalDescription": "Description",
+    "journalReason": "Reason",
+    "noJournalData": "No wallet journal entries",
+    "totalSP": "Total SP",
+    "unallocatedSP": "Unallocated SP",
+    "skillCount": "Skill Count",
+    "skillQueue": "Skill Queue",
+    "inQueue": "skills",
+    "skillList": "Skill List",
+    "searchSkill": "Search skills",
+    "skillGroup": "Group",
+    "skillName": "Skill Name",
+    "activeLevel": "Active Level",
+    "trainedLevel": "Trained Level",
+    "skillSP": "Skill Points",
+    "noSkillQueue": "No skills in training",
+    "noSkillData": "No skill data"
   },
   "shop": {
     "products": "Products",
