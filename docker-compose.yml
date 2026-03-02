@@ -18,3 +18,7 @@ services:
       - "8080:8080"
     networks:
       - amiya-eden-network
+
+networks:
+  amiya-eden-network:
+    driver: bridge
