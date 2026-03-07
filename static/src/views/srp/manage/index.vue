@@ -79,8 +79,12 @@
           </ElFormItem>
           <ElFormItem :label="$t('srp.manage.columns.fleet')" v-if="reviewTarget.fleet_id">
             <div>
-              <span class="font-medium">{{ reviewTarget.fleet_title || reviewTarget.fleet_id }}</span>
-              <span v-if="reviewTarget.fleet_fc_name" class="text-gray-400 ml-2 text-xs">FC: {{ reviewTarget.fleet_fc_name }}</span>
+              <span class="font-medium">{{
+                reviewTarget.fleet_title || reviewTarget.fleet_id
+              }}</span>
+              <span v-if="reviewTarget.fleet_fc_name" class="text-gray-400 ml-2 text-xs"
+                >FC: {{ reviewTarget.fleet_fc_name }}</span
+              >
             </div>
           </ElFormItem>
         </template>
@@ -357,9 +361,7 @@
               parts.push(h('div', { class: 'font-medium' }, row.fleet_title))
             }
             if (row.fleet_fc_name) {
-              parts.push(
-                h('div', { class: 'text-xs text-gray-400' }, `FC: ${row.fleet_fc_name}`)
-              )
+              parts.push(h('div', { class: 'text-xs text-gray-400' }, `FC: ${row.fleet_fc_name}`))
             }
             return parts.length ? h('div', {}, parts) : h('span', {}, row.fleet_id)
           }
@@ -532,10 +534,28 @@
   const reviewForm = reactive({ review_note: '', final_amount: 0 })
   const actionLoading = ref(false)
 
+  /** 当前操作人的主角色名（用于默认文案替换） */
+  const primaryCharName = computed(() => {
+    const info = userStore.getUserInfo
+    if (!info.characters || !info.primaryCharacterId) return ''
+    return (
+      info.characters.find((c) => c.character_id === info.primaryCharacterId)?.character_name ?? ''
+    )
+  })
+
+  const DEFAULT_APPROVE_NOTE =
+    '将钱包筛选项改为军团账户支取，找到最近的交易记录；或打开合同，在"我的合同"中将拥有者改为自己，状态设为未决，点击显示合同。如有问题请Q群联系{{mainChracterName}}（或游戏内邮件{{mainChracterName}})'
+  const DEFAULT_REJECT_NOTE =
+    '不符合现有补损条例。如有问题请Q群联系{{mainChracterName}}（或游戏内邮件{{mainChracterName}})'
+
+  const fillTemplate = (tpl: string) =>
+    tpl.replaceAll('{{mainChracterName}}', primaryCharName.value || t('srp.manage.unknownReviewer'))
+
   const openReviewDialog = (row: Api.Srp.Application, action: 'approve' | 'reject') => {
     reviewTarget.value = row
     reviewAction.value = action
-    reviewForm.review_note = ''
+    reviewForm.review_note =
+      action === 'approve' ? fillTemplate(DEFAULT_APPROVE_NOTE) : fillTemplate(DEFAULT_REJECT_NOTE)
     reviewForm.final_amount = action === 'approve' ? row.final_amount : 0
     reviewDialogVisible.value = true
   }

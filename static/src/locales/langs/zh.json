@@ -611,6 +611,7 @@
       "rejectSuccess": "已拒绝",
       "payoutSuccess": "发放成功",
       "rejectRequired": "拒绝时必须填写审批备注",
+      "unknownReviewer": "审批人",
       "payoutKillId": "KillID",
       "openInfoWindow": "打开角色信息",
       "editBtn": "编辑",

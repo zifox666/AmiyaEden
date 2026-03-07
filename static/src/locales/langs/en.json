@@ -599,6 +599,7 @@
       "rejectSuccess": "Rejected",
       "payoutSuccess": "Payout successful",
       "rejectRequired": "A note is required when rejecting",
+      "unknownReviewer": "Reviewer",
       "payoutKillId": "KillID",
       "openInfoWindow": "Open Info Window",
       "editBtn": "Edit",
