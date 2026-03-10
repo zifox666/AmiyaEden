@@ -196,9 +196,9 @@
       .map((row) => ({
         primary_character_name: String(row['主角色'] ?? row['primary_character_name'] ?? ''),
         monthly_pap: Number(row['月 PAP'] ?? row['monthly_pap'] ?? 0),
-        calculated_at: Number(row['数据时间'] ?? row['calculated_at'] ?? 0)
+        calculated_at: String(row['数据时间'] ?? row['calculated_at'] ?? 0)
       }))
-      .filter((item) => item.primary_character_name && item.calculated_at > 0)
+      .filter((item) => item.primary_character_name && item.calculated_at != '')
     if (!items.length) {
       ElMessage.warning(t('alliancePap.importNoData'))
       return
