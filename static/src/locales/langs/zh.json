@@ -714,6 +714,10 @@
     "fetchTriggered": "已触发后台拉取，请稍后刷新查看",
     "fetchFailed": "触发拉取失败",
     "emptyData": "暂无该月联盟 PAP 数据",
+    "importBtn": "导入 PAP 表格",
+    "importNoData": "未找到有效数据，请检查列名（主角色 / 月 PAP / 数据时间）",
+    "importFailed": "导入失败",
+    "importSuccess": "导入完成，成功 {count} 条",
     "columns": {
       "rank": "排名",
       "mainCharacter": "主角色",

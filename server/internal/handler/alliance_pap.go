@@ -120,6 +120,41 @@ func (h *AlliancePAPHandler) TriggerFetch(c *gin.Context) {
 	response.OK(c, gin.H{"message": "已触发后台拉取任务"})
 }
 
+// ImportAlliancePAP  POST /system/pap/import
+// 导入联盟 PAP 数据（管理员，可指定 year/month）
+type importAlliancePAPRequest struct {
+	Year          int  `json:"year"  binding:"required"`
+	Month         int  `json:"month" binding:"required,min=1,max=12"`
+	PAPImportInfo service.PAPImportInfo `json:"data" binding:"required"`
+}
+
+func (h *AlliancePAPHandler) ImportAlliancePAP(c *gin.Context) {
+	var req importAlliancePAPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+
+	char, err := h.charRepo.GetByCharacterName(req.PAPImportInfo.PrimaryCharacterName)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, "主角色不存在")
+		return
+	}
+
+	user, err := h.userRepo.GetByPrimaryCharacterID(char.CharacterID)
+	if err != nil || user.PrimaryCharacterID == 0 {
+		response.Fail(c, response.CodeBizError, "未设置主角色")
+		return
+	}
+
+	err := h.svc.ImportAlliancePAP(req.Year, req.Month, req.PAPImportInfo)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, gin.H{"message": "导入成功"})
+}
+
 // GetExchangeConfig  GET /system/pap/config
 // 查询 PAP 兑换系统钱包配置
 func (h *AlliancePAPHandler) GetExchangeConfig(c *gin.Context) {

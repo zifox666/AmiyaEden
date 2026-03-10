@@ -10,6 +10,9 @@
       <ElButton type="primary" :loading="fetching" :icon="Download" @click="handleFetch">
         {{ t('alliancePap.fetchLatest') }}
       </ElButton>
+      <ArtExcelImport @import-success="handleImport">
+        {{ $t('alliancePap.importBtn') }}
+      </ArtExcelImport>
     </template>
   </ArtSearchBar>
 </template>
@@ -68,5 +71,9 @@
 
   function handleFetch() {
     emit('fetch')
+  }
+
+  function handleImport(rows: Record<string, unknown>[]) {
+    emit('import', rows)
   }
 </script>

@@ -702,6 +702,10 @@
     "fetchTriggered": "Fetch triggered, please refresh later",
     "fetchFailed": "Failed to trigger fetch",
     "emptyData": "No alliance PAP data for this month",
+    "importBtn": "Import PAP table",
+    "importNoData": "No valid data found, check columns (primary_character_name, monthly_pap, calculated_at)",
+    "importFailed": "Import failed",
+    "importSuccess": "Import complete: {count} records",
     "columns": {
       "rank": "Rank",
       "mainCharacter": "Main Character",

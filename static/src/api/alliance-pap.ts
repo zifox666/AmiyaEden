@@ -75,6 +75,17 @@ export function triggerAlliancePAPFetch(params?: { year?: number; month?: number
   })
 }
 
+/** 管理员：通过表格导入 PAP 数据 */
+export interface PAPImportInfo {
+  primary_character_name: string
+  monthly_pap: number
+  calculated_at: number
+}
+
+export function importAlliancePAP(params?: { year?: number, month?: number, data: PAPImportInfo }) {
+  return request.post<PAPImportInfo>({ url: '/api/v1/system/pap/import', params })
+}
+
 export interface PAPExchangeConfig {
   wallet_per_pap: number
   enabled: boolean

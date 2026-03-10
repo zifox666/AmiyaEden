@@ -8,6 +8,7 @@
       @search="handleSearch"
       @reset="resetSearchParams"
       @fetch="triggerFetch"
+      @import="handleImport"
     />
 
     <ElCard class="art-table-card" shadow="never">
@@ -44,7 +45,9 @@
   import {
     fetchAllAlliancePAP,
     triggerAlliancePAPFetch,
-    type AlliancePAPSummary
+    importAlliancePAP,
+    type AlliancePAPSummary,
+    type PAPImportInfo
   } from '@/api/alliance-pap'
   import PapSearch from './modules/pap-search.vue'
   import PapSettle from './modules/pap-settle.vue'
@@ -181,6 +184,37 @@
       ElMessage.success(t('alliancePap.fetchTriggered'))
     } catch {
       ElMessage.error(t('alliancePap.fetchFailed'))
+    } finally {
+      fetching.value = false
+    }
+  }
+
+  // ─── 导入 PAP 表格 ───
+  const handleImport = async (rows: Record<string, unknown>[]) => {
+    const { year, month } = parseMonth()
+    const items = rows
+      .map((row) => ({
+        primary_character_name: String(row['主角色'] ?? row['primary_character_name'] ?? ''),
+        monthly_pap: Number(row['月 PAP'] ?? row['monthly_pap'] ?? 0),
+        calculated_at: Number(row['数据时间'] ?? row['calculated_at'] ?? 0)
+      }))
+      .filter((item) => item.primary_character_name && item.calculated_at > 0)
+    if (!items.length) {
+      ElMessage.warning(t('alliancePap.importNoData'))
+      return
+    }
+    fetching.value = true
+    let success = 0
+    try {
+      for (const item of items) {
+        const { primary_character_name, monthly_pap, calculated_at } = item
+        await importAlliancePAP({ year, month, data: { primary_character_name, monthly_pap, calculated_at } })
+        success++
+      }
+      ElMessage.success(t('alliancePap.importSuccess', { count: success }))
+      handleSearch()
+    } catch {
+      ElMessage.error(t('alliancePap.importFailed'))
     } finally {
       fetching.value = false
     }
