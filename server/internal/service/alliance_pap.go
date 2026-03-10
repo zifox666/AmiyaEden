@@ -217,7 +217,7 @@ type PAPImportInfo struct {
 func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *PAPImportInfo, mainChar *model.EveCharacter) error {
 	existingSummary, err := s.repo.GetSummary(mainChar.CharacterName, year, month)
 	if err != nil {
-		return err
+		existingSummary = nil
 	}
 	
 	var totalPap float64 = 0.0
