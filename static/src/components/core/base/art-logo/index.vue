@@ -3,7 +3,7 @@
   <div class="flex-cc">
     <img
       :style="logoStyle"
-      src="https://images.evetech.net/corporations/98575144/logo?size=128"
+      src="https://images.evetech.net/corporations/98632030/logo?size=128"
       alt="logo"
       class="w-full h-full"
     />
