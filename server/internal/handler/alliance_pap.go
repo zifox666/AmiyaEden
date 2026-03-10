@@ -125,7 +125,7 @@ func (h *AlliancePAPHandler) TriggerFetch(c *gin.Context) {
 type importAlliancePAPRequest struct {
 	Year          int  `json:"year"  binding:"required"`
 	Month         int  `json:"month" binding:"required,min=1,max=12"`
-	PAPImportInfo service.papImportInfo `json:"data" binding:"required"`
+	PAPImportInfo service.PAPImportInfo `json:"data" binding:"required"`
 }
 
 func (h *AlliancePAPHandler) ImportAlliancePAP(c *gin.Context) {

@@ -207,13 +207,13 @@ func (s *AlliancePAPService) FetchAllUsers(year, month int) {
 }
 
 // ─── 修改接口 ───
-type papImportInfo struct {
+type PAPImportInfo struct {
 	PrimaryCharacterName string `json:"primary_character_name" binding:"required"`
 	MonthlyPAP float64 `json:"monthly_pap" binding:"required,ge=0"`
 	CalculatedAt time.Time `json:"calculated_at" binding:"required"`
 }
 
-func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *papImportInfo, mainChar *model.EveCharacter) error {
+func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *PAPImportInfo, mainChar *model.EveCharacter) error {
 	existingSummary, err := s.repo.GetSummary(mainChar.CharacterName, year, month)
 	if err != nil {
 		return err
