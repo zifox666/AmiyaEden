@@ -213,7 +213,7 @@ type papImportInfo struct {
 	CalculatedAt time.Time `json:"calculated_at" binding:"required"`
 }
 
-func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data PAPImportInfo, mainChar *model.EveCharacter) {
+func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *papImportInfo, mainChar *model.EveCharacter) error {
 	existingSummary, err := s.repo.GetSummary(mainChar.CharacterName, year, month)
 	if err != nil {
 		return err
@@ -240,12 +240,14 @@ func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data PAPImportIn
 		totalInCorp = existingSummary.TotalInCorp
 		totalGlobal = existingSummary.TotalGlobal
 	}
+
+	corporationID := strconv.FormatInt(mainChar.CorporationID, 10)
 	
 	summary := &model.AlliancePAPSummary{
 		MainCharacter:     data.PrimaryCharacterName,
 		Year:              year,
 		Month:             month,
-		CorporationID:     mainChar.CorporationID,
+		CorporationID:     corporationID,
 		TotalPap:          totalPap,
 		YearlyTotalPap:    yearlyTotalPap,
 		MonthlyRank:       monthlyRank,
