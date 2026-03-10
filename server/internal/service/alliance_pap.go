@@ -210,7 +210,7 @@ func (s *AlliancePAPService) FetchAllUsers(year, month int) {
 type PAPImportInfo struct {
 	PrimaryCharacterName string `json:"primary_character_name" binding:"required"`
 	MonthlyPAP float64 `json:"monthly_pap" binding:"required,ge=0"`
-	CalculatedAt time.Time `json:"calculated_at" binding:"required"`
+	CalculatedAt string `json:"calculated_at" binding:"required"`
 }
 
 func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *PAPImportInfo, mainChar *model.EveCharacter) error {
@@ -227,7 +227,11 @@ func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *PAPImportI
 	var globalYearlyRank int = 1
 	var totalInCorp int = 0
 	var totalGlobal int = 0
-	var calculatedAt time.Time = data.CalculatedAt
+	calculatedAt, err := time.ParseInLocation(alliancePAPTimeLayout, data.CalculatedAt, time.UTC)
+
+	if err != nil {
+		return err
+	}
 
 	if existingSummary != nil {
 		delta := data.MonthlyPAP - existingSummary.TotalPap
