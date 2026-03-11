@@ -48,9 +48,10 @@ func (r *UserRepository) UpdateRole(id uint, role string) error {
 
 // UserFilter 用户列表筛选条件
 type UserFilter struct {
-	Nickname string
-	Status   *int
-	Role     string
+	Nickname          string
+	Status            *int
+	Role              string
+	AllowCorporations []int64 // 非空时只返回拥有这些军团角色的用户
 }
 
 // GetByPrimaryCharacterID 根据主角色 ID 查询用户
@@ -79,6 +80,9 @@ func (r *UserRepository) List(page, pageSize int, filter UserFilter) ([]model.Us
 	}
 	if filter.Role != "" {
 		db = db.Where("role = ?", filter.Role)
+	}
+	if len(filter.AllowCorporations) > 0 {
+		db = db.Where("id IN (SELECT DISTINCT user_id FROM eve_character WHERE corporation_id IN ?)", filter.AllowCorporations)
 	}
 
 	if err := db.Count(&total).Error; err != nil {

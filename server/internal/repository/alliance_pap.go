@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -79,12 +80,20 @@ func (r *AlliancePAPRepository) ListAllSummaries(year, month int) ([]model.Allia
 }
 
 // ListAllSummariesPaged 分页查询所有人某月的汇总（管理员视图）
-func (r *AlliancePAPRepository) ListAllSummariesPaged(year, month, page, pageSize int) ([]model.AlliancePAPSummary, int64, error) {
+// corporationIDs 非空时只返回这些军团的数据
+func (r *AlliancePAPRepository) ListAllSummariesPaged(year, month, page, pageSize int, corporationIDs []int64) ([]model.AlliancePAPSummary, int64, error) {
 	var list []model.AlliancePAPSummary
 	var total int64
 	offset := (page - 1) * pageSize
 
 	db := global.DB.Model(&model.AlliancePAPSummary{}).Where("year = ? AND month = ?", year, month)
+	if len(corporationIDs) > 0 {
+		strIDs := make([]string, len(corporationIDs))
+		for i, id := range corporationIDs {
+			strIDs[i] = fmt.Sprintf("%d", id)
+		}
+		db = db.Where("corporation_id IN ?", strIDs)
+	}
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -141,11 +150,19 @@ func (r *AlliancePAPRepository) ListRecentRecordsByMainChar(mainChar string, lim
 // ─────────────────────────────────────────────
 
 // ListUnredeemedSummaries 查询某月尚未兑换的汇总列表
-func (r *AlliancePAPRepository) ListUnredeemedSummaries(year, month int) ([]model.AlliancePAPSummary, error) {
+// corporationIDs 非空时只返回这些军团的数据
+func (r *AlliancePAPRepository) ListUnredeemedSummaries(year, month int, corporationIDs []int64) ([]model.AlliancePAPSummary, error) {
 	var list []model.AlliancePAPSummary
-	err := global.DB.
-		Where("year = ? AND month = ? AND is_redeemed = false AND total_pap > 0", year, month).
-		Find(&list).Error
+	db := global.DB.
+		Where("year = ? AND month = ? AND is_redeemed = false AND total_pap > 0", year, month)
+	if len(corporationIDs) > 0 {
+		strIDs := make([]string, len(corporationIDs))
+		for i, id := range corporationIDs {
+			strIDs[i] = fmt.Sprintf("%d", id)
+		}
+		db = db.Where("corporation_id IN ?", strIDs)
+	}
+	err := db.Find(&list).Error
 	return list, err
 }
 
