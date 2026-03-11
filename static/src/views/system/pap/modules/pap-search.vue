@@ -173,11 +173,13 @@
 
       if (response.status !== 200 && response.data.data) {
         for (const item of response.data.data) {
-          rows.push({
+          console.log(item)
+          const temp : Record<string, unknown> = {
             '主角色': item.character,
             '月 PAP': item.pap_count,
             '数据时间': item.logoff_date
-          })
+          }
+          rows.push(temp)
         }
       }
 
