@@ -54,7 +54,7 @@ export default ({ mode }: { mode: string }) => {
       terserOptions: {
         compress: {
           // 生产环境去除 console
-          drop_console: true,
+          drop_console: false,
           // 生产环境去除 debugger
           drop_debugger: true
         }

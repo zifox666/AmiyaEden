@@ -170,8 +170,18 @@
       })
 
       const response = await axiosInstance.get('/seatproxy/tools/paptracking')
-      console.log(response.data)
 
+      if (response.status !== 200 && response.data.data) {
+        for (const item of response.data.data) {
+          rows.push({
+            '主角色': item.character,
+            '月 PAP': item.pap_count,
+            '数据时间': item.logoff_date
+          })
+        }
+      }
+
+      console.log(rows)
       dialogVisible.value = false
       //emit('import', rows)
     } catch (e: any) {
