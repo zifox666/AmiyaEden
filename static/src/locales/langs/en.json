@@ -705,8 +705,6 @@
     "importBtnSEAT": "Import from SEAT",
     "importFormSEAT": {
       "fields": {
-        "URL": "URL",
-        "URLPlaceholder": "SEAT PAP fetch URL",
         "xsrfToken": "XSRF-TOKEN",
         "laravelSession": "laravel_session",
         "cfClearance": "cf_clearance (optional)",

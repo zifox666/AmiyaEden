@@ -27,9 +27,6 @@
     destroy-on-close
   >
     <ElForm ref="formRef" :model="formDataSEAT" :rules="formRulesSEAT" label-width="150px">
-      <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.URL')" prop="URL">
-        <ElInput v-model="formDataSEAT.URL" :placeholder="$t('alliancePap.importFormSEAT.fields.titlePlaceholder')" />
-      </ElFormItem>
       <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.xsrfToken')" prop="xsrfToken">
         <ElInput v-model="formDataSEAT.xsrfToken" :placeholder="$t('alliancePap.importFormSEAT.fields.xsrfToken')" />
       </ElFormItem>
@@ -119,7 +116,6 @@
   const formRef = ref<FormInstance>()
 
   const formDataSEAT = reactive({
-    URL: '',
     xsrfToken: '',
     laravelSession: '',
     cfClearance: '',
@@ -127,7 +123,6 @@
   })
 
   const formRulesSEAT: FormRules = {
-    URL: [{ required: true, message: t('alliancePap.importFormSEAT.fields.titlePlaceholder'), trigger: 'blur' }],
     xsrfToken: [{ required: true, message: t('alliancePap.importFormSEAT.fields.xsrfToken'), trigger: 'blur' }],
     laravelSession: [{ required: true, message: t('alliancePap.importFormSEAT.fields.laravelSession'), trigger: 'blur' }],
     cfClearance: [{ required: false, message: t('alliancePap.importFormSEAT.fields.cfClearance'), trigger: 'blur' }],
@@ -135,7 +130,6 @@
   }
 
   function ResetFormDataSEAT() {
-    formDataSEAT.URL = ''
     formDataSEAT.xsrfToken = ''
     formDataSEAT.laravelSession = ''
     formDataSEAT.cfClearance = ''
@@ -146,6 +140,8 @@
     ResetFormDataSEAT()
     dialogVisible.value = true
   }
+
+  const { VITE_API_URL } = import.meta.env
 
   async function handleImportSEAT() {
     if (!formRef.value) return
@@ -158,6 +154,7 @@
       /* 创建Axios实例 */
       const axiosInstance = axios.create({
         timeout: 10000,
+        baseURL: VITE_API_URL,
         headers: {
           'Cookie': `laravel_session=${formDataSEAT.laravelSession};XSRF-TOKEN=${formDataSEAT.xsrfToken}` + (formDataSEAT.cfClearance ? `;cf_clearance=${formDataSEAT.cfClearance}` : ''),
           'User-Agent': formDataSEAT.UA || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -171,7 +168,7 @@
         }
       })
 
-      const response = await axiosInstance.get(formDataSEAT.URL)
+      const response = await axiosInstance.get('/seatproxy/tools/paptracking')
       console.log(response.data)
 
       dialogVisible.value = false

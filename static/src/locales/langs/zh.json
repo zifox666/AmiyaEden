@@ -717,8 +717,6 @@
     "importBtnSEAT": "从 SEAT 导入",
     "importFormSEAT": {
       "fields": {
-        "URL": "URL",
-        "URLPlaceholder": "SEAT PAP获取接口URL",
         "xsrfToken": "XSRF-TOKEN",
         "laravelSession": "laravel_session",
         "cfClearance": "cf_clearance (可选)",
