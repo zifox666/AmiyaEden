@@ -719,9 +719,7 @@
       "fields": {
         "xsrfToken": "XSRF-TOKEN",
         "laravelSession": "laravel_session",
-        "cfClearance": "cf_clearance (可选)",
-        "UA": "UA (可选)",
-        "UAPlaceHolder": "User-Agent"
+        "cfClearance": "cf_clearance (可选)"
       }
     },
     "importBtnXLS": "从表格导入",

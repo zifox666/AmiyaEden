@@ -36,9 +36,6 @@
       <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.cfClearance')" prop="cfClearance">
         <ElInput v-model="formDataSEAT.cfClearance" :placeholder="$t('alliancePap.importFormSEAT.fields.cfClearance')" />
       </ElFormItem>
-      <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.UA')" prop="UA">
-        <ElInput v-model="formDataSEAT.UA" :placeholder="$t('alliancePap.importFormSEAT.fields.UAPlaceHolder')" />
-      </ElFormItem>
     </ElForm>
     <template #footer>
       <ElButton @click="dialogVisible = false">{{ $t('common.cancel') }}</ElButton>
@@ -126,14 +123,12 @@
     xsrfToken: [{ required: true, message: t('alliancePap.importFormSEAT.fields.xsrfToken'), trigger: 'blur' }],
     laravelSession: [{ required: true, message: t('alliancePap.importFormSEAT.fields.laravelSession'), trigger: 'blur' }],
     cfClearance: [{ required: false, message: t('alliancePap.importFormSEAT.fields.cfClearance'), trigger: 'blur' }],
-    UA: [{ required: false, message: t('alliancePap.importFormSEAT.fields.UAPlaceHolder'), trigger: 'blur' }]
   }
 
   function ResetFormDataSEAT() {
     formDataSEAT.xsrfToken = ''
     formDataSEAT.laravelSession = ''
     formDataSEAT.cfClearance = ''
-    formDataSEAT.UA = ''
   }
 
   function OpenImportSEATDialog() {
@@ -156,15 +151,21 @@
         timeout: 10000,
         baseURL: VITE_API_URL,
         headers: {
-          'X-Cookie': `laravel_session=${formDataSEAT.laravelSession};XSRF-TOKEN=${formDataSEAT.xsrfToken}` + (formDataSEAT.cfClearance ? `;cf_clearance=${formDataSEAT.cfClearance}` : ''),
-          'X-User-Agent': formDataSEAT.UA || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
           'Accept': 'application/json, text/javascript, */*; q=0.01',
           'X-Accept-Encoding': 'gzip, deflate, br, zstd',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
           'Cache-Control': 'no-cache',
+          'X-Cookie': `laravel_session=${formDataSEAT.laravelSession};XSRF-TOKEN=${formDataSEAT.xsrfToken}` + (formDataSEAT.cfClearance ? `;cf_clearance=${formDataSEAT.cfClearance}` : ''),
           'Pragma': 'no-cache',
-          'Requested-With': 'XMLHttpRequest',
-          'X-Connection': 'Close'
+          'Priority': 'u=1, i',
+          'Sec-Ch-Ua': `"Not:A-Brand";v="99", "Microsoft Edge";v="145", "Chromium";v="145"`,
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': `"Windows"`,
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-origin',
+          'X-User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+          'X-Requested-With': 'XMLHttpRequest',
         }
       })
 

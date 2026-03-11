@@ -707,9 +707,7 @@
       "fields": {
         "xsrfToken": "XSRF-TOKEN",
         "laravelSession": "laravel_session",
-        "cfClearance": "cf_clearance (optional)",
-        "UA": "UA (optional)",
-        "UAPlaceHolder": "User-Agent"
+        "cfClearance": "cf_clearance (optional)"
       }
     },
     "importBtnXLS": "Import from XLS",
