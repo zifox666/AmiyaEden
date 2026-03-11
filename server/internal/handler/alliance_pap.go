@@ -3,6 +3,7 @@ package handler
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/middleware"
+	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
@@ -25,6 +26,16 @@ func NewAlliancePAPHandler() *AlliancePAPHandler {
 		charRepo: repository.NewEveCharacterRepository(),
 		userRepo: repository.NewUserRepository(),
 	}
+}
+
+// getAllowCorpFilter 根据调用者角色返回军团过滤列表
+// super_admin 返回 nil（不过滤），admin 返回配置的 allow_corporations
+func getAllowCorpFilter(c *gin.Context) []int64 {
+	roles := middleware.GetUserRoles(c)
+	if model.IsSuperAdmin(roles) {
+		return nil
+	}
+	return global.Config.App.AllowCorporations
 }
 
 // GetMyAlliancePAP  GET /operation/pap/alliance
@@ -86,7 +97,7 @@ func (h *AlliancePAPHandler) GetAllAlliancePAP(c *gin.Context) {
 		}
 	}
 
-	list, total, err := h.svc.GetAllPAPPaged(year, month, page, size)
+	list, total, err := h.svc.GetAllPAPPaged(year, month, page, size, getAllowCorpFilter(c))
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -202,7 +213,7 @@ func (h *AlliancePAPHandler) SettleMonth(c *gin.Context) {
 		return
 	}
 	operatorID := middleware.GetUserID(c)
-	result, err := h.svc.SettleMonth(req.Year, req.Month, req.WalletConvert, operatorID)
+	result, err := h.svc.SettleMonth(req.Year, req.Month, req.WalletConvert, operatorID, getAllowCorpFilter(c))
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

@@ -301,8 +301,9 @@ func (s *AlliancePAPService) GetAllPAP(year, month int) ([]model.AlliancePAPSumm
 }
 
 // GetAllPAPPaged 分页获取所有成员某月联盟 PAP 汇总（管理员）
-func (s *AlliancePAPService) GetAllPAPPaged(year, month, page, pageSize int) ([]model.AlliancePAPSummary, int64, error) {
-	return s.repo.ListAllSummariesPaged(year, month, page, pageSize)
+// corporationIDs 非空时只返回这些军团的数据
+func (s *AlliancePAPService) GetAllPAPPaged(year, month, page, pageSize int, corporationIDs []int64) ([]model.AlliancePAPSummary, int64, error) {
+	return s.repo.ListAllSummariesPaged(year, month, page, pageSize, corporationIDs)
 }
 
 // ─── PAP 兑换配置 ───
@@ -356,7 +357,8 @@ type SettleMonthResult struct {
 
 // SettleMonth 归档某月并将 PAP 批量兑换为系统钱包
 // 如果 walletConvert=true，则同时兑换；否则仅归档
-func (s *AlliancePAPService) SettleMonth(year, month int, walletConvert bool, operatorID uint) (*SettleMonthResult, error) {
+// corporationIDs 非空时只结算这些军团的数据
+func (s *AlliancePAPService) SettleMonth(year, month int, walletConvert bool, operatorID uint, corporationIDs []int64) (*SettleMonthResult, error) {
 	// 1. 归档
 	if err := s.repo.MarkArchived(year, month); err != nil {
 		return nil, fmt.Errorf("归档失败: %w", err)
@@ -375,7 +377,7 @@ func (s *AlliancePAPService) SettleMonth(year, month int, walletConvert bool, op
 	}
 
 	// 3. 查找该月所有未兑换且 PAP > 0 的汇总
-	summaries, err := s.repo.ListUnredeemedSummaries(year, month)
+	summaries, err := s.repo.ListUnredeemedSummaries(year, month, corporationIDs)
 	if err != nil {
 		return nil, fmt.Errorf("查询未兑换 PAP 失败: %w", err)
 	}
