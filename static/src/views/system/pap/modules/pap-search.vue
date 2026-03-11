@@ -23,10 +23,10 @@
   <ElDialog
     v-model="dialogVisible"
     :title="$t('alliancePap.importBtnSEAT')"
-    width="520px"
+    width="600px"
     destroy-on-close
   >
-    <ElForm ref="formRef" :model="formDataSEAT" :rules="formRulesSEAT" label-width="100px">
+    <ElForm ref="formRef" :model="formDataSEAT" :rules="formRulesSEAT" label-width="150px">
       <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.URL')" prop="URL">
         <ElInput v-model="formDataSEAT.URL" :placeholder="$t('alliancePap.importFormSEAT.fields.titlePlaceholder')" />
       </ElFormItem>
@@ -121,7 +121,7 @@
   const formDataSEAT = reactive({
     URL: '',
     xsrfToken: '',
-    laravelSession: 1,
+    laravelSession: '',
     cfClearance: '',
     UA: ''
   })
@@ -137,7 +137,7 @@
   function ResetFormDataSEAT() {
     formDataSEAT.URL = ''
     formDataSEAT.xsrfToken = ''
-    formDataSEAT.laravelSession = 1
+    formDataSEAT.laravelSession = ''
     formDataSEAT.cfClearance = ''
     formDataSEAT.UA = ''
   }
