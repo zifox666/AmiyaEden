@@ -8,10 +8,10 @@
   >
     <template #fetchBtn>
       <ElButton type="primary" :loading="fetching" :icon="Download" @click="handleFetch">
-        {{ t('alliancePap.fetchLatest') }}
+        {{ $t('alliancePap.fetchLatest') }}
       </ElButton>
       <ElButton type="primary" :loading="fetching" :icon="Download" @click="OpenImportSEATDialog">
-        {{ t('alliancePap.importBtnSEAT') }}
+        {{ $t('alliancePap.importBtnSEAT') }}
       </ElButton>
       <ArtExcelImport @import-success="handleImportXLS">
         {{ $t('alliancePap.importBtnXLS') }}
