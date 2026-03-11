@@ -208,7 +208,14 @@
     try {
       for (const item of items) {
         const { primary_character_name, monthly_pap, calculated_at } = item
-        await importAlliancePAP({ year, month, data: { primary_character_name, monthly_pap, calculated_at } })
+        try {
+          await importAlliancePAP({ year, month, data: { primary_character_name, monthly_pap, calculated_at } })
+        } catch (err: any) {
+          if (err.message == '主角色不存在' || err.message == '未设置主角色') {
+            continue
+          }
+          throw err
+        }
         success++
       }
       ElMessage.success(t('alliancePap.importSuccess', { count: success }))
