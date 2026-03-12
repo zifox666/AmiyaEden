@@ -36,6 +36,30 @@ func (r *EveCharacterRepository) ListByUserID(userID uint) ([]model.EveCharacter
 	return chars, err
 }
 
+// ListByUserIDs 批量查询用户绑定的角色
+func (r *EveCharacterRepository) ListByUserIDs(userIDs []uint) ([]model.EveCharacter, error) {
+	if len(userIDs) == 0 {
+		return []model.EveCharacter{}, nil
+	}
+
+	var chars []model.EveCharacter
+	err := global.DB.Where("user_id IN ?", userIDs).
+		Order("user_id ASC, character_name ASC").
+		Find(&chars).Error
+	return chars, err
+}
+
+// ListByCharacterIDs 批量查询角色
+func (r *EveCharacterRepository) ListByCharacterIDs(characterIDs []int64) ([]model.EveCharacter, error) {
+	if len(characterIDs) == 0 {
+		return []model.EveCharacter{}, nil
+	}
+
+	var chars []model.EveCharacter
+	err := global.DB.Where("character_id IN ?", characterIDs).Find(&chars).Error
+	return chars, err
+}
+
 // Update 更新角色信息
 func (r *EveCharacterRepository) Update(char *model.EveCharacter) error {
 	return global.DB.Save(char).Error

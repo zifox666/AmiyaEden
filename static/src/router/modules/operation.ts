@@ -30,6 +30,15 @@ export const operationRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'corporation-pap',
+      name: 'CorporationPap',
+      component: '/operation/corporation-pap',
+      meta: {
+        title: 'menus.operation.corporationPap',
+        keepAlive: true
+      }
+    },
+    {
       path: 'pap',
       name: 'MyPap',
       component: '/operation/pap',

@@ -85,6 +85,7 @@ func RegisterRoutes(r *gin.Engine) {
 		fleet.POST("/:id/pap", fleetH.IssuePap)
 		fleet.GET("/:id/pap", fleetH.GetPapLogs)
 		fleet.GET("/pap/me", fleetH.GetMyPapLogs)
+		fleet.GET("/pap/corporation", fleetH.GetCorporationPapSummary)
 
 		// ――― 联盟 PAP
 		alliancePAPH := handler.NewAlliancePAPHandler()
