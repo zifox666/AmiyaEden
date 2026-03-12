@@ -278,6 +278,7 @@
       "title": "Fleet Operations",
       "fleets": "Fleet Management",
       "fleetDetail": "Fleet Detail",
+      "corporationPap": "Corporation PAP",
       "pap": "My PAP",
       "join": "Join Fleet",
       "srpApply": "SRP Apply",
@@ -533,6 +534,38 @@
       "issuedBy": "Issued By",
       "issuedAt": "Issued At",
       "empty": "No PAP records"
+    },
+    "corporationPap": {
+      "title": "Corporation PAP",
+      "summaryTitle": "Corporation PAP Summary",
+      "empty": "No PAP summary records",
+      "search": "Search",
+      "reset": "Reset",
+      "filters": {
+        "period": "Period",
+        "year": "Year",
+        "corpTickers": "Corp Tickers"
+      },
+      "periods": {
+        "currentMonth": "Current Month",
+        "lastMonth": "Last Month",
+        "atYear": "At Year",
+        "all": "All"
+      },
+      "stats": {
+        "filteredPap": "Current Period PAP",
+        "lastMonthPap": "Last Month PAP",
+        "allPap": "All-Time PAP",
+        "users": "Users"
+      },
+      "columns": {
+        "userId": "User ID",
+        "corpTicker": "Corp Ticker",
+        "mainCharacter": "Main Character",
+        "characterCount": "Number of Characters",
+        "stratOpPaps": "Start OP",
+        "skirmishPaps": "Skirmish PAP"
+      }
     },
     "invite": {
       "title": "Invite Links",

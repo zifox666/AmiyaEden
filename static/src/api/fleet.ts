@@ -86,6 +86,14 @@ export function fetchMyPapLogs() {
   })
 }
 
+/** 获取军团 PAP 汇总 */
+export function fetchCorporationPapSummary(params?: Api.Fleet.CorporationPapSummaryParams) {
+  return request.get<Api.Fleet.CorporationPapSummaryList>({
+    url: '/api/v1/operation/fleets/pap/corporation',
+    params
+  })
+}
+
 // ─── 邀请链接 ───
 
 /** 创建舰队邀请链接 */

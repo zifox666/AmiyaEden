@@ -6,6 +6,7 @@ import (
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -219,6 +220,27 @@ func (h *FleetHandler) GetMyPapLogs(c *gin.Context) {
 		return
 	}
 	response.OK(c, logs)
+}
+
+// GetCorporationPapSummary 获取军团 PAP 汇总
+func (h *FleetHandler) GetCorporationPapSummary(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	year, _ := strconv.Atoi(c.DefaultQuery("year", "0"))
+	period := c.DefaultQuery("period", service.CorporationPapPeriodLastMonth)
+	corpTickerParam := c.Query("corp_tickers")
+	var corpTickers []string
+	if corpTickerParam != "" {
+		corpTickers = strings.Split(corpTickerParam, ",")
+	}
+
+	result, err := h.svc.GetCorporationPapSummary(page, size, period, year, corpTickers)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, result)
 }
 
 // ─────────────────────────────────────────────

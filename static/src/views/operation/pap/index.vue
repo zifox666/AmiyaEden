@@ -61,13 +61,13 @@
           </ElTableColumn>
           <ElTableColumn prop="pap_count" :label="$t('fleet.pap.count')" width="120" align="center">
             <template #default="{ row }">
-              <ElTag type="success" size="small">+{{ row.pap_count }}</ElTag>
+              <ElTag type="success" size="small">{{ row.pap_count }}</ElTag>
             </template>
           </ElTableColumn>
           <ElTableColumn
-            prop="issued_by"
+            prop="issued_by_name"
             :label="$t('fleet.pap.issuedBy')"
-            width="120"
+            min-width="140"
             align="center"
           />
           <ElTableColumn prop="issued_at" :label="$t('fleet.pap.issuedAt')" width="200">
@@ -326,6 +326,12 @@
   const levelTagType = (level: string): 'danger' | 'warning' | 'info' | 'success' => {
     if (level === 'CTA') return 'danger'
     if (level === 'Strat Op') return 'warning'
+    return 'info'
+  }
+
+  const papTypeTagType = (importance: string): 'danger' | 'warning' | 'info' | 'success' => {
+    if (importance === 'cta') return 'danger'
+    if (importance === 'strat_op') return 'warning'
     return 'info'
   }
 

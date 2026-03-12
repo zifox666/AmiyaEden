@@ -109,6 +109,7 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "Operation", Path: "/operation", Component: "/index/index", Title: "menus.operation.title", Icon: "ri:ship-line", Sort: 90, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "Fleets", Path: "fleets", Component: "/operation/fleets", Title: "menus.operation.fleets", Sort: 100, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "FleetDetail", Path: "fleet-detail/:id", Component: "/operation/fleet-detail", Title: "menus.operation.fleetDetail", Sort: 90, IsHide: true, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "CorporationPap", Path: "corporation-pap", Component: "/operation/corporation-pap", Title: "menus.operation.corporationPap", Sort: 85, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "MyPap", Path: "pap", Component: "/operation/pap", Title: "menus.operation.pap", Sort: 80, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "JoinFleet", Path: "join", Component: "/operation/join", Title: "menus.operation.join", Sort: 60, IsHide: true, Status: 1}},
 
@@ -179,7 +180,7 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleAdmin: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings",
-			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "Fleets", "FleetDetail", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
 			"ShopRoot", "Shop", "ShopManage", "ShopProductAdd", "ShopProductEdit", "ShopProductDelete", "ShopOrderReview",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
 			"System", "User", "UserDelete", "UserSetRole",
@@ -196,7 +197,7 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleFC: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings",
-			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "Fleets", "FleetDetail", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
 			"Result", "ResultSuccess", "ResultFail",
@@ -204,7 +205,7 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleSRP: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings",
-			"Operation", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
 			"Result", "ResultSuccess", "ResultFail",
@@ -212,7 +213,7 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleUser: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings",
-			"Operation", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply",
 			"Result", "ResultSuccess", "ResultFail",

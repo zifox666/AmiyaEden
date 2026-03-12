@@ -276,6 +276,7 @@
       "title": "舰队行动",
       "fleets": "舰队管理",
       "fleetDetail": "舰队详情",
+      "corporationPap": "军团PAP",
       "pap": "我的 PAP",
       "join": "加入舰队",
       "srpApply": "申请补损",
@@ -545,6 +546,38 @@
       "issuedBy": "发放人",
       "issuedAt": "发放时间",
       "empty": "暂无 PAP 记录"
+    },
+    "corporationPap": {
+      "title": "军团PAP",
+      "summaryTitle": "军团 PAP 汇总",
+      "empty": "暂无军团 PAP 汇总记录",
+      "search": "查询",
+      "reset": "重置",
+      "filters": {
+        "period": "时间范围",
+        "year": "年份",
+        "corpTickers": "军团Ticker"
+      },
+      "periods": {
+        "currentMonth": "本月",
+        "lastMonth": "上月",
+        "atYear": "指定年份",
+        "all": "所有"
+      },
+      "stats": {
+        "filteredPap": "当前筛选 PAP",
+        "lastMonthPap": "最近一个月 PAP",
+        "allPap": "全部 PAP",
+        "users": "用户数"
+      },
+      "columns": {
+        "userId": "用户 ID",
+        "corpTicker": "军团Ticker",
+        "mainCharacter": "主角色名",
+        "characterCount": "角色数量",
+        "stratOpPaps": "战略OP",
+        "skirmishPaps": "散打"
+      }
     },
     "invite": {
       "title": "邀请链接",

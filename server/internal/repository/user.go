@@ -24,6 +24,17 @@ func (r *UserRepository) GetByID(id uint) (*model.User, error) {
 	return &user, err
 }
 
+// ListByIDs 批量查询用户
+func (r *UserRepository) ListByIDs(ids []uint) ([]model.User, error) {
+	if len(ids) == 0 {
+		return []model.User{}, nil
+	}
+
+	var users []model.User
+	err := global.DB.Where("id IN ?", ids).Find(&users).Error
+	return users, err
+}
+
 // Update 更新用户信息
 func (r *UserRepository) Update(user *model.User) error {
 	return global.DB.Save(user).Error
