@@ -44,7 +44,7 @@
           <ElDescriptionsItem :label="$t('fleet.fields.endAt')">{{
             formatTime(fleet.end_at)
           }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="创建时间">{{
+          <ElDescriptionsItem :label="$t('fleet.fields.createdAt')">{{
             formatTime(fleet.created_at)
           }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('fleet.fields.description')" :span="3">
@@ -241,8 +241,7 @@
           label: t('fleet.members.shipType'),
           width: 160,
           showOverflowTooltip: true,
-          formatter: (row: Api.Fleet.MemberWithPap) =>
-            h('span', {}, getName(row.ship_type_id, '-'))
+          formatter: (row: Api.Fleet.MemberWithPap) => h('span', {}, getName(row.ship_type_id, '-'))
         },
         {
           prop: 'solar_system_id',

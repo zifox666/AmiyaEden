@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetUserList, fetchDeleteUser, fetchImpersonateUser } from '@/api/system-manage'
@@ -41,6 +42,7 @@
   import { ElTag, ElMessageBox, ElAvatar } from 'element-plus'
 
   defineOptions({ name: 'User' })
+  const { t } = useI18n()
 
   type UserListItem = Api.SystemManage.UserListItem
 
@@ -61,23 +63,23 @@
 
   // 角色显示配置
   const ROLE_CONFIG: Record<string, { type: string; text: string }> = {
-    super_admin: { type: 'danger', text: '超级管理员' },
-    admin: { type: 'warning', text: '管理员' },
-    srp: { type: 'success', text: 'SRP管理员' },
+    super_admin: { type: 'danger', text: t('userAdmin.roles.super_admin') },
+    admin: { type: 'warning', text: t('userAdmin.roles.admin') },
+    srp: { type: 'success', text: t('userAdmin.roles.srp') },
     fc: { type: 'warning', text: 'FC' },
-    user: { type: 'success', text: '已认证用户' },
-    guest: { type: 'info', text: '访客' }
+    user: { type: 'success', text: t('userAdmin.roles.user') },
+    guest: { type: 'info', text: t('userAdmin.roles.guest') }
   }
 
   // 状态显示配置
   const STATUS_CONFIG: Record<number, { type: string; text: string }> = {
-    1: { type: 'success', text: '正常' },
-    0: { type: 'danger', text: '禁用' }
+    1: { type: 'success', text: t('userAdmin.status.active') },
+    0: { type: 'danger', text: t('userAdmin.status.disabled') }
   }
 
   const getRoleConfig = (role: string) => ROLE_CONFIG[role] || { type: 'info', text: role }
   const getStatusConfig = (status: number) =>
-    STATUS_CONFIG[status] || { type: 'info', text: '未知' }
+    STATUS_CONFIG[status] || { type: 'info', text: t('userAdmin.status.unknown') }
 
   const {
     columns,
@@ -100,10 +102,10 @@
         ...searchForm.value
       },
       columnsFactory: () => [
-        { type: 'index', width: 60, label: '序号' },
+        { type: 'index', width: 60, label: '#' },
         {
           prop: 'userInfo',
-          label: '用户信息',
+          label: t('userAdmin.table.userInfo'),
           width: 240,
           formatter: (row) => {
             return h('div', { class: 'flex items-center gap-2' }, [
@@ -113,7 +115,7 @@
                 class: 'flex-shrink-0'
               }),
               h('div', {}, [
-                h('p', { class: 'font-medium text-sm' }, row.nickname || '未命名'),
+                h('p', { class: 'font-medium text-sm' }, row.nickname || t('userAdmin.unnamed')),
                 h('p', { class: 'text-xs text-gray-400' }, `ID: ${row.id}`)
               ])
             ])
@@ -121,7 +123,7 @@
         },
         {
           prop: 'role',
-          label: '角色',
+          label: t('common.role'),
           width: 140,
           formatter: (row) => {
             const cfg = getRoleConfig(row.role)
@@ -130,7 +132,7 @@
         },
         {
           prop: 'status',
-          label: '状态',
+          label: t('common.status'),
           width: 100,
           formatter: (row) => {
             const cfg = getStatusConfig(row.status)
@@ -139,26 +141,26 @@
         },
         {
           prop: 'last_login_at',
-          label: '最后登录',
+          label: t('userAdmin.table.lastLogin'),
           width: 180,
           sortable: true,
           formatter: (row) => row.last_login_at || '-'
         },
         {
           prop: 'last_login_ip',
-          label: '登录IP',
+          label: t('userAdmin.table.loginIp'),
           width: 140,
           formatter: (row) => row.last_login_ip || '-'
         },
         {
           prop: 'created_at',
-          label: '注册时间',
+          label: t('userAdmin.table.registeredAt'),
           width: 180,
           sortable: true
         },
         {
           prop: 'operation',
-          label: '操作',
+          label: t('common.operation'),
           width: 160,
           fixed: 'right',
           formatter: (row) =>
@@ -167,7 +169,7 @@
                 h(ArtButtonTable, {
                   icon: 'ri:user-follow-line',
                   iconClass: 'bg-purple/12 text-purple',
-                  title: '模拟登录',
+                  title: t('userAdmin.impersonate'),
                   onClick: () => impersonateUser(row)
                 }),
               h(ArtButtonTable, {
@@ -201,21 +203,21 @@
   /** 删除用户 */
   const deleteUser = (row: UserListItem): void => {
     ElMessageBox.confirm(
-      `确定要删除用户「${row.nickname || row.id}」吗？此操作不可恢复。`,
-      '删除确认',
+      t('userAdmin.deleteConfirm', { name: row.nickname || row.id }),
+      t('common.tips'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'error'
       }
     )
       .then(async () => {
         try {
           await fetchDeleteUser(row.id)
-          ElMessage.success('删除成功')
+          ElMessage.success(t('userAdmin.deleteSuccess'))
           refreshData()
         } catch (error) {
-          console.error('删除失败:', error)
+          console.error(t('userAdmin.deleteFailed'), error)
         }
       })
       .catch(() => {})
@@ -224,11 +226,11 @@
   /** 模拟以指定用户登录 */
   const impersonateUser = (row: UserListItem): void => {
     ElMessageBox.confirm(
-      `确定要以「${row.nickname || row.id}」的身份登录吗？当前管理员会话将被替换，请提前记录当前 Token 或在新标签页中操作。`,
-      '模拟登录确认',
+      t('userAdmin.impersonateConfirm', { name: row.nickname || row.id }),
+      t('common.tips'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
@@ -239,10 +241,10 @@
           userStore.setLoginStatus(true)
           const userInfo = await fetchGetUserInfo()
           userStore.setUserInfo(userInfo)
-          ElMessage.success(`已切换至用户「${row.nickname || row.id}」`)
+          ElMessage.success(t('userAdmin.impersonateSuccess', { name: row.nickname || row.id }))
           window.location.href = '/'
         } catch (error: any) {
-          ElMessage.error(error?.message ?? '模拟登录失败')
+          ElMessage.error(error?.message ?? t('userAdmin.impersonateFailed'))
         }
       })
       .catch(() => {})

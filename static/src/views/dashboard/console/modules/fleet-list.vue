@@ -2,18 +2,14 @@
   <div class="art-card h-128 p-5 mb-5 max-sm:mb-4">
     <div class="art-card-header">
       <div class="title">
-        <h4>参与的舰队</h4>
-        <p>
-          共
-          <span class="text-theme font-medium">{{ fleets.length }}</span>
-          条记录
-        </p>
+        <h4>{{ $t('dashboardConsole.fleetList.title') }}</h4>
+        <p>{{ $t('dashboardConsole.fleetList.records', { count: fleets.length }) }}</p>
       </div>
     </div>
     <div class="h-[calc(100%-40px)] overflow-auto mt-2">
       <ElScrollbar>
         <div v-if="fleets.length === 0" class="flex-cc h-full text-g-500 text-sm">
-          暂无舰队参与记录
+          {{ $t('dashboardConsole.fleetList.empty') }}
         </div>
         <div
           v-for="(item, index) in fleets"
@@ -27,7 +23,11 @@
                 size="small"
                 effect="plain"
               >
-                {{ item.source === 'alliance' ? '联盟' : '内部' }}
+                {{
+                  item.source === 'alliance'
+                    ? $t('dashboardConsole.fleetList.source.alliance')
+                    : $t('dashboardConsole.fleetList.source.internal')
+                }}
               </ElTag>
               <span class="text-g-800 font-medium truncate">{{ item.title }}</span>
             </div>
@@ -51,17 +51,15 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n()
   defineProps<{
     fleets: Api.Dashboard.FleetItem[]
   }>()
 
   const importanceLabel = (importance: string): string => {
-    const map: Record<string, string> = {
-      strat_op: '战略行动',
-      cta: '全面集结',
-      other: '其他'
-    }
-    return map[importance] ?? importance
+    return t(`fleet.importance.${importance}`)
   }
 
   const formatTime = (time: string): string => {

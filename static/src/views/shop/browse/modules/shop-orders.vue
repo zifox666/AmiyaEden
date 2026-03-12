@@ -10,10 +10,10 @@
           style="width: 160px"
           @change="handleStatusChange"
         >
-          <ElOption label="待审批" value="pending" />
-          <ElOption label="已完成" value="completed" />
-          <ElOption label="已拒绝" value="rejected" />
-          <ElOption label="已取消" value="cancelled" />
+          <ElOption :label="$t('shopAdmin.orders.status.pending')" value="pending" />
+          <ElOption :label="$t('shopAdmin.orders.status.completed')" value="completed" />
+          <ElOption :label="$t('shopAdmin.orders.status.rejected')" value="rejected" />
+          <ElOption :label="$t('shopAdmin.orders.status.cancelled')" value="cancelled" />
         </ElSelect>
       </template>
     </ArtTableHeader>
@@ -44,13 +44,13 @@
 
   // ─── 订单状态映射 ───
   const ORDER_STATUS_MAP: Record<string, { label: string; type: string }> = {
-    pending: { label: '待审批', type: 'warning' },
-    paid: { label: '已付款', type: 'success' },
-    approved: { label: '已审批', type: 'success' },
-    rejected: { label: '已拒绝', type: 'danger' },
-    completed: { label: '已完成', type: 'success' },
-    cancelled: { label: '已取消', type: 'info' },
-    insufficient_funds: { label: '余额不足', type: 'danger' }
+    pending: { label: t('shopAdmin.orders.status.pending'), type: 'warning' },
+    paid: { label: t('shopAdmin.orders.status.paid'), type: 'success' },
+    approved: { label: t('shopAdmin.orders.status.approved'), type: 'success' },
+    rejected: { label: t('shopAdmin.orders.status.rejected'), type: 'danger' },
+    completed: { label: t('shopAdmin.orders.status.completed'), type: 'success' },
+    cancelled: { label: t('shopAdmin.orders.status.cancelled'), type: 'info' },
+    insufficient_funds: { label: t('shopAdmin.orders.status.insufficient_funds'), type: 'danger' }
   }
 
   const formatISK = (v: number) =>

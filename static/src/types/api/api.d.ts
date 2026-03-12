@@ -421,7 +421,9 @@ declare namespace Api {
     interface PapLog {
       id: number
       fleet_id: string
+      fleet_title?: string
       character_id: number
+      character_name?: string
       user_id: number
       pap_count: number
       issued_by: number

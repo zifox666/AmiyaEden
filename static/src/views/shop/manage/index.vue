@@ -3,7 +3,7 @@
   <div class="shop-admin-page art-full-height">
     <ElTabs v-model="activeTab" class="art-table-card p-4">
       <!-- 商品管理 -->
-      <ElTabPane label="商品管理" name="products">
+      <ElTabPane :label="$t('shopAdmin.tabs.products')" name="products">
         <ManageProducts ref="productsRef" />
       </ElTabPane>
 
@@ -13,7 +13,7 @@
       </ElTabPane>
 
       <!-- 订单管理 -->
-      <ElTabPane label="订单管理" name="orders">
+      <ElTabPane :label="$t('shopAdmin.tabs.orders')" name="orders">
         <ManageOrders ref="ordersRef" />
       </ElTabPane>
     </ElTabs>

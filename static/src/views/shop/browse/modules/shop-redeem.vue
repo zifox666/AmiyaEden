@@ -29,9 +29,9 @@
 
   // ─── 兑换码状态映射 ───
   const REDEEM_STATUS_MAP: Record<string, { label: string; type: string }> = {
-    unused: { label: '未使用', type: 'success' },
-    used: { label: '已使用', type: 'info' },
-    expired: { label: '已过期', type: 'danger' }
+    unused: { label: t('shopAdmin.redeem.status.unused'), type: 'success' },
+    used: { label: t('shopAdmin.redeem.status.used'), type: 'info' },
+    expired: { label: t('shopAdmin.redeem.status.expired'), type: 'danger' }
   }
 
   const formatTime = (v: string | null) => (v ? new Date(v).toLocaleString() : '-')

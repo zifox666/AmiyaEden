@@ -42,6 +42,9 @@
     "detail": "Detail",
     "edit": "Edit",
     "delete": "Delete",
+    "user": "User",
+    "role": "Role",
+    "name": "Name",
     "status": "Status",
     "save": "Save",
     "updatedAt": "Updated At",
@@ -676,6 +679,40 @@
       "markSuccess": "Marked as delivered"
     }
   },
+  "userAdmin": {
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled",
+      "unknown": "Unknown"
+    },
+    "search": {
+      "nickname": "Nickname",
+      "nicknamePlaceholder": "Enter nickname",
+      "statusPlaceholder": "Select status"
+    },
+    "roles": {
+      "super_admin": "Super Admin",
+      "admin": "Admin",
+      "srp": "SRP Admin",
+      "fc": "FC",
+      "user": "Verified User",
+      "guest": "Guest"
+    },
+    "table": {
+      "userInfo": "User Info",
+      "lastLogin": "Last Login",
+      "loginIp": "Login IP",
+      "registeredAt": "Registered At"
+    },
+    "unnamed": "Unnamed",
+    "impersonate": "Impersonate",
+    "deleteConfirm": "Are you sure you want to delete user \"{name}\"? This cannot be undone.",
+    "deleteSuccess": "Deleted",
+    "deleteFailed": "Failed to delete",
+    "impersonateConfirm": "Are you sure you want to sign in as \"{name}\"? Your current admin session will be replaced. Save your current token first or use a new tab.",
+    "impersonateSuccess": "Switched to user \"{name}\"",
+    "impersonateFailed": "Failed to impersonate user"
+  },
   "fleet": {
     "title": "Fleet Management",
     "subTitle": "Create and manage EVE fleet operations",
@@ -721,6 +758,7 @@
       "syncESI": "Sync from ESI",
       "syncSuccess": "Members synced",
       "characterName": "Character",
+      "characterId": "Character ID",
       "shipType": "Ship",
       "joinedAt": "Joined At",
       "solarSystem": "Solar System"
@@ -731,6 +769,12 @@
       "issueConfirm": "Issue PAP to all members?",
       "issueSuccess": "PAP issued",
       "myTitle": "My PAP Records",
+      "totalPap": "Total PAP",
+      "participationCount": "Participations",
+      "fleetId": "Fleet ID",
+      "fleetName": "Fleet Name",
+      "characterId": "Character ID",
+      "characterName": "Character Name",
       "count": "PAP Count",
       "issuedBy": "Issued By",
       "issuedAt": "Issued At",
@@ -779,7 +823,8 @@
       "selectCharacter": "Select Character",
       "selectCharacterPlaceholder": "Choose a character to join the fleet",
       "joinSuccess": "Successfully joined the fleet",
-      "invalidCode": "Invalid invite code"
+      "invalidCode": "Invalid invite code",
+      "missingCode": "Invalid invite link: missing invite code"
     },
     "ping": {
       "send": "Send Ping",
@@ -873,6 +918,7 @@
     "empty": "No characters bound",
     "noScopes": "No extra scopes",
     "scopeCount": "scopes",
+    "tokenInvalid": "(Expired)",
     "bindFailed": "Failed to get bind URL",
     "setPrimarySuccess": "{name} is now the primary character",
     "setPrimaryFailed": "Failed to set primary character",
@@ -1050,6 +1096,7 @@
   },
   "alliancePap": {
     "title": "Alliance PAP - All Members",
+    "shortTitle": "Alliance PAP",
     "selectMonth": "Select month",
     "memberCount": "{count} members have records",
     "totalPap": "Total PAP",
@@ -1074,6 +1121,12 @@
     "columns": {
       "rank": "Rank",
       "mainCharacter": "Main Character",
+      "operationTitle": "Operation",
+      "character": "Character",
+      "level": "Level",
+      "ship": "Ship",
+      "startTime": "Start Time",
+      "endTime": "End Time",
       "monthlyPap": "Monthly PAP",
       "yearlyPap": "Yearly PAP",
       "corpMonthlyRank": "Corp Monthly",
@@ -1087,6 +1140,13 @@
       "archived": "Archived",
       "current": "Current"
     },
+    "corpMonthlySummary": "Corp Monthly Rank / {count}",
+    "allianceMonthlySummary": "Alliance Monthly Rank / {count}",
+    "corpYearlySummary": "Corp Yearly Rank",
+    "sourceLabel": "Source",
+    "sourceName": "Alliance PAP System",
+    "calculatedAtLabel": "Calculated At",
+    "noRecords": "No alliance PAP records",
     "settle": {
       "openBtn": "PAP Exchange Config",
       "title": "PAP Exchange Config & Monthly Settle",
@@ -1109,6 +1169,319 @@
       "resultSkipped": "{count} users skipped",
       "resultWallet": "Total wallet issued: {amount}"
     }
+  },
+  "resultPage": {
+    "success": {
+      "title": "Submitted Successfully",
+      "message": "The result page is used to present the outcome of a sequence of operations. For simple actions, a global message is usually enough. The gray area can show extra information.",
+      "content": "Your request has been submitted and is awaiting review.",
+      "back": "Back to Edit",
+      "view": "View",
+      "print": "Print"
+    },
+    "fail": {
+      "title": "Submission Failed",
+      "message": "Please review and correct the following items before submitting again.",
+      "content": "The following issues were found in your submission:",
+      "frozen": "Your account has been frozen",
+      "ineligible": "Your account is not eligible to apply yet",
+      "back": "Back to Edit",
+      "view": "View"
+    }
+  },
+  "roleUi": {
+    "userRoleDialog": {
+      "title": "Assign Roles",
+      "unnamed": "Unnamed",
+      "systemTag": "(System)",
+      "loadFailed": "Failed to load roles",
+      "saveSuccess": "Roles assigned",
+      "saveFailed": "Failed to assign roles"
+    },
+    "permissionDialog": {
+      "title": "Assign Menu Permissions",
+      "roleLabel": "Role: {name}",
+      "expandAll": "Expand All",
+      "collapseAll": "Collapse All",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "loadFailed": "Failed to load menu tree",
+      "saveSuccess": "Permissions saved",
+      "saveFailed": "Failed to save permissions"
+    }
+  },
+  "autoRolePage": {
+    "title": "ESI Auto Roles",
+    "description": "Automatically assign system roles based on a character's EVE corporation roles and titles.",
+    "directorHint": "Director is always mapped to the admin role automatically.",
+    "triggerSync": "Trigger Sync",
+    "syncTriggered": "Sync task triggered and will run in the background",
+    "syncFailed": "Failed to trigger sync",
+    "tabs": {
+      "esiRole": "Corporation Role Mappings",
+      "title": "Corporation Title Mappings"
+    },
+    "descriptions": {
+      "esiRole": "Configure the mapping between EVE corporation roles and system roles.",
+      "title": "Configure the mapping between corporation titles and system roles, including the corporation ID."
+    },
+    "columns": {
+      "index": "#",
+      "esiRole": "EVE Corporation Role",
+      "mappedRole": "Mapped System Role",
+      "corporationId": "Corporation ID",
+      "titleId": "Title ID",
+      "titleName": "Title Name"
+    },
+    "addMapping": "Add Mapping",
+    "deleteConfirm": "Delete this mapping?",
+    "createEsiRoleTitle": "Add Corporation Role Mapping",
+    "createTitleTitle": "Add Corporation Title Mapping",
+    "fields": {
+      "esiRole": "EVE Role",
+      "systemRole": "System Role",
+      "title": "Title"
+    },
+    "placeholders": {
+      "esiRole": "Select a corporation role",
+      "systemRole": "Select a system role",
+      "title": "Select a corporation title"
+    },
+    "rules": {
+      "esiRole": "Please select an EVE corporation role",
+      "systemRole": "Please select a system role",
+      "title": "Please select a title"
+    },
+    "titleFallback": "Title {id}",
+    "corpPrefix": "Corp {id}",
+    "mappingCreated": "Mapping created",
+    "createFailed": "Failed to create mapping",
+    "deleteSuccess": "Deleted",
+    "deleteFailed": "Failed to delete"
+  },
+  "shopAdmin": {
+    "tabs": {
+      "products": "Product Management",
+      "orders": "Order Management",
+      "redeem": "Redeem Code Management"
+    },
+    "products": {
+      "createProduct": "Add Product",
+      "searchNamePlaceholder": "Product name",
+      "typePlaceholder": "Product type",
+      "statusPlaceholder": "Status",
+      "typeNormal": "Normal Product",
+      "typeRedeem": "Redeem Code",
+      "typeRedeemService": "Redeem Code / Service",
+      "statusOnSale": "On Sale",
+      "statusOffSale": "Off Sale",
+      "dialogCreate": "Add Product",
+      "dialogEdit": "Edit Product",
+      "fields": {
+        "name": "Product Name",
+        "description": "Description",
+        "image": "Image URL",
+        "price": "Price",
+        "type": "Type",
+        "stock": "Stock",
+        "maxPerUser": "Limit Per User",
+        "needApproval": "Requires Approval",
+        "status": "Status",
+        "sort": "Sort"
+      },
+      "placeholders": {
+        "name": "Enter product name",
+        "description": "Product description (optional)",
+        "image": "Product image URL (optional)"
+      },
+      "hints": {
+        "stock": "-1 = unlimited stock",
+        "maxPerUser": "0 = no limit",
+        "sort": "Higher values appear first"
+      },
+      "table": {
+        "name": "Product Name",
+        "price": "Price",
+        "stock": "Stock",
+        "maxPerUser": "Limit",
+        "needApproval": "Approval"
+      },
+      "values": {
+        "normal": "Normal",
+        "redeem": "Redeem Code",
+        "unlimited": "Unlimited",
+        "noLimit": "No Limit"
+      },
+      "messages": {
+        "createSuccess": "Created",
+        "updateSuccess": "Updated",
+        "deleteConfirm": "Are you sure you want to delete product \"{name}\"?",
+        "deleteSuccess": "Deleted",
+        "deleteFailed": "Failed to delete",
+        "nameRequired": "Please enter a product name",
+        "priceRequired": "Please enter a price",
+        "typeRequired": "Please select a type"
+      }
+    },
+    "orders": {
+      "userIdPlaceholder": "User ID",
+      "statusPlaceholder": "Order status",
+      "dialogApprove": "Approve Order",
+      "dialogReject": "Reject Order",
+      "approveButton": "Approve",
+      "rejectButton": "Reject",
+      "approveConfirm": "Confirm Approval",
+      "rejectConfirm": "Confirm Rejection",
+      "fields": {
+        "orderNo": "Order No.",
+        "reviewRemark": "Review Remark"
+      },
+      "placeholders": {
+        "reviewRemark": "Review remark (optional)"
+      },
+      "status": {
+        "pending": "Pending",
+        "paid": "Paid",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "insufficient_funds": "Insufficient Funds"
+      },
+      "table": {
+        "orderNo": "Order No.",
+        "userId": "User ID",
+        "product": "Product",
+        "quantity": "Qty",
+        "totalPrice": "Total",
+        "userRemark": "User Remark",
+        "reviewRemark": "Review Remark",
+        "createdAt": "Order Time"
+      },
+      "messages": {
+        "approveSuccess": "Approved",
+        "rejectSuccess": "Rejected",
+        "actionFailed": "Operation failed"
+      }
+    },
+    "redeem": {
+      "productIdPlaceholder": "Product ID",
+      "statusPlaceholder": "Status",
+      "status": {
+        "unused": "Unused",
+        "used": "Used",
+        "expired": "Expired"
+      },
+      "table": {
+        "productId": "Product ID",
+        "userId": "User ID",
+        "orderId": "Order ID",
+        "code": "Redeem Code",
+        "createdAt": "Created At",
+        "expiresAt": "Expires At"
+      }
+    }
+  },
+  "walletAdmin": {
+    "tabs": {
+      "wallets": "Wallets",
+      "transactions": "Transactions",
+      "logs": "Operation Logs"
+    },
+    "adjustTitle": "Adjust User Wallet",
+    "adjustBalance": "Manual Balance Adjustment",
+    "fields": {
+      "targetUserId": "Target User ID",
+      "action": "Action",
+      "amount": "Amount",
+      "reason": "Reason"
+    },
+    "placeholders": {
+      "reason": "Explain the reason for this adjustment (required)",
+      "userIdFilter": "Filter by user ID",
+      "refType": "Transaction type",
+      "targetUserId": "Target user ID",
+      "operatorId": "Operator ID",
+      "action": "Action"
+    },
+    "actions": {
+      "add": "Add",
+      "deduct": "Deduct",
+      "set": "Set",
+      "transactions": "Transactions",
+      "system": "System"
+    },
+    "refTypes": {
+      "pap_reward": "PAP Reward",
+      "admin_adjust": "Admin Adjustment",
+      "manual": "Manual",
+      "redeem": "Redeem Spend",
+      "srp_payout": "SRP Payout",
+      "shop_purchase": "Shop Purchase"
+    },
+    "validation": {
+      "targetUserId": "Please enter a target user ID",
+      "action": "Please select an action",
+      "amount": "Please enter an amount",
+      "reason": "Please enter a reason"
+    },
+    "messages": {
+      "adjustSuccess": "Balance adjusted",
+      "actionFailed": "Operation failed"
+    },
+    "wallets": {
+      "balance": "Balance"
+    },
+    "transactions": {
+      "balanceAfter": "Balance",
+      "operator": "Operator"
+    },
+    "logs": {
+      "operator": "Operator",
+      "targetUser": "Target User",
+      "before": "Balance Before",
+      "after": "Balance After"
+    }
+  },
+  "dashboardConsole": {
+    "alliancePapTitle": "Alliance PAP",
+    "internalPapTitle": "Internal PAP",
+    "cards": {
+      "eveWalletBalance": "EVE Wallet Balance",
+      "eveSkillPoints": "EVE Skill Points",
+      "systemWallet": "System Wallet",
+      "currentAlliancePap": "Current Alliance PAP"
+    },
+    "papChart": {
+      "recentMonths": "Last {count} months",
+      "monthLabel": "{month}M",
+      "empty": "No PAP data"
+    },
+    "srpList": {
+      "title": "SRP Applications",
+      "recentCount": "Latest {count}",
+      "empty": "No SRP applications",
+      "lossTime": "Loss Time",
+      "recommendedAmount": "Recommended",
+      "finalAmount": "Final"
+    },
+    "fleetList": {
+      "title": "Participated Fleets",
+      "records": "{count} records",
+      "empty": "No fleet participation records",
+      "source": {
+        "alliance": "Alliance",
+        "internal": "Internal"
+      }
+    }
+  },
+  "shopBrowse": {
+    "purchaseSuccess": "Purchase successful",
+    "purchaseFailed": "Purchase failed"
+  },
+  "authCallback": {
+    "missingToken": "No login token was received. Please try again.",
+    "verifyFailed": "Login verification failed. Please try again."
   },
   "sde": {
     "search": {

@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
   import { Loading, CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
+  import { useI18n } from 'vue-i18n'
   import { useUserStore } from '@/store/modules/user'
   import { fetchGetUserInfo } from '@/api/auth'
 
@@ -44,6 +45,7 @@
   const status = ref<Status>('loading')
   const errMsg = ref('')
   const userName = ref('')
+  const { t } = useI18n()
   const route = useRoute()
   const router = useRouter()
   const userStore = useUserStore()
@@ -63,7 +65,7 @@
 
     if (!token) {
       status.value = 'error'
-      errMsg.value = '未收到登录令牌，请重试'
+      errMsg.value = t('authCallback.missingToken')
       return
     }
 
@@ -90,7 +92,7 @@
       userStore.setToken('')
       userStore.setLoginStatus(false)
       status.value = 'error'
-      errMsg.value = err?.message ?? '登录验证失败，请重试'
+      errMsg.value = err?.message ?? t('authCallback.verifyFailed')
     }
   })
 </script>
