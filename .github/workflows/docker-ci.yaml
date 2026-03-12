@@ -30,7 +30,8 @@ jobs:
         with:
           context: ./server
           file: ./server/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: |
             xiaomaitx/amiya-eden-backend:latest
@@ -41,7 +42,8 @@ jobs:
         with:
           context: ./static
           file: ./static/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: |
             xiaomaitx/amiya-eden-frontend:latest
