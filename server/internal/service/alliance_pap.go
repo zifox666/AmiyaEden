@@ -236,7 +236,6 @@ func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *PAPImportI
 
 	if existingSummary != nil {
 		delta := data.MonthlyPAP - existingSummary.TotalPap
-		totalPap = existingSummary.TotalPap + delta
 		yearlyTotalPap = existingSummary.YearlyTotalPap + delta
 		monthlyRank = existingSummary.MonthlyRank
 		yearlyRank = existingSummary.YearlyRank

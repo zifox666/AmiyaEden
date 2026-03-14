@@ -10,7 +10,7 @@
       <ElButton type="primary" :loading="fetching" :icon="Download" @click="handleFetch">
         {{ t('alliancePap.fetchLatest') }}
       </ElButton>
-      <ElButton type="primary" :loading="fetching" :icon="Download" @click="OpenImportSEATDialog">
+      <ElButton type="primary" :loading="fetching" :icon="Download" @click="openImportSEATDialog">
         {{ t('alliancePap.importBtnSEAT') }}
       </ElButton>
       <ArtExcelImport @import-success="handleImportXLS">
@@ -124,14 +124,14 @@
     UA: [{ required: false, message: t('alliancePap.importFormSEAT.fields.UA'), trigger: 'blur' }],
   }
 
-  function ResetFormDataSEAT() {
+  function resetFormDataSEAT() {
     formDataSEAT.laravelSession = ''
     formDataSEAT.cfClearance = ''
     formDataSEAT.UA = ''
   }
 
-  function OpenImportSEATDialog() {
-    ResetFormDataSEAT()
+  function openImportSEATDialog() {
+    resetFormDataSEAT()
     dialogVisible.value = true
   }
 
@@ -149,6 +149,19 @@
       const axiosInstance = axios.create({
         timeout: 10000,
         baseURL: VITE_API_URL,
+        // SECURITY WARNING:
+        // The X-Cookie header below intentionally contains real session tokens
+        // (laravel_session and optionally cf_clearance) that are
+        // proxied through our backend/Nginx to the SEAT server.
+        //
+        // These credentials MUST be treated as highly sensitive:
+        //   - Backend/proxy access logs MUST NOT record the X-Cookie header.
+        //   - Any request/response logging or tracing MUST redact or omit
+        //     the values of this header.
+        //   - Only HTTPS should be used for this request.
+        //
+        // Changing this behavior will break SEAT integration; if you need
+        // to modify it, coordinate with security and infrastructure teams.
         headers: {
           'Accept': 'application/json, text/javascript, */*; q=0.01',
           'X-Accept-Encoding': 'gzip, deflate, br, zstd',

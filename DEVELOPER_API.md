@@ -892,8 +892,8 @@ POST /system/pap/fetch
 
 | 参数    | 类型  | 必填 | 说明 |
 | ------- | ----- | ---- | ---- |
-| `year`  | query | 否   | 年份 |
-| `month` | query | 否   | 月份 |
+| `year`  | body | 否   | 年份 |
+| `month` | body | 否   | 月份 |
 
 #### 从SEAT或表格导入PAP数据
 
@@ -903,8 +903,8 @@ POST /system/pap/import
 
 | 参数    | 类型  | 必填 | 说明 |
 | ------- | ----- | ---- | ---- |
-| `year`  | query | 是   | 年份 |
-| `month` | query | 是   | 月份 |
+| `year`  | body | 是   | 年份 |
+| `month` | body | 是   | 月份 |
 | `data` | object | 是   | 角色 PAP 信息 |
 
 `data` 定义：
