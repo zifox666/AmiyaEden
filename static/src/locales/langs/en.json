@@ -706,7 +706,8 @@
     "importFormSEAT": {
       "fields": {
         "laravelSession": "laravel_session",
-        "cfClearance": "cf_clearance (optional)"
+        "cfClearance": "cf_clearance (optional)",
+        "UA": "UA (optional)"
       },
       "fetchPapError": "Failed to fetch PAP data from SEAT, status code: {status}"
     },

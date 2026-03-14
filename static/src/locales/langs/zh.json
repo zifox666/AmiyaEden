@@ -718,7 +718,8 @@
     "importFormSEAT": {
       "fields": {
         "laravelSession": "laravel_session",
-        "cfClearance": "cf_clearance (可选)"
+        "cfClearance": "cf_clearance (可选)",
+        "UA": "UA (可选)"
       },
       "fetchPapError": "从 SEAT 获取数据失败，状态码：{status}"
     },

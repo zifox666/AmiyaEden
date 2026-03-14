@@ -33,6 +33,9 @@
       <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.cfClearance')" prop="cfClearance">
         <ElInput v-model="formDataSEAT.cfClearance" :placeholder="$t('alliancePap.importFormSEAT.fields.cfClearance')" />
       </ElFormItem>
+      <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.UA')" prop="UA">
+        <ElInput v-model="formDataSEAT.UA" :placeholder="$t('alliancePap.importFormSEAT.fields.UA')" />
+      </ElFormItem>
     </ElForm>
     <template #footer>
       <ElButton @click="dialogVisible = false">{{ $t('common.cancel') }}</ElButton>
@@ -111,17 +114,20 @@
 
   const formDataSEAT = reactive({
     laravelSession: '',
-    cfClearance: ''
+    cfClearance: '',
+    UA: ''
   })
 
   const formRulesSEAT: FormRules = {
     laravelSession: [{ required: true, message: t('alliancePap.importFormSEAT.fields.laravelSession'), trigger: 'blur' }],
     cfClearance: [{ required: false, message: t('alliancePap.importFormSEAT.fields.cfClearance'), trigger: 'blur' }],
+    UA: [{ required: false, message: t('alliancePap.importFormSEAT.fields.UA'), trigger: 'blur' }],
   }
 
   function ResetFormDataSEAT() {
     formDataSEAT.laravelSession = ''
     formDataSEAT.cfClearance = ''
+    formDataSEAT.UA = ''
   }
 
   function OpenImportSEATDialog() {
@@ -148,7 +154,7 @@
           'X-Accept-Encoding': 'gzip, deflate, br, zstd',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
           'Cache-Control': 'no-cache',
-          'X-Cookie': `laravel_session=${formDataSEAT.laravelSession}` + (formDataSEAT.cfClearance ? `;cf_clearance=${formDataSEAT.cfClearance}` : ''),
+          'X-Cookie': `laravel_session=${formDataSEAT.laravelSession}` + (formDataSEAT.cfClearance === '' ? '' : `;cf_clearance=${formDataSEAT.cfClearance}`),
           'Pragma': 'no-cache',
           'Priority': 'u=1, i',
           'X-Sec-Ch-Ua': `"Not:A-Brand";v="99", "Microsoft Edge";v="145", "Chromium";v="145"`,
@@ -157,7 +163,7 @@
           'X-Sec-Fetch-Dest': 'empty',
           'X-Sec-Fetch-Mode': 'cors',
           'X-Sec-Fetch-Site': 'same-origin',
-          'X-User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+          'X-User-Agent': formDataSEAT.UA === '' ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36' : formDataSEAT.UA,
           'X-Requested-With': 'XMLHttpRequest',
         }
       })
