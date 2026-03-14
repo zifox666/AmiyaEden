@@ -237,17 +237,6 @@
       "notFound": "404",
       "serverError": "500"
     },
-    "system": {
-      "title": "系统管理",
-      "user": "用户管理",
-      "role": "角色管理",
-      "characters": "角色管理",
-      "userCenter": "个人中心",
-      "menu": "菜单管理",
-      "esiRefresh": "定时任务",
-      "wallet": "钱包管理",
-      "alliancePap": "联盟 PAP"
-    },
     "shop": {
       "title": "商店",
       "browse": "浏览商品",
