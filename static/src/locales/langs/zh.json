@@ -237,17 +237,6 @@
       "notFound": "404",
       "serverError": "500"
     },
-    "system": {
-      "title": "系统管理",
-      "user": "用户管理",
-      "role": "角色管理",
-      "characters": "角色管理",
-      "userCenter": "个人中心",
-      "menu": "菜单管理",
-      "esiRefresh": "定时任务",
-      "wallet": "钱包管理",
-      "alliancePap": "联盟 PAP"
-    },
     "shop": {
       "title": "商店",
       "browse": "浏览商品",
@@ -293,7 +282,7 @@
       "title": "系统管理",
       "user": "用户管理",
       "role": "角色管理",
-      "characters": "角色管理",
+      "characters": "EVE 角色管理",
       "userCenter": "个人中心",
       "menu": "菜单管理",
       "esiRefresh": "定时任务",
@@ -723,6 +712,19 @@
     "fetchTriggered": "已触发后台拉取，请稍后刷新查看",
     "fetchFailed": "触发拉取失败",
     "emptyData": "暂无该月联盟 PAP 数据",
+    "importBtnSEAT": "从 SEAT 导入",
+    "importFormSEAT": {
+      "fields": {
+        "laravelSession": "laravel_session",
+        "cfClearance": "cf_clearance (可选)",
+        "UA": "UA (可选)"
+      },
+      "fetchPapError": "从 SEAT 获取数据失败，状态码：{status}"
+    },
+    "importBtnXLS": "从表格导入",
+    "importNoData": "未找到有效数据，请检查列名（主角色 / 月 PAP / 数据时间）",
+    "importFailed": "导入失败",
+    "importSuccess": "导入完成，成功 {count} 条",
     "columns": {
       "rank": "排名",
       "mainCharacter": "主角色",

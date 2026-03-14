@@ -194,6 +194,7 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		alliancePAPAdmin.GET("", alliancePAPAdminH.GetAllAlliancePAP)
 		alliancePAPAdmin.POST("/fetch", alliancePAPAdminH.TriggerFetch)
+		alliancePAPAdmin.POST("/import", alliancePAPAdminH.ImportAlliancePAP)
 		// PAP 兑换配置
 		alliancePAPAdmin.GET("/config", alliancePAPAdminH.GetExchangeConfig)
 		alliancePAPAdmin.PUT("/config", alliancePAPAdminH.SetExchangeConfig)
