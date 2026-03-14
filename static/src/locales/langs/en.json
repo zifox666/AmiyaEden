@@ -705,7 +705,6 @@
     "importBtnSEAT": "Import from SEAT",
     "importFormSEAT": {
       "fields": {
-        "xsrfToken": "XSRF-TOKEN",
         "laravelSession": "laravel_session",
         "cfClearance": "cf_clearance (optional)"
       },

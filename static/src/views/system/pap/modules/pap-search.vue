@@ -27,9 +27,6 @@
     destroy-on-close
   >
     <ElForm ref="formRef" :model="formDataSEAT" :rules="formRulesSEAT" label-width="150px">
-      <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.xsrfToken')" prop="xsrfToken">
-        <ElInput v-model="formDataSEAT.xsrfToken" :placeholder="$t('alliancePap.importFormSEAT.fields.xsrfToken')" />
-      </ElFormItem>
       <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.laravelSession')" prop="laravelSession">
         <ElInput v-model="formDataSEAT.laravelSession" :placeholder="$t('alliancePap.importFormSEAT.fields.laravelSession')" />
       </ElFormItem>
@@ -113,20 +110,16 @@
   const formRef = ref<FormInstance>()
 
   const formDataSEAT = reactive({
-    xsrfToken: '',
     laravelSession: '',
-    cfClearance: '',
-    UA: ''
+    cfClearance: ''
   })
 
   const formRulesSEAT: FormRules = {
-    xsrfToken: [{ required: true, message: t('alliancePap.importFormSEAT.fields.xsrfToken'), trigger: 'blur' }],
     laravelSession: [{ required: true, message: t('alliancePap.importFormSEAT.fields.laravelSession'), trigger: 'blur' }],
     cfClearance: [{ required: false, message: t('alliancePap.importFormSEAT.fields.cfClearance'), trigger: 'blur' }],
   }
 
   function ResetFormDataSEAT() {
-    formDataSEAT.xsrfToken = ''
     formDataSEAT.laravelSession = ''
     formDataSEAT.cfClearance = ''
   }
@@ -155,7 +148,7 @@
           'X-Accept-Encoding': 'gzip, deflate, br, zstd',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
           'Cache-Control': 'no-cache',
-          'X-Cookie': `laravel_session=${formDataSEAT.laravelSession};XSRF-TOKEN=${formDataSEAT.xsrfToken}` + (formDataSEAT.cfClearance ? `;cf_clearance=${formDataSEAT.cfClearance}` : ''),
+          'X-Cookie': `laravel_session=${formDataSEAT.laravelSession}` + (formDataSEAT.cfClearance ? `;cf_clearance=${formDataSEAT.cfClearance}` : ''),
           'Pragma': 'no-cache',
           'Priority': 'u=1, i',
           'X-Sec-Ch-Ua': `"Not:A-Brand";v="99", "Microsoft Edge";v="145", "Chromium";v="145"`,

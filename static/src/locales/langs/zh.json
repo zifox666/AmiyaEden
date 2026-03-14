@@ -717,7 +717,6 @@
     "importBtnSEAT": "从 SEAT 导入",
     "importFormSEAT": {
       "fields": {
-        "xsrfToken": "XSRF-TOKEN",
         "laravelSession": "laravel_session",
         "cfClearance": "cf_clearance (可选)"
       },
