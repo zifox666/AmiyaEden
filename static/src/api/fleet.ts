@@ -18,6 +18,13 @@ export function fetchFleetList(params?: Api.Fleet.FleetSearchParams) {
   })
 }
 
+/** 获取当前用户参与过的舰队列表 */
+export function fetchMyFleetList() {
+  return request.get<Api.Fleet.FleetItem[]>({
+    url: '/api/v1/operation/fleets/me'
+  })
+}
+
 /** 获取舰队详情 */
 export function fetchFleetDetail(id: string) {
   return request.get<Api.Fleet.FleetItem>({
@@ -53,6 +60,17 @@ export function deleteFleet(id: string) {
 export function fetchFleetMembers(fleetId: string) {
   return request.get<Api.Fleet.FleetMember[]>({
     url: `/api/v1/operation/fleets/${fleetId}/members`
+  })
+}
+
+/** 获取舰队成员列表（含 PAP 信息，分页） */
+export function fetchMembersWithPap(
+  fleetId: string,
+  params: { current: number; size: number }
+) {
+  return request.get<Api.Common.PaginatedResponse<Api.Fleet.MemberWithPap>>({
+    url: `/api/v1/operation/fleets/${fleetId}/members-pap`,
+    params
   })
 }
 
@@ -131,5 +149,12 @@ export function joinFleet(data: Api.Fleet.JoinFleetParams) {
 export function fetchCharacterFleetInfo(characterId: number) {
   return request.get<Api.Fleet.CharacterFleetInfo>({
     url: `/api/v1/operation/fleets/esi/${characterId}`
+  })
+}
+
+/** 手动触发舰队 Webhook Ping */
+export function pingFleet(fleetId: string) {
+  return request.post({
+    url: `/api/v1/operation/fleets/${fleetId}/ping`
   })
 }

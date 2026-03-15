@@ -95,6 +95,16 @@ export const systemRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['super_admin', 'admin']
       }
+    },
+    {
+      path: 'webhook',
+      name: 'WebhookSettings',
+      component: '/system/webhook',
+      meta: {
+        title: 'menus.system.webhook',
+        keepAlive: true,
+        roles: ['super_admin', 'admin']
+      }
     }
   ]
 }

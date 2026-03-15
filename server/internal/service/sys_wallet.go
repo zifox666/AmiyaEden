@@ -6,6 +6,8 @@ import (
 	"amiya-eden/internal/repository"
 	"errors"
 	"fmt"
+
+	"gorm.io/gorm"
 )
 
 // SysWalletService 系统钱包业务逻辑层
@@ -267,4 +269,32 @@ func (s *SysWalletService) DebitUser(userID uint, amount float64, reason, refTyp
 	}
 
 	return tx.Commit().Error
+}
+
+// ApplyWalletDeltaTx 在已有事务中对用户钱包应用差量（正=充值，负=扣减），用于 PAP 重复发放去重
+func (s *SysWalletService) ApplyWalletDeltaTx(tx *gorm.DB, userID uint, delta float64, reason, refType, refID string) error {
+	if delta == 0 {
+		return nil
+	}
+	wallet, err := s.repo.GetOrCreateWalletTx(tx, userID)
+	if err != nil {
+		return fmt.Errorf("获取用户钱包失败: %w", err)
+	}
+	newBalance := wallet.Balance + delta
+	if newBalance < 0 {
+		newBalance = 0
+	}
+	if err := s.repo.UpdateBalanceTx(tx, userID, newBalance); err != nil {
+		return err
+	}
+	walletTx := &model.WalletTransaction{
+		UserID:       userID,
+		Amount:       delta,
+		Reason:       reason,
+		RefType:      refType,
+		RefID:        refID,
+		BalanceAfter: newBalance,
+		OperatorID:   0,
+	}
+	return s.repo.CreateTransactionTx(tx, walletTx)
 }

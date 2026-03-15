@@ -18,6 +18,19 @@ func NewSysWalletRepository() *SysWalletRepository {
 //  钱包 CRUD
 // ─────────────────────────────────────────────
 
+// GetOrCreateWalletTx 在事务内获取或创建用户钱包
+func (r *SysWalletRepository) GetOrCreateWalletTx(tx *gorm.DB, userID uint) (*model.SystemWallet, error) {
+	var wallet model.SystemWallet
+	err := tx.Where("user_id = ?", userID).First(&wallet).Error
+	if err != nil {
+		wallet = model.SystemWallet{UserID: userID, Balance: 0}
+		if err := tx.Create(&wallet).Error; err != nil {
+			return nil, err
+		}
+	}
+	return &wallet, nil
+}
+
 // GetOrCreateWallet 获取或创建用户钱包
 func (r *SysWalletRepository) GetOrCreateWallet(userID uint) (*model.SystemWallet, error) {
 	var wallet model.SystemWallet

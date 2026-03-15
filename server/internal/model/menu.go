@@ -165,6 +165,7 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "CorpNpcKillReport", Path: "npc-kills", Component: "/system/npc-kills", Title: "menus.system.npcKills", Sort: 62, KeepAlive: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "AutoRole", Path: "auto-role", Component: "/system/auto-role", Title: "menus.system.autoRole", Sort: 61, KeepAlive: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", Sort: 60, IsHide: true, KeepAlive: true, IsHideTab: true, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "WebhookSettings", Path: "webhook", Component: "/system/webhook", Title: "menus.system.webhook", Sort: 59, KeepAlive: true, Status: 1}},
 
 		// ── Result ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", Sort: 10, IsHide: true, Status: 1}},

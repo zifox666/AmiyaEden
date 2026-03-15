@@ -206,6 +206,73 @@ func (s *AlliancePAPService) FetchAllUsers(year, month int) {
 	}
 }
 
+// ─── 修改接口 ───
+type PAPImportInfo struct {
+	PrimaryCharacterName string `json:"primary_character_name" binding:"required"`
+	MonthlyPAP float64 `json:"monthly_pap,default=0" binding:"gte=0"`
+	CalculatedAt string `json:"calculated_at" binding:"required"`
+}
+
+// ImportAlliancePAP 导入联盟 PAP 数据
+func (s *AlliancePAPService) ImportAlliancePAP(year, month int, data *PAPImportInfo, mainChar *model.EveCharacter) error {
+	existingSummary, err := s.repo.GetSummary(mainChar.CharacterName, year, month)
+	if err != nil {
+		existingSummary = nil
+	}
+	
+	var totalPap float64 = data.MonthlyPAP
+	var yearlyTotalPap float64 = data.MonthlyPAP
+	var monthlyRank int = 1
+	var yearlyRank int = 1
+	var globalMonthlyRank int = 1
+	var globalYearlyRank int = 1
+	var totalInCorp int = 0
+	var totalGlobal int = 0
+	calculatedAt, err := time.ParseInLocation(alliancePAPTimeLayout, data.CalculatedAt, time.UTC)
+
+	if err != nil {
+		return err
+	}
+
+	if existingSummary != nil {
+		delta := data.MonthlyPAP - existingSummary.TotalPap
+		yearlyTotalPap = existingSummary.YearlyTotalPap + delta
+		monthlyRank = existingSummary.MonthlyRank
+		yearlyRank = existingSummary.YearlyRank
+		globalMonthlyRank = existingSummary.GlobalMonthlyRank
+		globalYearlyRank = existingSummary.GlobalYearlyRank
+		totalInCorp = existingSummary.TotalInCorp
+		totalGlobal = existingSummary.TotalGlobal
+	}
+
+	corporationID := strconv.FormatInt(mainChar.CorporationID, 10)
+	
+	summary := &model.AlliancePAPSummary{
+		MainCharacter:     data.PrimaryCharacterName,
+		Year:              year,
+		Month:             month,
+		CorporationID:     corporationID,
+		TotalPap:          totalPap,
+		YearlyTotalPap:    yearlyTotalPap,
+		MonthlyRank:       monthlyRank,
+		YearlyRank:        yearlyRank,
+		GlobalMonthlyRank: globalMonthlyRank,
+		GlobalYearlyRank:  globalYearlyRank,
+		TotalInCorp:       totalInCorp,
+		TotalGlobal:       totalGlobal,
+		CalculatedAt:      calculatedAt,
+	}
+
+	if err := s.repo.UpsertSummary(summary); err != nil {
+		global.Logger.Warn("upsert alliance pap summary 失败",
+			zap.String("main_char", data.PrimaryCharacterName),
+			zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
 // ─── 查询接口 ───
 
 // GetMyPAP 获取当前用户的联盟 PAP 数据

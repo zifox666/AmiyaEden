@@ -24,22 +24,24 @@ const esiBaseURL = "https://esi.evetech.net/latest"
 
 // FleetService 舰队业务逻辑层
 type FleetService struct {
-	repo      *repository.FleetRepository
+	repo        *repository.FleetRepository
 	userRepo  *repository.UserRepository
-	charRepo  *repository.EveCharacterRepository
-	ssoSvc    *EveSSOService
-	walletSvc *SysWalletService
-	http      *http.Client
+	charRepo    *repository.EveCharacterRepository
+	ssoSvc      *EveSSOService
+	walletSvc   *SysWalletService
+	webhookSvc  *WebhookService
+	http        *http.Client
 }
 
 func NewFleetService() *FleetService {
 	return &FleetService{
-		repo:      repository.NewFleetRepository(),
+		repo:       repository.NewFleetRepository(),
 		userRepo:  repository.NewUserRepository(),
-		charRepo:  repository.NewEveCharacterRepository(),
-		ssoSvc:    NewEveSSOService(),
-		walletSvc: NewSysWalletService(),
-		http:      &http.Client{Timeout: 30 * time.Second},
+		charRepo:   repository.NewEveCharacterRepository(),
+		ssoSvc:     NewEveSSOService(),
+		walletSvc:  NewSysWalletService(),
+		webhookSvc: NewWebhookService(),
+		http:       &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -92,6 +94,7 @@ type CreateFleetRequest struct {
 	Importance  string  `json:"importance" binding:"required,oneof=strat_op cta other"`
 	PapCount    float64 `json:"pap_count"`
 	CharacterID int64   `json:"character_id" binding:"required"` // FC 角色 ID
+	SendPing    bool    `json:"send_ping"`                       // 是否发送 Ping 通知
 }
 
 // CreateFleet 创建舰队
@@ -152,7 +155,28 @@ func (s *FleetService) CreateFleet(userID uint, req *CreateFleetRequest) (*model
 	// 确保 FC 用户有钱包
 	_, _ = s.walletSvc.GetMyWallet(userID)
 
+	// 异步发送 Webhook Ping
+	if req.SendPing {
+		go func() {
+			if pingErr := s.webhookSvc.SendFleetPing(fleet); pingErr != nil {
+				global.Logger.Warn("CreateFleet: webhook ping 失败", zap.Error(pingErr))
+			}
+		}()
+	}
+
 	return fleet, nil
+}
+
+// PingFleet 手动触发舰队 Ping（仅 FC 或管理员）
+func (s *FleetService) PingFleet(fleetID string, userID uint, userRole string) error {
+	fleet, err := s.repo.GetByID(fleetID)
+	if err != nil {
+		return errors.New("舰队不存在")
+	}
+	if !s.canManageFleet(fleet, userID, userRole) {
+		return errors.New("权限不足")
+	}
+	return s.webhookSvc.SendFleetPing(fleet)
 }
 
 // UpdateFleetRequest 更新舰队请求
@@ -282,6 +306,11 @@ func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFil
 	return s.repo.List(page, pageSize, filter)
 }
 
+// GetMyFleets 返回当前用户参与过的舰队列表（按 fleet_member.user_id 过滤）
+func (s *FleetService) GetMyFleets(userID uint) ([]model.Fleet, error) {
+	return s.repo.ListFleetsByMemberUserID(userID, 200)
+}
+
 // ─────────────────────────────────────────────
 //  舰队成员
 // ─────────────────────────────────────────────
@@ -382,6 +411,17 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRole string) er
 		return errors.New("PAP 数量必须大于 0")
 	}
 
+	// 1. 先尝试 ESI 同步成员（失败不阻断发放）
+	if fleet.ESIFleetID != nil {
+		if _, syncErr := s.SyncESIMembers(fleetID, userID, userRole); syncErr != nil {
+			global.Logger.Warn("[Fleet] IssuePap ESI 同步失败，继续发放",
+				zap.String("fleet_id", fleetID),
+				zap.Error(syncErr),
+			)
+		}
+	}
+
+	// 2. 获取最新成员列表
 	members, err := s.repo.ListMembers(fleetID)
 	if err != nil {
 		return err
@@ -390,24 +430,73 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRole string) er
 		return errors.New("舰队中没有成员")
 	}
 
-	// 删除旧的 PAP 记录（允许多次发放，只保留最后一次）
-	if err := s.repo.DeletePapLogsByFleet(fleetID); err != nil {
+	// 3. 获取旧 PAP 记录，用于钱包差量计算（在事务外读取，快照一致即可）
+	oldLogs, err := s.repo.ListPapLogsByFleet(fleetID)
+	if err != nil {
 		return err
 	}
+	oldPapPerUser := make(map[uint]float64, len(oldLogs))
+	for _, ol := range oldLogs {
+		oldPapPerUser[ol.UserID] = ol.PapCount
+	}
 
-	// 创建新的 PAP 记录
-	logs := make([]model.FleetPapLog, 0, len(members))
+	// 4. 构建新 PAP 记录
+	newLogs := make([]model.FleetPapLog, 0, len(members))
+	newPapPerUser := make(map[uint]float64, len(members))
 	for _, m := range members {
-		logs = append(logs, model.FleetPapLog{
+		newLogs = append(newLogs, model.FleetPapLog{
 			FleetID:     fleetID,
 			CharacterID: m.CharacterID,
 			UserID:      m.UserID,
 			PapCount:    fleet.PapCount,
 			IssuedBy:    userID,
 		})
+		newPapPerUser[m.UserID] += fleet.PapCount
 	}
-	if err := s.repo.CreatePapLogs(logs); err != nil {
+
+	// 5. 事务：更新 PAP 记录 + 钱包差量
+	tx := global.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Where("fleet_id = ?", fleetID).Delete(&model.FleetPapLog{}).Error; err != nil {
+		tx.Rollback()
 		return err
+	}
+	if err := tx.Create(&newLogs).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 合并涉及的所有 user_id，计算并应用差量
+	allUsers := make(map[uint]struct{})
+	for uid := range oldPapPerUser {
+		allUsers[uid] = struct{}{}
+	}
+	for uid := range newPapPerUser {
+		allUsers[uid] = struct{}{}
+	}
+	reason := fmt.Sprintf("舰队 PAP 奖励: %s", fleetID)
+	for uid := range allUsers {
+		delta := newPapPerUser[uid] - oldPapPerUser[uid]
+		if delta == 0 {
+			continue
+		}
+		if err := s.walletSvc.ApplyWalletDeltaTx(tx, uid, delta, reason, model.WalletRefPapReward, fleetID); err != nil {
+			global.Logger.Warn("[Fleet] 钱包差量更新失败",
+				zap.Uint("user_id", uid),
+				zap.Float64("delta", delta),
+				zap.Error(err),
+			)
+			// 钱包失败不阻断整个操作，继续
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("提交事务失败: %w", err)
 	}
 
 	// 尝试更新 ESI 舰队 MOTD
@@ -416,6 +505,17 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRole string) er
 	}
 
 	return nil
+}
+
+// ListMembersWithPap 分页查询舰队成员（含 PAP 信息）
+func (s *FleetService) ListMembersWithPap(fleetID string, page, pageSize int) ([]repository.MemberWithPap, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	return s.repo.ListMembersWithPap(fleetID, page, pageSize)
 }
 
 // updateFleetMotd 在 ESI 舰队 MOTD 中追加 PAP 发放记录

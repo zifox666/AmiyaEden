@@ -21,7 +21,7 @@
               </ElTag>
             </div>
             <div class="flex gap-2">
-              <ElButton size="small" @click="loadAll">
+              <ElButton size="small" @click="handleRefreshAll">
                 <el-icon class="mr-1"><Refresh /></el-icon>
                 {{ $t('common.refresh') }}
               </ElButton>
@@ -44,7 +44,7 @@
           <ElDescriptionsItem :label="$t('fleet.fields.endAt')">{{
             formatTime(fleet.end_at)
           }}</ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('fleet.fields.createdAt')">{{
+          <ElDescriptionsItem label="创建时间">{{
             formatTime(fleet.created_at)
           }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('fleet.fields.description')" :span="3">
@@ -53,67 +53,14 @@
         </ElDescriptions>
       </ElCard>
 
-      <!-- 舰队成员 -->
-      <ElCard class="mt-4" shadow="never">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <span class="card-title">{{ $t('fleet.members.title') }}</span>
+      <!-- 成员 & PAP -->
+      <ElCard class="art-table-card mt-4" shadow="never">
+        <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+          <template #left>
             <ElButton type="primary" size="small" :loading="syncLoading" @click="handleSyncESI">
               <el-icon class="mr-1"><Refresh /></el-icon>
               {{ $t('fleet.members.syncESI') }}
             </ElButton>
-          </div>
-        </template>
-        <ElTable v-loading="membersLoading" :data="members" stripe border style="width: 100%">
-          <ElTableColumn type="index" width="60" label="#" />
-          <ElTableColumn
-            prop="character_name"
-            :label="$t('fleet.members.characterName')"
-            min-width="160"
-          />
-          <ElTableColumn
-            prop="character_id"
-            :label="$t('fleet.members.characterId')"
-            width="120"
-            align="center"
-          />
-          <ElTableColumn
-            prop="ship_type_id"
-            :label="$t('fleet.members.shipType')"
-            width="120"
-            align="center"
-          >
-            <template #default="{ row }">
-              {{ getName(row.ship_type_id) }}
-            </template>
-          </ElTableColumn>
-          <ElTableColumn
-            prop="solar_system_id"
-            :label="$t('fleet.members.solarSystem')"
-            width="120"
-            align="center"
-          >
-            <template #default="{ row }">
-              {{ getName(row.solar_system_id) }}
-            </template>
-          </ElTableColumn>
-          <ElTableColumn prop="joined_at" :label="$t('fleet.members.joinedAt')" width="180">
-            <template #default="{ row }">
-              {{ formatTime(row.joined_at) }}
-            </template>
-          </ElTableColumn>
-        </ElTable>
-        <ElEmpty
-          v-if="!membersLoading && members.length === 0"
-          :description="$t('fleet.members.empty')"
-        />
-      </ElCard>
-
-      <!-- PAP 发放 -->
-      <ElCard class="mt-4" shadow="never">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <span class="card-title">{{ $t('fleet.pap.title') }}</span>
             <ElButton
               type="success"
               size="small"
@@ -122,34 +69,20 @@
             >
               {{ $t('fleet.pap.issue') }}
             </ElButton>
-          </div>
-        </template>
-        <ElTable v-loading="papLoading" :data="papLogs" stripe border style="width: 100%">
-          <ElTableColumn type="index" width="60" label="#" />
-          <ElTableColumn
-            prop="character_id"
-            :label="$t('fleet.pap.characterId')"
-            width="120"
-            align="center"
-          />
-          <ElTableColumn prop="pap_count" :label="$t('fleet.pap.count')" width="120" align="center">
-            <template #default="{ row }">
-              <ElTag type="success" size="small">+{{ row.pap_count }}</ElTag>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn
-            prop="issued_by"
-            :label="$t('fleet.pap.issuedBy')"
-            width="120"
-            align="center"
-          />
-          <ElTableColumn prop="issued_at" :label="$t('fleet.pap.issuedAt')" min-width="180">
-            <template #default="{ row }">
-              {{ formatTime(row.issued_at) }}
-            </template>
-          </ElTableColumn>
-        </ElTable>
-        <ElEmpty v-if="!papLoading && papLogs.length === 0" :description="$t('fleet.pap.empty')" />
+            <ElButton type="warning" size="small" :loading="pingLoading" @click="handlePing">
+              {{ $t('fleet.ping.send') }}
+            </ElButton>
+          </template>
+        </ArtTableHeader>
+
+        <ArtTable
+          :loading="loading"
+          :data="data"
+          :columns="columns"
+          :pagination="pagination"
+          @pagination:size-change="handleSizeChange"
+          @pagination:current-change="handleCurrentChange"
+        />
       </ElCard>
 
       <!-- 邀请链接 -->
@@ -219,21 +152,21 @@
     ElTableColumn,
     ElTag,
     ElButton,
-    ElEmpty,
     ElMessageBox
   } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
+  import { useTable } from '@/hooks/core/useTable'
   import {
     fetchFleetDetail,
-    fetchFleetMembers,
     syncESIFleetMembers,
-    fetchFleetPapLogs,
     issuePap,
     fetchFleetInvites,
     createFleetInvite,
     deactivateFleetInvite,
-    refreshFleetESI
+    refreshFleetESI,
+    fetchMembersWithPap,
+    pingFleet
   } from '@/api/fleet'
   import { useNameResolver } from '@/hooks'
 
@@ -245,40 +178,22 @@
   const fleetId = computed(() => route.params.id as string)
   const { getName, resolve: resolveNames } = useNameResolver()
 
-  // ---- 数据 ----
+  // ---- 舰队信息 ----
   const fleet = ref<Api.Fleet.FleetItem | null>(null)
-  const members = ref<Api.Fleet.FleetMember[]>([])
-  const papLogs = ref<Api.Fleet.FleetPapLog[]>([])
-  const invites = ref<Api.Fleet.FleetInvite[]>([])
-
-  // ---- 加载状态 ----
   const fleetLoading = ref(false)
-  const membersLoading = ref(false)
-  const papLoading = ref(false)
-  const invitesLoading = ref(false)
-  const syncLoading = ref(false)
-  const papIssueLoading = ref(false)
-  const inviteCreateLoading = ref(false)
 
-  // ---- 等级样式 ----
   const IMPORTANCE_MAP: Record<string, string> = {
     strat_op: 'danger',
     cta: 'warning',
     other: 'info'
   }
   const importanceType = (v: string) => (IMPORTANCE_MAP[v] || 'info') as any
-
-  // ---- 时间格式化 ----
   const formatTime = (v: string) => (v ? new Date(v).toLocaleString() : '-')
-
-  // ---- 返回列表 ----
   const goBack = () => router.push({ name: 'Fleets' })
 
-  // ---- 加载数据 ----
   const loadFleet = async () => {
     fleetLoading.value = true
     try {
-      // 先尝试刷新 ESI fleet id，如果失败（非 FC 或 ESI 异常）就简单读取详情
       try {
         const refreshed = await refreshFleetESI(fleetId.value)
         fleet.value = refreshed
@@ -292,72 +207,90 @@
     }
   }
 
-  const loadMembers = async () => {
-    membersLoading.value = true
-    try {
-      members.value = (await fetchFleetMembers(fleetId.value)) ?? []
-      if (members.value.length) await resolveMemberNames(members.value)
-    } catch {
-      members.value = []
-    } finally {
-      membersLoading.value = false
+  // ---- 成员 & PAP 表格 ----
+  const syncLoading = ref(false)
+  const papIssueLoading = ref(false)
+  const pingLoading = ref(false)
+
+  const apiFn = (params: { current: number; size: number }) =>
+    fetchMembersWithPap(fleetId.value, params)
+
+  const {
+    columns,
+    columnChecks,
+    data,
+    loading,
+    pagination,
+    handleSizeChange,
+    handleCurrentChange,
+    refreshData
+  } = useTable({
+    core: {
+      apiFn,
+      apiParams: { current: 1, size: 20 },
+      columnsFactory: () => [
+        { type: 'index', width: 60, label: '#' },
+        {
+          prop: 'character_name',
+          label: t('fleet.members.characterName'),
+          minWidth: 160,
+          showOverflowTooltip: true
+        },
+        {
+          prop: 'ship_type_id',
+          label: t('fleet.members.shipType'),
+          width: 160,
+          showOverflowTooltip: true,
+          formatter: (row: Api.Fleet.MemberWithPap) =>
+            h('span', {}, getName(row.ship_type_id, '-'))
+        },
+        {
+          prop: 'solar_system_id',
+          label: t('fleet.members.solarSystem'),
+          width: 140,
+          showOverflowTooltip: true,
+          formatter: (row: Api.Fleet.MemberWithPap) =>
+            h('span', {}, getName(row.solar_system_id, '-'))
+        },
+        {
+          prop: 'joined_at',
+          label: t('fleet.members.joinedAt'),
+          width: 180,
+          formatter: (row: Api.Fleet.MemberWithPap) => h('span', {}, formatTime(row.joined_at))
+        },
+        {
+          prop: 'pap_count',
+          label: t('fleet.pap.count'),
+          width: 120,
+          align: 'center',
+          formatter: (row: Api.Fleet.MemberWithPap) =>
+            row.pap_count != null
+              ? h(ElTag, { type: 'success', size: 'small' }, () => `+${row.pap_count}`)
+              : h('span', { class: 'text-gray-400' }, '-')
+        }
+      ]
     }
-  }
+  })
 
-  /** 收集舰队成员中的 ship_type_id / solar_system_id 并解析 */
-  const resolveMemberNames = async (list: Api.Fleet.FleetMember[]) => {
-    const typeIds = new Set<number>()
-    const solarIds = new Set<number>()
-    for (const m of list) {
-      if (m.ship_type_id) typeIds.add(m.ship_type_id)
-      if (m.solar_system_id) solarIds.add(m.solar_system_id)
-    }
-    await resolveNames({
-      ids: {
-        ...(typeIds.size ? { type: [...typeIds] } : {}),
-        ...(solarIds.size ? { solar_system: [...solarIds] } : {})
-      }
-    })
-  }
+  watch(data, async (list) => {
+    if (!list.length) return
+    const typeIds = [...new Set(list.map((m) => m.ship_type_id).filter(Boolean))] as number[]
+    const solarIds = [...new Set(list.map((m) => m.solar_system_id).filter(Boolean))] as number[]
+    const ids: Record<string, number[]> = {}
+    if (typeIds.length) ids.type = typeIds
+    if (solarIds.length) ids.solar_system = solarIds
+    if (Object.keys(ids).length) await resolveNames({ ids })
+  })
 
-  const loadPap = async () => {
-    papLoading.value = true
-    try {
-      papLogs.value = (await fetchFleetPapLogs(fleetId.value)) ?? []
-    } catch {
-      papLogs.value = []
-    } finally {
-      papLoading.value = false
-    }
-  }
-
-  const loadInvites = async () => {
-    invitesLoading.value = true
-    try {
-      invites.value = (await fetchFleetInvites(fleetId.value)) ?? []
-    } catch {
-      invites.value = []
-    } finally {
-      invitesLoading.value = false
-    }
-  }
-
-  const loadAll = () => {
-    loadFleet()
-    loadMembers()
-    loadPap()
-    loadInvites()
-  }
-
-  // ---- ESI 同步成员 ----
+  // ---- ESI 同步 ----
   const handleSyncESI = async () => {
     syncLoading.value = true
     try {
       await syncESIFleetMembers(fleetId.value)
       ElMessage.success(t('fleet.members.syncSuccess'))
-      loadMembers()
-    } catch (e) {
-      console.error('Sync ESI members error:', e)
+      refreshData()
+    } catch {
+      /* handled */
     } finally {
       syncLoading.value = false
     }
@@ -374,46 +307,70 @@
     } catch {
       return
     }
-
     papIssueLoading.value = true
     try {
       await issuePap(fleetId.value)
       ElMessage.success(t('fleet.pap.issueSuccess'))
-      loadPap()
-    } catch (e) {
-      console.error('Issue PAP error:', e)
+      refreshData()
+    } catch {
+      /* handled */
     } finally {
       papIssueLoading.value = false
     }
   }
 
-  // ---- 生成邀请链接 ----
+  // ---- 手动 Ping ----
+  const handlePing = async () => {
+    pingLoading.value = true
+    try {
+      await pingFleet(fleetId.value)
+      ElMessage.success(t('fleet.ping.success'))
+    } catch {
+      /* handled */
+    } finally {
+      pingLoading.value = false
+    }
+  }
+
+  // ---- 邀请链接 ----
+  const invites = ref<Api.Fleet.FleetInvite[]>([])
+  const invitesLoading = ref(false)
+  const inviteCreateLoading = ref(false)
+
+  const loadInvites = async () => {
+    invitesLoading.value = true
+    try {
+      invites.value = (await fetchFleetInvites(fleetId.value)) ?? []
+    } catch {
+      invites.value = []
+    } finally {
+      invitesLoading.value = false
+    }
+  }
+
   const handleCreateInvite = async () => {
     inviteCreateLoading.value = true
     try {
       await createFleetInvite(fleetId.value)
       ElMessage.success(t('fleet.invite.createSuccess'))
       loadInvites()
-    } catch (e) {
-      console.error('Create invite error:', e)
+    } catch {
+      /* handled */
     } finally {
       inviteCreateLoading.value = false
     }
   }
 
-  // ---- 复制邀请链接 ----
   const copyInviteLink = async (invite: Api.Fleet.FleetInvite) => {
     const link = `${window.location.origin}/#/operation/join?code=${invite.code}`
     try {
       await navigator.clipboard.writeText(link)
       ElMessage.success(t('fleet.invite.copied'))
     } catch {
-      // 降级：选中 code 文本
       ElMessage.info(invite.code)
     }
   }
 
-  // ---- 禁用邀请链接 ----
   const handleDeactivateInvite = async (invite: Api.Fleet.FleetInvite) => {
     try {
       await ElMessageBox.confirm(
@@ -432,13 +389,22 @@
       await deactivateFleetInvite(invite.id)
       ElMessage.success(t('fleet.invite.deactivateSuccess'))
       loadInvites()
-    } catch (e) {
-      console.error('Deactivate invite error:', e)
+    } catch {
+      /* handled */
     }
   }
 
+  const handleRefreshAll = () => {
+    loadFleet()
+    refreshData()
+    loadInvites()
+  }
+
   // ---- 初始化 ----
-  onMounted(loadAll)
+  onMounted(() => {
+    loadFleet()
+    loadInvites()
+  })
 </script>
 
 <style scoped>

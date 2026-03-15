@@ -29,6 +29,7 @@
                 :key="km.killmail_id"
                 :value="km.killmail_id"
                 :label="formatKmLabel(km)"
+                :disabled="submittedKmIds.has(km.killmail_id)"
               />
             </ElSelect>
             <ElButton :disabled="!form.killmail_id" @click="openKmPreview">
@@ -49,7 +50,7 @@
               @change="onFleetChange"
             >
               <ElOption key="__other__" :label="$t('srp.apply.otherAction')" value="__other__" />
-              <ElOption v-for="f in fleets" :key="f.id" :label="f.title" :value="f.id" />
+              <ElOption v-for="f in fleets" :key="f.id" :label="formatFleetLabel(f)" :value="f.id" />
             </ElSelect>
           </ElFormItem>
 
@@ -133,13 +134,14 @@
     ElLink,
     ElMessage,
     ElAlert,
+    ElTooltip,
     type FormInstance,
     type FormRules
   } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import KmPreviewDialog from '@/components/business/KmPreviewDialog.vue'
-  import { fetchFleetList } from '@/api/fleet'
+  import { fetchMyFleetList } from '@/api/fleet'
   import {
     submitApplication,
     fetchMyApplications,
@@ -252,6 +254,25 @@
             )
         },
         {
+          prop: 'fleet_id',
+          label: t('srp.apply.columns.fleetNote'),
+          minWidth: 140,
+          formatter: (row: Api.Srp.Application) => {
+            if (row.fleet_id) {
+              const fleet = fleetMap.value.get(row.fleet_id)
+              const tooltipContent = fleet
+                ? formatFleetLabel(fleet)
+                : row.fleet_title || row.fleet_id
+              return h(
+                ElTooltip,
+                { content: tooltipContent, placement: 'top' },
+                () => h('span', { class: 'cursor-default' }, row.fleet_title || row.fleet_id || '')
+              )
+            }
+            return h('span', { class: row.note ? '' : 'text-gray-400' }, row.note || '-')
+          }
+        },
+        {
           prop: 'actions',
           label: t('srp.apply.columns.action'),
           width: 80,
@@ -269,10 +290,11 @@
 
   /* ── 角色 & 舰队 ── */
   const fleets = ref<Api.Fleet.FleetItem[]>([])
+  const fleetMap = computed(() => new Map(fleets.value.map((f) => [f.id, f])))
   const loadFleets = async () => {
     try {
-      const res = await fetchFleetList({ size: 200 } as any)
-      fleets.value = res?.list ?? []
+      const list = await fetchMyFleetList()
+      fleets.value = list ?? []
     } catch {
       fleets.value = []
     }
@@ -295,6 +317,7 @@
 
   const showNoteArea = computed(() => form.fleet_id === OTHER_ACTION)
   const noteRequired = computed(() => form.fleet_id === OTHER_ACTION || !form.fleet_id)
+  const submittedKmIds = computed(() => new Set((data.value ?? []).map((a) => a.killmail_id)))
 
   // 选中的舰队详情（非"__other__"且非空时显示）
   const selectedFleetDetail = computed(() => {
@@ -333,6 +356,7 @@
   const loadKillmails = async () => {
     kmLoading.value = true
     fleetKillmails.value = []
+    const prevKmId = form.killmail_id
     form.killmail_id = 0
     try {
       if (form.fleet_id && form.fleet_id !== OTHER_ACTION) {
@@ -358,6 +382,11 @@
           await resolveNames({ ids: idsToResolve })
         }
       }
+
+      // 如果之前选中的 KM 仍在新列表中，则保留选中状态
+      if (prevKmId && fleetKillmails.value.some((k) => k.killmail_id === prevKmId)) {
+        form.killmail_id = prevKmId
+      }
     } catch {
       fleetKillmails.value = []
     } finally {
@@ -366,7 +395,6 @@
   }
 
   const onFleetChange = () => {
-    form.killmail_id = 0
     if (form.fleet_id !== OTHER_ACTION) {
       form.note = ''
     }
@@ -423,6 +451,13 @@
 
   /* ── 工具函数 ── */
   const formatTime = (v: string) => (v ? new Date(v).toLocaleString() : '-')
+  const formatShortTime = (v: string) => {
+    if (!v) return '-'
+    const d = new Date(v)
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+  const formatFleetLabel = (f: Api.Fleet.FleetItem) =>
+    `${f.fc_character_name}: ${f.title} (${f.pap_count}PAP) @ ${formatShortTime(f.start_at)}~${formatShortTime(f.end_at)}`
   const formatISK = (v: number) =>
     new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,

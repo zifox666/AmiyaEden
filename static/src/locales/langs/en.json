@@ -263,7 +263,8 @@
       "wallet": "Wallet Management",
       "alliancePap": "Alliance PAP",
       "npcKills": "NPC Kill Report",
-      "autoRole": "Auto Roles"
+      "autoRole": "Auto Roles",
+      "webhook": "Webhook Notifications"
     },
     "shop": {
       "title": "Shop",
@@ -500,7 +501,9 @@
       "description": "Description",
       "descriptionPlaceholder": "Additional information about this operation",
       "esiFleetId": "ESI Fleet ID",
-      "createdAt": "Created At"
+      "createdAt": "Created At",
+      "sendPing": "Send Notification",
+      "sendPingHint": "Send a fleet ping to the channel after creation"
     },
     "importance": {
       "strat_op": "Strat Op",
@@ -515,8 +518,8 @@
       "characterName": "Character",
       "characterId": "Character ID",
       "shipType": "Ship",
-      "solarSystem": "System",
-      "joinedAt": "Joined At"
+      "joinedAt": "Joined At",
+      "solarSystem": "Solar System"
     },
     "pap": {
       "title": "PAP Distribution",
@@ -589,6 +592,10 @@
       "joinSuccess": "Successfully joined the fleet",
       "invalidCode": "Invalid invite code",
       "missingCode": "Invalid invite link: missing invite code"
+    },
+    "ping": {
+      "send": "Send Ping",
+      "success": "Ping sent"
     },
     "wallet": {
       "title": "My Wallet",
@@ -673,7 +680,8 @@
         "paid": "Paid",
         "payoutStatus": "Payout",
         "action": "Action",
-        "note": "Note"
+        "note": "Note",
+        "fleetNote": "Fleet / Note"
       }
     },
     "kmPreview": {
@@ -797,6 +805,19 @@
     "fetchTriggered": "Fetch triggered, please refresh later",
     "fetchFailed": "Failed to trigger fetch",
     "emptyData": "No alliance PAP data for this month",
+    "importBtnSEAT": "Import from SEAT",
+    "importFormSEAT": {
+      "fields": {
+        "laravelSession": "laravel_session",
+        "cfClearance": "cf_clearance (optional)",
+        "UA": "UA (optional)"
+      },
+      "fetchPapError": "Failed to fetch PAP data from SEAT, status code: {status}"
+    },
+    "importBtnXLS": "Import from XLS",
+    "importNoData": "No valid data found, check columns (primary_character_name, monthly_pap, calculated_at)",
+    "importFailed": "Import failed",
+    "importSuccess": "Import complete: {count} records",
     "columns": {
       "rank": "Rank",
       "mainCharacter": "Main Character",
@@ -1196,5 +1217,35 @@
     "zebra": "Zebra",
     "border": "Border",
     "headerBackground": "Header BG"
+  },
+  "webhook": {
+    "title": "Webhook Notification Settings",
+    "saveSuccess": "Settings saved",
+    "fields": {
+      "enabled": "Enabled",
+      "url": "Webhook URL",
+      "urlPlaceholder": "https://discord.com/api/webhooks/...",
+      "obUrlPlaceholder": "http://127.0.0.1:5700",
+      "type": "Type",
+      "template": "Message Template",
+      "templatePlaceholder": "Enter message template with variable placeholders",
+      "templateHint": "Available variables",
+      "obTargetType": "Target Type",
+      "obGroup": "Group",
+      "obPrivate": "Private",
+      "obTargetId": "Target ID",
+      "obTargetIdPlaceholder": "Group ID or User QQ",
+      "obToken": "Access Token",
+      "obTokenPlaceholder": "Leave blank for no authentication"
+    },
+    "test": {
+      "title": "Test",
+      "url": "Test URL",
+      "type": "Type",
+      "content": "Test Content",
+      "contentPlaceholder": "Leave blank for default test message",
+      "sendBtn": "Send Test",
+      "success": "Test message sent"
+    }
   }
 }

@@ -72,6 +72,7 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		fleet.POST("", fleetH.CreateFleet)
 		fleet.GET("", fleetH.ListFleets)
+		fleet.GET("/me", fleetH.GetMyFleets)
 		fleet.GET("/:id", fleetH.GetFleet)
 		fleet.PUT("/:id", fleetH.UpdateFleet)
 		fleet.DELETE("/:id", fleetH.DeleteFleet)
@@ -79,6 +80,7 @@ func RegisterRoutes(r *gin.Engine) {
 
 		// 成员
 		fleet.GET("/:id/members", fleetH.GetMembers)
+		fleet.GET("/:id/members-pap", fleetH.GetMembersWithPap)
 		fleet.POST("/:id/members/sync", fleetH.SyncESIMembers)
 
 		// ――― PAP
@@ -99,6 +101,9 @@ func RegisterRoutes(r *gin.Engine) {
 
 		// 查角色所在舰队
 		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
+
+		// Webhook Ping（FC 或管理员手动触发）
+		fleet.POST("/:id/ping", fleetH.PingFleet)
 	}
 
 	// ─── EVE 角色信息 ───
@@ -190,6 +195,7 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		alliancePAPAdmin.GET("", alliancePAPAdminH.GetAllAlliancePAP)
 		alliancePAPAdmin.POST("/fetch", alliancePAPAdminH.TriggerFetch)
+		alliancePAPAdmin.POST("/import", alliancePAPAdminH.ImportAlliancePAP)
 		// PAP 兑换配置
 		alliancePAPAdmin.GET("/config", alliancePAPAdminH.GetExchangeConfig)
 		alliancePAPAdmin.PUT("/config", alliancePAPAdminH.SetExchangeConfig)
@@ -288,5 +294,14 @@ func RegisterRoutes(r *gin.Engine) {
 
 		// 手动触发同步
 		adminAutoRole.POST("/sync", autoRoleH.TriggerSync)
+	}
+
+	// Webhook 配置（管理员）
+	webhookH := handler.NewWebhookHandler()
+	adminWebhook := admin.Group("/webhook")
+	{
+		adminWebhook.GET("/config", webhookH.GetConfig)
+		adminWebhook.PUT("/config", webhookH.SetConfig)
+		adminWebhook.POST("/test", webhookH.TestWebhook)
 	}
 }

@@ -377,6 +377,7 @@ declare namespace Api {
       importance: 'strat_op' | 'cta' | 'other'
       pap_count: number
       character_id: number
+      send_ping?: boolean
     }
 
     /** 更新舰队请求 */
@@ -402,6 +403,18 @@ declare namespace Api {
       solar_system_id: number | null
       joined_at: string
       created_at: string
+    }
+
+    /** 舰队成员（含 PAP 信息）*/
+    interface MemberWithPap extends FleetMember {
+      pap_count: number | null
+      issued_at: string | null
+    }
+
+    /** 舰队成员（含 PAP 信息）*/
+    interface MemberWithPap extends FleetMember {
+      pap_count: number | null
+      issued_at: string | null
     }
 
     /** 舰队 PAP 记录 */
@@ -1276,6 +1289,19 @@ declare namespace Api {
       members: CorpMemberSummary[]
       by_system: BySystem[]
       trend: Trend[]
+    }
+  }
+
+  /** Webhook 配置 */
+  namespace Webhook {
+    interface Config {
+      url: string
+      enabled: boolean
+      type: 'discord' | 'feishu' | 'dingtalk' | 'onebot' | string
+      fleet_template: string
+      ob_target_type: 'group' | 'private'
+      ob_target_id: number
+      ob_token: string
     }
   }
 }

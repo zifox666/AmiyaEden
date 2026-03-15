@@ -70,6 +70,17 @@ func (h *FleetHandler) ListFleets(c *gin.Context) {
 	})
 }
 
+// GetMyFleets 获取当前用户参与过的舰队列表
+func (h *FleetHandler) GetMyFleets(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	fleets, err := h.svc.GetMyFleets(userID)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, fleets)
+}
+
 // GetFleet 获取舰队详情
 func (h *FleetHandler) GetFleet(c *gin.Context) {
 	fleetID := c.Param("id")
@@ -157,6 +168,29 @@ func (h *FleetHandler) GetMembers(c *gin.Context) {
 		return
 	}
 	response.OK(c, members)
+}
+
+// GetMembersWithPap 分页查询舰队成员（含 PAP 信息）
+func (h *FleetHandler) GetMembersWithPap(c *gin.Context) {
+	fleetID := c.Param("id")
+	if fleetID == "" {
+		response.Fail(c, response.CodeParamError, "缺少舰队ID")
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+
+	list, total, err := h.svc.ListMembersWithPap(fleetID, page, size)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, gin.H{
+		"list":     list,
+		"page":     page,
+		"pageSize": size,
+		"total":    total,
+	})
 }
 
 // SyncESIMembers 从 ESI 拉取当前舰队成员并同步到数据库
@@ -337,4 +371,24 @@ func (h *FleetHandler) GetCharacterFleetInfo(c *gin.Context) {
 		return
 	}
 	response.OK(c, info)
+}
+
+// ─────────────────────────────────────────────
+//  Webhook Ping
+// ─────────────────────────────────────────────
+
+// PingFleet 手动触发舰队 Webhook Ping
+func (h *FleetHandler) PingFleet(c *gin.Context) {
+	fleetID := c.Param("id")
+	if fleetID == "" {
+		response.Fail(c, response.CodeParamError, "缺少舰队ID")
+		return
+	}
+	userID := middleware.GetUserID(c)
+	userRole := middleware.GetUserRole(c)
+	if err := h.svc.PingFleet(fleetID, userID, userRole); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, nil)
 }

@@ -32,7 +32,7 @@
           style="width: 220px"
           @change="handleSearch"
         >
-          <ElOption v-for="f in fleets" :key="f.id" :label="f.title" :value="f.id" />
+          <ElOption v-for="f in fleets" :key="f.id" :label="formatFleetLabel(f)" :value="f.id" />
         </ElSelect>
         <ElButton type="primary" @click="handleSearch">{{ $t('srp.manage.searchBtn') }}</ElButton>
         <ElButton @click="resetFilter">{{ $t('srp.manage.resetBtn') }}</ElButton>
@@ -78,14 +78,11 @@
             <span class="text-sm">{{ reviewTarget.note }}</span>
           </ElFormItem>
           <ElFormItem :label="$t('srp.manage.columns.fleet')" v-if="reviewTarget.fleet_id">
-            <div>
-              <span class="font-medium">{{
+            <ElTooltip :content="reviewTargetFleetLabel" placement="top">
+              <span class="font-medium cursor-default">{{
                 reviewTarget.fleet_title || reviewTarget.fleet_id
               }}</span>
-              <span v-if="reviewTarget.fleet_fc_name" class="text-gray-400 ml-2 text-xs"
-                >FC: {{ reviewTarget.fleet_fc_name }}</span
-              >
-            </div>
+            </ElTooltip>
           </ElFormItem>
         </template>
         <ElFormItem :label="$t('srp.manage.finalAmount')" v-if="reviewAction === 'approve'">
@@ -215,7 +212,8 @@
     ElInputNumber,
     ElInput,
     ElLink,
-    ElMessage
+    ElMessage,
+    ElTooltip
   } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
@@ -239,6 +237,7 @@
   const userStore = useUserStore()
 
   const fleets = ref<Api.Fleet.FleetItem[]>([])
+  const fleetMap = computed(() => new Map(fleets.value.map((f) => [f.id, f])))
   const loadFleets = async () => {
     try {
       const res = await fetchFleetList({ size: 200 } as any)
@@ -353,17 +352,19 @@
           prop: 'fleet_title',
           label: t('srp.manage.columns.fleet'),
           width: 180,
-          showOverflowTooltip: true,
           formatter: (row: SrpApp) => {
             if (!row.fleet_id) return h('span', { class: 'text-gray-400' }, '-')
-            const parts: ReturnType<typeof h>[] = []
-            if (row.fleet_title) {
-              parts.push(h('div', { class: 'font-medium' }, row.fleet_title))
-            }
-            if (row.fleet_fc_name) {
-              parts.push(h('div', { class: 'text-xs text-gray-400' }, `FC: ${row.fleet_fc_name}`))
-            }
-            return parts.length ? h('div', {}, parts) : h('span', {}, row.fleet_id)
+            const fleet = fleetMap.value.get(row.fleet_id)
+            const tooltipContent = fleet
+              ? formatFleetLabel(fleet)
+              : row.fleet_fc_name
+                ? `${row.fleet_fc_name}: ${row.fleet_title || row.fleet_id}`
+                : row.fleet_title || row.fleet_id
+            return h(
+              ElTooltip,
+              { content: tooltipContent, placement: 'top' },
+              () => h('span', { class: 'cursor-default' }, row.fleet_title || row.fleet_id || '')
+            )
           }
         },
         {
@@ -534,6 +535,16 @@
   const reviewForm = reactive({ review_note: '', final_amount: 0 })
   const actionLoading = ref(false)
 
+  const reviewTargetFleetLabel = computed(() => {
+    const rt = reviewTarget.value
+    if (!rt?.fleet_id) return ''
+    const fleet = fleetMap.value.get(rt.fleet_id)
+    if (fleet) return formatFleetLabel(fleet)
+    return rt.fleet_fc_name
+      ? `${rt.fleet_fc_name}: ${rt.fleet_title || rt.fleet_id}`
+      : rt.fleet_title || rt.fleet_id
+  })
+
   /** 当前操作人的主角色名（用于默认文案替换） */
   const primaryCharName = computed(() => {
     const info = userStore.getUserInfo
@@ -646,6 +657,13 @@
   }
 
   const formatTime = (v: string) => (v ? new Date(v).toLocaleString() : '-')
+  const formatShortTime = (v: string) => {
+    if (!v) return '-'
+    const d = new Date(v)
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+  const formatFleetLabel = (f: Api.Fleet.FleetItem) =>
+    `${f.fc_character_name}: ${f.title} (${f.pap_count}PAP) @ ${formatShortTime(f.start_at)}~${formatShortTime(f.end_at)}`
   const formatISK = (v: number) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
       v ?? 0

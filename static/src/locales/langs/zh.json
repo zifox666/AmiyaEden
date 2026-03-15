@@ -252,17 +252,6 @@
       "notFound": "404",
       "serverError": "500"
     },
-    "system": {
-      "title": "系统管理",
-      "user": "用户管理",
-      "role": "角色管理",
-      "characters": "角色管理",
-      "userCenter": "个人中心",
-      "menu": "菜单管理",
-      "esiRefresh": "定时任务",
-      "wallet": "钱包管理",
-      "alliancePap": "联盟 PAP"
-    },
     "shop": {
       "title": "商店",
       "browse": "浏览商品",
@@ -309,14 +298,15 @@
       "title": "系统管理",
       "user": "用户管理",
       "role": "角色管理",
-      "characters": "角色管理",
+      "characters": "EVE 角色管理",
       "userCenter": "个人中心",
       "menu": "菜单管理",
       "esiRefresh": "定时任务",
       "wallet": "钱包管理",
       "alliancePap": "联盟 PAP",
       "npcKills": "刷怪报表",
-      "autoRole": "自动权限"
+      "autoRole": "自动权限",
+      "webhook": "Webhook 通知"
     }
   },
   "info": {
@@ -512,6 +502,8 @@
       "description": "详细信息",
       "descriptionPlaceholder": "关于此行动的额外信息",
       "esiFleetId": "ESI 舰队 ID",
+      "sendPing": "发送通知",
+      "sendPingHint": "创建后向频道发送舰队行动 Ping",
       "createdAt": "创建时间"
     },
     "importance": {
@@ -527,8 +519,8 @@
       "characterName": "角色名",
       "characterId": "角色 ID",
       "shipType": "舰船",
-      "solarSystem": "星系",
-      "joinedAt": "加入时间"
+      "joinedAt": "加入时间",
+      "solarSystem": "星系"
     },
     "pap": {
       "title": "PAP 发放",
@@ -601,6 +593,10 @@
       "joinSuccess": "已成功加入舰队",
       "invalidCode": "无效的邀请码",
       "missingCode": "无效的邀请链接，缺少邀请码"
+    },
+    "ping": {
+      "send": "发送 Ping",
+      "success": "Ping 已发送"
     },
     "wallet": {
       "title": "我的钱包",
@@ -685,7 +681,8 @@
         "paid": "已打款",
         "payoutStatus": "发放状态",
         "action": "操作",
-        "note": "备注"
+        "note": "备注",
+        "fleetNote": "舰队/备注"
       }
     },
     "kmPreview": {
@@ -809,6 +806,19 @@
     "fetchTriggered": "已触发后台拉取，请稍后刷新查看",
     "fetchFailed": "触发拉取失败",
     "emptyData": "暂无该月联盟 PAP 数据",
+    "importBtnSEAT": "从 SEAT 导入",
+    "importFormSEAT": {
+      "fields": {
+        "laravelSession": "laravel_session",
+        "cfClearance": "cf_clearance (可选)",
+        "UA": "UA (可选)"
+      },
+      "fetchPapError": "从 SEAT 获取数据失败，状态码：{status}"
+    },
+    "importBtnXLS": "从表格导入",
+    "importNoData": "未找到有效数据，请检查列名（主角色 / 月 PAP / 数据时间）",
+    "importFailed": "导入失败",
+    "importSuccess": "导入完成，成功 {count} 条",
     "columns": {
       "rank": "排名",
       "mainCharacter": "主角色",
@@ -1208,5 +1218,35 @@
     "zebra": "斑马纹",
     "border": "边框",
     "headerBackground": "表头背景"
+  },
+  "webhook": {
+    "title": "Webhook 通知设置",
+    "saveSuccess": "设置已保存",
+    "fields": {
+      "enabled": "启用",
+      "url": "Webhook URL",
+      "urlPlaceholder": "https://discord.com/api/webhooks/...",
+      "obUrlPlaceholder": "http://127.0.0.1:5700",
+      "type": "类型",
+      "template": "消息模板",
+      "templatePlaceholder": "输入消息模板，支持变量替换",
+      "templateHint": "可用变量",
+      "obTargetType": "目标类型",
+      "obGroup": "群组",
+      "obPrivate": "私聊",
+      "obTargetId": "目标 ID",
+      "obTargetIdPlaceholder": "群号或用户 QQ",
+      "obToken": "Access Token",
+      "obTokenPlaceholder": "留空则不使用身份验证"
+    },
+    "test": {
+      "title": "测试发送",
+      "url": "测试 URL",
+      "type": "类型",
+      "content": "测试内容",
+      "contentPlaceholder": "留空则使用默认测试文本",
+      "sendBtn": "发送测试",
+      "success": "测试消息已发送"
+    }
   }
 }
