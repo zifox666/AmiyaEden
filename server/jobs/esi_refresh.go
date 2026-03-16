@@ -60,6 +60,16 @@ func registerESIRefreshJob(c *cron.Cron) {
 		_ = autoRoleSvc.SyncUserAutoRoles(ctx, userID)
 	}
 
+	// 注入舰队 PAP 发放时的 KM 刷新触发钩子
+	service.FleetKMRefreshFunc = func(characterID int64) {
+		if err := esiQueue.RunTask("character_killmails", characterID); err != nil {
+			global.Logger.Warn("[Fleet KM] 触发 KM 刷新失败",
+				zap.Int64("character_id", characterID),
+				zap.Error(err),
+			)
+		}
+	}
+
 	// 每 5 分钟执行一次调度（队列内部根据各任务间隔判断是否需要刷新）
 	id, err := c.AddFunc("0 */5 * * * *", func() {
 		esiQueue.Run()

@@ -31,14 +31,15 @@ func (Fleet) TableName() string { return "fleet" }
 
 // FleetMember 舰队成员记录（参与过的成员快照）
 type FleetMember struct {
-	ID            uint      `gorm:"primarykey"                                       json:"id"`
-	FleetID       string    `gorm:"size:36;not null;index:idx_fleet_member,unique"   json:"fleet_id"`
-	CharacterID   int64     `gorm:"not null;index:idx_fleet_member,unique"           json:"character_id"`
-	CharacterName string    `gorm:"size:128"                                         json:"character_name"`
-	UserID        uint      `gorm:"not null;index"                                   json:"user_id"`
-	ShipTypeID    *int64    `gorm:""                                                 json:"ship_type_id,omitempty"`
-	SolarSystemID *int64    `gorm:""                                                 json:"solar_system_id,omitempty"`
-	JoinedAt      time.Time `gorm:"autoCreateTime"                                   json:"joined_at"`
+	ID            uint       `gorm:"primarykey"                                       json:"id"`
+	FleetID       string     `gorm:"size:36;not null;index:idx_fleet_member,unique"   json:"fleet_id"`
+	CharacterID   int64      `gorm:"not null;index:idx_fleet_member,unique"           json:"character_id"`
+	CharacterName string     `gorm:"size:128"                                         json:"character_name"`
+	UserID        uint       `gorm:"not null;index"                                   json:"user_id"`
+	ShipTypeID    *int64     `gorm:""                                                 json:"ship_type_id,omitempty"`
+	SolarSystemID *int64     `gorm:""                                                 json:"solar_system_id,omitempty"`
+	KMRefreshedAt *time.Time `gorm:""                                                 json:"km_refreshed_at,omitempty"` // 上次触发 KM 刷新的时间
+	JoinedAt      time.Time  `gorm:"autoCreateTime"                                   json:"joined_at"`
 }
 
 func (FleetMember) TableName() string { return "fleet_member" }

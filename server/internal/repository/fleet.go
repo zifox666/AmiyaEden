@@ -123,6 +123,31 @@ func (r *FleetRepository) RemoveMember(fleetID string, characterID int64) error 
 		Delete(&model.FleetMember{}).Error
 }
 
+// kmRefreshCooldown 同一成员两次 KM 刷新触发的最小间隔
+const kmRefreshCooldown = 15 * time.Minute
+
+// ListMembersForKMRefresh 查询需要触发 KM 刷新的成员：
+// 从未触发过，或上次触发时间超过 15 分钟
+func (r *FleetRepository) ListMembersForKMRefresh(fleetID string) ([]model.FleetMember, error) {
+	var members []model.FleetMember
+	cooldownAt := time.Now().Add(-kmRefreshCooldown)
+	err := global.DB.Where(
+		"fleet_id = ? AND (km_refreshed_at IS NULL OR km_refreshed_at < ?)",
+		fleetID, cooldownAt,
+	).Find(&members).Error
+	return members, err
+}
+
+// MarkMembersKMRefreshed 更新成员的 KM 刷新时间戳为当前时间
+func (r *FleetRepository) MarkMembersKMRefreshed(fleetID string, characterIDs []int64) error {
+	if len(characterIDs) == 0 {
+		return nil
+	}
+	return global.DB.Model(&model.FleetMember{}).
+		Where("fleet_id = ? AND character_id IN ?", fleetID, characterIDs).
+		Update("km_refreshed_at", time.Now()).Error
+}
+
 // ─────────────────────────────────────────────
 //  PAP Log
 // ─────────────────────────────────────────────

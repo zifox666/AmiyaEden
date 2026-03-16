@@ -23,7 +23,7 @@ func (t *FittingsTask) Priority() Priority  { return PriorityNormal }
 func (t *FittingsTask) Interval() RefreshInterval {
 	return RefreshInterval{
 		Active:   6 * time.Hour,
-		Inactive: 48 * time.Hour,
+		Inactive: 7 * 24 * time.Hour,
 	}
 }
 

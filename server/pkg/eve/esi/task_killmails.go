@@ -31,8 +31,8 @@ func (t *KillmailsTask) Priority() Priority  { return PriorityCritical } // é«˜é
 
 func (t *KillmailsTask) Interval() RefreshInterval {
 	return RefreshInterval{
-		Active:   20 * time.Minute,
-		Inactive: 3 * 24 * time.Hour,
+		Active:   45 * time.Minute,
+		Inactive: 7 * 24 * time.Hour,
 	}
 }
 

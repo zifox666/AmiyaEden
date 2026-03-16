@@ -142,7 +142,7 @@
   }
   function defaultTimeRange(): [string, string] {
     const now = Date.now()
-    return [fmtLocalISO(new Date(now - 3_600_000)), fmtLocalISO(new Date(now + 3_600_000))]
+    return [fmtLocalISO(new Date(now - 5_400_000)), fmtLocalISO(new Date(now + 5_400_000))]
   }
 
   // ─── 表格 ───
