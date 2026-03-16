@@ -165,7 +165,10 @@
       "success": "Login successful",
       "successSub": "Welcome back, {name}! Redirecting...",
       "error": "Login failed",
-      "retry": "Try again"
+      "retry": "Try again",
+      "conflictTitle": "Character Bound to Another Account",
+      "conflictDesc": "Character {name} is currently bound to another account. Confirming will unbind it from the original account and bind it to your current account.",
+      "confirmTransfer": "Confirm Transfer"
     },
     "success": {
       "title": "Login successful",

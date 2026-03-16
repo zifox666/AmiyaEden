@@ -165,7 +165,10 @@
       "success": "登录成功",
       "successSub": "欢迎回来，{name}！正在跳转...",
       "error": "登录失败",
-      "retry": "重新登录"
+      "retry": "重新登录",
+      "conflictTitle": "角色已绑定其他账号",
+      "conflictDesc": "角色 {name} 当前绑定在其他账号下。确认转移后，该角色将解除与原账号的绑定并绑定到当前账号。",
+      "confirmTransfer": "确认转移"
     },
     "success": {
       "title": "登录成功",

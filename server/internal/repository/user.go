@@ -47,6 +47,13 @@ func (r *UserRepository) ListAllIDs() ([]uint, error) {
 	return ids, err
 }
 
+// GetByIDUnscoped 根据 ID 查询用户（包括软删除记录）
+func (r *UserRepository) GetByIDUnscoped(id uint) (*model.User, error) {
+	var user model.User
+	err := global.DB.Unscoped().First(&user, id).Error
+	return &user, err
+}
+
 // Delete 软删除用户
 func (r *UserRepository) Delete(id uint) error {
 	return global.DB.Delete(&model.User{}, id).Error

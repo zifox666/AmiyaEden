@@ -74,6 +74,17 @@ export function unbindCharacter(characterId: number) {
 }
 
 /**
+ * 确认角色转移（角色已绑定其他账号时，用户确认后调用）
+ * @param transferToken 转移令牌
+ */
+export function confirmCharacterTransfer(transferToken: string) {
+  return request.post<{ token: string; user: any; character: any }>({
+    url: '/api/v1/sso/eve/confirm-transfer',
+    data: { transfer_token: transferToken }
+  })
+}
+
+/**
  * 获取当前登录用户信息（从 /me 接口获取并封装成统一格式）
  * @returns 用户信息
  */

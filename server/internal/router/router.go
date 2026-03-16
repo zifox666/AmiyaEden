@@ -42,6 +42,7 @@ func RegisterRoutes(r *gin.Engine) {
 		ssoAuth.GET("/bind", ssoH.BindLogin)
 		ssoAuth.PUT("/primary/:character_id", ssoH.SetPrimary)
 		ssoAuth.DELETE("/characters/:character_id", ssoH.Unbind)
+		ssoAuth.POST("/confirm-transfer", ssoH.ConfirmTransfer)
 	}
 
 	// ─── 当前用户 ───

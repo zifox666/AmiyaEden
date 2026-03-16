@@ -78,6 +78,24 @@ func (h *EveSSOHandler) Callback(c *gin.Context) {
 		return
 	}
 
+	// 角色转移冲突：重定向到前端确认页面
+	if result.Conflict {
+		if result.RedirectURL != "" {
+			params := url.Values{}
+			params.Set("conflict", "true")
+			params.Set("character_name", result.ConflictCharName)
+			params.Set("transfer_token", result.TransferToken)
+			c.Redirect(302, result.RedirectURL+"?"+params.Encode())
+			return
+		}
+		response.OK(c, gin.H{
+			"conflict":        true,
+			"character_name":  result.ConflictCharName,
+			"transfer_token":  result.TransferToken,
+		})
+		return
+	}
+
 	// 如果有前端重定向地址，则带 token 跳转
 	if result.RedirectURL != "" {
 		c.Redirect(302, result.RedirectURL+"?token="+result.Token)
@@ -197,6 +215,37 @@ func (h *EveSSOHandler) Unbind(c *gin.Context) {
 	}
 
 	response.OK(c, nil)
+}
+
+// ConfirmTransfer 确认角色转移
+//
+// POST /api/v1/sso/eve/confirm-transfer { "transfer_token": "xxx" }
+func (h *EveSSOHandler) ConfirmTransfer(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Fail(c, response.CodeUnauthorized, "未登录")
+		return
+	}
+
+	var req struct {
+		TransferToken string `json:"transfer_token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "缺少 transfer_token")
+		return
+	}
+
+	result, err := h.svc.ConfirmTransfer(c.Request.Context(), userID, req.TransferToken)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{
+		"token":     result.Token,
+		"user":      result.User,
+		"character": result.Character,
+	})
 }
 
 // splitCSV 按逗号或空格分割字符串

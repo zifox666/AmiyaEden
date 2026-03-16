@@ -178,10 +178,32 @@ func (s *EveSSOService) GetBindAuthURL(ctx context.Context, userID uint, extraSc
 
 // CallbackResult EVE SSO 回调处理结果
 type CallbackResult struct {
-	Token       string              `json:"token"` // 我们系统颁发的 JWT
+	Token       string              `json:"token"`        // 我们系统颁发的 JWT
 	User        *model.User         `json:"user"`
 	Character   *model.EveCharacter `json:"character"`
 	RedirectURL string              `json:"redirect_url"` // 前端跳转地址（可能为空）
+	// 角色转移冲突
+	Conflict         bool   `json:"conflict,omitempty"`
+	ConflictCharName string `json:"conflict_char_name,omitempty"`
+	TransferToken    string `json:"transfer_token,omitempty"`
+}
+
+const (
+	transferCachePrefix = "eve:sso:transfer:"
+	transferCacheTTL    = 5 * time.Minute
+)
+
+// transferData 角色转移临时数据（存入 Redis）
+type transferData struct {
+	CharacterID   int64     `json:"character_id"`
+	CharacterName string    `json:"character_name"`
+	PortraitURL   string    `json:"portrait_url"`
+	AccessToken   string    `json:"access_token"`
+	RefreshToken  string    `json:"refresh_token"`
+	TokenExpiry   time.Time `json:"token_expiry"`
+	Scopes        string    `json:"scopes"`
+	BindToUserID  uint      `json:"bind_to_user_id"`
+	RedirectURL   string    `json:"redirect_url"`
 }
 
 // HandleCallback 处理 EVE SSO 回调，完成 Token 交换、用户创建/更新，颁发本系统 JWT
@@ -329,7 +351,35 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	// ── 绑定流程：该角色已存在 ──
 	if sd.BindToUserID > 0 {
 		if char.UserID != sd.BindToUserID {
-			return nil, errors.New("该角色已绑定到其他账号，无法再次绑定")
+			// 角色属于其他用户，生成转移令牌，等待前端确认
+			tb := make([]byte, 16)
+			if _, err := rand.Read(tb); err != nil {
+				return nil, err
+			}
+			transferToken := hex.EncodeToString(tb)
+
+			td := transferData{
+				CharacterID:   characterID,
+				CharacterName: claims.Name,
+				PortraitURL:   portraitURL,
+				AccessToken:   tokenResp.AccessToken,
+				RefreshToken:  tokenResp.RefreshToken,
+				TokenExpiry:   tokenExpiry,
+				Scopes:        scopesStr,
+				BindToUserID:  sd.BindToUserID,
+				RedirectURL:   sd.RedirectURL,
+			}
+			if err := cache.Set(ctx, transferCachePrefix+transferToken, td, transferCacheTTL); err != nil {
+				global.Logger.Warn("存储角色转移数据失败", zap.Error(err))
+				return nil, errors.New("系统繁忙，请稍后再试")
+			}
+
+			return &CallbackResult{
+				Conflict:         true,
+				ConflictCharName: claims.Name,
+				TransferToken:    transferToken,
+				RedirectURL:      sd.RedirectURL,
+			}, nil
 		}
 		// 角色已属于当前用户，更新 Token 即可
 		char.AccessToken = tokenResp.AccessToken
@@ -372,7 +422,45 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	// 更新用户最后登录信息
 	user, err := s.userRepo.GetByID(char.UserID)
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		// 用户已被软删除（孤儿角色），为该角色创建新用户
+		user = &model.User{
+			Nickname:           claims.Name,
+			Avatar:             portraitURL,
+			Status:             1,
+			Role:               "user",
+			PrimaryCharacterID: characterID,
+			LastLoginAt:        &now,
+			LastLoginIP:        clientIP,
+		}
+		if err := s.userRepo.Create(user); err != nil {
+			return nil, err
+		}
+		s.roleSvc.EnsureUserHasDefaultRole(context.Background(), user.ID)
+
+		char.UserID = user.ID
+		if err := s.charRepo.Update(char); err != nil {
+			return nil, err
+		}
+
+		if OnNewCharacterSyncFunc != nil {
+			OnNewCharacterSyncFunc(characterID, user.ID)
+		}
+		if OnNewCharacterFunc != nil {
+			go OnNewCharacterFunc(characterID, user.ID)
+		}
+
+		global.Logger.Info("孤儿角色重新绑定到新用户",
+			zap.Int64("characterID", characterID),
+			zap.Uint("newUserID", user.ID))
+
+		jwtToken, err := jwt.GenerateToken(user.ID, characterID, user.Role, global.Config.JWT.ExpireDay)
+		if err != nil {
+			return nil, err
+		}
+		return &CallbackResult{Token: jwtToken, User: user, Character: char, RedirectURL: sd.RedirectURL}, nil
 	}
 	user.LastLoginAt = &now
 	user.LastLoginIP = clientIP
@@ -513,6 +601,95 @@ func (s *EveSSOService) UnbindCharacter(userID uint, characterID int64) error {
 	}
 
 	return s.charRepo.Delete(char.ID)
+}
+
+// ConfirmTransfer 确认角色转移（用户在前端确认后调用）
+func (s *EveSSOService) ConfirmTransfer(ctx context.Context, userID uint, transferToken string) (*CallbackResult, error) {
+	// 1. 从 Redis 读取并删除 transfer data（防重放）
+	var td transferData
+	if err := cache.Get(ctx, transferCachePrefix+transferToken, &td); err != nil {
+		return nil, errors.New("转移令牌无效或已过期，请重新操作")
+	}
+	_ = cache.Del(ctx, transferCachePrefix+transferToken)
+
+	// 2. 验证 userID 与存储的 BindToUserID 一致
+	if td.BindToUserID != userID {
+		return nil, errors.New("无权执行此操作")
+	}
+
+	// 3. 获取角色记录
+	char, err := s.charRepo.GetByCharacterID(td.CharacterID)
+	if err != nil {
+		return nil, errors.New("角色不存在")
+	}
+
+	oldUserID := char.UserID
+
+	// 4. 转移角色：更新 user_id 和 token 信息
+	char.UserID = userID
+	char.AccessToken = td.AccessToken
+	char.RefreshToken = td.RefreshToken
+	char.TokenExpiry = td.TokenExpiry
+	char.Scopes = td.Scopes
+	char.CharacterName = td.CharacterName
+	char.PortraitURL = td.PortraitURL
+	char.TokenInvalid = false
+	if err := s.charRepo.Update(char); err != nil {
+		return nil, err
+	}
+
+	// 5. 清理旧用户（主角色切换等）
+	s.cleanupOldUserAfterTransfer(oldUserID, td.CharacterID)
+
+	// 6. 更新目标用户
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user.PrimaryCharacterID == 0 {
+		user.PrimaryCharacterID = td.CharacterID
+		_ = s.userRepo.Update(user)
+	}
+
+	// 7. 触发绑定钩子
+	if OnCharacterBindFunc != nil {
+		go OnCharacterBindFunc(user.ID)
+	}
+
+	// 8. 审计日志
+	global.Logger.Info("角色转移完成",
+		zap.Int64("characterID", td.CharacterID),
+		zap.Uint("fromUserID", oldUserID),
+		zap.Uint("toUserID", userID))
+
+	// 9. 生成 JWT
+	jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+	if err != nil {
+		return nil, err
+	}
+	return &CallbackResult{Token: jwtToken, User: user, Character: char}, nil
+}
+
+// cleanupOldUserAfterTransfer 角色转移后清理旧用户的主角色信息
+func (s *EveSSOService) cleanupOldUserAfterTransfer(oldUserID uint, transferredCharID int64) {
+	oldUser, err := s.userRepo.GetByIDUnscoped(oldUserID)
+	if err != nil || oldUser.DeletedAt.Valid {
+		return // 用户不存在或已软删除，无需清理
+	}
+	if oldUser.PrimaryCharacterID != transferredCharID {
+		return // 转移的不是主角色，无需调整
+	}
+	// 重新分配主角色
+	remaining, err := s.charRepo.ListByUserID(oldUserID)
+	if err != nil || len(remaining) == 0 {
+		oldUser.PrimaryCharacterID = 0
+		_ = s.userRepo.Update(oldUser)
+		return
+	}
+	oldUser.PrimaryCharacterID = remaining[0].CharacterID
+	oldUser.Avatar = remaining[0].PortraitURL
+	oldUser.Nickname = remaining[0].CharacterName
+	_ = s.userRepo.Update(oldUser)
 }
 
 // GetRedirectURLFromState 仅读取 state 对应的前端 redirect URL（不删除 state）
