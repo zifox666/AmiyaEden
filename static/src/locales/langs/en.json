@@ -815,6 +815,7 @@
         "recommendedAmount": "Recommended",
         "finalAmount": "Final Amount",
         "review": "Review",
+        "reviewNote": "Review Note",
         "payout": "Payout",
         "action": "Action"
       }

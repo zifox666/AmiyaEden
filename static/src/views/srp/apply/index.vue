@@ -50,7 +50,12 @@
               @change="onFleetChange"
             >
               <ElOption key="__other__" :label="$t('srp.apply.otherAction')" value="__other__" />
-              <ElOption v-for="f in fleets" :key="f.id" :label="formatFleetLabel(f)" :value="f.id" />
+              <ElOption
+                v-for="f in fleets"
+                :key="f.id"
+                :label="formatFleetLabel(f)"
+                :value="f.id"
+              />
             </ElSelect>
           </ElFormItem>
 
@@ -228,10 +233,15 @@
           prop: 'review_status',
           label: t('srp.apply.columns.reviewStatus'),
           width: 110,
-          formatter: (row: Api.Srp.Application) =>
-            h(ElTag, { type: reviewStatusType(row.review_status), size: 'small' }, () =>
+          formatter: (row: Api.Srp.Application) => {
+            const tag = h(ElTag, { type: reviewStatusType(row.review_status), size: 'small' }, () =>
               reviewStatusLabel(row.review_status)
             )
+            if (row.review_note) {
+              return h(ElTooltip, { content: row.review_note, placement: 'top' }, () => tag)
+            }
+            return tag
+          }
         },
         {
           prop: 'final_amount',
@@ -263,10 +273,8 @@
               const tooltipContent = fleet
                 ? formatFleetLabel(fleet)
                 : row.fleet_title || row.fleet_id
-              return h(
-                ElTooltip,
-                { content: tooltipContent, placement: 'top' },
-                () => h('span', { class: 'cursor-default' }, row.fleet_title || row.fleet_id || '')
+              return h(ElTooltip, { content: tooltipContent, placement: 'top' }, () =>
+                h('span', { class: 'cursor-default' }, row.fleet_title || row.fleet_id || '')
               )
             }
             return h('span', { class: row.note ? '' : 'text-gray-400' }, row.note || '-')
