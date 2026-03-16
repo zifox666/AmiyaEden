@@ -24,6 +24,8 @@ type EveKillmailItem = esimodel.EveKillmailItem
 type EveCharacterKillmail = esimodel.EveCharacterKillmail
 
 type EveCharacterContract = esimodel.EveCharacterContract
+type EveCharacterContractItem = esimodel.EveCharacterContractItem
+type EveCharacterContractBid = esimodel.EveCharacterContractBid
 
 type EVECharacterWallet = esimodel.EVECharacterWallet
 type EVECharacterWalletJournal = esimodel.EVECharacterWalletJournal

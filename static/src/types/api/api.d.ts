@@ -1204,6 +1204,78 @@ declare namespace Api {
       total_items: number
       locations: AssetLocationNode[]
     }
+
+    /** 合同请求（含分页与过滤） */
+    interface ContractsRequest {
+      current: number
+      size: number
+      type?: string
+      status?: string
+      language?: string
+    }
+
+    /** 合同竞标条目 */
+    interface ContractBidItem {
+      amount: number
+      bid_id: number
+      bidder_id: number
+      date_bid: string
+    }
+
+    /** 合同物品条目 */
+    interface ContractItemDetail {
+      type_id: number
+      type_name: string
+      group_name: string
+      category_id: number
+      quantity: number
+      is_included: boolean
+      is_singleton: boolean
+    }
+
+    /** 单条合同响应（列表行，不含物品/竞标） */
+    interface ContractItem {
+      character_id: number
+      character_name: string
+      contract_id: number
+      acceptor_id: number
+      assignee_id: number
+      availability: string
+      buyout?: number
+      collateral?: number
+      date_accepted?: string
+      date_completed?: string
+      date_expired: string
+      date_issued: string
+      days_to_complete?: number
+      end_location_id?: number
+      for_corporation: boolean
+      issuer_corporation_id: number
+      issuer_id: number
+      price?: number
+      reward?: number
+      start_location_id?: number
+      status: string
+      title?: string
+      type: string
+      volume?: number
+    }
+
+    /** 合同列表响应（分页） */
+    type ContractsResponse = Api.Common.PaginatedResponse<ContractItem>
+
+    /** 合同详情请求 */
+    interface ContractDetailRequest {
+      character_id: number
+      contract_id: number
+      language?: string
+    }
+
+    /** 合同详情响应（物品 + 竞标） */
+    interface ContractDetailResponse {
+      items: ContractItemDetail[]
+      bids: ContractBidItem[]
+    }
   }
 
   /** SDE 数据查询类型 */

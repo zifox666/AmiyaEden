@@ -4,7 +4,6 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -102,7 +101,7 @@ func (t *ContractsTask) Execute(ctx *TaskContext) error {
 		zap.Int("count", len(contracts)),
 	)
 
-	// 2. 获取未完成合同的竞标和物品详情，并入库
+	// 2. 逐条入库合同，并拉取 items/bids 存入独立表
 	for _, c := range contracts {
 		record := model.EveCharacterContract{
 			CharacterID:         ctx.CharacterID,
@@ -130,39 +129,7 @@ func (t *ContractsTask) Execute(ctx *TaskContext) error {
 			Volume:              c.Volume,
 		}
 
-		// 拍卖类活跃合同获取竞标
-		if (c.Status == "outstanding" || c.Status == "in_progress") && c.Type == "auction" {
-			bidPath := fmt.Sprintf("/characters/%d/contracts/%d/bids/", ctx.CharacterID, c.ContractID)
-			var bids []ContractBid
-			if err := ctx.Client.Get(bgCtx, bidPath, ctx.AccessToken, &bids); err != nil {
-				global.Logger.Warn("[ESI] 获取合同竞标失败",
-					zap.Int64("contract_id", c.ContractID),
-					zap.Error(err),
-				)
-			} else if len(bids) > 0 {
-				bidsJSON, _ := json.Marshal(bids)
-				s := string(bidsJSON)
-				record.BidsJSON = &s
-			}
-		}
-
-		// 活跃合同获取物品
-		if c.Status == "outstanding" || c.Status == "in_progress" {
-			itemPath := fmt.Sprintf("/characters/%d/contracts/%d/items/", ctx.CharacterID, c.ContractID)
-			var items []ContractItem
-			if err := ctx.Client.Get(bgCtx, itemPath, ctx.AccessToken, &items); err != nil {
-				global.Logger.Warn("[ESI] 获取合同物品失败",
-					zap.Int64("contract_id", c.ContractID),
-					zap.Error(err),
-				)
-			} else if len(items) > 0 {
-				itemsJSON, _ := json.Marshal(items)
-				s := string(itemsJSON)
-				record.ItemsJSON = &s
-			}
-		}
-
-		// Upsert
+		// Upsert 合同主记录
 		var existing model.EveCharacterContract
 		result := global.DB.Where("character_id = ? AND contract_id = ?", ctx.CharacterID, c.ContractID).First(&existing)
 		if result.Error != nil {
@@ -171,6 +138,7 @@ func (t *ContractsTask) Execute(ctx *TaskContext) error {
 					zap.Int64("contract_id", c.ContractID),
 					zap.Error(err),
 				)
+				continue
 			}
 		} else {
 			record.ID = existing.ID
@@ -179,6 +147,64 @@ func (t *ContractsTask) Execute(ctx *TaskContext) error {
 					zap.Int64("contract_id", c.ContractID),
 					zap.Error(err),
 				)
+				continue
+			}
+		}
+
+		// 拉取合同物品（所有合同类型均尝试，ESI 对已完成/取消的合同也会返回）
+		itemPath := fmt.Sprintf("/characters/%d/contracts/%d/items/", ctx.CharacterID, c.ContractID)
+		var esiItems []ContractItem
+		if err := ctx.Client.Get(bgCtx, itemPath, ctx.AccessToken, &esiItems); err != nil {
+			global.Logger.Debug("[ESI] 获取合同物品失败（可能无物品）",
+				zap.Int64("contract_id", c.ContractID),
+				zap.Error(err),
+			)
+		} else if len(esiItems) > 0 {
+			// 先删旧记录再批量插入（保证同步最新数据）
+			global.DB.Where("contract_id = ?", c.ContractID).Delete(&model.EveCharacterContractItem{})
+			items := make([]model.EveCharacterContractItem, 0, len(esiItems))
+			for _, it := range esiItems {
+				items = append(items, model.EveCharacterContractItem{
+					CharacterID: ctx.CharacterID,
+					ContractID:  c.ContractID,
+					RecordID:    it.RecordID,
+					TypeID:      it.TypeID,
+					Quantity:    it.Quantity,
+					RawQuantity: it.RawQuantity,
+					IsIncluded:  it.IsIncluded,
+					IsSingleton: it.IsSingleton,
+				})
+			}
+			if err := global.DB.Create(&items).Error; err != nil {
+				global.Logger.Warn("[ESI] 合同物品入库失败",
+					zap.Int64("contract_id", c.ContractID),
+					zap.Error(err),
+				)
+			}
+		}
+
+		// 拉取拍卖合同竞标
+		if c.Type == "auction" {
+			bidPath := fmt.Sprintf("/characters/%d/contracts/%d/bids/", ctx.CharacterID, c.ContractID)
+			var esiBids []ContractBid
+			if err := ctx.Client.Get(bgCtx, bidPath, ctx.AccessToken, &esiBids); err != nil {
+				global.Logger.Debug("[ESI] 获取合同竞标失败",
+					zap.Int64("contract_id", c.ContractID),
+					zap.Error(err),
+				)
+			} else if len(esiBids) > 0 {
+				// 逐条 upsert（bid_id 唯一）
+				for _, b := range esiBids {
+					bid := model.EveCharacterContractBid{
+						CharacterID: ctx.CharacterID,
+						ContractID:  c.ContractID,
+						BidID:       b.BidID,
+						Amount:      b.Amount,
+						BidderID:    b.BidderID,
+						DateBid:     b.DateBid,
+					}
+					global.DB.Where("bid_id = ?", b.BidID).Assign(bid).FirstOrCreate(&bid)
+				}
 			}
 		}
 	}

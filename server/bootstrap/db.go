@@ -79,6 +79,8 @@ func autoMigrate(db *gorm.DB) {
 		&model.EveCharacterKillmail{},
 
 		&model.EveCharacterContract{},
+		&model.EveCharacterContractItem{},
+		&model.EveCharacterContractBid{},
 
 		&model.EVECharacterWallet{},
 		&model.EVECharacterWalletJournal{},

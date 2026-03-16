@@ -10,16 +10,18 @@ import (
 
 // EveInfoHandler EVE 角色信息处理器
 type EveInfoHandler struct {
-	svc      *service.EveInfoService
-	cloneSvc *service.CloneService
-	assetSvc *service.AssetService
+	svc         *service.EveInfoService
+	cloneSvc    *service.CloneService
+	assetSvc    *service.AssetService
+	contractSvc *service.ContractService
 }
 
 func NewEveInfoHandler() *EveInfoHandler {
 	return &EveInfoHandler{
-		svc:      service.NewEveInfoService(),
-		cloneSvc: service.NewCloneService(),
-		assetSvc: service.NewAssetService(),
+		svc:         service.NewEveInfoService(),
+		cloneSvc:    service.NewCloneService(),
+		assetSvc:    service.NewAssetService(),
+		contractSvc: service.NewContractService(),
 	}
 }
 
@@ -111,6 +113,44 @@ func (h *EveInfoHandler) GetAssets(c *gin.Context) {
 	}
 
 	result, err := h.assetSvc.GetUserAssets(userID, &req)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, result)
+}
+
+// GetContracts POST /info/contracts
+// 分页获取当前用户所有角色的合同
+func (h *EveInfoHandler) GetContracts(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req service.InfoContractsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		req.Current = 1
+		req.Size = 20
+	}
+
+	list, total, err := h.contractSvc.GetUserContracts(userID, &req)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OKWithPage(c, list, total, req.Current, req.Size)
+}
+
+// GetContractDetail POST /info/contracts/detail
+// 获取指定合同的物品与竞标详情
+func (h *EveInfoHandler) GetContractDetail(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req service.InfoContractDetailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "参数错误: "+err.Error())
+		return
+	}
+
+	result, err := h.contractSvc.GetContractDetail(userID, &req)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
