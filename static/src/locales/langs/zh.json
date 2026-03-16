@@ -644,7 +644,31 @@
       "count": "PAP 数量",
       "issuedBy": "发放人",
       "issuedAt": "发放时间",
-      "empty": "暂无 PAP 记录"
+      "empty": "暂无 PAP 记录",
+      "operation": "舰队行动",
+      "character": "参与角色",
+      "ship": "舰船",
+      "fc": "发放 FC",
+      "level": "等级",
+      "totalPap": "总 PAP",
+      "participations": "参与次数",
+      "importance": {
+        "cta": "CTA",
+        "stratOp": "Strat Op",
+        "other": "普通"
+      },
+      "allianceCard": "联盟 PAP",
+      "allianceEmpty": "暂无联盟 PAP 记录",
+      "allianceMonthly": "月 PAP",
+      "allianceYearly": "年度 PAP",
+      "allianceCorpMonthRank": "军团月排名",
+      "allianceGlobalMonthRank": "联盟月排名",
+      "allianceCorpYearRank": "军团年排名",
+      "allianceDataSource": "数据来源：联盟 PAP 系统",
+      "allianceLastCalc": "最后计算",
+      "allianceOperationName": "行动名称",
+      "allianceStartTime": "开始时间",
+      "allianceEndTime": "结束时间"
     },
     "invite": {
       "title": "邀请链接",

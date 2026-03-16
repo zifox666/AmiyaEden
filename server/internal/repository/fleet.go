@@ -152,6 +152,37 @@ func (r *FleetRepository) ListPapLogsByUser(userID uint) ([]model.FleetPapLog, e
 	return logs, err
 }
 
+// PapLogDetail PAP 记录（含角色名、FC 名称、舰队信息）
+type PapLogDetail struct {
+	model.FleetPapLog
+	CharacterName   string `json:"character_name"`
+	FleetTitle      string `json:"fleet_title"`
+	FleetStartAt    string `json:"fleet_start_at"`
+	FCCharacterName string `json:"fc_character_name"`
+	FleetImportance string `json:"fleet_importance"`
+	ShipTypeID      *int64 `json:"ship_type_id"`
+}
+
+// ListPapLogsDetailByUser 查询某用户的 PAP 记录（JOIN 舰队、角色信息）
+func (r *FleetRepository) ListPapLogsDetailByUser(userID uint) ([]PapLogDetail, error) {
+	var results []PapLogDetail
+	err := global.DB.Table("fleet_pap_log p").
+		Select(`p.*,
+			COALESCE(ec.character_name, '') AS character_name,
+			COALESCE(f.title, '') AS fleet_title,
+			COALESCE(CAST(f.start_at AS TEXT), '') AS fleet_start_at,
+			COALESCE(f.fc_character_name, '') AS fc_character_name,
+			COALESCE(f.importance, '') AS fleet_importance,
+			fm.ship_type_id`).
+		Joins("LEFT JOIN eve_character ec ON ec.character_id = p.character_id").
+		Joins("LEFT JOIN fleet f ON f.id = p.fleet_id AND f.deleted_at IS NULL").
+		Joins("LEFT JOIN fleet_member fm ON fm.fleet_id = p.fleet_id AND fm.character_id = p.character_id").
+		Where("p.user_id = ?", userID).
+		Order("p.issued_at DESC").
+		Scan(&results).Error
+	return results, err
+}
+
 // ListFleetsByMemberUserID 查询用户参与过的舰队（通过成员记录关联）
 func (r *FleetRepository) ListFleetsByMemberUserID(userID uint, limit int) ([]model.Fleet, error) {
 	var fleets []model.Fleet

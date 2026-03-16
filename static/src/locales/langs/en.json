@@ -642,7 +642,31 @@
       "count": "PAP Count",
       "issuedBy": "Issued By",
       "issuedAt": "Issued At",
-      "empty": "No PAP records"
+      "empty": "No PAP records",
+      "operation": "Fleet Operation",
+      "character": "Character",
+      "ship": "Ship",
+      "fc": "FC",
+      "level": "Level",
+      "totalPap": "Total PAP",
+      "participations": "Participations",
+      "importance": {
+        "cta": "CTA",
+        "stratOp": "Strat Op",
+        "other": "Regular"
+      },
+      "allianceCard": "Alliance PAP",
+      "allianceEmpty": "No alliance PAP records",
+      "allianceMonthly": "Monthly PAP",
+      "allianceYearly": "Yearly PAP",
+      "allianceCorpMonthRank": "Corp Monthly Rank",
+      "allianceGlobalMonthRank": "Alliance Monthly Rank",
+      "allianceCorpYearRank": "Corp Yearly Rank",
+      "allianceDataSource": "Data source: Alliance PAP",
+      "allianceLastCalc": "Last calculated",
+      "allianceOperationName": "Operation Name",
+      "allianceStartTime": "Start Time",
+      "allianceEndTime": "End Time"
     },
     "invite": {
       "title": "Invite Links",

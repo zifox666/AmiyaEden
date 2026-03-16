@@ -23,12 +23,12 @@ const esiBaseURL = "https://esi.evetech.net/latest"
 
 // FleetService 舰队业务逻辑层
 type FleetService struct {
-	repo        *repository.FleetRepository
-	charRepo    *repository.EveCharacterRepository
-	ssoSvc      *EveSSOService
-	walletSvc   *SysWalletService
-	webhookSvc  *WebhookService
-	http        *http.Client
+	repo       *repository.FleetRepository
+	charRepo   *repository.EveCharacterRepository
+	ssoSvc     *EveSSOService
+	walletSvc  *SysWalletService
+	webhookSvc *WebhookService
+	http       *http.Client
 }
 
 func NewFleetService() *FleetService {
@@ -525,9 +525,9 @@ func (s *FleetService) GetPapLogs(fleetID string) ([]model.FleetPapLog, error) {
 	return s.repo.ListPapLogsByFleet(fleetID)
 }
 
-// GetUserPapLogs 获取用户的 PAP 记录
-func (s *FleetService) GetUserPapLogs(userID uint) ([]model.FleetPapLog, error) {
-	return s.repo.ListPapLogsByUser(userID)
+// GetUserPapLogs 获取用户的 PAP 记录（含角色名、FC 名称、舰队信息）
+func (s *FleetService) GetUserPapLogs(userID uint) ([]repository.PapLogDetail, error) {
+	return s.repo.ListPapLogsDetailByUser(userID)
 }
 
 // ─────────────────────────────────────────────

@@ -420,6 +420,13 @@ declare namespace Api {
       pap_count: number
       issued_by: number
       created_at: string
+      /** 以下为富化字段（联表查询返回） */
+      character_name: string
+      fleet_title: string
+      fleet_start_at: string
+      fc_character_name: string
+      fleet_importance: string
+      ship_type_id: number | null
     }
 
     /** 邀请链接 */
