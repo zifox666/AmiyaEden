@@ -762,6 +762,7 @@
         "recommendedAmount": "推荐金额",
         "finalAmount": "最终金额",
         "review": "审批",
+        "reviewNote": "审批备注",
         "payout": "发放",
         "action": "操作"
       }

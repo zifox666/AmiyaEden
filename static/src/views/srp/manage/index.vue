@@ -322,7 +322,7 @@
     }
   }
 
-  const filter = reactive({ review_status: '', payout_status: 'pending', fleet_id: '' })
+  const filter = reactive({ review_status: 'pending', payout_status: '', fleet_id: '' })
 
   type SrpApp = Api.Srp.Application
   type BatchPayoutSummary = Api.Srp.BatchPayoutSummary
@@ -466,10 +466,23 @@
           prop: 'review_status',
           label: t('srp.manage.columns.review'),
           width: 100,
-          formatter: (row: SrpApp) =>
-            h(ElTag, { type: reviewStatusType(row.review_status), size: 'small' }, () =>
+          formatter: (row: SrpApp) => {
+            const tag = h(ElTag, { type: reviewStatusType(row.review_status), size: 'small' }, () =>
               reviewStatusLabel(row.review_status)
             )
+            if (row.review_note) {
+              return h(ElTooltip, { content: row.review_note, placement: 'top' }, () => tag)
+            }
+            return tag
+          }
+        },
+        {
+          prop: 'review_note',
+          label: t('srp.manage.columns.reviewNote'),
+          minWidth: 200,
+          showOverflowTooltip: true,
+          formatter: (row: SrpApp) =>
+            h('span', { class: row.review_note ? '' : 'text-gray-400' }, row.review_note || '-')
         },
         {
           prop: 'payout_status',
@@ -849,6 +862,7 @@
     recommended_amount: '推荐金额',
     final_amount: '最终金额',
     review_status: '审批状态',
+    review_note: '审批备注',
     payout_status: '发放状态'
   }
   const exportManageData = computed(() =>
@@ -869,6 +883,7 @@
       recommended_amount: app.recommended_amount,
       final_amount: app.final_amount,
       review_status: reviewStatusLabel(app.review_status),
+      review_note: app.review_note || '-',
       payout_status: app.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.unpaid')
     }))
   )

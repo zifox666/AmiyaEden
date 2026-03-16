@@ -233,10 +233,15 @@
           prop: 'review_status',
           label: t('srp.apply.columns.reviewStatus'),
           width: 110,
-          formatter: (row: Api.Srp.Application) =>
-            h(ElTag, { type: reviewStatusType(row.review_status), size: 'small' }, () =>
+          formatter: (row: Api.Srp.Application) => {
+            const tag = h(ElTag, { type: reviewStatusType(row.review_status), size: 'small' }, () =>
               reviewStatusLabel(row.review_status)
             )
+            if (row.review_note) {
+              return h(ElTooltip, { content: row.review_note, placement: 'top' }, () => tag)
+            }
+            return tag
+          }
         },
         {
           prop: 'final_amount',
