@@ -58,8 +58,7 @@ func (h *EveSSOHandler) Callback(c *gin.Context) {
 	// 错误重定向辅助函数：带 error 参数跳回前端 callback 页面
 	redirectError := func(errMsg string) {
 		if frontendRedirect != "" {
-			target := frontendRedirect + "?error=" + url.QueryEscape(errMsg)
-			c.Redirect(302, target)
+			c.Redirect(302, appendQuery(frontendRedirect, url.Values{"error": {errMsg}}))
 			return
 		}
 		response.Fail(c, response.CodeBizError, errMsg)
@@ -85,7 +84,7 @@ func (h *EveSSOHandler) Callback(c *gin.Context) {
 			params.Set("conflict", "true")
 			params.Set("character_name", result.ConflictCharName)
 			params.Set("transfer_token", result.TransferToken)
-			c.Redirect(302, result.RedirectURL+"?"+params.Encode())
+			c.Redirect(302, appendQuery(result.RedirectURL, params))
 			return
 		}
 		response.OK(c, gin.H{
@@ -98,7 +97,7 @@ func (h *EveSSOHandler) Callback(c *gin.Context) {
 
 	// 如果有前端重定向地址，则带 token 跳转
 	if result.RedirectURL != "" {
-		c.Redirect(302, result.RedirectURL+"?token="+result.Token)
+		c.Redirect(302, appendQuery(result.RedirectURL, url.Values{"token": {result.Token}}))
 		return
 	}
 
@@ -246,6 +245,24 @@ func (h *EveSSOHandler) ConfirmTransfer(c *gin.Context) {
 		"user":      result.User,
 		"character": result.Character,
 	})
+}
+
+// appendQuery 安全地将额外的 query 参数追加到 URL 上，
+// 正确处理 URL 已有 query 参数的情况。
+func appendQuery(rawURL string, extra url.Values) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		// fallback：直接拼接
+		return rawURL + "?" + extra.Encode()
+	}
+	q := u.Query()
+	for k, vs := range extra {
+		for _, v := range vs {
+			q.Set(k, v)
+		}
+	}
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 // splitCSV 按逗号或空格分割字符串

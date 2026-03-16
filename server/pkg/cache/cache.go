@@ -36,6 +36,15 @@ func SetString(ctx context.Context, key string, value string, expiration time.Du
 	return global.Redis.Set(ctx, key, value, expiration).Err()
 }
 
+// GetDel 原子地获取并删除缓存（防重放）
+func GetDel(ctx context.Context, key string, dest any) error {
+	data, err := global.Redis.GetDel(ctx, key).Bytes()
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, dest)
+}
+
 // Del 删除一个或多个缓存 key
 func Del(ctx context.Context, keys ...string) error {
 	return global.Redis.Del(ctx, keys...).Err()

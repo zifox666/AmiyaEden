@@ -203,6 +203,7 @@ type transferData struct {
 	TokenExpiry   time.Time `json:"token_expiry"`
 	Scopes        string    `json:"scopes"`
 	BindToUserID  uint      `json:"bind_to_user_id"`
+	OldUserID     uint      `json:"old_user_id"` // 冲突检测时角色的原始所有者
 	RedirectURL   string    `json:"redirect_url"`
 }
 
@@ -367,6 +368,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 				TokenExpiry:   tokenExpiry,
 				Scopes:        scopesStr,
 				BindToUserID:  sd.BindToUserID,
+				OldUserID:     char.UserID,
 				RedirectURL:   sd.RedirectURL,
 			}
 			if err := cache.Set(ctx, transferCachePrefix+transferToken, td, transferCacheTTL); err != nil {
@@ -605,22 +607,24 @@ func (s *EveSSOService) UnbindCharacter(userID uint, characterID int64) error {
 
 // ConfirmTransfer 确认角色转移（用户在前端确认后调用）
 func (s *EveSSOService) ConfirmTransfer(ctx context.Context, userID uint, transferToken string) (*CallbackResult, error) {
-	// 1. 从 Redis 读取并删除 transfer data（防重放）
+	// 1. 原子地读取并删除 transfer data（防重放）
 	var td transferData
-	if err := cache.Get(ctx, transferCachePrefix+transferToken, &td); err != nil {
+	if err := cache.GetDel(ctx, transferCachePrefix+transferToken, &td); err != nil {
 		return nil, errors.New("转移令牌无效或已过期，请重新操作")
 	}
-	_ = cache.Del(ctx, transferCachePrefix+transferToken)
 
 	// 2. 验证 userID 与存储的 BindToUserID 一致
 	if td.BindToUserID != userID {
 		return nil, errors.New("无权执行此操作")
 	}
 
-	// 3. 获取角色记录
+	// 3. 获取角色记录并校验仍属于原用户
 	char, err := s.charRepo.GetByCharacterID(td.CharacterID)
 	if err != nil {
 		return nil, errors.New("角色不存在")
+	}
+	if char.UserID != td.OldUserID {
+		return nil, errors.New("角色归属已变更，请重新操作")
 	}
 
 	oldUserID := char.UserID
@@ -648,7 +652,9 @@ func (s *EveSSOService) ConfirmTransfer(ctx context.Context, userID uint, transf
 	}
 	if user.PrimaryCharacterID == 0 {
 		user.PrimaryCharacterID = td.CharacterID
-		_ = s.userRepo.Update(user)
+		if err := s.userRepo.Update(user); err != nil {
+			return nil, err
+		}
 	}
 
 	// 7. 触发绑定钩子
@@ -679,16 +685,22 @@ func (s *EveSSOService) cleanupOldUserAfterTransfer(oldUserID uint, transferredC
 	if oldUser.PrimaryCharacterID != transferredCharID {
 		return // 转移的不是主角色，无需调整
 	}
-	// 重新分配主角色
+	// 重新分配主角色（选择 character_id 最小的角色，确保确定性）
 	remaining, err := s.charRepo.ListByUserID(oldUserID)
 	if err != nil || len(remaining) == 0 {
 		oldUser.PrimaryCharacterID = 0
 		_ = s.userRepo.Update(oldUser)
 		return
 	}
-	oldUser.PrimaryCharacterID = remaining[0].CharacterID
-	oldUser.Avatar = remaining[0].PortraitURL
-	oldUser.Nickname = remaining[0].CharacterName
+	pick := remaining[0]
+	for _, c := range remaining[1:] {
+		if c.CharacterID < pick.CharacterID {
+			pick = c
+		}
+	}
+	oldUser.PrimaryCharacterID = pick.CharacterID
+	oldUser.Avatar = pick.PortraitURL
+	oldUser.Nickname = pick.CharacterName
 	_ = s.userRepo.Update(oldUser)
 }
 
