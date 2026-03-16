@@ -109,6 +109,39 @@ func (r *SysWalletRepository) ListTransactions(page, pageSize int, filter Wallet
 	return txs, total, nil
 }
 
+// ListTransactionsWithCharacter 分页查询钱包流水（附带用户主角色名）
+func (r *SysWalletRepository) ListTransactionsWithCharacter(page, pageSize int, filter WalletTransactionFilter) ([]model.TransactionWithCharacter, int64, error) {
+	var results []model.TransactionWithCharacter
+	var total int64
+	offset := (page - 1) * pageSize
+
+	countDB := global.DB.Model(&model.WalletTransaction{})
+	if filter.UserID != nil {
+		countDB = countDB.Where("user_id = ?", *filter.UserID)
+	}
+	if filter.RefType != "" {
+		countDB = countDB.Where("ref_type = ?", filter.RefType)
+	}
+	if err := countDB.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	queryDB := global.DB.Table("wallet_transaction wt").
+		Select("wt.*, COALESCE(ec.character_name, '') AS character_name").
+		Joins(`LEFT JOIN "user" u ON wt.user_id = u.id`).
+		Joins("LEFT JOIN eve_character ec ON u.primary_character_id = ec.character_id")
+	if filter.UserID != nil {
+		queryDB = queryDB.Where("wt.user_id = ?", *filter.UserID)
+	}
+	if filter.RefType != "" {
+		queryDB = queryDB.Where("wt.ref_type = ?", filter.RefType)
+	}
+	if err := queryDB.Order("wt.created_at DESC").Offset(offset).Limit(pageSize).Scan(&results).Error; err != nil {
+		return nil, 0, err
+	}
+	return results, total, nil
+}
+
 // ─────────────────────────────────────────────
 //  操作日志
 // ─────────────────────────────────────────────
@@ -156,6 +189,49 @@ func (r *SysWalletRepository) ListLogs(page, pageSize int, filter WalletLogFilte
 	return logs, total, nil
 }
 
+// ListLogsWithCharacter 分页查询操作日志（附带操作人和目标用户主角色名）
+func (r *SysWalletRepository) ListLogsWithCharacter(page, pageSize int, filter WalletLogFilter) ([]model.LogWithCharacter, int64, error) {
+	var results []model.LogWithCharacter
+	var total int64
+	offset := (page - 1) * pageSize
+
+	countDB := global.DB.Model(&model.WalletLog{})
+	if filter.OperatorID != nil {
+		countDB = countDB.Where("operator_id = ?", *filter.OperatorID)
+	}
+	if filter.TargetUID != nil {
+		countDB = countDB.Where("target_uid = ?", *filter.TargetUID)
+	}
+	if filter.Action != "" {
+		countDB = countDB.Where("action = ?", filter.Action)
+	}
+	if err := countDB.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	queryDB := global.DB.Table("wallet_log wl").
+		Select(`wl.*,
+			COALESCE(t_ec.character_name, '') AS target_character_name,
+			COALESCE(o_ec.character_name, '') AS operator_character_name`).
+		Joins(`LEFT JOIN "user" t_u ON wl.target_uid = t_u.id`).
+		Joins("LEFT JOIN eve_character t_ec ON t_u.primary_character_id = t_ec.character_id").
+		Joins(`LEFT JOIN "user" o_u ON wl.operator_id = o_u.id`).
+		Joins("LEFT JOIN eve_character o_ec ON o_u.primary_character_id = o_ec.character_id")
+	if filter.OperatorID != nil {
+		queryDB = queryDB.Where("wl.operator_id = ?", *filter.OperatorID)
+	}
+	if filter.TargetUID != nil {
+		queryDB = queryDB.Where("wl.target_uid = ?", *filter.TargetUID)
+	}
+	if filter.Action != "" {
+		queryDB = queryDB.Where("wl.action = ?", filter.Action)
+	}
+	if err := queryDB.Order("wl.created_at DESC").Offset(offset).Limit(pageSize).Scan(&results).Error; err != nil {
+		return nil, 0, err
+	}
+	return results, total, nil
+}
+
 // ─────────────────────────────────────────────
 //  管理员：批量查询钱包
 // ─────────────────────────────────────────────
@@ -174,4 +250,28 @@ func (r *SysWalletRepository) ListWallets(page, pageSize int) ([]model.SystemWal
 		return nil, 0, err
 	}
 	return wallets, total, nil
+}
+
+// ListWalletsWithCharacter 分页查询所有用户钱包（附带主角色名）
+func (r *SysWalletRepository) ListWalletsWithCharacter(page, pageSize int) ([]model.WalletWithCharacter, int64, error) {
+	var results []model.WalletWithCharacter
+	var total int64
+	offset := (page - 1) * pageSize
+
+	db := global.DB.Model(&model.SystemWallet{})
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := global.DB.Table("system_wallet sw").
+		Select("sw.*, COALESCE(ec.character_name, '') AS character_name").
+		Joins(`LEFT JOIN "user" u ON sw.user_id = u.id`).
+		Joins("LEFT JOIN eve_character ec ON u.primary_character_id = ec.character_id").
+		Order("sw.updated_at DESC").
+		Offset(offset).Limit(pageSize).
+		Scan(&results).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return results, total, nil
 }

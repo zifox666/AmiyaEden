@@ -101,6 +101,10 @@ func autoMigrate(db *gorm.DB) {
 		&model.ShopProduct{},
 		&model.ShopOrder{},
 		&model.ShopRedeemCode{},
+		// 抽奖相关表
+		&model.ShopLotteryActivity{},
+		&model.ShopLotteryPrize{},
+		&model.ShopLotteryRecord{},
 		// SRP 补损相关表
 		&model.SrpShipPrice{},
 		&model.SrpApplication{},

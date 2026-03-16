@@ -16,6 +16,25 @@ type SystemWallet struct {
 
 func (SystemWallet) TableName() string { return "system_wallet" }
 
+// WalletWithCharacter 钱包信息 + 用户主角色名（用于管理列表展示）
+type WalletWithCharacter struct {
+	SystemWallet
+	CharacterName string `json:"character_name"`
+}
+
+// TransactionWithCharacter 钱包流水 + 用户主角色名
+type TransactionWithCharacter struct {
+	WalletTransaction
+	CharacterName string `json:"character_name"`
+}
+
+// LogWithCharacter 钱包操作日志 + 操作人/目标用户角色名
+type LogWithCharacter struct {
+	WalletLog
+	TargetCharacterName   string `json:"target_character_name"`
+	OperatorCharacterName string `json:"operator_character_name"`
+}
+
 // WalletTransaction 钱包流水
 type WalletTransaction struct {
 	ID           uint      `gorm:"primarykey"                 json:"id"`
@@ -55,6 +74,7 @@ const (
 	WalletRefAdminAdjust = "admin_adjust"  // 管理员调整
 	WalletRefSrpPayout   = "srp_payout"    // SRP 补损发放
 	WalletRefShopBuy     = "shop_purchase" // 商城购买
+	WalletRefLotteryDraw = "lottery_draw"  // 抽奖消费
 )
 
 // 钱包操作日志动作

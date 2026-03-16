@@ -10,6 +10,9 @@ import (
 
 // RegisterRoutes 注册所有业务路由
 func RegisterRoutes(r *gin.Engine) {
+	// ─── 上传文件静态目录 ───
+	r.Static("/uploads", "./uploads")
+
 	api := r.Group("/api/v1")
 
 	// ─── 无需认证 ───
@@ -142,7 +145,16 @@ func RegisterRoutes(r *gin.Engine) {
 		shop.POST("/buy", shopH.BuyProduct)
 		shop.POST("/orders", shopH.GetMyOrders)
 		shop.POST("/redeem/list", shopH.GetMyRedeemCodes)
+		// 抽奖
+		lotteryH := handler.NewLotteryHandler()
+		shop.POST("/lottery/list", lotteryH.ListActivities)
+		shop.POST("/lottery/draw", lotteryH.Draw)
+		shop.POST("/lottery/records", lotteryH.GetMyRecords)
 	}
+
+	// ─── 文件上传（需要登录）───
+	uploadH := handler.NewUploadHandler()
+	auth.POST("/upload/image", uploadH.UploadImage)
 
 	// ─── SRP 补损 ───
 	srpH := handler.NewSrpHandler()
@@ -273,6 +285,21 @@ func RegisterRoutes(r *gin.Engine) {
 	adminShopRedeem := admin.Group("/shop/redeem")
 	{
 		adminShopRedeem.POST("/list", adminShopH.AdminListRedeemCodes)
+	}
+
+	// 抽奖管理（管理员）
+	adminLotteryH := handler.NewLotteryHandler()
+	adminLottery := admin.Group("/shop/lottery")
+	{
+		adminLottery.POST("/list", adminLotteryH.AdminListActivities)
+		adminLottery.POST("/add", adminLotteryH.AdminCreateActivity)
+		adminLottery.POST("/edit", adminLotteryH.AdminUpdateActivity)
+		adminLottery.POST("/delete", adminLotteryH.AdminDeleteActivity)
+		adminLottery.POST("/prize/add", adminLotteryH.AdminCreatePrize)
+		adminLottery.POST("/prize/edit", adminLotteryH.AdminUpdatePrize)
+		adminLottery.POST("/prize/delete", adminLotteryH.AdminDeletePrize)
+		adminLottery.POST("/records", adminLotteryH.AdminListRecords)
+		adminLottery.POST("/records/deliver", adminLotteryH.AdminUpdateRecordDelivery)
 	}
 
 	// 自动权限映射管理（管理员）

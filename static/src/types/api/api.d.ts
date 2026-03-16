@@ -492,6 +492,7 @@ declare namespace Api {
       user_id: number
       balance: number
       updated_at: string
+      character_name?: string
     }
 
     /** 钱包流水 */
@@ -505,6 +506,7 @@ declare namespace Api {
       balance_after: number
       operator_id: number
       created_at: string
+      character_name?: string
     }
 
     /** 钱包操作日志 */
@@ -518,6 +520,8 @@ declare namespace Api {
       after: number
       reason: string
       created_at: string
+      target_character_name?: string
+      operator_character_name?: string
     }
 
     /** 管理员调整余额请求 */
@@ -805,6 +809,107 @@ declare namespace Api {
       product_id: number
       status: string
     }>
+
+    // ─── 抽奖活动 ───
+
+    /** 抽奖奖品稀有度 */
+    type LotteryPrizeTier = 'normal' | 'rare' | 'legendary'
+
+    /** 抽奖奖品 */
+    interface LotteryPrize {
+      id: number
+      activity_id: number
+      name: string
+      image: string
+      tier: LotteryPrizeTier
+      probability_weight: number
+      total_stock: number
+      drawn_count: number
+      created_at: string
+      updated_at: string
+    }
+
+    /** 抽奖活动 */
+    interface LotteryActivity {
+      id: number
+      name: string
+      description: string
+      image: string
+      cost_per_draw: number
+      status: number
+      start_at: string | null
+      end_at: string | null
+      sort_order: number
+      prizes: LotteryPrize[]
+      created_at: string
+      updated_at: string
+    }
+
+    /** 抽奖记录 */
+    interface LotteryRecord {
+      id: number
+      user_id: number
+      activity_id: number
+      activity_name: string
+      prize_id: number
+      prize_name: string
+      prize_tier: LotteryPrizeTier
+      prize_image: string
+      cost: number
+      delivery_status: 'pending' | 'delivered'
+      created_at: string
+      updated_at: string
+    }
+
+    /** 抽奖结果 */
+    interface DrawResult {
+      prize: LotteryPrize
+    }
+
+    /** 创建抽奖活动参数 */
+    interface LotteryActivityCreateParams {
+      name: string
+      description?: string
+      image?: string
+      cost_per_draw?: number
+      status?: number
+      start_at?: string | null
+      end_at?: string | null
+      sort_order?: number
+    }
+
+    /** 更新抽奖活动参数 */
+    interface LotteryActivityUpdateParams {
+      id: number
+      name?: string
+      description?: string
+      image?: string
+      cost_per_draw?: number
+      status?: number
+      start_at?: string | null
+      end_at?: string | null
+      sort_order?: number
+    }
+
+    /** 创建奖品参数 */
+    interface LotteryPrizeCreateParams {
+      activity_id: number
+      name: string
+      image?: string
+      tier?: LotteryPrizeTier
+      probability_weight?: number
+      total_stock?: number
+    }
+
+    /** 更新奖品参数 */
+    interface LotteryPrizeUpdateParams {
+      id: number
+      name?: string
+      image?: string
+      tier?: LotteryPrizeTier
+      probability_weight?: number
+      total_stock?: number
+    }
   }
 
   /** 通知相关类型 */

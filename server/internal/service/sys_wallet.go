@@ -141,15 +141,15 @@ func (s *SysWalletService) AdminAdjust(operatorID uint, req *AdminAdjustRequest)
 	return wallet, nil
 }
 
-// AdminListWallets 管理员查询所有钱包
-func (s *SysWalletService) AdminListWallets(page, pageSize int) ([]model.SystemWallet, int64, error) {
+// AdminListWallets 管理员查询所有钱包（附带主角色名）
+func (s *SysWalletService) AdminListWallets(page, pageSize int) ([]model.WalletWithCharacter, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	return s.repo.ListWallets(page, pageSize)
+	return s.repo.ListWalletsWithCharacter(page, pageSize)
 }
 
 // AdminGetWallet 管理员查看指定用户钱包
@@ -157,26 +157,26 @@ func (s *SysWalletService) AdminGetWallet(userID uint) (*model.SystemWallet, err
 	return s.repo.GetOrCreateWallet(userID)
 }
 
-// AdminListTransactions 管理员查询流水（可按用户/类型筛选）
-func (s *SysWalletService) AdminListTransactions(page, pageSize int, filter repository.WalletTransactionFilter) ([]model.WalletTransaction, int64, error) {
+// AdminListTransactions 管理员查询流水（可按用户/类型筛选，附带角色名）
+func (s *SysWalletService) AdminListTransactions(page, pageSize int, filter repository.WalletTransactionFilter) ([]model.TransactionWithCharacter, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	return s.repo.ListTransactions(page, pageSize, filter)
+	return s.repo.ListTransactionsWithCharacter(page, pageSize, filter)
 }
 
-// AdminListLogs 管理员查询操作日志
-func (s *SysWalletService) AdminListLogs(page, pageSize int, filter repository.WalletLogFilter) ([]model.WalletLog, int64, error) {
+// AdminListLogs 管理员查询操作日志（附带角色名）
+func (s *SysWalletService) AdminListLogs(page, pageSize int, filter repository.WalletLogFilter) ([]model.LogWithCharacter, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	return s.repo.ListLogs(page, pageSize, filter)
+	return s.repo.ListLogsWithCharacter(page, pageSize, filter)
 }
 
 // ─────────────────────────────────────────────

@@ -87,14 +87,28 @@
         {
           prop: 'operator_id',
           label: '操作人',
-          width: 100,
-          formatter: (row: WalletLog) => h('span', {}, `#${row.operator_id}`)
+          minWidth: 140,
+          formatter: (row: WalletLog) =>
+            h(
+              'span',
+              {},
+              row.operator_character_name
+                ? `${row.operator_character_name} (#${row.operator_id})`
+                : `#${row.operator_id}`
+            )
         },
         {
           prop: 'target_uid',
           label: '目标用户',
-          width: 100,
-          formatter: (row: WalletLog) => h('span', {}, `#${row.target_uid}`)
+          minWidth: 140,
+          formatter: (row: WalletLog) =>
+            h(
+              'span',
+              {},
+              row.target_character_name
+                ? `${row.target_character_name} (#${row.target_uid})`
+                : `#${row.target_uid}`
+            )
         },
         {
           prop: 'action',

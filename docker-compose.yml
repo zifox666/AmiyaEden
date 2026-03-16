@@ -14,6 +14,8 @@ services:
       - ./server/config/config.yaml:/app/config/config.yaml:ro
       # 持久化日志
       - ./server/logs:/app/logs
+      # 持久化图片
+      - ./server/uploads:/app/uploads
     ports:
       - "8080:8080"
     networks:

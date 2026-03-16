@@ -4,36 +4,37 @@
     <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
       <template #left>
         <div class="flex items-center gap-2">
-          <ElButton type="success" :icon="Plus" @click="openCreateDialog">新增商品</ElButton>
+          <ElButton type="success" :icon="Plus" @click="openCreateDialog">{{
+            t('shop.manage.createProduct')
+          }}</ElButton>
           <ElInput
             v-model="nameFilter"
-            placeholder="商品名称"
+            :placeholder="t('shop.manage.filterName')"
             clearable
             style="width: 160px"
             @keyup.enter="handleSearch"
           />
           <ElSelect
             v-model="typeFilter"
-            placeholder="商品类型"
+            :placeholder="t('shop.manage.filterType')"
             clearable
             style="width: 140px"
             @change="handleSearch"
           >
-            <ElOption label="普通商品" value="normal" />
-            <ElOption label="兑换码" value="redeem" />
+            <ElOption :label="t('shop.manage.typeNormal')" value="normal" />
           </ElSelect>
           <ElSelect
             v-model="statusFilter"
-            placeholder="状态"
+            :placeholder="t('shop.manage.filterStatus')"
             clearable
             style="width: 120px"
             @change="handleSearch"
           >
-            <ElOption label="上架" :value="1" />
-            <ElOption label="下架" :value="0" />
+            <ElOption :label="t('shop.manage.statusOnSale')" :value="1" />
+            <ElOption :label="t('shop.manage.statusOffSale')" :value="0" />
           </ElSelect>
-          <ElButton type="primary" @click="handleSearch">查询</ElButton>
-          <ElButton @click="handleReset">重置</ElButton>
+          <ElButton type="primary" @click="handleSearch">{{ t('shop.manage.search') }}</ElButton>
+          <ElButton @click="handleReset">{{ t('shop.manage.reset') }}</ElButton>
         </div>
       </template>
     </ArtTableHeader>
@@ -51,26 +52,61 @@
   <!-- 商品编辑对话框 -->
   <ElDialog
     v-model="dialogVisible"
-    :title="editingProduct ? '编辑商品' : '新增商品'"
-    width="560px"
+    :title="editingProduct ? t('shop.manage.editProduct') : t('shop.manage.createProduct')"
+    width="580px"
     destroy-on-close
   >
     <ElForm ref="formRef" :model="formData" :rules="formRules" label-width="100px">
-      <ElFormItem label="商品名称" prop="name">
-        <ElInput v-model="formData.name" placeholder="请输入商品名称" />
+      <ElFormItem :label="$t('shop.productName')" prop="name">
+        <ElInput v-model="formData.name" :placeholder="$t('shop.manage.namePlaceholder')" />
       </ElFormItem>
-      <ElFormItem label="描述">
+      <ElFormItem :label="$t('shop.manage.sdeSearch')">
+        <SdeSearchSelect
+          v-model="sdeTypeId"
+          :placeholder="$t('shop.manage.sdeSearchPlaceholder')"
+          style="width: 100%"
+          @select="onSdeSelect"
+        />
+      </ElFormItem>
+      <ElFormItem :label="t('shop.manage.description')">
         <ElInput
           v-model="formData.description"
           type="textarea"
           :rows="3"
-          placeholder="商品描述（可选）"
+          :placeholder="t('shop.manage.descriptionPlaceholder')"
         />
       </ElFormItem>
-      <ElFormItem label="图片 URL">
-        <ElInput v-model="formData.image" placeholder="商品图片链接（可选）" />
+      <!-- 图片上传区域 -->
+      <ElFormItem :label="t('shop.manage.productImage')">
+        <div class="image-upload-area">
+          <div v-if="formData.image" class="image-preview">
+            <img :src="formData.image" :alt="t('shop.manage.productImage')" />
+            <div class="image-actions">
+              <ElButton size="small" type="danger" text @click="formData.image = ''">
+                <el-icon><Delete /></el-icon>
+              </ElButton>
+            </div>
+          </div>
+          <ElUpload
+            v-else
+            class="image-uploader"
+            :show-file-list="false"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            :before-upload="handleImageBeforeUpload"
+            :http-request="handleImageUpload"
+          >
+            <div class="upload-placeholder">
+              <el-icon v-if="!imageUploading" :size="32"><Plus /></el-icon>
+              <el-icon v-else :size="32" class="animate-spin"><Loading /></el-icon>
+              <span>{{
+                imageUploading ? t('shop.manage.uploading') : t('shop.manage.uploadImage')
+              }}</span>
+              <span class="upload-hint">{{ t('shop.manage.uploadHint') }}</span>
+            </div>
+          </ElUpload>
+        </div>
       </ElFormItem>
-      <ElFormItem label="价格" prop="price">
+      <ElFormItem :label="t('shop.manage.price')" prop="price">
         <ElInputNumber
           v-model="formData.price"
           :min="0.01"
@@ -79,37 +115,38 @@
           style="width: 200px"
         />
       </ElFormItem>
-      <ElFormItem label="类型" prop="type">
+      <ElFormItem :label="t('shop.manage.type')" prop="type">
         <ElSelect v-model="formData.type" style="width: 200px">
-          <ElOption label="普通商品" value="normal" />
-          <ElOption label="兑换码/服务" value="redeem" />
+          <ElOption :label="t('shop.manage.typeNormal')" value="normal" />
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="库存">
+      <ElFormItem :label="t('shop.manage.stock')">
         <ElInputNumber v-model="formData.stock" :min="-1" style="width: 200px" />
-        <span class="ml-2 text-xs text-gray-400">-1 = 无限库存</span>
+        <span class="ml-2 text-xs text-gray-400">{{ t('shop.manage.stockUnlimitedHint') }}</span>
       </ElFormItem>
-      <ElFormItem label="限购/人">
+      <ElFormItem :label="t('shop.manage.limitPerUser')">
         <ElInputNumber v-model="formData.max_per_user" :min="0" style="width: 200px" />
-        <span class="ml-2 text-xs text-gray-400">0 = 不限购</span>
+        <span class="ml-2 text-xs text-gray-400">{{ t('shop.manage.limitPerUserHint') }}</span>
       </ElFormItem>
-      <ElFormItem label="需要审批">
+      <ElFormItem :label="t('shop.manage.needApproval')">
         <ElSwitch v-model="formData.need_approval" />
       </ElFormItem>
-      <ElFormItem label="状态">
+      <ElFormItem :label="t('shop.manage.status')">
         <ElSelect v-model="formData.status" style="width: 200px">
-          <ElOption label="上架" :value="1" />
-          <ElOption label="下架" :value="0" />
+          <ElOption :label="t('shop.manage.statusOnSale')" :value="1" />
+          <ElOption :label="t('shop.manage.statusOffSale')" :value="0" />
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="排序">
+      <ElFormItem :label="t('shop.manage.sortOrder')">
         <ElInputNumber v-model="formData.sort_order" :min="0" style="width: 200px" />
-        <span class="ml-2 text-xs text-gray-400">越大越靠前</span>
+        <span class="ml-2 text-xs text-gray-400">{{ t('shop.manage.sortHint') }}</span>
       </ElFormItem>
     </ElForm>
     <template #footer>
-      <ElButton @click="dialogVisible = false">取消</ElButton>
-      <ElButton type="primary" :loading="submitLoading" @click="handleSubmit">确定</ElButton>
+      <ElButton @click="dialogVisible = false">{{ t('common.cancel') }}</ElButton>
+      <ElButton type="primary" :loading="submitLoading" @click="handleSubmit">{{
+        t('common.confirm')
+      }}</ElButton>
     </template>
   </ElDialog>
 </template>
@@ -123,33 +160,43 @@
     ElOption,
     ElSwitch,
     ElMessage,
-    ElMessageBox
+    ElMessageBox,
+    ElUpload
   } from 'element-plus'
-  import type { FormInstance, FormRules } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import type { FormInstance, FormRules, UploadRequestOptions } from 'element-plus'
+  import { Plus, Delete, Loading } from '@element-plus/icons-vue'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import SdeSearchSelect from '@/components/business/SdeSearchSelect.vue'
   import {
     adminListProducts,
     adminCreateProduct,
     adminUpdateProduct,
-    adminDeleteProduct
+    adminDeleteProduct,
+    uploadShopImage
   } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
+  import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'ManageProducts' })
+  const { t } = useI18n()
 
   type Product = Api.Shop.Product
 
   // ─── 商品类型/状态映射 ───
-  const PRODUCT_TYPE_CONFIG: Record<string, { label: string; type: string }> = {
-    normal: { label: '普通', type: 'primary' },
-    redeem: { label: '兑换码', type: 'warning' }
-  }
+  const PRODUCT_TYPE_CONFIG = computed(
+    () =>
+      ({
+        normal: { label: t('shop.manage.typeNormalShort'), type: 'primary' }
+      }) as unknown as Record<string, { label: string; type: string }>
+  )
 
-  const PRODUCT_STATUS_CONFIG: Record<number, { label: string; type: string }> = {
-    1: { label: '上架', type: 'success' },
-    0: { label: '下架', type: 'danger' }
-  }
+  const PRODUCT_STATUS_CONFIG = computed(
+    () =>
+      ({
+        1: { label: t('shop.manage.statusOnSale'), type: 'success' },
+        0: { label: t('shop.manage.statusOffSale'), type: 'danger' }
+      }) as unknown as Record<number, { label: string; type: string }>
+  )
 
   const formatISK = (v: number) =>
     v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -179,17 +226,29 @@
       columnsFactory: () => [
         { type: 'index', width: 60, label: '#' },
         {
+          prop: 'image',
+          label: t('shop.manage.colImage'),
+          width: 64,
+          formatter: (row: Product) => {
+            if (!row.image) return null
+            return h('img', {
+              src: row.image,
+              style: 'width:40px;height:40px;object-fit:cover;border-radius:4px'
+            })
+          }
+        },
+        {
           prop: 'name',
-          label: '商品名称',
-          minWidth: 160,
+          label: t('shop.productName'),
+          minWidth: 140,
           showOverflowTooltip: true
         },
         {
           prop: 'type',
-          label: '类型',
+          label: t('shop.manage.colType'),
           width: 100,
           formatter: (row: Product) => {
-            const cfg = PRODUCT_TYPE_CONFIG[row.type] ?? { label: row.type, type: 'info' }
+            const cfg = PRODUCT_TYPE_CONFIG.value[row.type] ?? { label: row.type, type: 'info' }
             return h(
               ElTag,
               { type: cfg.type as any, size: 'small', effect: 'plain' },
@@ -199,17 +258,18 @@
         },
         {
           prop: 'price',
-          label: '价格',
+          label: t('shop.manage.price'),
           width: 130,
           formatter: (row: Product) =>
             h('span', { class: 'font-medium text-orange-600' }, formatISK(row.price))
         },
         {
           prop: 'stock',
-          label: '库存',
+          label: t('shop.manage.stock'),
           width: 90,
           formatter: (row: Product) => {
-            if (row.stock < 0) return h('span', { class: 'text-gray-400' }, '无限')
+            if (row.stock < 0)
+              return h('span', { class: 'text-gray-400' }, t('shop.manage.stockUnlimited'))
             return h(
               'span',
               { class: row.stock === 0 ? 'text-red-500 font-bold' : '' },
@@ -218,29 +278,22 @@
           }
         },
         {
-          prop: 'max_per_user',
-          label: '限购',
-          width: 80,
-          formatter: (row: Product) =>
-            h('span', {}, row.max_per_user > 0 ? String(row.max_per_user) : '不限')
-        },
-        {
           prop: 'need_approval',
-          label: '需审批',
+          label: t('shop.manage.colApproval'),
           width: 90,
           formatter: (row: Product) =>
             h(
               ElTag,
               { type: row.need_approval ? 'warning' : 'info', size: 'small', effect: 'plain' },
-              () => (row.need_approval ? '是' : '否')
+              () => (row.need_approval ? t('shop.manage.yes') : t('shop.manage.no'))
             )
         },
         {
           prop: 'status',
-          label: '状态',
+          label: t('shop.manage.status'),
           width: 90,
           formatter: (row: Product) => {
-            const cfg = PRODUCT_STATUS_CONFIG[row.status] ?? {
+            const cfg = PRODUCT_STATUS_CONFIG.value[row.status] ?? {
               label: String(row.status),
               type: 'info'
             }
@@ -253,12 +306,12 @@
         },
         {
           prop: 'sort_order',
-          label: '排序',
+          label: t('shop.manage.colSort'),
           width: 80
         },
         {
           prop: 'actions',
-          label: '操作',
+          label: t('common.operation'),
           width: 120,
           fixed: 'right',
           formatter: (row: Product) =>
@@ -307,11 +360,11 @@
     sort_order: 0
   })
 
-  const formRules: FormRules = {
-    name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
-    price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-    type: [{ required: true, message: '请选择类型', trigger: 'change' }]
-  }
+  const formRules = computed<FormRules>(() => ({
+    name: [{ required: true, message: t('shop.manage.validName'), trigger: 'blur' }],
+    price: [{ required: true, message: t('shop.manage.validPrice'), trigger: 'blur' }],
+    type: [{ required: true, message: t('shop.manage.validType'), trigger: 'change' }]
+  }))
 
   function resetForm() {
     Object.assign(formData, {
@@ -358,34 +411,156 @@
     try {
       if (editingProduct.value) {
         await adminUpdateProduct({ id: editingProduct.value.id, ...formData })
-        ElMessage.success('更新成功')
+        ElMessage.success(t('shop.manage.updateSuccess'))
       } else {
         await adminCreateProduct({ ...formData })
-        ElMessage.success('创建成功')
+        ElMessage.success(t('shop.manage.createSuccess'))
       }
       dialogVisible.value = false
       refreshData()
     } catch (e: any) {
-      ElMessage.error(e?.message ?? '操作失败')
+      ElMessage.error(e?.message ?? t('shop.manage.operationFailed'))
     } finally {
       submitLoading.value = false
     }
   }
 
   async function handleDelete(row: Product) {
-    await ElMessageBox.confirm(`确定要删除商品「${row.name}」吗？`, '确认删除', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      t('shop.manage.deleteConfirm', { name: row.name }),
+      t('shop.manage.deleteTitle'),
+      {
+        confirmButtonText: t('shop.manage.deleteBtn'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning'
+      }
+    )
     try {
       await adminDeleteProduct(row.id)
-      ElMessage.success('删除成功')
+      ElMessage.success(t('shop.manage.deleteSuccess'))
       refreshData()
     } catch (e: any) {
-      ElMessage.error(e?.message ?? '删除失败')
+      ElMessage.error(e?.message ?? t('shop.manage.deleteFailed'))
+    }
+  }
+
+  // ─── 图片上传 ───
+  const imageUploading = ref(false)
+
+  function handleImageBeforeUpload(file: File) {
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      ElMessage.error(t('shop.manage.imageTooLarge'))
+      return false
+    }
+    return true
+  }
+
+  async function handleImageUpload(options: UploadRequestOptions) {
+    imageUploading.value = true
+    try {
+      const res = (await uploadShopImage(options.file as File)) as any
+      formData.image = res?.url ?? ''
+      ElMessage.success(t('shop.manage.uploadSuccess'))
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('shop.manage.uploadFailed'))
+    } finally {
+      imageUploading.value = false
+    }
+  }
+
+  // ─── SDE 物品搜索 ───
+  const sdeTypeId = ref<number | null>(null)
+
+  function onSdeSelect(item: Api.Sde.FuzzySearchItem | null) {
+    if (item) {
+      if (!formData.name) {
+        formData.name = item.name
+      }
+      formData.image = `https://images.evetech.net/types/${item.id}/render?size=256`
+      ElMessage.success(t('shop.manage.sdeSelected', { name: item.name }))
     }
   }
 
   defineExpose({ load: getData, refresh: refreshData })
 </script>
+
+<style scoped>
+  .image-upload-area {
+    width: 160px;
+    height: 160px;
+    border: 1px dashed var(--el-border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    background: var(--el-fill-color-lighter);
+  }
+
+  .image-preview {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-actions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+  }
+
+  .image-uploader {
+    width: 100%;
+    height: 100%;
+  }
+
+  .image-uploader :deep(.el-upload) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .upload-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--el-text-color-placeholder);
+    font-size: 13px;
+    transition: color 0.2s;
+  }
+
+  .upload-placeholder:hover {
+    color: var(--el-color-primary);
+  }
+
+  .upload-hint {
+    font-size: 11px;
+    color: var(--el-text-color-secondary);
+    text-align: center;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+</style>

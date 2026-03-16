@@ -50,7 +50,13 @@
       apiParams: { current: 1, size: 20 },
       columnsFactory: () => [
         { type: 'index', width: 60, label: '#' },
-        { prop: 'user_id', label: '用户 ID', width: 120 },
+        { prop: 'user_id', label: '用户 ID', width: 100 },
+        {
+          prop: 'character_name',
+          label: '主角色',
+          minWidth: 160,
+          formatter: (row: Wallet) => h('span', {}, row.character_name || '-')
+        },
         {
           prop: 'balance',
           label: '余额',
