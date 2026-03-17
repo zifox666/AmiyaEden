@@ -86,8 +86,9 @@ func (s *AlliancePAPService) FetchAndStore(mainChar string, year, month int) err
 		return fmt.Errorf("alliance_pap 配置不完整（base_url 或 api_key 为空）")
 	}
 
+	encodedCharacterName := url.QueryEscape(mainChar)
 	url := fmt.Sprintf("%s/api/pap/main?main_character=%s&year=%d&month=%d",
-		cfg.BaseURL, mainChar, year, month)
+		cfg.BaseURL, encodedCharacterName, year, month)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -155,24 +156,44 @@ func (s *AlliancePAPService) FetchAndStore(mainChar string, year, month int) err
 	totalPap, _ := strconv.ParseFloat(apiResp.TotalPap, 64)
 	yearlyTotalPap, _ := strconv.ParseFloat(apiResp.YearlyTotalPap, 64)
 
+	corporationID := ""
+	monthlyRank := 0
+	yearlyRank := 0
+	globalMonthlyRank := 0
+	globalYearlyRank := 0
+	totalInCorp := 0
+	totalGlobal := 0
+	// 默认使用当前时间
 	var calculatedAt time.Time
-	if apiResp.Ranking.CalculatedAt != "" {
-		calculatedAt, _ = time.ParseInLocation(alliancePAPTimeLayout, apiResp.Ranking.CalculatedAt, time.UTC)
+	calculatedAt = time.Now()
+
+	// Ranking不为空时才采用
+	if(apiResp.Ranking.CorporationID != "") {
+		corporationID = apiResp.Ranking.CorporationID
+		monthlyRank = apiResp.Ranking.MonthlyRank
+		yearlyRank = apiResp.Ranking.YearlyRank
+		globalMonthlyRank = apiResp.Ranking.GlobalMonthlyRank
+		globalYearlyRank = apiResp.Ranking.GlobalYearlyRank
+		totalInCorp = apiResp.Ranking.TotalInCorp
+		totalGlobal = apiResp.Ranking.TotalGlobal
+		if apiResp.Ranking.CalculatedAt != "" {
+			calculatedAt, _ = time.ParseInLocation(alliancePAPTimeLayout, apiResp.Ranking.CalculatedAt, time.UTC)
+		}
 	}
 
 	summary := &model.AlliancePAPSummary{
 		MainCharacter:     apiResp.MainCharacter,
 		Year:              year,
 		Month:             month,
-		CorporationID:     apiResp.Ranking.CorporationID,
+		CorporationID:     corporationID,
 		TotalPap:          totalPap,
 		YearlyTotalPap:    yearlyTotalPap,
-		MonthlyRank:       apiResp.Ranking.MonthlyRank,
-		YearlyRank:        apiResp.Ranking.YearlyRank,
-		GlobalMonthlyRank: apiResp.Ranking.GlobalMonthlyRank,
-		GlobalYearlyRank:  apiResp.Ranking.GlobalYearlyRank,
-		TotalInCorp:       apiResp.Ranking.TotalInCorp,
-		TotalGlobal:       apiResp.Ranking.TotalGlobal,
+		MonthlyRank:       monthlyRank,
+		YearlyRank:        yearlyRank,
+		GlobalMonthlyRank: globalMonthlyRank,
+		GlobalYearlyRank:  globalYearlyRank,
+		TotalInCorp:       totalInCorp,
+		TotalGlobal:       totalGlobal,
 		CalculatedAt:      calculatedAt,
 	}
 
