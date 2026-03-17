@@ -216,7 +216,11 @@ func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string,
 		fleet.ESIFleetID = req.ESIFleetID
 	}
 	if req.FleetConfigID != nil {
-		fleet.FleetConfigID = req.FleetConfigID
+		if *req.FleetConfigID == 0 {
+			fleet.FleetConfigID = nil
+		} else {
+			fleet.FleetConfigID = req.FleetConfigID
+		}
 	}
 	if req.AutoSrpMode != nil {
 		fleet.AutoSrpMode = normalizeAutoSrpMode(*req.AutoSrpMode)

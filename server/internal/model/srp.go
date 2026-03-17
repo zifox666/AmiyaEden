@@ -33,9 +33,9 @@ func (SrpShipPrice) TableName() string { return "srp_ship_price" }
 type SrpApplication struct {
 	ID            uint    `gorm:"primarykey"                              json:"id"`
 	UserID        uint    `gorm:"not null;index"                          json:"user_id"`
-	CharacterID   int64   `gorm:"not null;index"                          json:"character_id"`
+	CharacterID   int64   `gorm:"not null;uniqueIndex:idx_killmail_character" json:"character_id"`
 	CharacterName string  `gorm:"size:128"                                json:"character_name"`
-	KillmailID    int64   `gorm:"not null;index"                          json:"killmail_id"`
+	KillmailID    int64   `gorm:"not null;uniqueIndex:idx_killmail_character" json:"killmail_id"`
 	FleetID       *string `gorm:"size:36;index"                           json:"fleet_id,omitempty"`
 	Note          string  `gorm:"size:512"                                json:"note"`
 	// 冗余 KM 信息（提交时从 EveKillmail 快照）

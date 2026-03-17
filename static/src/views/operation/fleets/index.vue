@@ -351,7 +351,7 @@
           character_id: formData.character_id,
           start_at,
           end_at,
-          fleet_config_id: formData.fleet_config_id,
+          fleet_config_id: formData.fleet_config_id ?? null,
           auto_srp_mode: formData.auto_srp_mode
         })
         ElMessage.success(t('fleet.updateSuccess'))
@@ -365,7 +365,7 @@
           start_at,
           end_at,
           send_ping: formData.send_ping,
-          fleet_config_id: formData.fleet_config_id,
+          fleet_config_id: formData.fleet_config_id ?? null,
           auto_srp_mode: formData.auto_srp_mode
         })
         ElMessage.success(t('fleet.createSuccess'))

@@ -822,6 +822,7 @@
     "saveToGame": "保存到游戏",
     "saveToGameTitle": "保存装配到游戏",
     "saveToGameSuccess": "装配已成功保存到游戏",
+    "saveToGameCharacterRequired": "请选择角色",
     "itemSettings": "装备设置",
     "itemSettingsTitle": "装备重要性与惩罚设置",
     "itemSettingsSaved": "装备设置已保存",

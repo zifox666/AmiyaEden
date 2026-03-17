@@ -34,7 +34,7 @@
       <!-- 装配列表 -->
       <ElDivider content-position="left">{{ $t('fleetConfig.fields.fittings') }}</ElDivider>
 
-      <div v-for="(fit, idx) in formData.fittings" :key="idx" class="fitting-entry">
+      <div v-for="(fit, idx) in formData.fittings" :key="fit.id || idx" class="fitting-entry">
         <div class="fitting-header">
           <strong>{{ fit.fitting_name || $t('fleetConfig.newFitting') }}</strong>
           <ElButton
@@ -399,21 +399,21 @@
         formData.description = props.editing.description
         if (props.readonly) {
           // 查看模式：展示本地化 EFT，formData.fittings 仅用于渲染字段
-          formData.fittings = (props.editing.fittings ?? []).map((f) => ({
+          formData.fittings = (props.editing.fittings ?? []).map<InternalFitting>((f) => ({
             fitting_name: f.fitting_name,
             eft: '',
             srp_amount: f.srp_amount,
             id: f.id
-          })) as any
+          }))
           await loadEFTs(locale.value)
         } else {
           // 编辑模式：先填充基础字段，再用英文 EFT 填充 textarea
-          formData.fittings = (props.editing.fittings ?? []).map((f) => ({
+          formData.fittings = (props.editing.fittings ?? []).map<InternalFitting>((f) => ({
             fitting_name: f.fitting_name,
             eft: '',
             srp_amount: f.srp_amount,
             id: f.id
-          })) as any
+          }))
           // 异步加载英文 EFT 填入编辑模式
           const eftRes = await fetchFleetConfigEFT(props.editing.id, 'en').catch(() => null)
           if (eftRes) {
@@ -680,7 +680,7 @@
 
   async function handleSaveToGame() {
     if (!saveToGameCharacterID.value) {
-      ElMessage.warning(t('fleetConfig.importSelectRequired'))
+      ElMessage.warning(t('fleetConfig.saveToGameCharacterRequired'))
       return
     }
     if (!props.editing) return

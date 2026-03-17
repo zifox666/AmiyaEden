@@ -111,35 +111,43 @@ func (s *AutoSrpService) processOneMember(
 	itemsByFitting map[uint][]model.FleetConfigFittingItem,
 	repByItem map[uint][]model.FleetConfigFittingItemReplacement,
 ) {
-	// 查找该成员在舰队时间范围内的受害 KM
+	// 查找该成员的受害 KM
 	var killmails []model.EveCharacterKillmail
 	if err := global.DB.Where(
 		"character_id = ? AND victim = ?", member.CharacterID, true,
 	).Find(&killmails).Error; err != nil {
 		return
 	}
+	if len(killmails) == 0 {
+		return
+	}
+
+	// 批量获取 KM 详情，同时按时间范围过滤
+	killmailIDs := make([]int64, len(killmails))
+	for i, ckm := range killmails {
+		killmailIDs[i] = ckm.KillmailID
+	}
+	var kmList []model.EveKillmailList
+	if err := global.DB.Where(
+		"kill_mail_id IN ? AND kill_mail_time BETWEEN ? AND ?",
+		killmailIDs, fleet.StartAt, fleet.EndAt,
+	).Find(&kmList).Error; err != nil {
+		return
+	}
+	kmByID := make(map[int64]model.EveKillmailList, len(kmList))
+	for _, km := range kmList {
+		kmByID[km.KillmailID] = km
+	}
 
 	for _, ckm := range killmails {
-		// 检查是否已提交过 SRP
-		if s.srpRepo.ExistsApplicationByKillmail(ckm.KillmailID, ckm.CharacterID) {
-			continue
-		}
-
-		// 获取 KM 详情
-		var km model.EveKillmailList
-		if err := global.DB.Where("kill_mail_id = ?", ckm.KillmailID).First(&km).Error; err != nil {
-			continue
-		}
-
-		// KM 时间必须在舰队时间范围内
-		if km.KillmailTime.Before(fleet.StartAt) || km.KillmailTime.After(fleet.EndAt) {
+		km, ok := kmByID[ckm.KillmailID]
+		if !ok {
 			continue
 		}
 
 		// 查找对应的装配配置
 		fitting, ok := fittingByShip[km.ShipTypeID]
 		if !ok {
-			// 该舰船不在配置中，跳过
 			continue
 		}
 
@@ -167,7 +175,6 @@ func (s *AutoSrpService) processOneMember(
 		}
 
 		if fleet.AutoSrpMode == model.FleetAutoSrpAutoApprove {
-			// 验证装配并自动审批
 			configItemsForFitting := itemsByFitting[fitting.ID]
 			finalAmount, note := s.validateFitting(km.KillmailID, configItemsForFitting, repByItem, baseAmount)
 			app.FinalAmount = finalAmount
@@ -182,6 +189,9 @@ func (s *AutoSrpService) processOneMember(
 		}
 
 		if err := s.srpRepo.CreateApplication(app); err != nil {
+			if isDuplicateSrpApplicationError(err) {
+				continue
+			}
 			global.Logger.Warn("[AutoSRP] 创建申请失败",
 				zap.Int64("killmail_id", ckm.KillmailID),
 				zap.Int64("character_id", member.CharacterID),
@@ -189,6 +199,12 @@ func (s *AutoSrpService) processOneMember(
 			)
 		}
 	}
+}
+
+// isDuplicateSrpApplicationError 检查是否为唯一约束冲突（重复 SRP 申请）
+func isDuplicateSrpApplicationError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "duplicate key") || strings.Contains(msg, "UNIQUE constraint") || strings.Contains(msg, "Duplicate entry")
 }
 
 // getBaseAmount 获取 SRP 基础金额：配置金额 > 0 则用配置金额，否则查全局价格表

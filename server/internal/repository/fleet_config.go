@@ -89,16 +89,22 @@ func (r *FleetConfigRepository) Update(config *model.FleetConfig, fittings []Fit
 
 	// 获取旧装配 ID 列表
 	var oldFittingIDs []uint
-	tx.Model(&model.FleetConfigFitting{}).
+	if err := tx.Model(&model.FleetConfigFitting{}).
 		Where("fleet_config_id = ?", config.ID).
-		Pluck("id", &oldFittingIDs)
+		Pluck("id", &oldFittingIDs).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	// 删除旧替代品 + 物品
 	if len(oldFittingIDs) > 0 {
 		var oldItemIDs []uint
-		tx.Model(&model.FleetConfigFittingItem{}).
+		if err := tx.Model(&model.FleetConfigFittingItem{}).
 			Where("fleet_config_fitting_id IN ?", oldFittingIDs).
-			Pluck("id", &oldItemIDs)
+			Pluck("id", &oldItemIDs).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 		if len(oldItemIDs) > 0 {
 			if err := tx.Where("fleet_config_fitting_item_id IN ?", oldItemIDs).
 				Delete(&model.FleetConfigFittingItemReplacement{}).Error; err != nil {
@@ -148,15 +154,21 @@ func (r *FleetConfigRepository) Delete(id uint) error {
 	tx := global.DB.Begin()
 
 	var fittingIDs []uint
-	tx.Model(&model.FleetConfigFitting{}).
+	if err := tx.Model(&model.FleetConfigFitting{}).
 		Where("fleet_config_id = ?", id).
-		Pluck("id", &fittingIDs)
+		Pluck("id", &fittingIDs).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	if len(fittingIDs) > 0 {
 		var itemIDs []uint
-		tx.Model(&model.FleetConfigFittingItem{}).
+		if err := tx.Model(&model.FleetConfigFittingItem{}).
 			Where("fleet_config_fitting_id IN ?", fittingIDs).
-			Pluck("id", &itemIDs)
+			Pluck("id", &itemIDs).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 		if len(itemIDs) > 0 {
 			if err := tx.Where("fleet_config_fitting_item_id IN ?", itemIDs).
 				Delete(&model.FleetConfigFittingItemReplacement{}).Error; err != nil {

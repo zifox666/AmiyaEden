@@ -379,7 +379,7 @@ declare namespace Api {
       importance: 'strat_op' | 'cta' | 'other'
       pap_count: number
       character_id: number
-      fleet_config_id?: number
+      fleet_config_id?: number | null
       send_ping?: boolean
       auto_srp_mode?: 'disabled' | 'submit_only' | 'auto_approve'
     }
@@ -394,7 +394,7 @@ declare namespace Api {
       pap_count?: number
       character_id?: number
       esi_fleet_id?: number
-      fleet_config_id?: number
+      fleet_config_id?: number | null
       auto_srp_mode?: 'disabled' | 'submit_only' | 'auto_approve'
     }
 

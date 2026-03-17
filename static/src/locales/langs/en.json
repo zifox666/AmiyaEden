@@ -820,6 +820,7 @@
     "saveToGame": "Save to Game",
     "saveToGameTitle": "Save Fitting to Game",
     "saveToGameSuccess": "Fitting saved to game successfully",
+    "saveToGameCharacterRequired": "Please select a character",
     "itemSettings": "Item Settings",
     "itemSettingsTitle": "Item Importance & Penalty Settings",
     "itemSettingsSaved": "Item settings saved",

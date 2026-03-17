@@ -488,21 +488,6 @@ func parseEFTHeader(eft string) *eftHeader {
 	}
 }
 
-// 模块 flag 名映射（EFT 行顺序 -> ESI flag）
-var eftSlotPrefixes = []struct {
-	prefix string
-	flags  []string
-}{
-	{"LoSlot", []string{"LoSlot0", "LoSlot1", "LoSlot2", "LoSlot3", "LoSlot4", "LoSlot5", "LoSlot6", "LoSlot7"}},
-	{"MedSlot", []string{"MedSlot0", "MedSlot1", "MedSlot2", "MedSlot3", "MedSlot4", "MedSlot5", "MedSlot6", "MedSlot7"}},
-	{"HiSlot", []string{"HiSlot0", "HiSlot1", "HiSlot2", "HiSlot3", "HiSlot4", "HiSlot5", "HiSlot6", "HiSlot7"}},
-	{"RigSlot", []string{"RigSlot0", "RigSlot1", "RigSlot2"}},
-	{"SubSystemSlot", []string{"SubSystemSlot0", "SubSystemSlot1", "SubSystemSlot2", "SubSystemSlot3"}},
-}
-
-// EFT 格式各段在空行之间的索引: lo=0, med=1, hi=2, rig=3, subsystem=4, drones/cargo在双空行后
-var eftSectionNames = []string{"lo", "med", "hi", "rig", "subsystem", "service"}
-
 var countRegex = regexp.MustCompile(`^(.+?)\s+x(\d+)\s*$`)
 
 // parseEFTToESIItems 已废弃 - 由 parseEFTToFitting 替代
