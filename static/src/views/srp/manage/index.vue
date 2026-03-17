@@ -58,6 +58,7 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        :pagination-options="{ pageSizes: [200, 500, 1000] }"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
       />
@@ -247,7 +248,7 @@
     }
   }
 
-  const filter = reactive({ review_status: '', payout_status: '', fleet_id: '' })
+  const filter = reactive({ review_status: '', payout_status: 'pending', fleet_id: '' })
 
   type SrpApp = Api.Srp.Application
   type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
@@ -278,7 +279,7 @@
   } = useTable({
     core: {
       apiFn: fetchApplicationList,
-      apiParams: { current: 1, size: 20 },
+      apiParams: { current: 1, size: 200, payout_status: 'pending' },
       columnsFactory: () => [
         { type: 'index', width: 60, label: '#' },
         {
@@ -360,10 +361,8 @@
               : row.fleet_fc_name
                 ? `${row.fleet_fc_name}: ${row.fleet_title || row.fleet_id}`
                 : row.fleet_title || row.fleet_id
-            return h(
-              ElTooltip,
-              { content: tooltipContent, placement: 'top' },
-              () => h('span', { class: 'cursor-default' }, row.fleet_title || row.fleet_id || '')
+            return h(ElTooltip, { content: tooltipContent, placement: 'top' }, () =>
+              h('span', { class: 'cursor-default' }, row.fleet_title || row.fleet_id || '')
             )
           }
         },
@@ -519,11 +518,11 @@
   }
   const resetFilter = () => {
     filter.review_status = ''
-    filter.payout_status = ''
+    filter.payout_status = 'pending'
     filter.fleet_id = ''
     Object.assign(searchParams, {
       review_status: undefined,
-      payout_status: undefined,
+      payout_status: 'pending',
       fleet_id: undefined
     })
     getData()
