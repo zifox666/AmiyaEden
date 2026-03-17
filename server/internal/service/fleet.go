@@ -24,6 +24,9 @@ const esiBaseURL = "https://esi.evetech.net/latest"
 // FleetKMRefreshFunc 触发单个角色 KM 刷新的钩子，由 jobs 层注入以避免循环依赖
 var FleetKMRefreshFunc func(characterID int64)
 
+// FleetAutoSRPFunc 自动 SRP 处理钩子，由 jobs 层注入
+var FleetAutoSRPFunc func(fleetID string)
+
 // FleetService 舰队业务逻辑层
 type FleetService struct {
 	repo       *repository.FleetRepository
@@ -51,14 +54,16 @@ func NewFleetService() *FleetService {
 
 // CreateFleetRequest 创建舰队请求
 type CreateFleetRequest struct {
-	Title       string  `json:"title" binding:"required"`
-	Description string  `json:"description"`
-	StartAt     string  `json:"start_at" binding:"required"` // RFC3339
-	EndAt       string  `json:"end_at" binding:"required"`   // RFC3339
-	Importance  string  `json:"importance" binding:"required,oneof=strat_op cta other"`
-	PapCount    float64 `json:"pap_count"`
-	CharacterID int64   `json:"character_id" binding:"required"` // FC 角色 ID
-	SendPing    bool    `json:"send_ping"`                       // 是否发送 Ping 通知
+	Title         string  `json:"title" binding:"required"`
+	Description   string  `json:"description"`
+	StartAt       string  `json:"start_at" binding:"required"` // RFC3339
+	EndAt         string  `json:"end_at" binding:"required"`   // RFC3339
+	Importance    string  `json:"importance" binding:"required,oneof=strat_op cta other"`
+	PapCount      float64 `json:"pap_count"`
+	CharacterID   int64   `json:"character_id" binding:"required"` // FC 角色 ID
+	SendPing      bool    `json:"send_ping"`                       // 是否发送 Ping 通知
+	FleetConfigID *uint   `json:"fleet_config_id"`                 // 舰队配置 ID
+	AutoSrpMode   string  `json:"auto_srp_mode"`                   // disabled/submit_only/auto_approve
 }
 
 // CreateFleet 创建舰队
@@ -96,6 +101,8 @@ func (s *FleetService) CreateFleet(userID uint, req *CreateFleetRequest) (*model
 		FCUserID:        userID,
 		FCCharacterID:   req.CharacterID,
 		FCCharacterName: char.CharacterName,
+		FleetConfigID:   req.FleetConfigID,
+		AutoSrpMode:     normalizeAutoSrpMode(req.AutoSrpMode),
 	}
 
 	// 自动从 ESI 拉取当前 ESI 舰队 ID
@@ -145,14 +152,16 @@ func (s *FleetService) PingFleet(fleetID string, userID uint, userRole string) e
 
 // UpdateFleetRequest 更新舰队请求
 type UpdateFleetRequest struct {
-	Title       *string  `json:"title"`
-	Description *string  `json:"description"`
-	StartAt     *string  `json:"start_at"`
-	EndAt       *string  `json:"end_at"`
-	Importance  *string  `json:"importance"`
-	PapCount    *float64 `json:"pap_count"`
-	CharacterID *int64   `json:"character_id"`
-	ESIFleetID  *int64   `json:"esi_fleet_id"`
+	Title         *string  `json:"title"`
+	Description   *string  `json:"description"`
+	StartAt       *string  `json:"start_at"`
+	EndAt         *string  `json:"end_at"`
+	Importance    *string  `json:"importance"`
+	PapCount      *float64 `json:"pap_count"`
+	CharacterID   *int64   `json:"character_id"`
+	ESIFleetID    *int64   `json:"esi_fleet_id"`
+	FleetConfigID *uint    `json:"fleet_config_id"`
+	AutoSrpMode   *string  `json:"auto_srp_mode"`
 }
 
 // UpdateFleet 更新舰队信息
@@ -205,6 +214,12 @@ func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string,
 	}
 	if req.ESIFleetID != nil {
 		fleet.ESIFleetID = req.ESIFleetID
+	}
+	if req.FleetConfigID != nil {
+		fleet.FleetConfigID = req.FleetConfigID
+	}
+	if req.AutoSrpMode != nil {
+		fleet.AutoSrpMode = normalizeAutoSrpMode(*req.AutoSrpMode)
 	}
 
 	if err := s.repo.Update(fleet); err != nil {
@@ -513,6 +528,11 @@ func (s *FleetService) triggerNewMembersKMRefresh(fleetID string) {
 		zap.String("fleet_id", fleetID),
 		zap.Int("count", len(charIDs)),
 	)
+
+	// KM 刷新完成后触发自动 SRP
+	if FleetAutoSRPFunc != nil {
+		FleetAutoSRPFunc(fleetID)
+	}
 }
 
 // ListMembersWithPap 分页查询舰队成员（含 PAP 信息）
@@ -717,6 +737,16 @@ type CharacterFleetInfo struct {
 	Role        string `json:"role"`
 	SquadID     int64  `json:"squad_id"`
 	WingID      int64  `json:"wing_id"`
+}
+
+// normalizeAutoSrpMode 规范化自动 SRP 模式值
+func normalizeAutoSrpMode(mode string) string {
+	switch mode {
+	case model.FleetAutoSrpSubmitOnly, model.FleetAutoSrpAutoApprove:
+		return mode
+	default:
+		return model.FleetAutoSrpDisabled
+	}
 }
 
 // GetCharacterFleetInfo 获取角色当前所在的 ESI 舰队信息

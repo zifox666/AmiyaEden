@@ -354,6 +354,8 @@ declare namespace Api {
       fc_character_id: number
       fc_character_name: string
       esi_fleet_id: number | null
+      fleet_config_id: number | null
+      auto_srp_mode: 'disabled' | 'submit_only' | 'auto_approve'
       created_at: string
       updated_at: string
     }
@@ -377,7 +379,9 @@ declare namespace Api {
       importance: 'strat_op' | 'cta' | 'other'
       pap_count: number
       character_id: number
+      fleet_config_id?: number
       send_ping?: boolean
+      auto_srp_mode?: 'disabled' | 'submit_only' | 'auto_approve'
     }
 
     /** 更新舰队请求 */
@@ -390,6 +394,8 @@ declare namespace Api {
       pap_count?: number
       character_id?: number
       esi_fleet_id?: number
+      fleet_config_id?: number
+      auto_srp_mode?: 'disabled' | 'submit_only' | 'auto_approve'
     }
 
     /** 舰队成员 */
@@ -488,6 +494,127 @@ declare namespace Api {
       solar_system_id: number
       squad_id: number
       wing_id: number
+    }
+  }
+
+  /** 舰队配置类型 */
+  namespace FleetConfig {
+    /** 舰队配置装配条目（不含 EFT，通过专用端点获取） */
+    interface FittingItem {
+      id: number
+      fleet_config_id: number
+      ship_type_id: number
+      fitting_name: string
+      srp_amount: number
+    }
+
+    /** 舰队配置 */
+    interface FleetConfigItem {
+      id: number
+      name: string
+      description: string
+      created_by: number
+      created_at: string
+      updated_at: string
+      fittings: FittingItem[]
+    }
+
+    /** 舰队配置列表（分页） */
+    type FleetConfigList = Api.Common.PaginatedResponse<FleetConfigItem>
+
+    /** 创建/更新装配条目请求（输入英文 EFT，后端解析） */
+    interface FittingReq {
+      fitting_name: string
+      eft: string
+      srp_amount: number
+    }
+
+    /** 创建舰队配置请求 */
+    interface CreateFleetConfigParams {
+      name: string
+      description?: string
+      fittings: FittingReq[]
+    }
+
+    /** 更新舰队配置请求 */
+    interface UpdateFleetConfigParams {
+      name?: string
+      description?: string
+      fittings?: FittingReq[]
+    }
+
+    /** 从用户装配导入请求 */
+    interface ImportFittingParams {
+      character_id: number
+      fitting_id: number
+    }
+
+    /** 从用户装配导入响应（英文 EFT） */
+    interface ImportFittingResponse {
+      fitting_name: string
+      eft: string
+      srp_amount: number
+    }
+
+    /** 导出到 ESI 请求 */
+    interface ExportToESIParams {
+      character_id: number
+      fleet_config_id: number
+      fitting_item_id: number
+    }
+
+    /** 单个装配的本地化 EFT */
+    interface EFTFittingItem {
+      id: number
+      eft: string
+    }
+
+    /** GetFittingEFT 响应 */
+    interface EFTResponse {
+      fittings: EFTFittingItem[]
+    }
+
+    /** 装备替代品 */
+    interface FittingItemReplacement {
+      id: number
+      type_id: number
+      type_name: string
+    }
+
+    /** 装备物品详情 */
+    interface FittingItemDetail {
+      id: number
+      type_id: number
+      type_name: string
+      quantity: number
+      flag: string
+      flag_group: string
+      importance: 'required' | 'optional' | 'replaceable'
+      penalty: 'none' | 'half'
+      replacement_penalty: 'none' | 'half'
+      replacements: FittingItemReplacement[]
+    }
+
+    /** 装配物品详情响应 */
+    interface FittingItemsResponse {
+      fitting_id: number
+      fitting_name: string
+      ship_type_id: number
+      items: FittingItemDetail[]
+    }
+
+    /** 单个物品设置更新请求 */
+    interface ItemSettingUpdate {
+      id: number
+      importance: 'required' | 'optional' | 'replaceable'
+      penalty: 'none' | 'half'
+      replacement_penalty: 'none' | 'half'
+      replacements?: number[]
+    }
+
+    /** 批量更新装备设置请求 */
+    interface UpdateItemsSettingsParams {
+      items: ItemSettingUpdate[]
     }
   }
 

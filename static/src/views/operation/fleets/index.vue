@@ -58,6 +58,23 @@
             />
           </ElSelect>
         </ElFormItem>
+        <ElFormItem :label="$t('fleet.fields.fleetConfig')">
+          <ElSelect
+            v-model="formData.fleet_config_id"
+            :placeholder="$t('fleet.fields.fleetConfigPlaceholder')"
+            style="width: 100%"
+            clearable
+          >
+            <ElOption v-for="fc in fleetConfigs" :key="fc.id" :label="fc.name" :value="fc.id" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem :label="$t('fleet.fields.autoSrpMode')">
+          <ElSelect v-model="formData.auto_srp_mode" style="width: 100%">
+            <ElOption :label="$t('fleet.autoSrp.disabled')" value="disabled" />
+            <ElOption :label="$t('fleet.autoSrp.submitOnly')" value="submit_only" />
+            <ElOption :label="$t('fleet.autoSrp.autoApprove')" value="auto_approve" />
+          </ElSelect>
+        </ElFormItem>
         <ElFormItem :label="$t('fleet.fields.timeRange')" prop="time_range">
           <ElDatePicker
             v-model="formData.time_range"
@@ -98,6 +115,7 @@
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import FleetSearch from './modules/fleet-search.vue'
   import { fetchFleetList, createFleet, updateFleet, deleteFleet } from '@/api/fleet'
+  import { fetchFleetConfigList } from '@/api/fleet-config'
   import { fetchMyCharacters } from '@/api/auth'
   import {
     ElTag,
@@ -273,7 +291,9 @@
     pap_count: 1,
     character_id: undefined as number | undefined,
     time_range: null as [string, string] | null,
-    send_ping: true
+    send_ping: true,
+    fleet_config_id: undefined as number | undefined,
+    auto_srp_mode: 'disabled' as 'disabled' | 'submit_only' | 'auto_approve'
   })
 
   const formRules: FormRules = {
@@ -292,6 +312,8 @@
     formData.character_id = undefined
     formData.time_range = null
     formData.send_ping = true
+    formData.fleet_config_id = undefined
+    formData.auto_srp_mode = 'disabled'
     editingFleet.value = null
   }
 
@@ -309,6 +331,8 @@
     formData.pap_count = row.pap_count
     formData.character_id = row.fc_character_id
     formData.time_range = [row.start_at, row.end_at]
+    formData.fleet_config_id = row.fleet_config_id ?? undefined
+    formData.auto_srp_mode = row.auto_srp_mode ?? 'disabled'
     dialogVisible.value = true
   }
 
@@ -326,7 +350,9 @@
           pap_count: formData.pap_count,
           character_id: formData.character_id,
           start_at,
-          end_at
+          end_at,
+          fleet_config_id: formData.fleet_config_id,
+          auto_srp_mode: formData.auto_srp_mode
         })
         ElMessage.success(t('fleet.updateSuccess'))
       } else {
@@ -338,7 +364,9 @@
           character_id: formData.character_id!,
           start_at,
           end_at,
-          send_ping: formData.send_ping
+          send_ping: formData.send_ping,
+          fleet_config_id: formData.fleet_config_id,
+          auto_srp_mode: formData.auto_srp_mode
         })
         ElMessage.success(t('fleet.createSuccess'))
       }
@@ -368,7 +396,20 @@
   }
 
   // ─── 初始化 ───
+  // ─── 舰队配置列表 ───
+  const fleetConfigs = ref<Api.FleetConfig.FleetConfigItem[]>([])
+
+  async function loadFleetConfigs() {
+    try {
+      const res = await fetchFleetConfigList({ current: 1, size: 100 })
+      fleetConfigs.value = res?.list ?? []
+    } catch {
+      fleetConfigs.value = []
+    }
+  }
+
   onMounted(() => {
     loadCharacters()
+    loadFleetConfigs()
   })
 </script>

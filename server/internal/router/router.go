@@ -108,6 +108,22 @@ func RegisterRoutes(r *gin.Engine) {
 		fleet.POST("/:id/ping", fleetH.PingFleet)
 	}
 
+	// ─── 舰队配置 ───
+	fleetConfigH := handler.NewFleetConfigHandler()
+	fleetConfig := operation.Group("/fleet-configs")
+	{
+		fleetConfig.GET("", fleetConfigH.ListFleetConfigs)
+		fleetConfig.GET("/:id", fleetConfigH.GetFleetConfig)
+		fleetConfig.GET("/:id/eft", fleetConfigH.GetFittingEFT)
+		fleetConfig.POST("", middleware.RequireRole(model.RoleFC, model.RoleSRP), fleetConfigH.CreateFleetConfig)
+		fleetConfig.PUT("/:id", middleware.RequireRole(model.RoleFC, model.RoleSRP), fleetConfigH.UpdateFleetConfig)
+		fleetConfig.DELETE("/:id", middleware.RequireRole(model.RoleFC, model.RoleSRP), fleetConfigH.DeleteFleetConfig)
+		fleetConfig.POST("/import-fitting", fleetConfigH.ImportFromUserFitting)
+		fleetConfig.POST("/export-esi", fleetConfigH.ExportToESI)
+		fleetConfig.GET("/:id/fittings/:fitting_id/items", fleetConfigH.GetFittingItems)
+		fleetConfig.PUT("/:id/fittings/:fitting_id/items/settings", middleware.RequireRole(model.RoleFC, model.RoleSRP), fleetConfigH.UpdateFittingItemsSettings)
+	}
+
 	// ─── EVE 角色信息 ───
 	infoH := handler.NewEveInfoHandler()
 	info := auth.Group("/info")

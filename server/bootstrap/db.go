@@ -111,6 +111,11 @@ func autoMigrate(db *gorm.DB) {
 		// SRP 补损相关表
 		&model.SrpShipPrice{},
 		&model.SrpApplication{},
+		// 舰队配置相关表
+		&model.FleetConfig{},
+		&model.FleetConfigFitting{},
+		&model.FleetConfigFittingItem{},
+		&model.FleetConfigFittingItemReplacement{},
 		// 联盟 PAP 相关表
 		&model.AlliancePAPRecord{},
 		&model.AlliancePAPSummary{},
@@ -129,9 +134,34 @@ func autoMigrate(db *gorm.DB) {
 		global.Logger.Fatal("数据库迁移失败", zap.Error(err))
 	}
 
+	// 清理旧列（GORM AutoMigrate 不会自动删除列）
+	dropObsoleteColumns(db)
+
 	// 种子数据：系统角色 → 系统菜单 → 默认角色权限 → 迁移已有用户
 	roleSvc := service.NewRoleService()
 	roleSvc.SeedSystemRoles()
 	roleSvc.SeedSystemMenus()
 	roleSvc.MigrateExistingUsers()
+}
+
+// dropObsoleteColumns 删除历史遗留的已被移除的列
+func dropObsoleteColumns(db *gorm.DB) {
+	migrator := db.Migrator()
+	type colDrop struct {
+		table string
+		col   string
+	}
+	drops := []colDrop{
+		{"fleet_config_fitting", "eft"},
+		{"fleet_config_fitting", "ship_name"},
+	}
+	for _, d := range drops {
+		if migrator.HasColumn(d.table, d.col) {
+			if err := migrator.DropColumn(d.table, d.col); err != nil {
+				global.Logger.Warn("删除旧列失败", zap.String("table", d.table), zap.String("col", d.col), zap.Error(err))
+			} else {
+				global.Logger.Info("已删除旧列", zap.String("table", d.table), zap.String("col", d.col))
+			}
+		}
+	}
 }

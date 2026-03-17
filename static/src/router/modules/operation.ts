@@ -20,6 +20,16 @@ export const operationRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'fleet-configs',
+      name: 'FleetConfigs',
+      component: '/operation/fleet-configs',
+      meta: {
+        title: 'menus.operation.fleetConfigs',
+        keepAlive: true,
+        roles: ['super_admin', 'admin', 'fc', 'srp', 'user']
+      }
+    },
+    {
       path: 'fleet-detail/:id',
       name: 'FleetDetail',
       component: '/operation/fleet-detail',

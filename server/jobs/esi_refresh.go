@@ -70,6 +70,12 @@ func registerESIRefreshJob(c *cron.Cron) {
 		}
 	}
 
+	// 注入自动 SRP 处理钩子
+	autoSrpSvc := service.NewAutoSrpService()
+	service.FleetAutoSRPFunc = func(fleetID string) {
+		autoSrpSvc.ProcessAutoSRP(fleetID)
+	}
+
 	// 每 5 分钟执行一次调度（队列内部根据各任务间隔判断是否需要刷新）
 	id, err := c.AddFunc("0 */5 * * * *", func() {
 		esiQueue.Run()

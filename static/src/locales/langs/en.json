@@ -36,13 +36,16 @@
     "tips": "Prompt",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "close": "Close",
     "refresh": "Refresh",
     "operation": "Operation",
     "detail": "Detail",
     "edit": "Edit",
     "delete": "Delete",
     "status": "Status",
+    "save": "Save",
     "updatedAt": "Updated At",
+    "createdAt": "Created At",
     "logOutTips": "Do you want to log out?"
   },
   "search": {
@@ -294,6 +297,7 @@
       "title": "Fleet Operations",
       "fleets": "Fleet Management",
       "fleetDetail": "Fleet Detail",
+      "fleetConfigs": "Fleet Configs",
       "pap": "My PAP",
       "join": "Join Fleet",
       "srpApply": "SRP Apply",
@@ -696,7 +700,15 @@
       "descriptionPlaceholder": "Additional information about this operation",
       "esiFleetId": "ESI Fleet ID",
       "sendPing": "Send Notification",
-      "sendPingHint": "Send a fleet ping to the channel after creation"
+      "sendPingHint": "Send a fleet ping to the channel after creation",
+      "fleetConfig": "Fleet Config",
+      "fleetConfigPlaceholder": "Select fleet config (optional)",
+      "autoSrpMode": "Auto SRP"
+    },
+    "autoSrp": {
+      "disabled": "Disabled",
+      "submitOnly": "Submit Only",
+      "autoApprove": "Auto Approve"
     },
     "importance": {
       "strat_op": "Strat Op",
@@ -783,6 +795,71 @@
       "refType": "Type",
       "time": "Time",
       "empty": "No transactions"
+    }
+  },
+  "fleetConfig": {
+    "title": "Fleet Configs",
+    "subTitle": "Manage fleet operation fitting configurations",
+    "create": "Create Config",
+    "edit": "Edit Config",
+    "view": "View Config",
+    "delete": "Delete Config",
+    "deleteConfirm": "Are you sure you want to delete config \"{name}\"? This cannot be undone.",
+    "deleteSuccess": "Config deleted",
+    "createSuccess": "Config created",
+    "updateSuccess": "Config updated",
+    "fittingUnit": "fittings",
+    "newFitting": "New Fitting",
+    "addFitting": "Add Fitting",
+    "importFromFitting": "Import from My Fittings",
+    "importSuccess": "Fitting imported",
+    "importSelectRequired": "Please select a character and fitting",
+    "copyEFT": "Copy EFT",
+    "eftCopied": "EFT copied to clipboard",
+    "noFittings": "Please add at least one fitting",
+    "saveToGame": "Save to Game",
+    "saveToGameTitle": "Save Fitting to Game",
+    "saveToGameSuccess": "Fitting saved to game successfully",
+    "itemSettings": "Item Settings",
+    "itemSettingsTitle": "Item Importance & Penalty Settings",
+    "itemSettingsSaved": "Item settings saved",
+    "replacementSearch": "Search replacement item",
+    "importance": {
+      "required": "Required",
+      "optional": "Optional",
+      "replaceable": "Replaceable"
+    },
+    "penalty": {
+      "half": "Half",
+      "none": "None"
+    },
+    "replacementPenalty": {
+      "half": "Rep Half",
+      "none": "Rep None"
+    },
+    "slotGroup": {
+      "HiSlot": "High Slot",
+      "MedSlot": "Mid Slot",
+      "LoSlot": "Low Slot",
+      "RigSlot": "Rig Slot",
+      "SubSystem": "Subsystem"
+    },
+    "fields": {
+      "name": "Config Name",
+      "namePlaceholder": "Enter config name",
+      "description": "Description",
+      "descriptionPlaceholder": "About this configuration",
+      "fittings": "Fittings",
+      "fittingName": "Fitting Name",
+      "fittingNamePlaceholder": "Enter fitting name",
+      "shipName": "Ship",
+      "shipNamePlaceholder": "Ship name",
+      "srpAmount": "SRP Amount",
+      "eft": "EFT Format",
+      "eftPlaceholder": "Paste EFT format fitting text",
+      "character": "Character",
+      "fitting": "Fitting",
+      "fittingPlaceholder": "Select a fitting"
     }
   },
   "characters": {
@@ -915,7 +992,7 @@
         "corporation": "Corporation",
         "alliance": "Alliance",
         "fleet": "Fleet",
-        "note": "Note",
+        "note": "App Note",
         "recommendedAmount": "Recommended",
         "finalAmount": "Final Amount",
         "review": "Review",

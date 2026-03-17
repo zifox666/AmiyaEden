@@ -36,13 +36,16 @@
     "tips": "提示",
     "cancel": "取消",
     "confirm": "确定",
+    "close": "关闭",
     "refresh": "刷新",
     "operation": "操作",
     "detail": "详情",
     "edit": "编辑",
     "delete": "删除",
     "status": "状态",
+    "save": "保存",
     "updatedAt": "更新时间",
+    "createdAt": "创建时间",
     "logOutTips": "您是否要退出登录?"
   },
   "search": {
@@ -280,6 +283,7 @@
       "title": "舰队行动",
       "fleets": "舰队管理",
       "fleetDetail": "舰队详情",
+      "fleetConfigs": "舰队配置",
       "pap": "我的 PAP",
       "join": "加入舰队",
       "srpApply": "申请补损",
@@ -698,7 +702,15 @@
       "descriptionPlaceholder": "关于此行动的额外信息",
       "esiFleetId": "ESI 舰队 ID",
       "sendPing": "发送通知",
-      "sendPingHint": "创建后向频道发送舰队行动 Ping"
+      "sendPingHint": "创建后向频道发送舰队行动 Ping",
+      "fleetConfig": "舰队配置",
+      "fleetConfigPlaceholder": "选择舰队配置（可选）",
+      "autoSrpMode": "自动补损"
+    },
+    "autoSrp": {
+      "disabled": "关闭",
+      "submitOnly": "仅提交",
+      "autoApprove": "自动审批"
     },
     "importance": {
       "strat_op": "Strat Op",
@@ -785,6 +797,71 @@
       "refType": "类型",
       "time": "时间",
       "empty": "暂无交易记录"
+    }
+  },
+  "fleetConfig": {
+    "title": "舰队配置",
+    "subTitle": "管理舰队行动的装配配置方案",
+    "create": "创建配置",
+    "edit": "编辑配置",
+    "view": "查看配置",
+    "delete": "删除配置",
+    "deleteConfirm": "确定要删除配置「{name}」吗？此操作不可恢复。",
+    "deleteSuccess": "配置已删除",
+    "createSuccess": "配置创建成功",
+    "updateSuccess": "配置更新成功",
+    "fittingUnit": "个装配",
+    "newFitting": "新装配",
+    "addFitting": "添加装配",
+    "importFromFitting": "从我的装配导入",
+    "importSuccess": "装配导入成功",
+    "importSelectRequired": "请选择角色和装配",
+    "copyEFT": "复制 EFT",
+    "eftCopied": "EFT 已复制到剪贴板",
+    "noFittings": "请至少添加一个装配",
+    "saveToGame": "保存到游戏",
+    "saveToGameTitle": "保存装配到游戏",
+    "saveToGameSuccess": "装配已成功保存到游戏",
+    "itemSettings": "装备设置",
+    "itemSettingsTitle": "装备重要性与惩罚设置",
+    "itemSettingsSaved": "装备设置已保存",
+    "replacementSearch": "搜索替代装备",
+    "importance": {
+      "required": "必需",
+      "optional": "可选",
+      "replaceable": "可替换"
+    },
+    "penalty": {
+      "half": "半额",
+      "none": "不赔"
+    },
+    "replacementPenalty": {
+      "half": "替代半额",
+      "none": "替代不罚"
+    },
+    "slotGroup": {
+      "HiSlot": "高槽",
+      "MedSlot": "中槽",
+      "LoSlot": "低槽",
+      "RigSlot": "改装件",
+      "SubSystem": "子系统"
+    },
+    "fields": {
+      "name": "配置名称",
+      "namePlaceholder": "请输入配置名称",
+      "description": "描述",
+      "descriptionPlaceholder": "关于此配置的说明",
+      "fittings": "装配列表",
+      "fittingName": "装配名称",
+      "fittingNamePlaceholder": "请输入装配名称",
+      "shipName": "舰船",
+      "shipNamePlaceholder": "舰船名称",
+      "srpAmount": "补损额度",
+      "eft": "EFT 格式",
+      "eftPlaceholder": "粘贴 EFT 格式装配文本",
+      "character": "角色",
+      "fitting": "装配",
+      "fittingPlaceholder": "选择一个装配"
     }
   },
   "characters": {
@@ -917,7 +994,7 @@
         "corporation": "军团",
         "alliance": "联盟",
         "fleet": "关联舰队",
-        "note": "备注",
+        "note": "申请备注",
         "recommendedAmount": "推荐金额",
         "finalAmount": "最终金额",
         "review": "审批",

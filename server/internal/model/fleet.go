@@ -9,6 +9,13 @@ const (
 	FleetImportanceOther   = "other"    // 其他
 )
 
+// Fleet 自动 SRP 模式
+const (
+	FleetAutoSrpDisabled    = "disabled"     // 不启用
+	FleetAutoSrpSubmitOnly  = "submit_only"  // 仅提交
+	FleetAutoSrpAutoApprove = "auto_approve" // 自动审批
+)
+
 // Fleet 舰队记录
 type Fleet struct {
 	ID              string     `gorm:"primaryKey;size:36"         json:"id"`
@@ -22,6 +29,8 @@ type Fleet struct {
 	FCCharacterID   int64      `gorm:"not null"                   json:"fc_character_id"`
 	FCCharacterName string     `gorm:"size:128"                   json:"fc_character_name"`
 	ESIFleetID      *int64     `gorm:""                           json:"esi_fleet_id,omitempty"`
+	FleetConfigID   *uint      `gorm:""                           json:"fleet_config_id,omitempty"`
+	AutoSrpMode     string     `gorm:"size:32;not null;default:'disabled'" json:"auto_srp_mode"` // disabled/submit_only/auto_approve
 	CreatedAt       time.Time  `gorm:"autoCreateTime"             json:"created_at"`
 	UpdatedAt       time.Time  `gorm:"autoUpdateTime"             json:"updated_at"`
 	DeletedAt       *time.Time `gorm:"index"                      json:"deleted_at,omitempty"`

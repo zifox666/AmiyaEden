@@ -195,6 +195,30 @@ type FuzzySearchItem struct {
 	Category  string `json:"category"   gorm:"column:category"` // "type" | "character"
 }
 
+// GetTypeIDsByNames 通过英文名称批量反查 typeID（用于 EFT 解析）
+func (r *SdeRepository) GetTypeIDsByNames(names []string) (map[string]int64, error) {
+	if len(names) == 0 {
+		return map[string]int64{}, nil
+	}
+	type row struct {
+		TypeID   int64  `gorm:"column:typeID"`
+		TypeName string `gorm:"column:typeName"`
+	}
+	var rows []row
+	err := global.DB.Table(`"invTypes"`).
+		Select(`"typeID", "typeName"`).
+		Where(`"typeName" IN ?`, names).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]int64, len(rows))
+	for _, r := range rows {
+		result[r.TypeName] = r.TypeID
+	}
+	return result, nil
+}
+
 // FuzzySearch 模糊搜索 trnTranslations（物品名称）及成员名称
 func (r *SdeRepository) FuzzySearch(keyword string, languageID string, categoryIDs []int, excludeCategoryIDs []int, limit int, searchMember bool) ([]FuzzySearchItem, error) {
 	if keyword == "" {
