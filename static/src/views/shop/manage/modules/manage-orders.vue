@@ -6,25 +6,28 @@
         <div class="flex items-center gap-4">
           <ElInput
             v-model="userIdFilter"
-            placeholder="用户 ID"
+            :placeholder="$t('shopAdmin.orders.userIdPlaceholder')"
             clearable
             style="width: 140px"
             @keyup.enter="handleSearch"
           />
           <ElSelect
             v-model="statusFilter"
-            placeholder="订单状态"
+            :placeholder="$t('shopAdmin.orders.statusPlaceholder')"
             clearable
             style="width: 140px"
             @change="handleSearch"
           >
-            <ElOption label="待审批" value="pending" />
-            <ElOption label="已完成" value="completed" />
-            <ElOption label="已拒绝" value="rejected" />
-            <ElOption label="余额不足" value="insufficient_funds" />
+            <ElOption :label="$t('shopAdmin.orders.status.pending')" value="pending" />
+            <ElOption :label="$t('shopAdmin.orders.status.completed')" value="completed" />
+            <ElOption :label="$t('shopAdmin.orders.status.rejected')" value="rejected" />
+            <ElOption
+              :label="$t('shopAdmin.orders.status.insufficient_funds')"
+              value="insufficient_funds"
+            />
           </ElSelect>
-          <ElButton type="primary" @click="handleSearch">查询</ElButton>
-          <ElButton @click="handleReset">重置</ElButton>
+          <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
+          <ElButton @click="handleReset">{{ $t('common.reset') }}</ElButton>
         </div>
       </template>
     </ArtTableHeader>
@@ -42,26 +45,39 @@
   <!-- 审批备注对话框 -->
   <ElDialog
     v-model="reviewDialogVisible"
-    :title="reviewAction === 'approve' ? '审批通过' : '拒绝订单'"
+    :title="
+      reviewAction === 'approve'
+        ? $t('shopAdmin.orders.dialogApprove')
+        : $t('shopAdmin.orders.dialogReject')
+    "
     width="400px"
     destroy-on-close
   >
     <ElForm label-width="80px">
-      <ElFormItem label="订单号">
+      <ElFormItem :label="$t('shopAdmin.orders.fields.orderNo')">
         <span class="font-medium">{{ reviewOrderNo }}</span>
       </ElFormItem>
-      <ElFormItem label="审批备注">
-        <ElInput v-model="reviewRemark" type="textarea" :rows="3" placeholder="审批备注（可选）" />
+      <ElFormItem :label="$t('shopAdmin.orders.fields.reviewRemark')">
+        <ElInput
+          v-model="reviewRemark"
+          type="textarea"
+          :rows="3"
+          :placeholder="$t('shopAdmin.orders.placeholders.reviewRemark')"
+        />
       </ElFormItem>
     </ElForm>
     <template #footer>
-      <ElButton @click="reviewDialogVisible = false">取消</ElButton>
+      <ElButton @click="reviewDialogVisible = false">{{ $t('common.cancel') }}</ElButton>
       <ElButton
         :type="reviewAction === 'approve' ? 'success' : 'danger'"
         :loading="reviewSubmitting"
         @click="submitReview"
       >
-        {{ reviewAction === 'approve' ? '确认通过' : '确认拒绝' }}
+        {{
+          reviewAction === 'approve'
+            ? $t('shopAdmin.orders.approveConfirm')
+            : $t('shopAdmin.orders.rejectConfirm')
+        }}
       </ElButton>
     </template>
   </ElDialog>
@@ -69,22 +85,24 @@
 
 <script setup lang="ts">
   import { ElTag, ElButton, ElInput, ElSelect, ElOption, ElMessage } from 'element-plus'
+  import { useI18n } from 'vue-i18n'
   import { adminListOrders, adminApproveOrder, adminRejectOrder } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
 
   defineOptions({ name: 'ManageOrders' })
+  const { t } = useI18n()
 
   type Order = Api.Shop.Order
 
   // ─── 订单状态映射 ───
   const ORDER_STATUS_CONFIG: Record<string, { label: string; type: string }> = {
-    pending: { label: '待审批', type: 'warning' },
-    paid: { label: '已付款', type: 'success' },
-    approved: { label: '已审批', type: 'success' },
-    rejected: { label: '已拒绝', type: 'danger' },
-    completed: { label: '已完成', type: 'success' },
-    cancelled: { label: '已取消', type: 'info' },
-    insufficient_funds: { label: '余额不足', type: 'danger' }
+    pending: { label: t('shopAdmin.orders.status.pending'), type: 'warning' },
+    paid: { label: t('shopAdmin.orders.status.paid'), type: 'success' },
+    approved: { label: t('shopAdmin.orders.status.approved'), type: 'success' },
+    rejected: { label: t('shopAdmin.orders.status.rejected'), type: 'danger' },
+    completed: { label: t('shopAdmin.orders.status.completed'), type: 'success' },
+    cancelled: { label: t('shopAdmin.orders.status.cancelled'), type: 'info' },
+    insufficient_funds: { label: t('shopAdmin.orders.status.insufficient_funds'), type: 'danger' }
   }
 
   const formatISK = (v: number) =>
@@ -116,36 +134,36 @@
       columnsFactory: () => [
         {
           prop: 'order_no',
-          label: '订单号',
+          label: t('shopAdmin.orders.table.orderNo'),
           width: 200,
           showOverflowTooltip: true
         },
         {
           prop: 'user_id',
-          label: '用户ID',
+          label: t('shopAdmin.orders.table.userId'),
           width: 90
         },
         {
           prop: 'product_name',
-          label: '商品',
+          label: t('shopAdmin.orders.table.product'),
           minWidth: 140,
           showOverflowTooltip: true
         },
         {
           prop: 'quantity',
-          label: '数量',
+          label: t('shopAdmin.orders.table.quantity'),
           width: 70
         },
         {
           prop: 'total_price',
-          label: '总价',
+          label: t('shopAdmin.orders.table.totalPrice'),
           width: 130,
           formatter: (row: Order) =>
             h('span', { class: 'font-medium text-orange-600' }, formatISK(row.total_price))
         },
         {
           prop: 'status',
-          label: '状态',
+          label: t('common.status'),
           width: 120,
           formatter: (row: Order) => {
             const cfg = ORDER_STATUS_CONFIG[row.status] ?? { label: row.status, type: 'info' }
@@ -158,25 +176,25 @@
         },
         {
           prop: 'remark',
-          label: '用户备注',
+          label: t('shopAdmin.orders.table.userRemark'),
           width: 140,
           showOverflowTooltip: true
         },
         {
           prop: 'review_remark',
-          label: '审批备注',
+          label: t('shopAdmin.orders.table.reviewRemark'),
           width: 140,
           showOverflowTooltip: true
         },
         {
           prop: 'created_at',
-          label: '下单时间',
+          label: t('shopAdmin.orders.table.createdAt'),
           width: 180,
           formatter: (row: Order) => h('span', {}, formatTime(row.created_at))
         },
         {
           prop: 'actions',
-          label: '操作',
+          label: t('common.operation'),
           width: 160,
           fixed: 'right',
           formatter: (row: Order) => {
@@ -187,12 +205,12 @@
               h(
                 ElButton,
                 { size: 'small', type: 'success', onClick: () => openApproveDialog(row) },
-                () => '通过'
+                () => t('shopAdmin.orders.approveButton')
               ),
               h(
                 ElButton,
                 { size: 'small', type: 'danger', onClick: () => openRejectDialog(row) },
-                () => '拒绝'
+                () => t('shopAdmin.orders.rejectButton')
               )
             ])
           }
@@ -249,15 +267,15 @@
       }
       if (reviewAction.value === 'approve') {
         await adminApproveOrder(params)
-        ElMessage.success('审批通过')
+        ElMessage.success(t('shopAdmin.orders.messages.approveSuccess'))
       } else {
         await adminRejectOrder(params)
-        ElMessage.success('已拒绝')
+        ElMessage.success(t('shopAdmin.orders.messages.rejectSuccess'))
       }
       reviewDialogVisible.value = false
       refreshData()
     } catch (e: any) {
-      ElMessage.error(e?.message ?? '操作失败')
+      ElMessage.error(e?.message ?? t('shopAdmin.orders.messages.actionFailed'))
     } finally {
       reviewSubmitting.value = false
     }

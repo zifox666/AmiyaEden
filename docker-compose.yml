@@ -1,26 +1,61 @@
 services:
-  backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: amiya-eden-backend
-    restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      - TZ=Asia/Shanghai
-    volumes:
-      # 挂载配置文件
-      - ./server/config/config.yaml:/app/config/config.yaml:ro
-      # 持久化日志
-      - ./server/logs:/app/logs
-      # 持久化图片
-      - ./server/uploads:/app/uploads
-    ports:
-      - "8080:8080"
-    networks:
-      - amiya-eden-network
+    backend:
+        image: xiaomaitx/amiya-eden-backend:latest
+        container_name: amiya-eden-backend
+        restart: unless-stopped
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        environment:
+            - TZ=Asia/Shanghai
+        volumes:
+            # 挂载配置文件
+            - /root/dockers/amiya-eden/config.yaml:/app/config/config.yaml:ro
+            # 持久化日志
+            - /root/dockers/amiya-eden/logs:/app/logs
+        expose:
+            - "8080"
+        networks:
+            - amiya-eden-network
+
+    redis:
+        image: redis:latest
+        container_name: amiya-eden-redis
+        restart: unless-stopped
+        command: redis-server --requirepass "amiya_eden_redis_password"
+        environment:
+            - TZ=Asia/Shanghai
+        volumes:
+            - /root/dockers/amiya-eden/redis_data:/data
+        expose:
+            - "6379"
+        networks:
+            - amiya-eden-network
+
+    postgres:
+        image: postgres:latest
+        container_name: amiya-eden-postgres
+        restart: unless-stopped
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=amiya_eden_password
+            - POSTGRES_DB=amiya_eden
+            - TZ=Asia/Shanghai
+        volumes:
+            - /root/dockers/amiya-eden/database:/var/lib/postgresql/data
+        expose:
+            - "5432"
+        networks:
+            - amiya-eden-network
+
+    frontend:
+        image: xiaomaitx/amiya-eden-frontend:latest
+        container_name: amiya-eden-frontend
+        restart: unless-stopped
+        ports:
+            - "23746:80"
+        networks:
+            - amiya-eden-network
 
 networks:
-  amiya-eden-network:
-    driver: bridge
+    amiya-eden-network:
+        driver: bridge

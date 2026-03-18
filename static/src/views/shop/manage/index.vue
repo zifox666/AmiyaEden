@@ -3,17 +3,17 @@
   <div class="shop-admin-page art-full-height">
     <ElTabs v-model="activeTab" class="art-table-card p-4">
       <!-- 商品管理 -->
-      <ElTabPane label="商品管理" name="products">
+      <ElTabPane :label="$t('shopAdmin.tabs.products')" name="products">
         <ManageProducts ref="productsRef" />
       </ElTabPane>
 
       <!-- 抽奖管理 -->
-      <ElTabPane label="抽奖管理" name="lottery">
+      <ElTabPane label="$t('shopAdmin.tabs.lottery')" name="lottery">
         <ManageLottery ref="lotteryRef" />
       </ElTabPane>
 
       <!-- 订单管理 -->
-      <ElTabPane label="订单管理" name="orders">
+      <ElTabPane :label="$t('shopAdmin.tabs.orders')" name="orders">
         <ManageOrders ref="ordersRef" />
       </ElTabPane>
     </ElTabs>

@@ -75,6 +75,7 @@
     ElButton,
     ElMessage
   } from 'element-plus'
+  import { useI18n } from 'vue-i18n'
   import { buyProduct as apiBuyProduct } from '@/api/shop'
   import { fetchMyWallet } from '@/api/sys-wallet'
   import ShopProducts from './modules/shop-products.vue'
@@ -82,6 +83,7 @@
   import ShopOrders from './modules/shop-orders.vue'
 
   defineOptions({ name: 'Shop' })
+  const { t } = useI18n()
 
   // ─── Tab ───
   const activeTab = ref('products')
@@ -140,12 +142,12 @@
         quantity: buyQuantity.value,
         remark: buyRemark.value
       })
-      ElMessage.success('购买成功')
+      ElMessage.success(t('shopBrowse.purchaseSuccess'))
       buyDialogVisible.value = false
       productsRef.value?.refresh()
       loadWallet()
     } catch (e: any) {
-      ElMessage.error(e?.message || '购买失败')
+      ElMessage.error(e?.message || t('shopBrowse.purchaseFailed'))
     } finally {
       buyLoading.value = false
     }

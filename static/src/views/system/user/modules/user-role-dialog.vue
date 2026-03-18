@@ -1,13 +1,19 @@
 <template>
-  <ElDialog v-model="dialogVisible" title="分配角色" width="480px" align-center @open="onOpen">
+  <ElDialog
+    v-model="dialogVisible"
+    :title="$t('roleUi.userRoleDialog.title')"
+    width="480px"
+    align-center
+    @open="onOpen"
+  >
     <ElForm label-width="80px">
-      <ElFormItem label="用户">
+      <ElFormItem :label="$t('common.user')">
         <div class="flex items-center gap-2">
           <ElAvatar :size="32" :src="userData?.avatar" />
-          <span>{{ userData?.nickname || '未命名' }}</span>
+          <span>{{ userData?.nickname || $t('roleUi.userRoleDialog.unnamed') }}</span>
         </div>
       </ElFormItem>
-      <ElFormItem label="角色">
+      <ElFormItem :label="$t('common.role')">
         <ElCheckboxGroup v-model="selectedRoleIds">
           <ElCheckbox
             v-for="role in allRoles"
@@ -16,21 +22,26 @@
             :disabled="role.code === 'super_admin' && !isSuperAdmin"
           >
             {{ role.name }}
-            <span v-if="role.is_system" class="text-xs text-gray-400 ml-1">(系统)</span>
+            <span v-if="role.is_system" class="text-xs text-gray-400 ml-1">
+              {{ $t('roleUi.userRoleDialog.systemTag') }}
+            </span>
           </ElCheckbox>
         </ElCheckboxGroup>
       </ElFormItem>
     </ElForm>
     <template #footer>
       <div class="dialog-footer">
-        <ElButton @click="dialogVisible = false">取消</ElButton>
-        <ElButton type="primary" :loading="submitting" @click="handleSubmit">确认</ElButton>
+        <ElButton @click="dialogVisible = false">{{ $t('common.cancel') }}</ElButton>
+        <ElButton type="primary" :loading="submitting" @click="handleSubmit">
+          {{ $t('common.confirm') }}
+        </ElButton>
       </div>
     </template>
   </ElDialog>
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import { fetchGetAllRoles, fetchGetUserRoles, fetchSetUserRoles } from '@/api/system-manage'
   import { useUserStore } from '@/store/modules/user'
 
@@ -46,6 +57,7 @@
 
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
+  const { t } = useI18n()
 
   const userStore = useUserStore()
   const isSuperAdmin = computed(() => userStore.info?.roles?.includes('super_admin'))
@@ -67,7 +79,7 @@
         selectedRoleIds.value = userRoles.map((r) => r.id)
       }
     } catch (err) {
-      console.error('加载角色数据失败:', err)
+      console.error(t('roleUi.userRoleDialog.loadFailed'), err)
     }
   }
 
@@ -76,11 +88,11 @@
     submitting.value = true
     try {
       await fetchSetUserRoles(props.userData.id, selectedRoleIds.value)
-      ElMessage.success('角色分配成功')
+      ElMessage.success(t('roleUi.userRoleDialog.saveSuccess'))
       dialogVisible.value = false
       emit('saved')
     } catch (err) {
-      console.error('角色分配失败:', err)
+      console.error(t('roleUi.userRoleDialog.saveFailed'), err)
     } finally {
       submitting.value = false
     }

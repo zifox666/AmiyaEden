@@ -2,7 +2,9 @@
 <template>
   <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
     <template #left>
-      <ElButton type="success" @click="emit('adjust', 0, 'add')">手动调整余额</ElButton>
+      <ElButton type="success" @click="emit('adjust', 0, 'add')">
+        {{ $t('walletAdmin.adjustBalance') }}
+      </ElButton>
     </template>
   </ArtTableHeader>
 
@@ -18,10 +20,12 @@
 
 <script setup lang="ts">
   import { ElButton } from 'element-plus'
+  import { useI18n } from 'vue-i18n'
   import { useTable } from '@/hooks/core/useTable'
   import { adminListWallets } from '@/api/sys-wallet'
 
   defineOptions({ name: 'WalletList' })
+  const { t } = useI18n()
 
   type Wallet = Api.SysWallet.Wallet
 
@@ -59,7 +63,7 @@
         },
         {
           prop: 'balance',
-          label: '余额',
+          label: t('walletAdmin.wallets.balance'),
           minWidth: 180,
           formatter: (row: Wallet) =>
             h(
@@ -70,13 +74,13 @@
         },
         {
           prop: 'updated_at',
-          label: '最后更新',
+          label: t('common.updatedAt'),
           minWidth: 200,
           formatter: (row: Wallet) => h('span', {}, formatTime(row.updated_at))
         },
         {
           prop: 'actions',
-          label: '操作',
+          label: t('common.operation'),
           width: 220,
           fixed: 'right',
           formatter: (row: Wallet) =>
@@ -88,7 +92,7 @@
                   type: 'success',
                   onClick: () => emit('adjust', row.user_id, 'add')
                 },
-                () => '增加'
+                () => t('walletAdmin.actions.add')
               ),
               h(
                 ElButton,
@@ -97,7 +101,7 @@
                   type: 'warning',
                   onClick: () => emit('adjust', row.user_id, 'deduct')
                 },
-                () => '扣减'
+                () => t('walletAdmin.actions.deduct')
               ),
               h(
                 ElButton,
@@ -106,7 +110,7 @@
                   type: 'primary',
                   onClick: () => emit('viewTransactions', row.user_id)
                 },
-                () => '流水'
+                () => t('walletAdmin.actions.transactions')
               )
             ])
         }

@@ -329,6 +329,57 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	// ── 绑定流程：该角色已存在 ──
 	if sd.BindToUserID > 0 {
 		if char.UserID != sd.BindToUserID {
+			// 保存原用户ID
+			oldUserID := char.UserID
+			
+			// 检查原用户是否存在（是否被软删除）
+			_, err := s.userRepo.GetByID(oldUserID)
+			if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+				// 原用户已被软删除（孤儿角色），直接重新绑定到新用户
+				char.UserID = sd.BindToUserID
+				char.AccessToken = tokenResp.AccessToken
+				char.RefreshToken = tokenResp.RefreshToken
+				char.TokenExpiry = tokenExpiry
+				char.Scopes = scopesStr
+				char.CharacterName = claims.Name
+				char.PortraitURL = portraitURL
+				char.TokenInvalid = false
+				if err := s.charRepo.Update(char); err != nil {
+					return nil, err
+				}
+
+				// 获取目标用户
+				user, err := s.userRepo.GetByID(sd.BindToUserID)
+				if err != nil {
+					return nil, err
+				}
+				
+				// 如果用户还没有主角色，自动设为主角色
+				if user.PrimaryCharacterID == 0 {
+					user.PrimaryCharacterID = characterID
+					if err := s.userRepo.Update(user); err != nil {
+						return nil, err
+					}
+				}
+
+				// 触发绑定钩子
+				if OnCharacterBindFunc != nil {
+					go OnCharacterBindFunc(user.ID)
+				}
+
+				global.Logger.Info("孤儿角色重新绑定到新用户（绑定流程）",
+					zap.Int64("characterID", characterID),
+					zap.Uint("oldUserID", oldUserID),
+					zap.Uint("newUserID", sd.BindToUserID))
+
+				jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+				if err != nil {
+					return nil, err
+				}
+				return &CallbackResult{Token: jwtToken, User: user, Character: char, RedirectURL: sd.RedirectURL}, nil
+			}
+
+			// 原用户存在，角色已绑定到其他账号，返回错误
 			return nil, errors.New("该角色已绑定到其他账号，无法再次绑定")
 		}
 		// 角色已属于当前用户，更新 Token 即可

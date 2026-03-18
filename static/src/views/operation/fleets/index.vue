@@ -181,7 +181,7 @@
       apiFn: fetchFleetList,
       apiParams: { current: 1, size: 20 },
       columnsFactory: () => [
-        { type: 'index', width: 60, label: '序号' },
+        { type: 'index', width: 60, label: '#' },
         {
           prop: 'title',
           label: t('fleet.fields.title'),
@@ -233,7 +233,7 @@
         },
         {
           prop: 'created_at',
-          label: '创建时间',
+          label: t('common.createdAt'),
           width: 180,
           formatter: (row: FleetItem) => h('span', {}, formatTime(row.created_at))
         },

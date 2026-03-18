@@ -15,7 +15,7 @@
       </div>
 
       <!-- 无邀请码 -->
-      <ElEmpty v-if="!inviteCode" description="无效的邀请链接，缺少邀请码" />
+      <ElEmpty v-if="!inviteCode" :description="$t('fleet.join.missingCode')" />
 
       <template v-else>
         <ElForm ref="formRef" :model="formData" :rules="formRules" label-width="80px">

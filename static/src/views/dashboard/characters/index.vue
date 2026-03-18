@@ -50,7 +50,7 @@
           <div class="flex-1 min-w-0">
             <h3 class="text-base font-medium truncate">
               {{ char.character_name }}
-              <span v-if="char.token_invalid">(已失效)</span>
+              <span v-if="char.token_invalid">{{ t('characters.tokenInvalid') }}</span>
             </h3>
             <p class="mt-0.5 text-xs text-g-500">ID: {{ char.character_id }}</p>
             <p class="mt-0.5 text-xs text-g-400 truncate" :title="char.scopes">
