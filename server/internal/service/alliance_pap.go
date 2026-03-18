@@ -182,6 +182,13 @@ func (s *AlliancePAPService) FetchAndStore(mainChar string, year, month int) err
 		}
 	}
 
+	// API 未返回 corporation_id 时，从数据库角色表中查找
+	if corporationID == "" {
+		if char, err := s.charRepo.GetByCharacterName(mainChar); err == nil && char.CorporationID != 0 {
+			corporationID = strconv.FormatInt(char.CorporationID, 10)
+		}
+	}
+
 	summary := &model.AlliancePAPSummary{
 		MainCharacter:     apiResp.MainCharacter,
 		Year:              year,
@@ -431,6 +438,15 @@ func (s *AlliancePAPService) SettleMonth(year, month int, walletConvert bool, op
 			continue
 		}
 
+		// 检查该笔兑换是否已存在（防止重复入库）
+		refID := fmt.Sprintf("pap:%d:%d:%s", year, month, summary.MainCharacter)
+		if exists, _ := s.walletRepo.ExistsTransactionByRefID(refID); exists {
+			// 已存在同 RefID 的流水，直接标记已兑换并跳过
+			_ = s.repo.MarkSummaryRedeemed(summary.ID, walletAmount)
+			result.SkippedUsers++
+			continue
+		}
+
 		// 事务：获取钱包 → 加余额 → 写流水
 		wallet, err := s.walletRepo.GetOrCreateWallet(user.ID)
 		if err != nil {
@@ -456,7 +472,7 @@ func (s *AlliancePAPService) SettleMonth(year, month int, walletConvert bool, op
 			Amount:       walletAmount,
 			Reason:       fmt.Sprintf("%d年%d月联盟PAP兑换（%.2f PAP × %.2f）", year, month, summary.TotalPap, walletPerPAP),
 			RefType:      model.WalletRefPapConvert,
-			RefID:        fmt.Sprintf("pap:%d:%d:%s", year, month, summary.MainCharacter),
+			RefID:        refID,
 			BalanceAfter: newBalance,
 			OperatorID:   operatorID,
 		}
