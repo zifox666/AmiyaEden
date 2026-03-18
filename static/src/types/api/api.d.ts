@@ -835,6 +835,7 @@ declare namespace Api {
       price: number
       stock: number
       max_per_user: number
+      limit_period: 'forever' | 'daily' | 'weekly' | 'monthly'
       type: 'normal' | 'redeem'
       need_approval: boolean
       status: number
@@ -893,6 +894,7 @@ declare namespace Api {
       price: number
       stock?: number
       max_per_user?: number
+      limit_period?: 'forever' | 'daily' | 'weekly' | 'monthly'
       type: 'normal' | 'redeem'
       need_approval?: boolean
       status?: number
@@ -908,6 +910,7 @@ declare namespace Api {
       price?: number
       stock?: number
       max_per_user?: number
+      limit_period?: 'forever' | 'daily' | 'weekly' | 'monthly'
       type?: string
       need_approval?: boolean
       status?: number

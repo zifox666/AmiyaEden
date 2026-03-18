@@ -80,6 +80,13 @@ func (r *SysWalletRepository) CreateTransactionTx(dbTx *gorm.DB, tx *model.Walle
 	return dbTx.Create(tx).Error
 }
 
+// ExistsTransactionByRefID 检查是否已存在指定 RefID 的流水记录
+func (r *SysWalletRepository) ExistsTransactionByRefID(refID string) (bool, error) {
+	var count int64
+	err := global.DB.Model(&model.WalletTransaction{}).Where("ref_id = ?", refID).Count(&count).Error
+	return count > 0, err
+}
+
 // WalletTransactionFilter 流水查询筛选条件
 type WalletTransactionFilter struct {
 	UserID  *uint

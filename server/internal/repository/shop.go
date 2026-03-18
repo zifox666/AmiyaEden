@@ -3,6 +3,7 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -165,12 +166,32 @@ func (r *ShopRepository) ListOrders(page, pageSize int, filter OrderFilter) ([]m
 }
 
 // CountUserProductPurchased 统计用户对某商品的已购数量（pending + paid + approved + completed）
-func (r *ShopRepository) CountUserProductPurchased(userID, productID uint) (int64, error) {
+// limitPeriod 控制统计时间范围：forever=全部, daily=当天, weekly=本周, monthly=本月
+func (r *ShopRepository) CountUserProductPurchased(userID, productID uint, limitPeriod string) (int64, error) {
 	var total int64
-	err := global.DB.Model(&model.ShopOrder{}).
+	db := global.DB.Model(&model.ShopOrder{}).
 		Where("user_id = ? AND product_id = ? AND status IN ?", userID, productID,
-			[]string{model.OrderStatusPending, model.OrderStatusPaid, model.OrderStatusApproved, model.OrderStatusCompleted}).
-		Select("COALESCE(SUM(quantity), 0)").Scan(&total).Error
+			[]string{model.OrderStatusPending, model.OrderStatusPaid, model.OrderStatusApproved, model.OrderStatusCompleted})
+
+	now := time.Now()
+	switch limitPeriod {
+	case model.LimitPeriodDaily:
+		start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		db = db.Where("created_at >= ?", start)
+	case model.LimitPeriodWeekly:
+		weekday := int(now.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		start := time.Date(now.Year(), now.Month(), now.Day()-weekday+1, 0, 0, 0, 0, now.Location())
+		db = db.Where("created_at >= ?", start)
+	case model.LimitPeriodMonthly:
+		start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		db = db.Where("created_at >= ?", start)
+		// forever 或其他值不加时间过滤
+	}
+
+	err := db.Select("COALESCE(SUM(quantity), 0)").Scan(&total).Error
 	return total, err
 }
 

@@ -128,6 +128,15 @@
         <ElInputNumber v-model="formData.max_per_user" :min="0" style="width: 200px" />
         <span class="ml-2 text-xs text-gray-400">{{ t('shop.manage.limitPerUserHint') }}</span>
       </ElFormItem>
+      <ElFormItem :label="t('shop.manage.limitPeriod')">
+        <ElSelect v-model="formData.limit_period" style="width: 200px">
+          <ElOption :label="t('shop.manage.periodForever')" value="forever" />
+          <ElOption :label="t('shop.manage.periodDaily')" value="daily" />
+          <ElOption :label="t('shop.manage.periodWeekly')" value="weekly" />
+          <ElOption :label="t('shop.manage.periodMonthly')" value="monthly" />
+        </ElSelect>
+        <span class="ml-2 text-xs text-gray-400">{{ t('shop.manage.limitPeriodHint') }}</span>
+      </ElFormItem>
       <ElFormItem :label="t('shop.manage.needApproval')">
         <ElSwitch v-model="formData.need_approval" />
       </ElFormItem>
@@ -355,6 +364,7 @@
     type: 'normal' as 'normal' | 'redeem',
     stock: -1,
     max_per_user: 0,
+    limit_period: 'forever' as 'forever' | 'daily' | 'weekly' | 'monthly',
     need_approval: false,
     status: 1 as number,
     sort_order: 0
@@ -375,6 +385,7 @@
       type: 'normal',
       stock: -1,
       max_per_user: 0,
+      limit_period: 'forever',
       need_approval: false,
       status: 1,
       sort_order: 0
@@ -397,6 +408,7 @@
       type: row.type,
       stock: row.stock,
       max_per_user: row.max_per_user,
+      limit_period: row.limit_period || 'forever',
       need_approval: row.need_approval,
       status: row.status,
       sort_order: row.sort_order
@@ -477,7 +489,7 @@
       if (!formData.name) {
         formData.name = item.name
       }
-      formData.image = `https://images.evetech.net/types/${item.id}/render?size=256`
+      formData.image = `https://images.evetech.net/types/${item.id}/icon?size=256`
       ElMessage.success(t('shop.manage.sdeSelected', { name: item.name }))
     }
   }
