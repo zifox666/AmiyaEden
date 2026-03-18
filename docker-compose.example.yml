@@ -1,6 +1,6 @@
 services:
     backend:
-        image: xiaomaitx/amiya-eden-backend:latest
+        image: newdoublex/amiya-eden-backend:latest
         container_name: amiya-eden-backend
         restart: unless-stopped
         extra_hosts:
@@ -12,8 +12,10 @@ services:
             - /root/dockers/amiya-eden/config.yaml:/app/config/config.yaml:ro
             # 持久化日志
             - /root/dockers/amiya-eden/logs:/app/logs
-        expose:
-            - "8080"
+            # 持久化数据
+            - /root/dockers/amiya-eden/uploads:/app/uploads
+        ports:
+            - "8080:8080"
         networks:
             - amiya-eden-network
 
@@ -26,8 +28,6 @@ services:
             - TZ=Asia/Shanghai
         volumes:
             - /root/dockers/amiya-eden/redis_data:/data
-        expose:
-            - "6379"
         networks:
             - amiya-eden-network
 
@@ -42,17 +42,15 @@ services:
             - TZ=Asia/Shanghai
         volumes:
             - /root/dockers/amiya-eden/database:/var/lib/postgresql/data
-        expose:
-            - "5432"
         networks:
             - amiya-eden-network
 
     frontend:
-        image: xiaomaitx/amiya-eden-frontend:latest
+        image: newdoublex/amiya-eden-frontend:latest
         container_name: amiya-eden-frontend
         restart: unless-stopped
         ports:
-            - "23746:80"
+            - "80:80"
         networks:
             - amiya-eden-network
 

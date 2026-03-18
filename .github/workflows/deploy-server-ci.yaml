@@ -1,0 +1,105 @@
+name: Deploy to Private Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  changes:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'static/**'
+            backend:
+              - 'server/**'
+
+  deploy:
+    name: Build & Deploy
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Setup pnpm
+        if: needs.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        if: needs.changes.outputs.frontend == 'true'
+        working-directory: static
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        if: needs.changes.outputs.frontend == 'true'
+        working-directory: static
+        run: pnpm build
+
+      - name: Package dist
+        if: needs.changes.outputs.frontend == 'true'
+        working-directory: static
+        run: tar -czf ../dist.tar.gz dist/
+
+      - name: Upload dist to server
+        if: needs.changes.outputs.frontend == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: dist.tar.gz
+          target: /tmp/
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            DEPLOY_FRONTEND="${{ needs.changes.outputs.frontend }}"
+            DEPLOY_BACKEND="${{ needs.changes.outputs.backend }}"
+
+            if [ "$DEPLOY_FRONTEND" = "true" ]; then
+              echo ">>> 解压前端文件..."
+              tar -xzf /tmp/dist.tar.gz -C /tmp/
+              sudo rsync -a --delete /tmp/dist/ ${{ secrets.FRONTEND_PATH }}/
+              rm -rf /tmp/dist.tar.gz /tmp/dist
+              echo ">>> 前端部署完成！"
+            fi
+
+            if [ "$DEPLOY_BACKEND" = "true" ]; then
+              echo ">>> 拉取最新代码..."
+              cd ${{ secrets.DEPLOY_PATH }}
+              git pull origin main
+              echo ">>> 构建并启动后端容器..."
+              sudo docker compose up -d --build --remove-orphans
+              echo ">>> 清理无用镜像..."
+              sudo docker image prune -f
+              echo ">>> 后端部署完成！"
+            fi
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::error::部署失败，请检查服务器日志"

@@ -3,10 +3,10 @@ server:
   mode: "debug" # debug | release | test
 
 database:
-  host: "127.0.0.1"
+  host: "amiya-eden-postgres"
   port: 5432
   user: "postgres"
-  password: ""
+  password: "amiya_eden_password"
   dbname: "amiya_eden"
   sslmode: "disable"
   max_idle_conns: 10
@@ -25,8 +25,8 @@ jwt:
   expire_day: 7
 
 redis:
-  addr: "127.0.0.1:6379"
-  password: ""          # 无密码留空
+  addr: "amiya-eden-redis:6379"
+  password: "amiya_eden_redis_password"  # 无密码留空
   db: 0                 # 使用默认 DB
   pool_size: 10         # 连接池大小
 
