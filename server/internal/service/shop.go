@@ -78,7 +78,11 @@ func (s *ShopService) BuyProduct(userID uint, req *BuyRequest) (*model.ShopOrder
 
 	// 3. 检查限购
 	if product.MaxPerUser > 0 {
-		purchased, err := s.repo.CountUserProductPurchased(userID, product.ID)
+		limitPeriod := product.LimitPeriod
+		if limitPeriod == "" {
+			limitPeriod = model.LimitPeriodForever
+		}
+		purchased, err := s.repo.CountUserProductPurchased(userID, product.ID, limitPeriod)
 		if err != nil {
 			return nil, fmt.Errorf("查询购买记录失败: %w", err)
 		}
@@ -255,6 +259,9 @@ func (s *ShopService) AdminUpdateProduct(id uint, req *AdminProductUpdateRequest
 	if req.MaxPerUser != nil {
 		product.MaxPerUser = *req.MaxPerUser
 	}
+	if req.LimitPeriod != nil {
+		product.LimitPeriod = *req.LimitPeriod
+	}
 	if req.Type != "" {
 		product.Type = req.Type
 	}
@@ -282,6 +289,7 @@ type AdminProductUpdateRequest struct {
 	Price        *float64 `json:"price"`
 	Stock        *int     `json:"stock"`
 	MaxPerUser   *int     `json:"max_per_user"`
+	LimitPeriod  *string  `json:"limit_period"`
 	Type         string   `json:"type"`
 	NeedApproval *bool    `json:"need_approval"`
 	Status       *int8    `json:"status"`

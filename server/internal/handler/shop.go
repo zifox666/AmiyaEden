@@ -136,6 +136,7 @@ type adminProductCreateRequest struct {
 	Price        float64 `json:"price" binding:"required,gt=0"`
 	Stock        int     `json:"stock"`        // -1=无限，>=0 有限
 	MaxPerUser   int     `json:"max_per_user"` // 0=不限购
+	LimitPeriod  string  `json:"limit_period"` // forever / daily / weekly / monthly
 	Type         string  `json:"type" binding:"required,oneof=normal redeem"`
 	NeedApproval bool    `json:"need_approval"`
 	Status       int8    `json:"status"`
@@ -158,6 +159,7 @@ func (h *ShopHandler) AdminCreateProduct(c *gin.Context) {
 		Price:        req.Price,
 		Stock:        req.Stock,
 		MaxPerUser:   req.MaxPerUser,
+		LimitPeriod:  req.LimitPeriod,
 		Type:         req.Type,
 		NeedApproval: req.NeedApproval,
 		Status:       req.Status,

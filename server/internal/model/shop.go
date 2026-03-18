@@ -35,6 +35,15 @@ const (
 	ProductStatusOffSale int8 = 0 // 下架
 )
 
+// ─── 限购周期 ───
+
+const (
+	LimitPeriodForever = "forever" // 一直（总限购）
+	LimitPeriodDaily   = "daily"   // 每日
+	LimitPeriodWeekly  = "weekly"  // 每周
+	LimitPeriodMonthly = "monthly" // 每月
+)
+
 // ─── 订单状态 ───
 
 const (
@@ -73,6 +82,7 @@ type ShopProduct struct {
 	Price        float64 `gorm:"not null"                       json:"price"`
 	Stock        int     `gorm:"default:-1"                     json:"stock"`         // -1 = 无限库存
 	MaxPerUser   int     `gorm:"default:0"                      json:"max_per_user"`  // 0 = 不限购
+	LimitPeriod  string  `gorm:"size:20;default:'forever'"       json:"limit_period"` // forever / daily / weekly / monthly
 	Type         string  `gorm:"size:20;default:'normal';index" json:"type"`          // normal / redeem
 	NeedApproval bool    `gorm:"default:false"                  json:"need_approval"` // 是否需要管理员审批
 	Status       int8    `gorm:"default:1;index"                json:"status"`        // 1=上架 0=下架

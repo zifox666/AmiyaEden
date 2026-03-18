@@ -32,7 +32,7 @@
     <div v-loading="loading" class="product-grid">
       <ElCard v-for="item in data" :key="item.id" shadow="hover" class="product-card">
         <div v-if="item.image" class="product-image">
-          <img :src="item.image" :alt="item.name" />
+          <img :src="item.image" :alt="item.name" @error="onImgError" />
         </div>
         <div v-else class="product-image placeholder">
           <el-icon :size="48"><ShoppingBag /></el-icon>
@@ -48,6 +48,9 @@
             </div>
             <div v-if="item.max_per_user > 0" class="limit text-xs text-gray-400">
               {{ $t('shop.limitPerUser', { n: item.max_per_user }) }}
+              <span v-if="item.limit_period && item.limit_period !== 'forever'">
+                ({{ $t('shop.period.' + item.limit_period) }})
+              </span>
             </div>
           </div>
           <div class="product-tags mt-2">
@@ -78,7 +81,7 @@
         :current-page="pagination.current"
         :page-size="pagination.size"
         :total="pagination.total"
-        :page-sizes="[12, 24, 48]"
+        :page-sizes="[12, 24, 36, 48]"
         layout="total, sizes, prev, pager, next"
         background
         @size-change="handleSizeChange"
@@ -108,6 +111,14 @@
   const formatISK = (v: number) =>
     v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+  /** 图片加载失败时尝试回退：render → icon */
+  function onImgError(e: Event) {
+    const img = e.target as HTMLImageElement
+    if (img.src.includes('/render')) {
+      img.src = img.src.replace('/render', '/icon')
+    }
+  }
+
   const {
     data,
     loading,
@@ -136,7 +147,7 @@
 <style scoped>
   .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
   }
 
@@ -154,7 +165,7 @@
 
   .product-image {
     width: 100%;
-    height: 160px;
+    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -166,7 +177,7 @@
   .product-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .product-image.placeholder {
