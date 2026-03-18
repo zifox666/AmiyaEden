@@ -1265,8 +1265,7 @@
     "tabs": {
       "products": "商品管理",
       "orders": "订单管理",
-      "redeem": "兑换码管理",
-      "lottery": "抽奖管理"
+      "redeem": "兑换码管理"
     },
     "products": {
       "createProduct": "新增商品",

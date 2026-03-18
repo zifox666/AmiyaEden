@@ -8,7 +8,7 @@
       </ElTabPane>
 
       <!-- 抽奖管理 -->
-      <ElTabPane label="$t('shopAdmin.tabs.lottery')" name="lottery">
+      <ElTabPane label="抽奖管理" name="lottery">
         <ManageLottery ref="lotteryRef" />
       </ElTabPane>
 
