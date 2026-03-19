@@ -1,11 +1,13 @@
 ---
-status: active
+status: template
 doc_type: template
 owner: engineering
 last_reviewed: 2026-03-20
 ---
 
 # Feature Name
+
+> Template only. Replace all placeholders before using this as a current-state feature document.
 
 ## 当前能力
 

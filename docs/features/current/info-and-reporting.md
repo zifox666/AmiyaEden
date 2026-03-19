@@ -65,3 +65,13 @@ source_of_truth:
 - 此模块基于本地持久化的 ESI / SDE 数据与查询服务，不是页面直接调 CCP
 - NPC 刷怪既有用户视角也有管理员视角，文档和实现都要区分清楚
 - 装配功能属于 Info 模块，但也被舰队配置与自动 SRP 复用
+
+## 主要代码文件
+
+- `server/internal/service/eve_info.go`
+- `server/internal/service/fittings.go`
+- `server/internal/service/npc_kill.go`
+- `server/internal/router/router.go`
+- `static/src/api/eve-info.ts`
+- `static/src/api/npc-kill.ts`
+- `static/src/views/info`

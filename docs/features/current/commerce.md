@@ -51,3 +51,14 @@ source_of_truth:
 - 系统钱包是多个模块共享的资金载体，不能按单一页面理解
 - 钱包流水与调整日志属于不同查询面
 - 商店、兑换码、抽奖虽然都在 `Shop` 目录下，但用户态与管理态接口是分开的
+
+## 主要代码文件
+
+- `server/internal/service/shop.go`
+- `server/internal/service/lottery.go`
+- `server/internal/service/sys_wallet.go`
+- `server/internal/router/router.go`
+- `static/src/api/shop.ts`
+- `static/src/api/sys-wallet.ts`
+- `static/src/views/shop`
+- `static/src/views/system/wallet`

@@ -38,3 +38,11 @@ source_of_truth:
 - 旧文档里“网页 API 需要 API Key 鉴权”的说法不再代表当前实现
 - SDE 是共享基础能力，修改返回结构时要检查多个业务模块
 - 版本检查与导入流程是运行时基础设施问题，不要只从某个页面角度描述
+- `docs/reference/sde-schema.sql` 仅是历史参考资产，不代表当前应用的实时 schema
+
+## 主要代码文件
+
+- `server/internal/handler/sde.go`
+- `server/internal/service/sde.go`
+- `server/internal/router/router.go`
+- `static/src/api/sde.ts`

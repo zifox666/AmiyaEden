@@ -37,10 +37,13 @@ source_of_truth:
 ### 处理 ESI / SSO / CCP 数据同步
 
 1. `AGENTS.md`
-2. `docs/architecture/runtime-and-startup.md`
-3. `docs/features/current/auth-and-characters.md`
-4. `docs/features/current/esi-refresh.md`
-5. `docs/guides/adding-esi-feature.md`
+2. `docs/README.md`
+3. `docs/architecture/overview.md`
+4. `docs/architecture/runtime-and-startup.md`
+5. `docs/features/current/auth-and-characters.md`
+6. `docs/features/current/esi-refresh.md`
+7. `docs/guides/adding-esi-feature.md`
+8. 只有在任务已经确定落在 `server/pkg/eve/esi/` 时，再读该目录下的局部 `README.md`
 
 ## 冲突处理规则
 
@@ -48,7 +51,8 @@ source_of_truth:
 
 1. 先信 `AGENTS.md`
 2. 再信 `docs/` 中更高层级的 active 文档
-3. 旧兼容文件不作为裁决依据
+3. `docs/templates/` 与局部目录 `README.md` 不作为规范裁决依据
+4. 旧兼容文件不作为裁决依据
 
 当代码与文档冲突时：
 
@@ -77,3 +81,4 @@ source_of_truth:
 - 把“计划中的行为”写进 architecture / feature current
 - 在多个文档里维护同一份角色、权限、路由清单
 - 看到旧标题就假设旧内容仍然正确
+- 把模板文件或模块局部 `README.md` 当成 repo-level source of truth

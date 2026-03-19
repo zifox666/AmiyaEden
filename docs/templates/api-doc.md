@@ -1,11 +1,13 @@
 ---
-status: active
+status: template
 doc_type: template
 owner: engineering
 last_reviewed: 2026-03-20
 ---
 
 # API Doc Name
+
+> Template only. Replace all placeholders before treating this file as documentation.
 
 ## 范围
 

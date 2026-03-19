@@ -16,6 +16,8 @@ source_of_truth:
 - 一类事实只保留一个 canonical source。
 - 当前实现、工程规则、未来提案必须分开存放。
 - 不要保留第二套并行文档树。
+- repo-level canonical 文档只放在根目录 `AGENTS.md` 与 `docs/`。
+- 目录内局部 `README.md` 只可作为实现注释，不能重新定义全局规则、路由面或产品行为。
 
 ## 2. 文档类型
 
@@ -50,6 +52,11 @@ source_of_truth:
 - `supersedes`
 - `related_docs`
 
+模板约定：
+
+- `docs/templates/*` 使用 `status: template`
+- 模板内应显式声明“这是模板，不代表当前实现”
+
 ## 4. 文件命名
 
 - 使用 `kebab-case`
@@ -82,6 +89,7 @@ source_of_truth:
 
 - base URL / auth / response
 - 路由索引或接口清单
+- 权限边界应尽量显式、稳定，避免只靠上下文推断
 - 变更同步要求
 
 ### feature
@@ -113,6 +121,7 @@ source_of_truth:
 - 只是另一个视角重复已有路由表
 - 只是把同一规则改写一遍
 - 只是为了记录一次临时对话结论
+- 在子目录放一个 README，然后让它和 `docs/` 并行维护同一套规范
 
 ## 7. 更新规则
 

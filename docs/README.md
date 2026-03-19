@@ -39,6 +39,7 @@ source_of_truth:
 | `docs/api/` | api | 接口约定、响应格式、路由索引 |
 | `docs/features/current/` | feature | 当前已落地功能的模块级说明 |
 | `docs/guides/` | guide | 过程型指南，例如新增一个 ESI 模块 |
+| `docs/reference/` | reference | 离线参考资产，不作为当前实现的 source of truth |
 | `docs/specs/draft/` | draft | 提案、未来增强、未完成设计 |
 | `docs/templates/` | template | 新建文档时复用的模板 |
 
@@ -51,6 +52,11 @@ source_of_truth:
 - `owner`
 - `last_reviewed`
 
+约定：
+
+- `docs/templates/*` 使用 `status: template`，不要写成 `active`
+- `docs/specs/draft/*` 使用 `status: draft`
+
 ## 文档更新规则
 
 - 当前行为变化时，优先更新对应的 `docs/architecture`、`docs/api`、`docs/features/current`。
@@ -58,6 +64,7 @@ source_of_truth:
 - 新增尚未落地的设计时，只放进 `docs/specs/draft`。
 - 不要在多个文件里重复维护同一份角色定义、路由表、权限矩阵。
 - 不要保留并行的“第二套文档入口”。
+- 仓库内允许存在少量模块级 `README.md` 作为局部实现说明，但它们不是 repo-level canonical doc，不能覆盖 `AGENTS.md` 与 `docs/`。
 
 ## 推荐阅读顺序
 
@@ -78,7 +85,8 @@ source_of_truth:
 4. 任务对应的标准文档
 5. 任务对应的 feature / API 文档
 6. 只有在明确做规划工作时才读取 `docs/specs/draft/`
+7. 如任务已明确落在某个子目录，再补读该目录下的局部 `README.md`，但只把它当作实现注释而不是规范裁决来源
 
 ## 维护原则
 
-`AGENTS.md` 与 `docs/` 是唯一维护中的 Markdown 文档体系。不要重新建立影子文档树。
+`AGENTS.md` 与 `docs/` 是唯一维护中的 repo-level canonical Markdown 文档体系。局部 `README.md` 可以存在，但只能补充子目录实现细节，不能重新建立影子规范树。

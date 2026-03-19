@@ -62,3 +62,15 @@ source_of_truth:
 - 自动权限映射已经是当前功能，不是纯想法
 - 联盟 PAP 的管理接口与用户查看接口分属不同模块
 - Webhook 是系统配置能力，不应散落到页面里直接拼接
+
+## 主要代码文件
+
+- `server/internal/service/role.go`
+- `server/internal/service/menu.go`
+- `server/internal/service/user.go`
+- `server/internal/service/auto_role.go`
+- `server/internal/service/alliance_pap.go`
+- `server/internal/service/sys_webhook.go`
+- `static/src/api/system-manage.ts`
+- `static/src/api/webhook.ts`
+- `static/src/views/system`

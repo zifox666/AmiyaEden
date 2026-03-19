@@ -54,3 +54,13 @@ source_of_truth:
 - 自动 SRP 不是纯草案，当前模型、页面和后台处理逻辑都已存在
 - 自动 SRP 的触发与舰队成员、KM 刷新、舰队配置装配有关，不能只改 UI 字段
 - 联盟 PAP 的用户侧展示在 Operation，管理员配置与导入在 System
+
+## 主要代码文件
+
+- `server/internal/service/fleet.go`
+- `server/internal/service/fleet_config.go`
+- `server/internal/service/auto_srp.go`
+- `server/internal/router/router.go`
+- `static/src/api/fleet.ts`
+- `static/src/api/fleet-config.ts`
+- `static/src/views/operation`

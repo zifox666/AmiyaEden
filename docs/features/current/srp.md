@@ -53,3 +53,10 @@ source_of_truth:
 - 审核与发放是分离的接口，不要假设它们是一步完成
 - 价格表、舰队配置金额、自动 SRP 逻辑之间存在耦合
 - 涉及 killmail、舰队、SDE 名称映射的改动要跨模块检查
+
+## 主要代码文件
+
+- `server/internal/service/srp.go`
+- `server/internal/router/router.go`
+- `static/src/api/srp.ts`
+- `static/src/views/srp`

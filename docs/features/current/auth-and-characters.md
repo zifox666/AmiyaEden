@@ -52,3 +52,11 @@ source_of_truth:
 - `register` / `forget-password` 页面源码存在，但不是当前产品规范
 - `/api/v1/me` 是前端启动权限上下文的关键接口
 - 角色编码与权限列表必须与后端返回保持一致，不做前端别名映射
+
+## 主要代码文件
+
+- `server/internal/handler/eve_sso.go`
+- `server/internal/service/eve_sso.go`
+- `server/internal/router/router.go`
+- `static/src/api/auth.ts`
+- `static/src/views/auth`

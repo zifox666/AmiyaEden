@@ -38,3 +38,11 @@ source_of_truth:
 - 新增 ESI 数据模块时，通常不只改一个 handler，还需要任务注册、scope、持久化、前端消费一起落地
 - 队列与登录后同步钩子共享同一套任务体系
 - 如果要新增模块，请先遵循 `docs/guides/adding-esi-feature.md`
+
+## 主要代码文件
+
+- `server/jobs/esi_refresh.go`
+- `server/internal/handler/esi_refresh.go`
+- `server/pkg/eve/esi`
+- `static/src/api/esi-refresh.ts`
+- `static/src/views/system/esi-refresh`

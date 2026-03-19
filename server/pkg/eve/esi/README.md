@@ -1,4 +1,28 @@
-# ESI 数据刷新队列
+---
+status: active
+doc_type: guide
+owner: backend
+last_reviewed: 2026-03-20
+canonical: false
+source_of_truth:
+  - AGENTS.md
+  - docs/features/current/esi-refresh.md
+  - docs/guides/adding-esi-feature.md
+  - server/pkg/eve/esi
+---
+
+# ESI 数据刷新队列（局部实现说明）
+
+## 说明
+
+本文件只描述 `server/pkg/eve/esi/` 目录内部的实现约定与扩展方式。
+
+它不是 repo-level canonical 文档，不能覆盖以下内容：
+
+- 仓库工程约束：`AGENTS.md`
+- 当前功能边界：`docs/features/current/esi-refresh.md`
+- 新增模块流程：`docs/guides/adding-esi-feature.md`
+- API / 权限 / 产品行为：`docs/api/*` 与 `docs/architecture/*`
 
 ## 概述
 
@@ -20,22 +44,19 @@
 
 ```
 pkg/eve/esi/
-├── README.md              # 本文件
-├── client.go              # ESI HTTP 客户端（基础方法）
-├── request.go             # 增强请求客户端（分页、限速、元数据）
-├── task.go                # 任务接口定义、优先级、注册表
-├── queue.go               # 队列调度引擎
-├── activity.go            # 角色活跃度检测
-├── task_affiliation.go    # 角色归属（军团/联盟）
-├── task_assets.go         # 角色资产
-├── task_clones.go         # 克隆体/植入体/跳跃疲劳
-├── task_contracts.go      # 角色合同
-├── task_killmails.go      # 击杀邮件
-├── task_notifications.go  # 角色通知
-├── task_online.go         # 在线状态
-├── task_titles.go         # 角色头衔
-└── task_wallet.go         # 角色钱包
+├── README.md        # 本文件
+├── client.go        # ESI HTTP 客户端（基础方法）
+├── request.go       # 增强请求客户端（分页、限速、元数据）
+├── task.go          # 任务接口定义、优先级、注册表
+├── queue.go         # 队列调度引擎
+├── activity.go      # 角色活跃度检测
+└── task_*.go        # 各类刷新任务，按数据域拆分
 ```
+
+说明：
+
+- 任务文件会持续增加，具体列表请直接查看目录实际内容，不要把本 README 当作完整清单。
+- 新增任务前，先读 `docs/guides/adding-esi-feature.md`；需要理解队列内部细节时，再回到本文件。
 
 ## 请求客户端
 
@@ -118,6 +139,13 @@ fmt.Println(meta.RateLimitRemain) // 139
 - 超过 3 次：返回错误
 
 ## 如何添加新的刷新任务
+
+建议阅读顺序：
+
+1. `AGENTS.md`
+2. `docs/features/current/esi-refresh.md`
+3. `docs/guides/adding-esi-feature.md`
+4. 本文件
 
 ### 1. 创建任务文件
 

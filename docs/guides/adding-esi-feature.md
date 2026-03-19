@@ -51,6 +51,15 @@ source_of_truth:
 - `static/src/locales/langs/zh.json`
 - `static/src/locales/langs/en.json`
 
+### 可选离线参考
+
+- `docs/reference/esi-openapi.json`
+- `docs/reference/sde-schema.sql`
+
+这些文件只用于离线查阅，不是当前运行时行为的权威来源。
+
+如果你已经确认改动会落在 `server/pkg/eve/esi/` 内部实现细节，再补读该目录下的 `README.md`。但它只用于解释本地机制，不能覆盖 `AGENTS.md` 与 `docs/` 中的 canonical 规则。
+
 ## 任务系统要求
 
 如果是可刷新的 ESI 数据：
