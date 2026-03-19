@@ -49,7 +49,9 @@
     "save": "Save",
     "updatedAt": "Updated At",
     "createdAt": "Created At",
-    "logOutTips": "Do you want to log out?"
+    "logOutTips": "Do you want to log out?",
+    "search": "Search",
+    "reset": "Reset"
   },
   "search": {
     "placeholder": "Search page",
@@ -493,6 +495,7 @@
     "stockRemaining": "Stock: {n}",
     "limitPerUser": "Limit {n} per person",
     "needApproval": "Requires Approval",
+    "needShipping": "Shipping Required",
     "period": {
       "daily": "Daily",
       "weekly": "Weekly",
@@ -556,6 +559,7 @@
       "periodWeekly": "Weekly",
       "periodMonthly": "Monthly",
       "needApproval": "Requires Approval",
+      "needShipping": "Requires Shipping",
       "status": "Status",
       "statusOnSale": "On Sale",
       "statusOffSale": "Off Sale",
@@ -566,6 +570,7 @@
       "colImage": "Image",
       "colType": "Type",
       "colApproval": "Approval",
+      "colShipping": "Shipping",
       "colSort": "Sort",
       "updateSuccess": "Updated",
       "createSuccess": "Created",
@@ -1298,6 +1303,7 @@
         "stock": "Stock",
         "maxPerUser": "Limit Per User",
         "needApproval": "Requires Approval",
+        "needShipping": "Requires Shipping",
         "status": "Status",
         "sort": "Sort"
       },
@@ -1316,7 +1322,8 @@
         "price": "Price",
         "stock": "Stock",
         "maxPerUser": "Limit",
-        "needApproval": "Approval"
+        "needApproval": "Approval",
+        "needShipping": "Shipping"
       },
       "values": {
         "normal": "Normal",
@@ -1342,6 +1349,8 @@
       "dialogReject": "Reject Order",
       "approveButton": "Approve",
       "rejectButton": "Reject",
+      "shipButton": "Mark Shipped",
+      "shipConfirm": "Confirm mark as shipped?",
       "approveConfirm": "Confirm Approval",
       "rejectConfirm": "Confirm Rejection",
       "fields": {
@@ -1358,7 +1367,9 @@
         "rejected": "Rejected",
         "completed": "Completed",
         "cancelled": "Cancelled",
-        "insufficient_funds": "Insufficient Funds"
+        "insufficient_funds": "Insufficient Funds",
+        "shipping_pending": "Pending Shipping",
+        "shipping_shipped": "Shipped"
       },
       "table": {
         "orderNo": "Order No.",
@@ -1368,11 +1379,13 @@
         "totalPrice": "Total",
         "userRemark": "User Remark",
         "reviewRemark": "Review Remark",
+        "shippingStatus": "Shipping",
         "createdAt": "Order Time"
       },
       "messages": {
         "approveSuccess": "Approved",
         "rejectSuccess": "Rejected",
+        "shipSuccess": "Marked as shipped",
         "actionFailed": "Operation failed"
       }
     },

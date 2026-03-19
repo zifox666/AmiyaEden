@@ -838,6 +838,7 @@ declare namespace Api {
       limit_period: 'forever' | 'daily' | 'weekly' | 'monthly'
       type: 'normal' | 'redeem'
       need_approval: boolean
+      need_shipping: boolean
       status: number
       sort_order: number
       created_at: string
@@ -861,6 +862,8 @@ declare namespace Api {
       reviewed_by: number | null
       reviewed_at: string | null
       review_remark: string
+      shipping_status: string
+      character_name: string
       created_at: string
       updated_at: string
     }
@@ -897,6 +900,7 @@ declare namespace Api {
       limit_period?: 'forever' | 'daily' | 'weekly' | 'monthly'
       type: 'normal' | 'redeem'
       need_approval?: boolean
+      need_shipping?: boolean
       status?: number
       sort_order?: number
     }
@@ -913,6 +917,7 @@ declare namespace Api {
       limit_period?: 'forever' | 'daily' | 'weekly' | 'monthly'
       type?: string
       need_approval?: boolean
+      need_shipping?: boolean
       status?: number
       sort_order?: number
     }

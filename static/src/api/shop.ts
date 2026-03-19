@@ -100,6 +100,14 @@ export function adminRejectOrder(data: Api.Shop.OrderReviewParams) {
   })
 }
 
+/** 管理员标记订单已发货 */
+export function adminShipOrder(orderId: number) {
+  return request.post<Api.Shop.Order>({
+    url: '/api/v1/system/shop/order/ship',
+    data: { order_id: orderId }
+  })
+}
+
 /** 管理员查询兑换码 */
 export function adminListRedeemCodes(data?: Api.Shop.RedeemSearchParams) {
   return request.post<Api.Common.PaginatedResponse<Api.Shop.RedeemCode>>({

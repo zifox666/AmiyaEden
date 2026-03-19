@@ -140,6 +140,9 @@
       <ElFormItem :label="t('shop.manage.needApproval')">
         <ElSwitch v-model="formData.need_approval" />
       </ElFormItem>
+      <ElFormItem :label="t('shop.manage.needShipping')">
+        <ElSwitch v-model="formData.need_shipping" />
+      </ElFormItem>
       <ElFormItem :label="t('shop.manage.status')">
         <ElSelect v-model="formData.status" style="width: 200px">
           <ElOption :label="t('shop.manage.statusOnSale')" :value="1" />
@@ -298,6 +301,17 @@
             )
         },
         {
+          prop: 'need_shipping',
+          label: t('shop.manage.colShipping'),
+          width: 90,
+          formatter: (row: Product) =>
+            h(
+              ElTag,
+              { type: row.need_shipping ? 'warning' : 'info', size: 'small', effect: 'plain' },
+              () => (row.need_shipping ? t('shop.manage.yes') : t('shop.manage.no'))
+            )
+        },
+        {
           prop: 'status',
           label: t('shop.manage.status'),
           width: 90,
@@ -366,6 +380,7 @@
     max_per_user: 0,
     limit_period: 'forever' as 'forever' | 'daily' | 'weekly' | 'monthly',
     need_approval: false,
+    need_shipping: true,
     status: 1 as number,
     sort_order: 0
   })
@@ -387,6 +402,7 @@
       max_per_user: 0,
       limit_period: 'forever',
       need_approval: false,
+      need_shipping: true,
       status: 1,
       sort_order: 0
     })
@@ -410,6 +426,7 @@
       max_per_user: row.max_per_user,
       limit_period: row.limit_period || 'forever',
       need_approval: row.need_approval,
+      need_shipping: row.need_shipping,
       status: row.status,
       sort_order: row.sort_order
     })

@@ -139,6 +139,7 @@ type adminProductCreateRequest struct {
 	LimitPeriod  string  `json:"limit_period"` // forever / daily / weekly / monthly
 	Type         string  `json:"type" binding:"required,oneof=normal redeem"`
 	NeedApproval bool    `json:"need_approval"`
+	NeedShipping bool    `json:"need_shipping"`
 	Status       int8    `json:"status"`
 	SortOrder    int     `json:"sort_order"`
 }
@@ -162,6 +163,7 @@ func (h *ShopHandler) AdminCreateProduct(c *gin.Context) {
 		LimitPeriod:  req.LimitPeriod,
 		Type:         req.Type,
 		NeedApproval: req.NeedApproval,
+		NeedShipping: req.NeedShipping,
 		Status:       req.Status,
 		SortOrder:    req.SortOrder,
 	}
@@ -316,6 +318,29 @@ func (h *ShopHandler) AdminRejectOrder(c *gin.Context) {
 
 	operatorID := middleware.GetUserID(c)
 	order, err := h.svc.AdminRejectOrder(req.OrderID, operatorID, req.Remark)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, order)
+}
+
+// adminShipRequest 标记发货请求
+type adminShipRequest struct {
+	OrderID uint `json:"order_id" binding:"required"`
+}
+
+// AdminShipOrder POST /system/shop/order/ship
+// 管理员标记订单已发货
+func (h *ShopHandler) AdminShipOrder(c *gin.Context) {
+	var req adminShipRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+
+	operatorID := middleware.GetUserID(c)
+	order, err := h.svc.AdminShipOrder(req.OrderID, operatorID)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

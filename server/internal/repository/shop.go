@@ -165,6 +165,45 @@ func (r *ShopRepository) ListOrders(page, pageSize int, filter OrderFilter) ([]m
 	return list, total, nil
 }
 
+// ListOrdersWithCharacter 分页查询订单（含主角色名称）
+func (r *ShopRepository) ListOrdersWithCharacter(page, pageSize int, filter OrderFilter) ([]model.OrderWithCharacter, int64, error) {
+	var results []model.OrderWithCharacter
+	var total int64
+	offset := (page - 1) * pageSize
+
+	countDB := global.DB.Model(&model.ShopOrder{})
+	if filter.UserID != nil {
+		countDB = countDB.Where("user_id = ?", *filter.UserID)
+	}
+	if filter.ProductID != nil {
+		countDB = countDB.Where("product_id = ?", *filter.ProductID)
+	}
+	if filter.Status != "" {
+		countDB = countDB.Where("status = ?", filter.Status)
+	}
+	if err := countDB.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	queryDB := global.DB.Table("shop_order o").
+		Select("o.*, COALESCE(ec.character_name, '') AS character_name").
+		Joins(`LEFT JOIN "user" u ON o.user_id = u.id`).
+		Joins("LEFT JOIN eve_character ec ON u.primary_character_id = ec.character_id")
+	if filter.UserID != nil {
+		queryDB = queryDB.Where("o.user_id = ?", *filter.UserID)
+	}
+	if filter.ProductID != nil {
+		queryDB = queryDB.Where("o.product_id = ?", *filter.ProductID)
+	}
+	if filter.Status != "" {
+		queryDB = queryDB.Where("o.status = ?", filter.Status)
+	}
+	if err := queryDB.Order("o.created_at DESC").Offset(offset).Limit(pageSize).Scan(&results).Error; err != nil {
+		return nil, 0, err
+	}
+	return results, total, nil
+}
+
 // CountUserProductPurchased 统计用户对某商品的已购数量（pending + paid + approved + completed）
 // limitPeriod 控制统计时间范围：forever=全部, daily=当天, weekly=本周, monthly=本月
 func (r *ShopRepository) CountUserProductPurchased(userID, productID uint, limitPeriod string) (int64, error) {

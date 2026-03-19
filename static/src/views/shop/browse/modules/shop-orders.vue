@@ -122,6 +122,27 @@
           }
         },
         {
+          prop: 'shipping_status',
+          label: t('shopAdmin.orders.table.shippingStatus'),
+          width: 110,
+          formatter: (row: Order) => {
+            if (!row.shipping_status) return h('span', { class: 'text-gray-400' }, '—')
+            const SHIPPING_MAP: Record<string, { label: string; type: string }> = {
+              pending: { label: t('shopAdmin.orders.status.shipping_pending'), type: 'warning' },
+              shipped: { label: t('shopAdmin.orders.status.shipping_shipped'), type: 'success' }
+            }
+            const cfg = SHIPPING_MAP[row.shipping_status] ?? {
+              label: row.shipping_status,
+              type: 'info'
+            }
+            return h(
+              ElTag,
+              { type: cfg.type as any, size: 'small', effect: 'plain' },
+              () => cfg.label
+            )
+          }
+        },
+        {
           prop: 'created_at',
           label: t('shop.orderTime'),
           width: 180,
