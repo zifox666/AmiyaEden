@@ -148,6 +148,7 @@
   /** 递归匹配搜索 */
   const matchSearch = (item: Api.EveInfo.AssetItemNode, kw: string): boolean => {
     if (item.type_name?.toLowerCase().includes(kw)) return true
+    if (item.group_name?.toLowerCase().includes(kw)) return true
     if (item.asset_name?.toLowerCase().includes(kw)) return true
     if (item.children?.some((c) => matchSearch(c, kw))) return true
     return false

@@ -144,18 +144,25 @@ func (s *AssetService) GetUserAssets(userID uint, req *InfoAssetsRequest) (*Info
 
 	// 5. 建立位置分组
 	//    根物品: location_type == station / solar_system / other
-	//    子物品: location_type == item (location_id 是父物品的 item_id)
+	//           或 location_type == item 但 location_id 不在 itemMap 中（玩家建筑）
+	//    子物品: location_type == item 且 location_id 在 itemMap 中（在容器/船内）
 	type locationKey struct {
 		LocationID int64
 	}
 
-	// 先找所有根位置 ID（非 item 类型的 location）
+	// 先找所有根位置 ID（非 item 类型的 location，或 item 类型但 location_id 是建筑 ID）
 	rootLocationIDs := make(map[int64]string)                // locationID -> locationType
 	childrenMap := make(map[int64][]model.EveCharacterAsset) // parentItemID -> children
 
 	for _, a := range allAssets {
 		if a.LocationType == "item" {
-			childrenMap[a.LocationID] = append(childrenMap[a.LocationID], a)
+			if _, isParentAsset := itemMap[a.LocationID]; isParentAsset {
+				// location_id 是另一个资产的 item_id → 在容器/船内
+				childrenMap[a.LocationID] = append(childrenMap[a.LocationID], a)
+			} else {
+				// location_id 不在资产列表中 → 在玩家建筑中，location_id 是建筑 ID
+				rootLocationIDs[a.LocationID] = "structure"
+			}
 		} else {
 			rootLocationIDs[a.LocationID] = a.LocationType
 		}
@@ -167,10 +174,14 @@ func (s *AssetService) GetUserAssets(userID uint, req *InfoAssetsRequest) (*Info
 		locationNames[locID] = s.resolveLocationName(chars, locID, locType)
 	}
 
-	// 7. 按位置分组根物品
+	// 7. 按位置分组根物品（包括在玩家建筑中的物品）
 	locationItemsMap := make(map[int64][]model.EveCharacterAsset)
 	for _, a := range allAssets {
 		if a.LocationType != "item" {
+			// station / solar_system / other
+			locationItemsMap[a.LocationID] = append(locationItemsMap[a.LocationID], a)
+		} else if _, isParentAsset := itemMap[a.LocationID]; !isParentAsset {
+			// location_type == item 但 location_id 不是另一个资产 → 在玩家建筑中
 			locationItemsMap[a.LocationID] = append(locationItemsMap[a.LocationID], a)
 		}
 	}
@@ -265,11 +276,10 @@ func (s *AssetService) resolveLocationName(chars []model.EveCharacter, locationI
 			}
 		}
 		return fmt.Sprintf("System-%d", locationID)
-	case "other":
-		// 太空中的建筑，尝试从建筑表查询
+	case "structure", "other":
+		// 玩家建筑（structure: 资产直接在建筑内; other: 太空中的建筑）
 		return s.resolveStructureName(chars, locationID)
 	default:
-		// 可能是玩家建筑
 		return s.resolveStructureName(chars, locationID)
 	}
 }
