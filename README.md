@@ -1,179 +1,162 @@
 # AmiyaEden
 
-面向 EVE Online 联盟/军团的一体化管理平台，提供 SSO 登录、舰队行动、SRP 补损、ESI 数据同步等功能。
+面向 EVE Online 联盟 / 军团的一体化运营平台。
 
----
+当前仓库的活跃实现包含：
 
-## 功能特性
+- EVE SSO 登录与多角色绑定
+- RBAC 角色 / 菜单 / 按钮权限
+- 动态菜单与动态路由
+- 舰队行动、PAP、舰队配置
+- ESI 角色信息查询（钱包、技能、舰船、植入体、资产、合同、装配）
+- SRP 补损申请、审核、价格表
+- 系统钱包、商店、抽奖
+- 联盟 PAP、自动权限映射、Webhook 配置
+- ESI 刷新队列与 SDE 查询接口
 
-- **EVE SSO 登录**：基于 EVE Online OAuth 2.0 身份认证，支持多角色绑定
-- **舰队行动管理**：创建舰队、ESI 成员同步、PAP 出勤记录
-- **SRP 补损系统**：关联击杀邮件的补损申请、审批与发放流程
-- **ESI 数据自动刷新**：定时从 ESI API 拉取角色资产、击杀、合同等数据
-- **SDE 静态数据**：自动从 GitHub Release 下载并导入最新 EVE 静态数据
-- **角色权限控制**：多级角色体系（超级管理员 / 管理员 / 补损管理 / 舰队指挥 / 普通用户）
-- **动态菜单路由**：后端下发菜单与路由配置，前端动态注册
-- **EVE权限关联**：基于 ESI 头衔自动分配系统角色，支持自定义映射规则
-- **成员审计**：支持模拟登录指定成员账户
-- **自动审核机器人**：基于规则引擎自动审核 SRP 申请
+## 当前状态
 
----
+- 后端：Go + Gin + GORM + PostgreSQL + Redis
+- 前端：Vue 3 + TypeScript + Vite + Pinia + Vue Router
+- 认证：EVE SSO + JWT
+- 菜单模式：支持前端静态模式与后端菜单模式，当前仓库完整实现两种路径
+- 登录流程：当前产品登录流以 EVE SSO 为主；仓库中仍有模板化的 `register` / `forget-password` 页面源码，但它们不是当前路由中的受支持流程
 
-## 效果预览
+## 仓库结构
 
-1. 总览
-    ![总览界面](./docs/img/console.png)
-2. EVE角色绑定管理
-    ![角色绑定](./docs/img/character_binding.png)
-3. 舰队行动列表：支持舰队邀请
-    ![舰队行动](./docs/img/fleet_details.png)
-4. PAP 查看(军团+联盟)
-    ![PAP 列表](./docs/img/pap.png)
-5. 技能列表
-    ![技能列表](./docs/img/character_skills.png)
-6. 兑换商店
-    ![兑换商店](./docs/img/shop_view.png)
-    ![兑换商店2](./docs/img/shop_manage.png)
-7. SRP
-    ![SRP 列表](./docs/img/srp_apply.png)
-    ![SRP 详情](./docs/img/srp_detail.png)
-8. ESI 刷新
-    ![ESI 刷新](./docs/img/esi_refresh.png)
-9. 联盟PAP
-    ![联盟PAP](./docs/img/alliance_pap.png)
-10. 可用舰船技能检查
-    ![可用舰船技能检查](./docs/img/ship_check.png)
-11. 资产列表
-    ![资产列表](./docs/img/character_assets.png)
+```text
+AmiyaEden/
+├── server/                 # Go 后端
+│   ├── bootstrap/          # 配置 / 日志 / DB / Redis / 路由 / Cron 初始化
+│   ├── config/             # config.yaml 与配置结构
+│   ├── internal/
+│   │   ├── handler/        # HTTP 处理层
+│   │   ├── middleware/     # JWT、响应包装、日志、CORS 等
+│   │   ├── model/          # GORM 模型与菜单种子
+│   │   ├── repository/     # 数据访问层
+│   │   ├── router/         # API 路由注册
+│   │   └── service/        # 业务逻辑层
+│   ├── jobs/               # 定时任务
+│   └── pkg/                # JWT、EVE SSO / ESI、响应工具等
+├── static/                 # Vue 前端
+│   ├── src/api/            # API 调用层
+│   ├── src/components/     # 共享组件
+│   ├── src/hooks/          # 共享逻辑
+│   ├── src/locales/        # 国际化
+│   ├── src/router/         # 路由核心、守卫、模块定义
+│   ├── src/store/          # Pinia store
+│   ├── src/types/          # TS 类型定义
+│   └── src/views/          # 页面视图
+├── docs/                   # canonical 文档树（standards / architecture / api / features / drafts）
+├── AGENTS.md               # 仓库工程约束（最高优先级）
+└── docker-compose.example.yml
+```
 
----
+## 运行依赖
 
-## 技术栈
-
-| 层     | 技术                                          |
-| ------ | --------------------------------------------- |
-| 后端   | Go · Gin · GORM · PostgreSQL · Redis · robfig/cron |
-| 前端   | Vue 3 · TypeScript · Vite · Pinia · Vue Router |
-| 认证   | EVE SSO OAuth 2.0 · HMAC-SHA256 JWT           |
-| 日志   | zap · lumberjack                              |
-
----
-
-## 环境要求
-
-- Go >= 1.24
-- Node.js >= 20.19.0
-- pnpm >= 8.8.0
+- Go `>= 1.24`
+- Node.js `>= 20.19.0`
+- pnpm `>= 8.8.0`
 - PostgreSQL
 - Redis
 
----
+## 本地启动
 
-## 快速开始
+### 1. 后端配置
 
-### 1. 克隆仓库
-
-```bash
-git clone https://github.com/zifox666/AmiyaEden.git
-cd AmiyaEden
-```
-
-### 2. 配置后端
-
-复制配置模板并填写必要参数：
+复制后端配置模板：
 
 ```bash
-cd server
-cp config/config.example.yaml config/config.yaml
+cp server/config/config.example.yaml server/config/config.yaml
 ```
 
-需要修改的关键配置项：
+最少需要确认这些配置：
 
-| 配置项 | 说明 |
-| --- | --- |
-| `database.*` | PostgreSQL 连接信息 |
-| `redis.*` | Redis 连接信息 |
-| `jwt.secret` | JWT 签名密钥，生产环境务必修改 |
-| `eve_sso.client_id` | EVE 开发者控制台申请的 Client ID |
-| `eve_sso.client_secret` | EVE 开发者控制台申请的 Client Secret |
-| `eve_sso.callback_url` | SSO 回调地址 |
-| `sde.api_key` | SDE 查询接口的 API Key |
+- `server.port`
+- `database.*`
+- `redis.*`
+- `jwt.secret`
+- `eve_sso.client_id`
+- `eve_sso.client_secret`
+- `eve_sso.callback_url`
+- `sde.api_key`
+
+### 2. 准备基础设施
+
+仓库提供了容器部署示例：
+
+```bash
+docker compose -f docker-compose.example.yml up -d postgres redis
+```
+
+如果你使用本机数据库 / Redis，也可以直接修改 `server/config/config.yaml` 指向对应实例。
 
 ### 3. 启动后端
 
 ```bash
 cd server
-
-# 安装依赖
 go mod download
-
-# 运行（使用指定配置文件）
-go run main.go -c ./config/config.yaml
-
-# 或使用 Makefile
-make run
+go run main.go
 ```
 
-首次启动会自动执行数据库迁移（AutoMigrate）。
+启动时会执行：
+
+- 配置加载
+- 日志初始化
+- PostgreSQL 连接
+- Redis 连接
+- GORM AutoMigrate
+- 系统角色 / 菜单种子初始化
+- 定时任务注册
 
 ### 4. 启动前端
 
+当前仓库没有提交前端 `.env.example`，本地开发通常至少需要提供以下 Vite 变量：
+
+```bash
+VITE_VERSION=dev
+VITE_PORT=5173
+VITE_BASE_URL=/
+VITE_API_URL=http://localhost:8080
+VITE_API_PROXY_URL=http://localhost:8080
+VITE_ACCESS_MODE=backend
+VITE_WITH_CREDENTIALS=false
+VITE_LOCK_ENCRYPT_KEY=change_me
+VITE_OPEN_ROUTE_INFO=false
+```
+
+然后启动前端：
+
 ```bash
 cd static
-
-# 安装依赖
 pnpm install
-
-# 开发模式
 pnpm dev
-
-# 构建生产包
-pnpm build
 ```
 
----
+## 认证说明
 
-## 项目结构
+- 后端 SSO 回调默认路径：`/api/v1/sso/eve/callback`
+- 前端登录页当前使用 `/auth/login`
+- 前端回调页当前使用 `/auth/callback`
+- 活跃登录方式是 EVE SSO；不要把未接入的用户名 / 密码模板页当作当前产品能力
 
-```text
-AmiyaEden/
-├── server/                 # Go 后端
-│   ├── main.go
-│   ├── bootstrap/          # 启动引导（配置/数据库/Redis/路由/定时任务）
-│   ├── config/             # 配置定义与配置文件
-│   ├── global/             # 全局变量
-│   ├── internal/
-│   │   ├── handler/        # HTTP 处理器
-│   │   ├── service/        # 业务逻辑
-│   │   ├── repository/     # 数据访问层
-│   │   ├── model/          # GORM 数据模型
-│   │   ├── middleware/      # 中间件
-│   │   └── router/         # 路由注册
-│   ├── jobs/               # 定时任务
-│   └── pkg/                # 公共工具包（JWT / ESI / SSO / Cache）
-└── static/                 # Vue 3 前端
-    └── src/
-        ├── api/            # API 调用层
-        ├── router/         # 动态路由核心
-        ├── store/          # Pinia 状态管理
-        └── views/          # 页面视图
+## 常用校验命令
+
+```bash
+cd server && go test ./...
+cd server && go build ./...
+cd static && pnpm lint .
+cd static && pnpm build
+cd static && pnpm exec vue-tsc --noEmit
 ```
 
-详细的开发文档请参阅 [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)。
+## 文档入口
 
----
-
-## EVE SSO 配置
-
-前往 [EVE 开发者控制台](https://developers.eveonline.com/) 创建应用，回调地址需与配置文件中的 `eve_sso.callback_url` 保持一致。
-
-本地开发默认回调地址：
-
-```text
-http://localhost:8080/api/v1/sso/eve/callback
-```
-
----
+- 文档索引与信任顺序：[docs/README.md](docs/README.md)
+- 仓库工程规范：[AGENTS.md](AGENTS.md)
+- 当前架构：[docs/architecture/overview.md](docs/architecture/overview.md)
+- API 路由索引：[docs/api/route-index.md](docs/api/route-index.md)
+- Feature 状态说明：[docs/features/README.md](docs/features/README.md)
 
 ## 许可证
 
