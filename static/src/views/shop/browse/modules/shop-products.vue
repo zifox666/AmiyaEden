@@ -60,6 +60,9 @@
             <ElTag v-if="item.need_approval" size="small" type="info" effect="plain">
               {{ $t('shop.needApproval') }}
             </ElTag>
+            <ElTag v-if="item.need_shipping" size="small" type="info" effect="plain">
+              {{ $t('shop.needShipping') }}
+            </ElTag>
           </div>
           <ElButton
             class="mt-3"

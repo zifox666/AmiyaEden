@@ -49,7 +49,9 @@
     "save": "保存",
     "updatedAt": "更新时间",
     "createdAt": "创建时间",
-    "logOutTips": "您是否要退出登录?"
+    "logOutTips": "您是否要退出登录?",
+    "search": "搜索",
+    "reset": "重置"
   },
   "search": {
     "placeholder": "搜索页面",
@@ -494,6 +496,7 @@
     "stockRemaining": "库存: {n}",
     "limitPerUser": "限购 {n} 件",
     "needApproval": "需审批",
+    "needShipping": "需发货",
     "period": {
       "daily": "每日",
       "weekly": "每周",
@@ -557,6 +560,7 @@
       "periodWeekly": "每周",
       "periodMonthly": "每月",
       "needApproval": "需要审批",
+      "needShipping": "需要发货",
       "status": "状态",
       "statusOnSale": "上架",
       "statusOffSale": "下架",
@@ -567,6 +571,7 @@
       "colImage": "图片",
       "colType": "类型",
       "colApproval": "需审批",
+      "colShipping": "需发货",
       "colSort": "排序",
       "updateSuccess": "更新成功",
       "createSuccess": "创建成功",
@@ -1300,6 +1305,7 @@
         "stock": "库存",
         "maxPerUser": "限购/人",
         "needApproval": "需要审批",
+        "needShipping": "需要发货",
         "status": "状态",
         "sort": "排序"
       },
@@ -1318,7 +1324,8 @@
         "price": "价格",
         "stock": "库存",
         "maxPerUser": "限购",
-        "needApproval": "需审批"
+        "needApproval": "需审批",
+        "needShipping": "需发货"
       },
       "values": {
         "normal": "普通",
@@ -1344,6 +1351,8 @@
       "dialogReject": "拒绝订单",
       "approveButton": "通过",
       "rejectButton": "拒绝",
+      "shipButton": "标记发货",
+      "shipConfirm": "确认标记为已发货？",
       "approveConfirm": "确认通过",
       "rejectConfirm": "确认拒绝",
       "fields": {
@@ -1360,7 +1369,9 @@
         "rejected": "已拒绝",
         "completed": "已完成",
         "cancelled": "已取消",
-        "insufficient_funds": "余额不足"
+        "insufficient_funds": "余额不足",
+        "shipping_pending": "待发货",
+        "shipping_shipped": "已发货"
       },
       "table": {
         "orderNo": "订单号",
@@ -1370,11 +1381,13 @@
         "totalPrice": "总价",
         "userRemark": "用户备注",
         "reviewRemark": "审批备注",
+        "shippingStatus": "发货状态",
         "createdAt": "下单时间"
       },
       "messages": {
         "approveSuccess": "审批通过",
         "rejectSuccess": "已拒绝",
+        "shipSuccess": "已标记发货",
         "actionFailed": "操作失败"
       }
     },

@@ -84,9 +84,17 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElInput, ElSelect, ElOption, ElMessage } from 'element-plus'
+  import {
+    ElTag,
+    ElButton,
+    ElInput,
+    ElSelect,
+    ElOption,
+    ElMessage,
+    ElMessageBox
+  } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { adminListOrders, adminApproveOrder, adminRejectOrder } from '@/api/shop'
+  import { adminListOrders, adminApproveOrder, adminRejectOrder, adminShipOrder } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
 
   defineOptions({ name: 'ManageOrders' })
@@ -103,6 +111,11 @@
     completed: { label: t('shopAdmin.orders.status.completed'), type: 'success' },
     cancelled: { label: t('shopAdmin.orders.status.cancelled'), type: 'info' },
     insufficient_funds: { label: t('shopAdmin.orders.status.insufficient_funds'), type: 'danger' }
+  }
+
+  const SHIPPING_STATUS_CONFIG: Record<string, { label: string; type: string }> = {
+    pending: { label: t('shopAdmin.orders.status.shipping_pending'), type: 'warning' },
+    shipped: { label: t('shopAdmin.orders.status.shipping_shipped'), type: 'success' }
   }
 
   const formatISK = (v: number) =>
@@ -141,7 +154,8 @@
         {
           prop: 'user_id',
           label: t('shopAdmin.orders.table.userId'),
-          width: 90
+          width: 140,
+          formatter: (row: Order) => h('span', {}, row.character_name || String(row.user_id))
         },
         {
           prop: 'product_name',
@@ -175,6 +189,23 @@
           }
         },
         {
+          prop: 'shipping_status',
+          label: t('shopAdmin.orders.table.shippingStatus'),
+          width: 110,
+          formatter: (row: Order) => {
+            if (!row.shipping_status) return h('span', { class: 'text-gray-400 text-sm' }, '-')
+            const cfg = SHIPPING_STATUS_CONFIG[row.shipping_status] ?? {
+              label: row.shipping_status,
+              type: 'info'
+            }
+            return h(
+              ElTag,
+              { type: cfg.type as any, size: 'small', effect: 'plain' },
+              () => cfg.label
+            )
+          }
+        },
+        {
           prop: 'remark',
           label: t('shopAdmin.orders.table.userRemark'),
           width: 140,
@@ -195,24 +226,37 @@
         {
           prop: 'actions',
           label: t('common.operation'),
-          width: 160,
+          width: 200,
           fixed: 'right',
           formatter: (row: Order) => {
-            if (row.status !== 'pending') {
+            const buttons = []
+            if (row.status === 'pending') {
+              buttons.push(
+                h(
+                  ElButton,
+                  { size: 'small', type: 'success', onClick: () => openApproveDialog(row) },
+                  () => t('shopAdmin.orders.approveButton')
+                ),
+                h(
+                  ElButton,
+                  { size: 'small', type: 'danger', onClick: () => openRejectDialog(row) },
+                  () => t('shopAdmin.orders.rejectButton')
+                )
+              )
+            }
+            if (row.shipping_status === 'pending') {
+              buttons.push(
+                h(
+                  ElButton,
+                  { size: 'small', type: 'primary', onClick: () => handleShip(row) },
+                  () => t('shopAdmin.orders.shipButton')
+                )
+              )
+            }
+            if (buttons.length === 0) {
               return h('span', { class: 'text-gray-400 text-sm' }, '-')
             }
-            return h('div', { class: 'flex gap-1' }, [
-              h(
-                ElButton,
-                { size: 'small', type: 'success', onClick: () => openApproveDialog(row) },
-                () => t('shopAdmin.orders.approveButton')
-              ),
-              h(
-                ElButton,
-                { size: 'small', type: 'danger', onClick: () => openRejectDialog(row) },
-                () => t('shopAdmin.orders.rejectButton')
-              )
-            ])
+            return h('div', { class: 'flex gap-1' }, buttons)
           }
         }
       ]
@@ -278,6 +322,22 @@
       ElMessage.error(e?.message ?? t('shopAdmin.orders.messages.actionFailed'))
     } finally {
       reviewSubmitting.value = false
+    }
+  }
+
+  // ─── 标记发货 ───
+  async function handleShip(order: Order) {
+    await ElMessageBox.confirm(
+      t('shopAdmin.orders.shipConfirm'),
+      t('shopAdmin.orders.shipButton'),
+      { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'info' }
+    )
+    try {
+      await adminShipOrder(order.id)
+      ElMessage.success(t('shopAdmin.orders.messages.shipSuccess'))
+      refreshData()
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('shopAdmin.orders.messages.actionFailed'))
     }
   }
 

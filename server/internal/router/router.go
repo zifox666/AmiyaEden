@@ -305,6 +305,7 @@ func RegisterRoutes(r *gin.Engine) {
 		adminShopOrder.POST("/list", adminShopH.AdminListOrders)
 		adminShopOrder.POST("/approve", adminShopH.AdminApproveOrder)
 		adminShopOrder.POST("/reject", adminShopH.AdminRejectOrder)
+		adminShopOrder.POST("/ship", adminShopH.AdminShipOrder)
 	}
 	adminShopRedeem := admin.Group("/shop/redeem")
 	{

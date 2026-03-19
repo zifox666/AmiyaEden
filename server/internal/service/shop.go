@@ -195,6 +195,9 @@ func (s *ShopService) debitAndComplete(order *model.ShopOrder, userID uint, prod
 	}
 
 	order.Status = model.OrderStatusCompleted
+	if product.NeedShipping {
+		order.ShippingStatus = model.ShippingStatusPending
+	}
 	if err := s.repo.UpdateOrder(order); err != nil {
 		return fmt.Errorf("更新订单状态失败: %w", err)
 	}
@@ -268,6 +271,9 @@ func (s *ShopService) AdminUpdateProduct(id uint, req *AdminProductUpdateRequest
 	if req.NeedApproval != nil {
 		product.NeedApproval = *req.NeedApproval
 	}
+	if req.NeedShipping != nil {
+		product.NeedShipping = *req.NeedShipping
+	}
 	if req.Status != nil {
 		product.Status = *req.Status
 	}
@@ -292,6 +298,7 @@ type AdminProductUpdateRequest struct {
 	LimitPeriod  *string  `json:"limit_period"`
 	Type         string   `json:"type"`
 	NeedApproval *bool    `json:"need_approval"`
+	NeedShipping *bool    `json:"need_shipping"`
 	Status       *int8    `json:"status"`
 	SortOrder    *int     `json:"sort_order"`
 }
@@ -313,14 +320,14 @@ func (s *ShopService) AdminListProducts(page, pageSize int, filter repository.Pr
 }
 
 // AdminListOrders 管理员查询订单
-func (s *ShopService) AdminListOrders(page, pageSize int, filter repository.OrderFilter) ([]model.ShopOrder, int64, error) {
+func (s *ShopService) AdminListOrders(page, pageSize int, filter repository.OrderFilter) ([]model.OrderWithCharacter, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	return s.repo.ListOrders(page, pageSize, filter)
+	return s.repo.ListOrdersWithCharacter(page, pageSize, filter)
 }
 
 // AdminApproveOrder 审批通过订单
@@ -382,6 +389,9 @@ func (s *ShopService) AdminApproveOrder(orderID uint, operatorID uint, remark st
 	order.ReviewedBy = &operatorID
 	order.ReviewedAt = &now
 	order.ReviewRemark = remark
+	if product.NeedShipping {
+		order.ShippingStatus = model.ShippingStatusPending
+	}
 	if err := s.repo.UpdateOrder(order); err != nil {
 		return nil, fmt.Errorf("更新订单失败: %w", err)
 	}
@@ -411,6 +421,24 @@ func (s *ShopService) AdminRejectOrder(orderID uint, operatorID uint, remark str
 	order.ReviewedBy = &operatorID
 	order.ReviewedAt = &now
 	order.ReviewRemark = remark
+	if err := s.repo.UpdateOrder(order); err != nil {
+		return nil, fmt.Errorf("更新订单失败: %w", err)
+	}
+
+	return order, nil
+}
+
+// AdminShipOrder 管理员标记订单已发货
+func (s *ShopService) AdminShipOrder(orderID uint, operatorID uint) (*model.ShopOrder, error) {
+	order, err := s.repo.GetOrderByID(orderID)
+	if err != nil {
+		return nil, errors.New("订单不存在")
+	}
+	if order.ShippingStatus != model.ShippingStatusPending {
+		return nil, errors.New("该订单无需发货或已发货")
+	}
+
+	order.ShippingStatus = model.ShippingStatusShipped
 	if err := s.repo.UpdateOrder(order); err != nil {
 		return nil, fmt.Errorf("更新订单失败: %w", err)
 	}
