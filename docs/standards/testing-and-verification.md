@@ -41,6 +41,7 @@ source_of_truth:
 - 如果某个 frontend 行为必须依赖完整组件挂载、浏览器环境或复杂 mock，先评估是否值得引入更重的测试基础设施，而不是临时拼装半套方案。
 - `static/src/types/import/auto-imports.d.ts` 与 `static/src/types/import/components.d.ts` 属于 frontend 自动导入的声明文件，当前默认作为仓库工件保留，以保证干净检出也能通过 lint / typecheck。
 - `static/.auto-import.json` 仅是本地开发辅助文件，不应作为 CI lint 的前置依赖。
+- 具体测试落点、命名与编写建议，见 `docs/guides/testing-guide.md`。
 
 ## 必须遵守
 

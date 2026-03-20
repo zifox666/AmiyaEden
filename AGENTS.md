@@ -19,6 +19,32 @@ The active product authentication flow is EVE SSO-based. Legacy template pages m
 
 Changes should preserve the existing architecture. Prefer consistency with the current repo over introducing new patterns.
 
+## 1.1 Quick Start Commands
+
+Most common local commands:
+
+```bash
+# backend
+cd server && go run main.go
+cd server && go test ./...
+cd server && go build ./...
+
+# frontend
+cd static && pnpm install
+cd static && pnpm dev
+cd static && pnpm lint .
+cd static && pnpm exec vue-tsc --noEmit
+cd static && pnpm test:unit
+cd static && pnpm build
+```
+
+Documentation entry points:
+
+- `docs/README.md` for documentation hierarchy and source-of-truth order
+- `docs/architecture/module-map.md` for directory ownership and module lookup
+- `docs/guides/local-development.md` for local runtime setup
+- `docs/guides/testing-guide.md` for practical testing patterns
+
 ## 2. Architecture Rules
 
 ### 2.1 Backend Layering

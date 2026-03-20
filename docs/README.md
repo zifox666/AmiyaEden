@@ -75,6 +75,7 @@ source_of_truth:
 2. `AGENTS.md`
 3. 本文件
 4. 相关架构文档
+   如果只是先找代码落点，优先补读 `docs/architecture/module-map.md`
 5. 相关 feature doc
 6. 相关 API / guide
 
@@ -83,11 +84,12 @@ source_of_truth:
 1. `AGENTS.md`
 2. `docs/ai/agent-onboarding.md`
 3. `docs/architecture/overview.md`
-4. 任务对应的标准文档
+4. `docs/architecture/module-map.md`
+5. 任务对应的标准文档
    如果涉及测试、验证、回归保障，优先补读 `docs/standards/testing-and-verification.md`
-5. 任务对应的 feature / API 文档
-6. 只有在明确做规划工作时才读取 `docs/specs/draft/`
-7. 如任务已明确落在某个子目录，再补读该目录下的局部 `README.md`，但只把它当作实现注释而不是规范裁决来源
+6. 任务对应的 feature / API 文档
+7. 只有在明确做规划工作时才读取 `docs/specs/draft/`
+8. 如任务已明确落在某个子目录，再补读该目录下的局部 `README.md`，但只把它当作实现注释而不是规范裁决来源
 
 ## 维护原则
 

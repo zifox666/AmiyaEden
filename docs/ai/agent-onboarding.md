@@ -2,7 +2,7 @@
 status: active
 doc_type: guide
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-21
 source_of_truth:
   - AGENTS.md
   - docs/README.md
@@ -21,29 +21,32 @@ source_of_truth:
 1. `AGENTS.md`
 2. `docs/README.md`
 3. `docs/architecture/overview.md`
-4. `docs/architecture/auth-and-permissions.md`
-5. `docs/api/conventions.md`
-6. `docs/api/route-index.md`
-7. 对应 feature doc
+4. `docs/architecture/module-map.md`
+5. `docs/architecture/auth-and-permissions.md`
+6. `docs/api/conventions.md`
+7. `docs/api/route-index.md`
+8. 对应 feature doc
 
 ### 处理前端页面 / 路由 / 权限
 
 1. `AGENTS.md`
 2. `docs/README.md`
-3. `docs/architecture/routing-and-menus.md`
-4. `docs/standards/frontend-table-pages.md`
-5. 对应 feature doc
+3. `docs/architecture/module-map.md`
+4. `docs/architecture/routing-and-menus.md`
+5. `docs/standards/frontend-table-pages.md`
+6. 对应 feature doc
 
 ### 处理 ESI / SSO / CCP 数据同步
 
 1. `AGENTS.md`
 2. `docs/README.md`
 3. `docs/architecture/overview.md`
-4. `docs/architecture/runtime-and-startup.md`
-5. `docs/features/current/auth-and-characters.md`
-6. `docs/features/current/esi-refresh.md`
-7. `docs/guides/adding-esi-feature.md`
-8. 只有在任务已经确定落在 `server/pkg/eve/esi/` 时，再读该目录下的局部 `README.md`
+4. `docs/architecture/module-map.md`
+5. `docs/architecture/runtime-and-startup.md`
+6. `docs/features/current/auth-and-characters.md`
+7. `docs/features/current/esi-refresh.md`
+8. `docs/guides/adding-esi-feature.md`
+9. 只有在任务已经确定落在 `server/pkg/eve/esi/` 时，再读该目录下的局部 `README.md`
 
 ## 冲突处理规则
 
