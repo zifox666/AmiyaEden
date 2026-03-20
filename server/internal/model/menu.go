@@ -112,6 +112,7 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "FleetDetail", Path: "fleet-detail/:id", Component: "/operation/fleet-detail", Title: "menus.operation.fleetDetail", Sort: 90, IsHide: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "MyPap", Path: "pap", Component: "/operation/pap", Title: "menus.operation.pap", Sort: 80, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "JoinFleet", Path: "join", Component: "/operation/join", Title: "menus.operation.join", Sort: 60, IsHide: true, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "UserSkillPlan", Path: "skill-plan", Component: "/operation/skill-plan", Title: "menus.operation.skillPlan", Sort: 78, KeepAlive: true, Status: 1}},
 
 		// ── Shop ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "ShopRoot", Path: "/shop", Component: "/index/index", Title: "menus.shop.title", Icon: "ri:shopping-bag-line", Sort: 85, Status: 1}},
@@ -142,6 +143,11 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "SRP", Menu: Menu{Type: MenuTypeMenu, Name: "SrpPrices", Path: "srp-prices", Component: "/srp/prices", Title: "menus.srp.srpPrices", Sort: 80, KeepAlive: true, Status: 1}},
 		{ParentName: "SrpPrices", Menu: Menu{Type: MenuTypeButton, Name: "SrpPriceAdd", Permission: "srp:price:add", Title: "新增价格", Sort: 100, Status: 1}},
 		{ParentName: "SrpPrices", Menu: Menu{Type: MenuTypeButton, Name: "SrpPriceDelete", Permission: "srp:price:delete", Title: "删除价格", Sort: 90, Status: 1}},
+
+		// ── Corp Management (军团管理) ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "CorpManage", Path: "/corp-manage", Component: "/index/index", Title: "menus.corpManage.title", Icon: "ri:shield-star-line", Sort: 75, Status: 1}},
+		{ParentName: "CorpManage", Menu: Menu{Type: MenuTypeMenu, Name: "SkillPlanManage", Path: "skill-plan", Component: "/corp-manage/skill-plan", Title: "menus.corpManage.skillPlanManage", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "CorpManage", Menu: Menu{Type: MenuTypeMenu, Name: "SkillPlanCheck", Path: "skill-plan-check", Component: "/corp-manage/skill-plan/check", Title: "menus.corpManage.skillPlanCheck", Sort: 90, KeepAlive: true, Status: 1}},
 
 		// ── System ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", Sort: 70, Status: 1}},
@@ -184,7 +190,8 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleFC: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet", "UserSkillPlan",
+			"CorpManage", "SkillPlanManage", "SkillPlanCheck",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
 			"Result", "ResultSuccess", "ResultFail",
@@ -200,7 +207,7 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleUser: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "MyPap", "Wallet", "JoinFleet", "FleetConfigs",
+			"Operation", "MyPap", "Wallet", "JoinFleet", "FleetConfigs", "UserSkillPlan",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply",
 			"Result", "ResultSuccess", "ResultFail",

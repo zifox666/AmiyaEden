@@ -209,7 +209,11 @@
       for (const item of items) {
         const { primary_character_name, monthly_pap, calculated_at } = item
         try {
-          await importAlliancePAP({ year, month, data: { primary_character_name, monthly_pap, calculated_at } })
+          await importAlliancePAP({
+            year,
+            month,
+            data: { primary_character_name, monthly_pap, calculated_at }
+          })
         } catch (err: any) {
           if (err.message == '主角色不存在' || err.message == '未设置主角色') {
             continue

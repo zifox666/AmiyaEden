@@ -293,7 +293,8 @@
       "join": "加入舰队",
       "srpApply": "申请补损",
       "srpManage": "补损审批",
-      "srpPrices": "补损价格表"
+      "srpPrices": "补损价格表",
+      "skillPlan": "技能规划"
     },
     "role": {
       "title": "权限组",
@@ -333,8 +334,14 @@
       "autoRole": "自动权限",
       "webhook": "Webhook 通知",
       "basicConfig": "基础配置"
-    }
     },
+    "corpManage": {
+      "title": "军团管理",
+      "skillPlanManage": "技能规划管理",
+      "skillPlanCheck": "技能规划检查",
+      "skillPlan": "技能规划"
+    }
+  },
   "info": {
     "selectCharacter": "选择角色",
     "selectCharacterPlaceholder": "请选择一个角色",
@@ -1585,5 +1592,59 @@
       "siteTitlePlaceholder": "请输入网站标题",
       "saveSuccess": "配置已保存"
     }
+  },
+  "skillPlan": {
+    "title": "技能规划",
+    "create": "新建规划",
+    "edit": "编辑规划",
+    "selectPlan": "选择技能规划",
+    "checkAll": "检查所有角色",
+    "checkMyCharacters": "检查我的角色",
+    "exportResults": "导出结果",
+    "deleteConfirm": "确定要删除这个技能规划吗？",
+    "fields": {
+      "name": "规划名称",
+      "namePlaceholder": "请输入规划名称",
+      "description": "备注",
+      "descriptionPlaceholder": "可选备注信息",
+      "skillText": "技能文本",
+      "skillTextPlaceholder": "从剪贴板粘贴技能文本，每行一个技能，格式：技能名 等级",
+      "skillCount": "技能数量",
+      "createdAt": "创建时间"
+    },
+    "validation": {
+      "nameRequired": "请输入规划名称",
+      "skillTextRequired": "请输入技能文本"
+    },
+    "searchPlaceholder": "搜索用户名/角色名",
+    "summary": {
+      "planName": "规划名称",
+      "totalCharacters": "总角色数",
+      "satisfiedCount": "满足数量",
+      "unsatisfiedCount": "不满足数量",
+      "satisfiedRate": "满足率"
+    },
+    "filter": {
+      "all": "全部",
+      "satisfied": "满足要求",
+      "unsatisfied": "不满足"
+    },
+    "columns": {
+      "userName": "用户名",
+      "characterName": "角色名称",
+      "progress": "技能进度",
+      "status": "状态",
+      "missingSkills": "缺少技能"
+    },
+    "status": {
+      "satisfied": "满足",
+      "unsatisfied": "不满足"
+    },
+    "currentLevel": "当前",
+    "missingSkillsTitle": "缺少的技能",
+    "allSatisfied": "所有技能均已满足要求！",
+    "selectAndCheck": "请选择一个技能规划并点击检查",
+    "noCharacters": "没有找到角色数据",
+    "noDescription": "暂无备注"
   }
 }

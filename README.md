@@ -45,6 +45,9 @@
     ![可用舰船技能检查](./docs/img/ship_check.png)
 11. 资产列表
     ![资产列表](./docs/img/character_assets.png)
+12. 技能规划检测
+    ![技能规划检测](./docs/img/skill_plan_check.png)
+    ![技能规划检测2](./docs/img/skill_plan.png)
 
 ---
 

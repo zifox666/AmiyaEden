@@ -24,19 +24,27 @@
     <div v-if="reportData" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 my-4">
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalBounty') }}</p>
-        <p class="text-xl font-bold text-green-600 mt-1">{{ formatISK(reportData.summary.total_bounty) }}</p>
+        <p class="text-xl font-bold text-green-600 mt-1">{{
+          formatISK(reportData.summary.total_bounty)
+        }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalESS') }}</p>
-        <p class="text-xl font-bold text-blue-600 mt-1">{{ formatISK(reportData.summary.total_ess) }}</p>
+        <p class="text-xl font-bold text-blue-600 mt-1">{{
+          formatISK(reportData.summary.total_ess)
+        }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalTax') }}</p>
-        <p class="text-xl font-bold text-red-500 mt-1">{{ formatISK(reportData.summary.total_tax) }}</p>
+        <p class="text-xl font-bold text-red-500 mt-1">{{
+          formatISK(reportData.summary.total_tax)
+        }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.actualIncome') }}</p>
-        <p class="text-xl font-bold text-green-600 mt-1">{{ formatISK(reportData.summary.actual_income) }}</p>
+        <p class="text-xl font-bold text-green-600 mt-1">{{
+          formatISK(reportData.summary.actual_income)
+        }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalRecords') }}</p>
@@ -53,30 +61,71 @@
       <template #header>
         <span class="font-medium">{{ $t('npcKill.members') }}</span>
       </template>
-      <ElTable :data="reportData.members" stripe border max-height="500" :default-sort="{ prop: 'actual_income', order: 'descending' }">
+      <ElTable
+        :data="reportData.members"
+        stripe
+        border
+        max-height="500"
+        :default-sort="{ prop: 'actual_income', order: 'descending' }"
+      >
         <ElTableColumn type="index" width="55" label="#" align="center" />
-        <ElTableColumn prop="character_name" :label="$t('npcKill.characterName')" min-width="140" show-overflow-tooltip />
-        <ElTableColumn prop="total_bounty" :label="$t('npcKill.totalBounty')" width="160" align="right" sortable>
+        <ElTableColumn
+          prop="character_name"
+          :label="$t('npcKill.characterName')"
+          min-width="140"
+          show-overflow-tooltip
+        />
+        <ElTableColumn
+          prop="total_bounty"
+          :label="$t('npcKill.totalBounty')"
+          width="160"
+          align="right"
+          sortable
+        >
           <template #default="{ row }">
             <span class="text-green-600 font-medium">{{ formatISK(row.total_bounty) }}</span>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="total_ess" :label="$t('npcKill.totalESS')" width="160" align="right" sortable>
+        <ElTableColumn
+          prop="total_ess"
+          :label="$t('npcKill.totalESS')"
+          width="160"
+          align="right"
+          sortable
+        >
           <template #default="{ row }">
             <span class="text-blue-600 font-medium">{{ formatISK(row.total_ess) }}</span>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="total_tax" :label="$t('npcKill.totalTax')" width="140" align="right" sortable>
+        <ElTableColumn
+          prop="total_tax"
+          :label="$t('npcKill.totalTax')"
+          width="140"
+          align="right"
+          sortable
+        >
           <template #default="{ row }">
             <span class="text-red-500 font-medium">{{ formatISK(row.total_tax) }}</span>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="actual_income" :label="$t('npcKill.actualIncome')" width="160" align="right" sortable>
+        <ElTableColumn
+          prop="actual_income"
+          :label="$t('npcKill.actualIncome')"
+          width="160"
+          align="right"
+          sortable
+        >
           <template #default="{ row }">
             <span class="text-green-600 font-bold">{{ formatISK(row.actual_income) }}</span>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="record_count" :label="$t('npcKill.recordCount')" width="100" align="right" sortable />
+        <ElTableColumn
+          prop="record_count"
+          :label="$t('npcKill.recordCount')"
+          width="100"
+          align="right"
+          sortable
+        />
       </ElTable>
     </ElCard>
 
@@ -88,9 +137,26 @@
         </template>
         <ElTable :data="reportData.by_system" stripe border max-height="400">
           <ElTableColumn type="index" width="55" label="#" align="center" />
-          <ElTableColumn prop="solar_system_name" :label="$t('npcKill.solarSystem')" min-width="160" show-overflow-tooltip />
-          <ElTableColumn prop="count" :label="$t('npcKill.systemCount')" width="100" align="right" sortable />
-          <ElTableColumn prop="amount" :label="$t('npcKill.systemAmount')" width="160" align="right" sortable>
+          <ElTableColumn
+            prop="solar_system_name"
+            :label="$t('npcKill.solarSystem')"
+            min-width="160"
+            show-overflow-tooltip
+          />
+          <ElTableColumn
+            prop="count"
+            :label="$t('npcKill.systemCount')"
+            width="100"
+            align="right"
+            sortable
+          />
+          <ElTableColumn
+            prop="amount"
+            :label="$t('npcKill.systemAmount')"
+            width="160"
+            align="right"
+            sortable
+          >
             <template #default="{ row }">
               <span class="text-green-600 font-medium">{{ formatISK(row.amount) }}</span>
             </template>
@@ -105,12 +171,24 @@
         </template>
         <ElTable :data="reportData.trend" stripe border max-height="400">
           <ElTableColumn prop="date" :label="$t('npcKill.trendDate')" width="140" />
-          <ElTableColumn prop="amount" :label="$t('npcKill.trendAmount')" min-width="160" align="right" sortable>
+          <ElTableColumn
+            prop="amount"
+            :label="$t('npcKill.trendAmount')"
+            min-width="160"
+            align="right"
+            sortable
+          >
             <template #default="{ row }">
               <span class="text-green-600 font-medium">{{ formatISK(row.amount) }}</span>
             </template>
           </ElTableColumn>
-          <ElTableColumn prop="count" :label="$t('npcKill.trendCount')" width="100" align="right" sortable />
+          <ElTableColumn
+            prop="count"
+            :label="$t('npcKill.trendCount')"
+            width="100"
+            align="right"
+            sortable
+          />
         </ElTable>
       </ElCard>
     </div>

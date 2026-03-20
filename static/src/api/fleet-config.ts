@@ -77,7 +77,11 @@ export function fetchFittingItems(configId: number, fittingId: number, lang?: st
 }
 
 /** 批量更新装配物品设置（重要性、惩罚、替代品） */
-export function updateFittingItemsSettings(configId: number, fittingId: number, data: Api.FleetConfig.UpdateItemsSettingsParams) {
+export function updateFittingItemsSettings(
+  configId: number,
+  fittingId: number,
+  data: Api.FleetConfig.UpdateItemsSettingsParams
+) {
   return request.put({
     url: `/api/v1/operation/fleet-configs/${configId}/fittings/${fittingId}/items/settings`,
     data

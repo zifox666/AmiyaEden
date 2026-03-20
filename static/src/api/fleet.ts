@@ -64,10 +64,7 @@ export function fetchFleetMembers(fleetId: string) {
 }
 
 /** 获取舰队成员列表（含 PAP 信息，分页） */
-export function fetchMembersWithPap(
-  fleetId: string,
-  params: { current: number; size: number }
-) {
+export function fetchMembersWithPap(fleetId: string, params: { current: number; size: number }) {
   return request.get<Api.Common.PaginatedResponse<Api.Fleet.MemberWithPap>>({
     url: `/api/v1/operation/fleets/${fleetId}/members-pap`,
     params

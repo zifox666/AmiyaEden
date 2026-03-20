@@ -288,7 +288,14 @@
       "npcKills": "NPC Kill Report",
       "autoRole": "Auto Roles",
       "webhook": "Webhook Notifications",
-      "basicConfig": "Basic Config"
+      "basicConfig": "Basic Config",
+      "skillPlan": "Skill Plans",
+      "skillPlanCheck": "Skill Check"
+    },
+    "corpManage": {
+      "title": "Corp Management",
+      "skillPlanManage": "Skill Plan Admin",
+      "skillPlanCheck": "Skill Check"
     },
     "shop": {
       "title": "Shop",
@@ -308,7 +315,8 @@
       "join": "Join Fleet",
       "srpApply": "SRP Apply",
       "srpManage": "SRP Review",
-      "srpPrices": "SRP Price List"
+      "srpPrices": "SRP Price List",
+      "skillPlan": "Skill Plans"
     },
     "role": {
       "title": "Roles",
@@ -1583,5 +1591,59 @@
       "siteTitlePlaceholder": "Please enter site title",
       "saveSuccess": "Configuration saved"
     }
+  },
+  "skillPlan": {
+    "title": "Skill Plans",
+    "create": "New Plan",
+    "edit": "Edit Plan",
+    "selectPlan": "Select Skill Plan",
+    "checkAll": "Check All Characters",
+    "checkMyCharacters": "Check My Characters",
+    "exportResults": "Export Results",
+    "deleteConfirm": "Are you sure you want to delete this skill plan?",
+    "fields": {
+      "name": "Plan Name",
+      "namePlaceholder": "Enter plan name",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "skillText": "Skill Text",
+      "skillTextPlaceholder": "Paste skill text from clipboard, one skill per line, format: SkillName Level",
+      "skillCount": "Skills",
+      "createdAt": "Created"
+    },
+    "validation": {
+      "nameRequired": "Please enter a plan name",
+      "skillTextRequired": "Please enter skill text"
+    },
+    "searchPlaceholder": "Search user/character",
+    "summary": {
+      "planName": "Plan Name",
+      "totalCharacters": "Total Characters",
+      "satisfiedCount": "Satisfied",
+      "unsatisfiedCount": "Unsatisfied",
+      "satisfiedRate": "Rate"
+    },
+    "filter": {
+      "all": "All",
+      "satisfied": "Satisfied",
+      "unsatisfied": "Unsatisfied"
+    },
+    "columns": {
+      "userName": "User",
+      "characterName": "Character",
+      "progress": "Progress",
+      "status": "Status",
+      "missingSkills": "Missing Skills"
+    },
+    "status": {
+      "satisfied": "Satisfied",
+      "unsatisfied": "Unsatisfied"
+    },
+    "currentLevel": "current",
+    "missingSkillsTitle": "Missing Skills",
+    "allSatisfied": "All skills satisfied!",
+    "selectAndCheck": "Select a skill plan and click check",
+    "noCharacters": "No character data found",
+    "noDescription": "No description"
   }
 }

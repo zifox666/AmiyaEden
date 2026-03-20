@@ -72,7 +72,9 @@
         <div v-for="grp in groupedFittings" :key="grp.groupName" class="market-group-section">
           <!-- 舰船组标题 -->
           <div class="market-group-header" @click="toggleGroup(grp.groupName)">
-            <span class="mg-arrow" :class="{ expanded: !collapsedGroups.has(grp.groupName) }">▶</span>
+            <span class="mg-arrow" :class="{ expanded: !collapsedGroups.has(grp.groupName) }"
+              >▶</span
+            >
             <span class="mg-title">{{ grp.groupName }}</span>
             <span class="mg-count">{{ grp.fittings.length }}</span>
           </div>
@@ -120,7 +122,9 @@
           <div class="km-header-info">
             <h3 class="km-ship-name">{{ selectedFitting.name }}</h3>
             <p class="km-meta">{{ selectedFitting.ship_name }}</p>
-            <p v-if="selectedFitting.description" class="km-meta">{{ selectedFitting.description }}</p>
+            <p v-if="selectedFitting.description" class="km-meta">{{
+              selectedFitting.description
+            }}</p>
           </div>
         </div>
 
@@ -158,15 +162,7 @@
 
 <script setup lang="ts">
   import { Refresh, Search } from '@element-plus/icons-vue'
-  import {
-    ElCard,
-    ElSelect,
-    ElOption,
-    ElButton,
-    ElEmpty,
-    ElInput,
-    ElDialog
-  } from 'element-plus'
+  import { ElCard, ElSelect, ElOption, ElButton, ElEmpty, ElInput, ElDialog } from 'element-plus'
   import { fetchInfoFittings } from '@/api/eve-info'
   import { useUserStore } from '@/store/modules/user'
 

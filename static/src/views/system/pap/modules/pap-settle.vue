@@ -21,7 +21,9 @@
           :controls="false"
           style="width: 180px"
         />
-        <span class="ml-2 text-gray-400 text-sm">{{ t('alliancePap.settle.walletPerPapUnit') }}</span>
+        <span class="ml-2 text-gray-400 text-sm">{{
+          t('alliancePap.settle.walletPerPapUnit')
+        }}</span>
       </ElFormItem>
 
       <ElDivider />
@@ -39,7 +41,9 @@
       </ElFormItem>
       <ElFormItem :label="t('alliancePap.settle.walletConvert')">
         <ElSwitch v-model="form.wallet_convert" />
-        <span class="ml-2 text-gray-400 text-xs">{{ t('alliancePap.settle.walletConvertTip') }}</span>
+        <span class="ml-2 text-gray-400 text-xs">{{
+          t('alliancePap.settle.walletConvertTip')
+        }}</span>
       </ElFormItem>
     </ElForm>
 
@@ -54,9 +58,13 @@
       <template #default>
         <div class="text-sm mt-1 space-y-1">
           <div>{{ t('alliancePap.settle.resultUsers', { count: settleResult.total_users }) }}</div>
-          <div>{{ t('alliancePap.settle.resultSkipped', { count: settleResult.skipped_users }) }}</div>
+          <div>{{
+            t('alliancePap.settle.resultSkipped', { count: settleResult.skipped_users })
+          }}</div>
           <div v-if="form.wallet_convert">
-            {{ t('alliancePap.settle.resultWallet', { amount: settleResult.total_wallet.toFixed(2) }) }}
+            {{
+              t('alliancePap.settle.resultWallet', { amount: settleResult.total_wallet.toFixed(2) })
+            }}
           </div>
         </div>
       </template>
@@ -76,8 +84,18 @@
 
 <script setup lang="ts">
   import {
-    ElDialog, ElForm, ElFormItem, ElInputNumber, ElSwitch, ElDatePicker,
-    ElDivider, ElAlert, ElButton, ElMessage, type FormInstance, type FormRules
+    ElDialog,
+    ElForm,
+    ElFormItem,
+    ElInputNumber,
+    ElSwitch,
+    ElDatePicker,
+    ElDivider,
+    ElAlert,
+    ElButton,
+    ElMessage,
+    type FormInstance,
+    type FormRules
   } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import {
@@ -107,8 +125,18 @@
   })
 
   const rules: FormRules = {
-    wallet_per_pap: [{ required: true, type: 'number', min: 0.01, message: t('alliancePap.settle.walletPerPapRequired'), trigger: 'blur' }],
-    settle_month: [{ required: true, message: t('alliancePap.settle.settleMonthRequired'), trigger: 'change' }]
+    wallet_per_pap: [
+      {
+        required: true,
+        type: 'number',
+        min: 0.01,
+        message: t('alliancePap.settle.walletPerPapRequired'),
+        trigger: 'blur'
+      }
+    ],
+    settle_month: [
+      { required: true, message: t('alliancePap.settle.settleMonthRequired'), trigger: 'change' }
+    ]
   }
 
   async function handleOpen() {

@@ -124,6 +124,21 @@ func RegisterRoutes(r *gin.Engine) {
 		fleetConfig.PUT("/:id/fittings/:fitting_id/items/settings", middleware.RequireRole(model.RoleFC, model.RoleSRP), fleetConfigH.UpdateFittingItemsSettings)
 	}
 
+	// ─── 技能规划 ───
+	skillPlanH := handler.NewSkillPlanHandler()
+	skillPlan := operation.Group("/skill-plans")
+	{
+		skillPlan.GET("/all", skillPlanH.ListAllSkillPlans)
+		skillPlan.GET("/:id", skillPlanH.GetSkillPlan)
+		skillPlan.GET("/:id/check/me", skillPlanH.CheckUserCharacters)
+		// 管理操作（需要 FC 或 admin）
+		skillPlan.GET("", middleware.RequireRole(model.RoleFC, model.RoleAdmin), skillPlanH.ListSkillPlans)
+		skillPlan.POST("", middleware.RequireRole(model.RoleFC, model.RoleAdmin), skillPlanH.CreateSkillPlan)
+		skillPlan.PUT("/:id", middleware.RequireRole(model.RoleFC, model.RoleAdmin), skillPlanH.UpdateSkillPlan)
+		skillPlan.DELETE("/:id", middleware.RequireRole(model.RoleFC, model.RoleAdmin), skillPlanH.DeleteSkillPlan)
+		skillPlan.GET("/:id/check", middleware.RequireRole(model.RoleFC, model.RoleAdmin), skillPlanH.CheckAllCharacters)
+	}
+
 	// ─── EVE 角色信息 ───
 	infoH := handler.NewEveInfoHandler()
 	info := auth.Group("/info")

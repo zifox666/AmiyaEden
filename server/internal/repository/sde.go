@@ -219,6 +219,30 @@ func (r *SdeRepository) GetTypeIDsByNames(names []string) (map[string]int64, err
 	return result, nil
 }
 
+// GetTypeIDsByTranslatedNames 通过翻译名称批量反查 typeID（用于技能规划解析）
+func (r *SdeRepository) GetTypeIDsByTranslatedNames(names []string, languageID string) (map[string]int64, error) {
+	if len(names) == 0 {
+		return map[string]int64{}, nil
+	}
+	type row struct {
+		TypeID int64  `gorm:"column:keyID"`
+		Text   string `gorm:"column:text"`
+	}
+	var rows []row
+	err := global.DB.Table(`"trnTranslations"`).
+		Select(`"keyID", text`).
+		Where(`"tcID" = ? AND "languageID" = ? AND text IN ?`, TC_ID["type"], languageID, names).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]int64, len(rows))
+	for _, r := range rows {
+		result[r.Text] = r.TypeID
+	}
+	return result, nil
+}
+
 // FuzzySearch 模糊搜索 trnTranslations（物品名称）及成员名称
 func (r *SdeRepository) FuzzySearch(keyword string, languageID string, categoryIDs []int, excludeCategoryIDs []int, limit int, searchMember bool) ([]FuzzySearchItem, error) {
 	if keyword == "" {

@@ -27,14 +27,26 @@
     destroy-on-close
   >
     <ElForm ref="formRef" :model="formDataSEAT" :rules="formRulesSEAT" label-width="150px">
-      <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.laravelSession')" prop="laravelSession">
-        <ElInput v-model="formDataSEAT.laravelSession" :placeholder="$t('alliancePap.importFormSEAT.fields.laravelSession')" />
+      <ElFormItem
+        :label="$t('alliancePap.importFormSEAT.fields.laravelSession')"
+        prop="laravelSession"
+      >
+        <ElInput
+          v-model="formDataSEAT.laravelSession"
+          :placeholder="$t('alliancePap.importFormSEAT.fields.laravelSession')"
+        />
       </ElFormItem>
       <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.cfClearance')" prop="cfClearance">
-        <ElInput v-model="formDataSEAT.cfClearance" :placeholder="$t('alliancePap.importFormSEAT.fields.cfClearance')" />
+        <ElInput
+          v-model="formDataSEAT.cfClearance"
+          :placeholder="$t('alliancePap.importFormSEAT.fields.cfClearance')"
+        />
       </ElFormItem>
       <ElFormItem :label="$t('alliancePap.importFormSEAT.fields.UA')" prop="UA">
-        <ElInput v-model="formDataSEAT.UA" :placeholder="$t('alliancePap.importFormSEAT.fields.UA')" />
+        <ElInput
+          v-model="formDataSEAT.UA"
+          :placeholder="$t('alliancePap.importFormSEAT.fields.UA')"
+        />
       </ElFormItem>
     </ElForm>
     <template #footer>
@@ -119,9 +131,21 @@
   })
 
   const formRulesSEAT: FormRules = {
-    laravelSession: [{ required: true, message: t('alliancePap.importFormSEAT.fields.laravelSession'), trigger: 'blur' }],
-    cfClearance: [{ required: false, message: t('alliancePap.importFormSEAT.fields.cfClearance'), trigger: 'blur' }],
-    UA: [{ required: false, message: t('alliancePap.importFormSEAT.fields.UA'), trigger: 'blur' }],
+    laravelSession: [
+      {
+        required: true,
+        message: t('alliancePap.importFormSEAT.fields.laravelSession'),
+        trigger: 'blur'
+      }
+    ],
+    cfClearance: [
+      {
+        required: false,
+        message: t('alliancePap.importFormSEAT.fields.cfClearance'),
+        trigger: 'blur'
+      }
+    ],
+    UA: [{ required: false, message: t('alliancePap.importFormSEAT.fields.UA'), trigger: 'blur' }]
   }
 
   function resetFormDataSEAT() {
@@ -141,7 +165,7 @@
     if (!formRef.value) return
     await formRef.value.validate()
 
-    let rows : Record<string, unknown>[] = []
+    let rows: Record<string, unknown>[] = []
 
     submitLoading.value = true
     try {
@@ -163,21 +187,26 @@
         // Changing this behavior will break SEAT integration; if you need
         // to modify it, coordinate with security and infrastructure teams.
         headers: {
-          'Accept': 'application/json, text/javascript, */*; q=0.01',
+          Accept: 'application/json, text/javascript, */*; q=0.01',
           'X-Accept-Encoding': 'gzip, deflate, br, zstd',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
           'Cache-Control': 'no-cache',
-          'X-Cookie': `laravel_session=${formDataSEAT.laravelSession}` + (formDataSEAT.cfClearance === '' ? '' : `;cf_clearance=${formDataSEAT.cfClearance}`),
-          'Pragma': 'no-cache',
-          'Priority': 'u=1, i',
+          'X-Cookie':
+            `laravel_session=${formDataSEAT.laravelSession}` +
+            (formDataSEAT.cfClearance === '' ? '' : `;cf_clearance=${formDataSEAT.cfClearance}`),
+          Pragma: 'no-cache',
+          Priority: 'u=1, i',
           'X-Sec-Ch-Ua': `"Not:A-Brand";v="99", "Microsoft Edge";v="145", "Chromium";v="145"`,
           'X-Sec-Ch-Ua-Mobile': '?0',
           'X-Sec-Ch-Ua-Platform': `"Windows"`,
           'X-Sec-Fetch-Dest': 'empty',
           'X-Sec-Fetch-Mode': 'cors',
           'X-Sec-Fetch-Site': 'same-origin',
-          'X-User-Agent': formDataSEAT.UA === '' ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36' : formDataSEAT.UA,
-          'X-Requested-With': 'XMLHttpRequest',
+          'X-User-Agent':
+            formDataSEAT.UA === ''
+              ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+              : formDataSEAT.UA,
+          'X-Requested-With': 'XMLHttpRequest'
         }
       })
 
@@ -185,15 +214,14 @@
 
       if (response.status == 200 && response.data.data) {
         for (const item of response.data.data) {
-          const temp : Record<string, unknown> = {
-            '主角色': item.character,
+          const temp: Record<string, unknown> = {
+            主角色: item.character,
             '月 PAP': item.pap_count,
-            '数据时间': item.logoff_date
+            数据时间: item.logoff_date
           }
           rows.push(temp)
         }
-      }
-      else {
+      } else {
         throw new Error(t('alliancePap.importFormSEAT.fetchPapError', { status: response.status }))
       }
 

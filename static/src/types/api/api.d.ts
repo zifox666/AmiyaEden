@@ -1624,4 +1624,69 @@ declare namespace Api {
       site_title?: string
     }
   }
+
+  /** 技能规划 */
+  namespace SkillPlan {
+    /** 技能规划条目 */
+    interface SkillPlanItem {
+      skill_type_id: number
+      skill_name: string
+      required_level: number
+    }
+
+    /** 技能规划 DTO */
+    interface SkillPlanDTO {
+      id: number
+      name: string
+      description: string
+      created_by: number
+      created_at: string
+      updated_at: string
+      items: SkillPlanItem[]
+    }
+
+    /** 创建技能规划请求 */
+    interface CreateSkillPlanRequest {
+      name: string
+      description: string
+      skill_text: string
+    }
+
+    /** 更新技能规划请求 */
+    interface UpdateSkillPlanRequest {
+      name: string
+      description: string
+      skill_text: string
+    }
+
+    /** 缺失技能条目 */
+    interface MissingSkillItem {
+      skill_type_id: number
+      skill_name: string
+      required_level: number
+      current_level: number
+    }
+
+    /** 角色技能检查结果 */
+    interface SkillCheckCharacterResult {
+      user_id: number
+      user_name: string
+      character_id: number
+      character_name: string
+      satisfied: number
+      total: number
+      status: 'satisfied' | 'unsatisfied'
+      missing_skills: MissingSkillItem[]
+    }
+
+    /** 技能检查汇总 */
+    interface SkillCheckSummary {
+      plan_name: string
+      total_characters: number
+      satisfied_count: number
+      unsatisfied_count: number
+      satisfied_rate: number
+      characters: SkillCheckCharacterResult[]
+    }
+  }
 }

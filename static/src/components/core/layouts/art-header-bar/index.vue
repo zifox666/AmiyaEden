@@ -91,6 +91,9 @@
           ></div>
         </ArtIconButton>
 
+        <!-- Github -->
+        <ArtIconButton icon="ri:github-line" class="chat-button text-[19px]" @click="openGithub" />
+
         <!-- 主题切换按钮 -->
         <ArtIconButton
           v-if="shouldShowThemeToggle"
@@ -262,6 +265,13 @@
    */
   const visibleNotice = (): void => {
     showNotice.value = !showNotice.value
+  }
+
+  /**
+   * 打开GitHub链接
+   */
+  const openGithub = (): void => {
+    window.open('https://github.com/zifox666/AmiyaEden', '_blank')
   }
 </script>
 
