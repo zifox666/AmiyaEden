@@ -14,10 +14,17 @@ import tseslint from 'typescript-eslint'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// 读取 .auto-import.json 文件的内容，并将其解析为 JSON 对象
-const autoImportConfig = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '.auto-import.json'), 'utf-8')
-)
+function loadAutoImportConfig() {
+  const autoImportPath = path.resolve(__dirname, '.auto-import.json')
+  if (!fs.existsSync(autoImportPath)) {
+    return { globals: {} }
+  }
+
+  return JSON.parse(fs.readFileSync(autoImportPath, 'utf-8'))
+}
+
+// .auto-import.json 是本地开发生成文件，CI 的干净检出未必存在。
+const autoImportConfig = loadAutoImportConfig()
 
 export default [
   // 指定文件匹配规则
