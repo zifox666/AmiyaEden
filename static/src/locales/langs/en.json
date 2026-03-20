@@ -282,12 +282,16 @@
       "fleetDetail": "Fleet Detail",
       "fleetConfigs": "Fleet Configs",
       "corporationPap": "Corporation PAP",
-      "skillPlans": "Corp Skill Plans",
       "pap": "My PAP",
       "join": "Join Fleet",
       "srpApply": "SRP Apply",
       "srpManage": "SRP Review",
       "srpPrices": "SRP Price List"
+    },
+    "skillPlanning": {
+      "title": "Skill Planning",
+      "skillPlans": "Manage Corp Plans",
+      "completionCheck": "Check Completion"
     },
     "role": {
       "title": "Roles",
@@ -855,6 +859,9 @@
       "titlePlaceholder": "Enter the skill plan title",
       "description": "Description",
       "descriptionPlaceholder": "Describe what this skill plan is for",
+      "ship": "Plan Ship Icon",
+      "shipPlaceholder": "Search and select a ship",
+      "shipHint": "Optional. The selected ship icon will be shown in the plan list.",
       "skillsText": "Skill Text",
       "skillsTextPlaceholder": "One skill per line, for example:\nGraviton Physics 5\nDoomsday Rapid Firing 5\nCapital Shield Operation 4",
       "skillsTextHint": "Supported format: skill name + space + level. Levels may use 1-5 or Roman numerals I-V. Duplicate skills automatically keep the highest level.",
@@ -868,6 +875,29 @@
       "group": "Group",
       "requiredLevel": "Required Level"
     }
+  },
+  "skillPlanCheck": {
+    "title": "Check Completion",
+    "subtitle": "Compare the selected characters' skills against the saved corp plans and review completion at a glance.",
+    "selectCharacters": "Select Characters",
+    "selectedCharacters": "Selected Characters",
+    "noCharactersSelected": "No characters selected yet",
+    "noAvailableCharacters": "No available characters for this user",
+    "selectionSaved": "Character selection saved",
+    "selectCharactersFirst": "Please select at least one character first",
+    "startCheck": "Start Check",
+    "resultTitle": "Check Results",
+    "resultSubtitle": "Expand by character, then by skill plan, to inspect completion details.",
+    "planCount": "{count} plans",
+    "emptyResult": "Select characters and start the check to view completion results",
+    "characterSummary": "{completed} / {total} plans completed",
+    "planCompleted": "Completed",
+    "planIncomplete": "Incomplete",
+    "missingCount": "{count} missing",
+    "missingSkillsTitle": "Missing Skills",
+    "requiredVsCurrent": "Required Lv.{required}, current Lv.{current}",
+    "planCompleteSummary": "This character fully satisfies the selected skill plan.",
+    "planIncompleteSummary": "{matched} / {total} skill requirements are currently satisfied."
   },
   "characters": {
     "title": "EVE Characters",

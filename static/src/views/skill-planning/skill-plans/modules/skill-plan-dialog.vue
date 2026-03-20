@@ -25,6 +25,34 @@
         />
       </ElFormItem>
 
+      <ElFormItem :label="$t('skillPlan.fields.ship')">
+        <div class="skill-plan-ship-field">
+          <SdeSearchSelect
+            v-model="formData.shipTypeId"
+            :category-ids="[6]"
+            :initial-options="formData.shipInitialOption ? [formData.shipInitialOption] : []"
+            :placeholder="$t('skillPlan.fields.shipPlaceholder')"
+            style="width: 100%"
+            @select="onShipSelect"
+          />
+          <div class="skill-plan-ship-hint">
+            {{ $t('skillPlan.fields.shipHint') }}
+          </div>
+          <div v-if="formData.shipTypeId" class="skill-plan-ship-preview">
+            <img
+              :src="getShipIconUrl(formData.shipTypeId, 64)"
+              class="skill-plan-ship-preview__icon"
+              alt=""
+              loading="lazy"
+            />
+            <div class="skill-plan-ship-preview__meta">
+              <strong>{{ formData.shipName || String(formData.shipTypeId) }}</strong>
+              <span v-if="formData.shipGroupName">{{ formData.shipGroupName }}</span>
+            </div>
+          </div>
+        </div>
+      </ElFormItem>
+
       <ElFormItem :label="$t('skillPlan.fields.skillsText')">
         <ElInput
           v-model="formData.skillsText"
@@ -139,6 +167,10 @@
   const formData = reactive({
     title: '',
     description: '',
+    shipTypeId: null as number | null,
+    shipName: '',
+    shipGroupName: '',
+    shipInitialOption: null as Api.Sde.FuzzySearchItem | null,
     skillsText: '',
     skills: [] as SkillFormItem[]
   })
@@ -181,6 +213,18 @@
   function resetForm() {
     formData.title = props.editing?.title ?? ''
     formData.description = props.editing?.description ?? ''
+    formData.shipTypeId = props.editing?.ship_type_id ?? null
+    formData.shipName = props.editing?.ship_name ?? ''
+    formData.shipGroupName = ''
+    formData.shipInitialOption = props.editing?.ship_type_id
+      ? {
+          id: props.editing.ship_type_id,
+          name: props.editing.ship_name || String(props.editing.ship_type_id),
+          group_id: 0,
+          group_name: '',
+          category: 'type'
+        }
+      : null
     formData.skillsText = props.editing?.skills?.length
       ? props.editing.skills
           .map((skill) => `${skill.skill_name} ${skill.required_level}`)
@@ -213,10 +257,22 @@
     target.initialOption = item
   }
 
+  function onShipSelect(item: Api.Sde.FuzzySearchItem | null) {
+    formData.shipTypeId = item?.id ?? null
+    formData.shipName = item?.name ?? ''
+    formData.shipGroupName = item?.group_name ?? ''
+    formData.shipInitialOption = item
+  }
+
+  function getShipIconUrl(shipTypeId: number, size = 64) {
+    return `https://images.evetech.net/types/${shipTypeId}/icon?size=${size}`
+  }
+
   function buildPayload(): Api.SkillPlan.CreateSkillPlanParams {
     return {
       title: formData.title.trim(),
       description: formData.description.trim(),
+      ship_type_id: formData.shipTypeId ?? undefined,
       skills_text: formData.skillsText.trim() || undefined,
       skills: usesTextInput.value
         ? undefined
@@ -333,6 +389,52 @@
     font-size: 12px;
     line-height: 1.5;
     white-space: pre-wrap;
+  }
+
+  .skill-plan-ship-field {
+    width: 100%;
+  }
+
+  .skill-plan-ship-hint {
+    margin-top: 6px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .skill-plan-ship-preview {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--el-fill-color-extra-light);
+    border: 1px solid var(--el-border-color-lighter);
+  }
+
+  .skill-plan-ship-preview__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .skill-plan-ship-preview__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .skill-plan-ship-preview__meta strong {
+    color: var(--el-text-color-primary);
+    line-height: 1.2;
+  }
+
+  .skill-plan-ship-preview__meta span {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.2;
   }
 
   @media (max-width: 768px) {

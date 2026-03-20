@@ -664,6 +664,7 @@ declare namespace Api {
       id: number
       title: string
       description: string
+      ship_type_id: number | null
       created_by: number
       created_at: string
       updated_at: string
@@ -686,6 +687,8 @@ declare namespace Api {
       id: number
       title: string
       description: string
+      ship_type_id: number | null
+      ship_name: string
       created_by: number
       created_at: string
       updated_at: string
@@ -713,6 +716,7 @@ declare namespace Api {
     interface CreateSkillPlanParams {
       title: string
       description?: string
+      ship_type_id?: number
       skills?: SkillRequirementParams[]
       skills_text?: string
     }
@@ -721,8 +725,57 @@ declare namespace Api {
     interface UpdateSkillPlanParams {
       title: string
       description?: string
+      ship_type_id?: number
       skills?: SkillRequirementParams[]
       skills_text?: string
+    }
+
+    /** 技能完成度角色选择 */
+    interface CheckSelection {
+      character_ids: number[]
+    }
+
+    /** 技能完成度缺失技能 */
+    interface CompletionMissingSkill {
+      skill_type_id: number
+      skill_name: string
+      group_name: string
+      required_level: number
+      current_level: number
+    }
+
+    /** 单个技能计划完成度 */
+    interface CompletionPlan {
+      plan_id: number
+      plan_title: string
+      plan_description: string
+      ship_type_id: number | null
+      matched_skills: number
+      total_skills: number
+      fully_satisfied: boolean
+      missing_skills: CompletionMissingSkill[]
+    }
+
+    /** 单个角色完成度结果 */
+    interface CompletionCharacter {
+      character_id: number
+      character_name: string
+      portrait_url: string
+      completed_plans: number
+      total_plans: number
+      plans: CompletionPlan[]
+    }
+
+    /** 技能完成度检查结果 */
+    interface CompletionCheckResult {
+      characters: CompletionCharacter[]
+      plan_count: number
+    }
+
+    /** 手动执行检查参数 */
+    interface CompletionCheckParams {
+      character_ids?: number[]
+      language?: string
     }
   }
 

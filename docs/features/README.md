@@ -2,7 +2,7 @@
 status: active
 doc_type: index
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-21
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -19,6 +19,7 @@ source_of_truth:
 
 - [auth-and-characters.md](current/auth-and-characters.md)
 - [operation.md](current/operation.md)
+- [skill-planning.md](current/skill-planning.md)
 - [info-and-reporting.md](current/info-and-reporting.md)
 - [srp.md](current/srp.md)
 - [commerce.md](current/commerce.md)

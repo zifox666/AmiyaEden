@@ -5,14 +5,14 @@ import request from '@/utils/http'
 /** 获取我的钱包 */
 export function fetchMyWallet() {
   return request.post<Api.SysWallet.Wallet>({
-    url: '/api/v1/operation/wallet/my'
+    url: '/api/v1/shop/wallet/my'
   })
 }
 
 /** 获取我的钱包流水 */
 export function fetchMyWalletTransactions(data?: Partial<Api.Common.CommonSearchParams>) {
   return request.post<Api.Common.PaginatedResponse<Api.SysWallet.WalletTransaction>>({
-    url: '/api/v1/operation/wallet/my/transactions',
+    url: '/api/v1/shop/wallet/my/transactions',
     data: data ?? { current: 1, size: 20 }
   })
 }

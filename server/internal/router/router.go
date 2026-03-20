@@ -130,10 +130,15 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// ─── 军团技能计划 ───
 	skillPlanH := handler.NewSkillPlanHandler()
-	skillPlan := operation.Group("/skill-plans")
+	skillPlanning := auth.Group("/skill-planning")
+	skillPlan := skillPlanning.Group("/skill-plans")
 	{
 		manageSkillPlans := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
+		viewSkillPlanChecks := middleware.RequireRole(model.RoleAdmin, model.RoleFC, model.RoleUser)
 
+		skillPlan.GET("/check/selection", viewSkillPlanChecks, skillPlanH.GetCheckSelection)
+		skillPlan.PUT("/check/selection", viewSkillPlanChecks, skillPlanH.SaveCheckSelection)
+		skillPlan.POST("/check/run", viewSkillPlanChecks, skillPlanH.RunCompletionCheck)
 		skillPlan.GET("", manageSkillPlans, skillPlanH.ListSkillPlans)
 		skillPlan.GET("/:id", manageSkillPlans, skillPlanH.GetSkillPlan)
 		skillPlan.POST("", manageSkillPlans, skillPlanH.CreateSkillPlan)
@@ -164,23 +169,20 @@ func RegisterRoutes(r *gin.Engine) {
 	info.POST("/npc-kills", npcKillH.GetNpcKills)
 	info.POST("/npc-kills/all", npcKillH.GetAllNpcKills)
 
-	// ─── 系统钱包（用户端）───
-	walletH := handler.NewSysWalletHandler()
-	wallet := operation.Group("/wallet")
-	{
-		wallet.POST("/my", walletH.GetMyWallet)
-		wallet.POST("/my/transactions", walletH.GetMyTransactions)
-	}
-
 	// ─── 商店（用户端）───
 	shopH := handler.NewShopHandler()
 	shop := auth.Group("/shop")
+	walletH := handler.NewSysWalletHandler()
+	shopWallet := shop.Group("/wallet")
 	{
 		shop.POST("/products", shopH.ListProducts)
 		shop.POST("/product/detail", shopH.GetProductDetail)
 		shop.POST("/buy", shopH.BuyProduct)
 		shop.POST("/orders", shopH.GetMyOrders)
 		shop.POST("/redeem/list", shopH.GetMyRedeemCodes)
+
+		shopWallet.POST("/my", walletH.GetMyWallet)
+		shopWallet.POST("/my/transactions", walletH.GetMyTransactions)
 	}
 
 	// ─── 文件上传（需要登录）───

@@ -4,6 +4,8 @@ import (
 	"amiya-eden/internal/middleware"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
+	"errors"
+	"io"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -118,6 +120,55 @@ func (h *SkillPlanHandler) DeleteSkillPlan(c *gin.Context) {
 	}
 
 	response.OK(c, nil)
+}
+
+// GetCheckSelection 获取当前用户保存的检查角色选择
+func (h *SkillPlanHandler) GetCheckSelection(c *gin.Context) {
+	result, err := h.svc.GetCheckSelection(middleware.GetUserID(c))
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, result)
+}
+
+// SaveCheckSelection 保存当前用户的检查角色选择
+func (h *SkillPlanHandler) SaveCheckSelection(c *gin.Context) {
+	var req service.SkillPlanCheckSelectionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+
+	result, err := h.svc.SaveCheckSelection(middleware.GetUserID(c), &req)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, result)
+}
+
+// RunCompletionCheck 执行技能计划完成度检查
+func (h *SkillPlanHandler) RunCompletionCheck(c *gin.Context) {
+	var req service.RunSkillPlanCheckRequest
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+
+	if req.Language == "" {
+		req.Language = resolveRequestLang(c)
+	}
+
+	result, err := h.svc.RunCompletionCheck(middleware.GetUserID(c), &req)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, result)
 }
 
 func resolveRequestLang(c *gin.Context) string {

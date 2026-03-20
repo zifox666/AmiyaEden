@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: frontend
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-21
 source_of_truth:
   - server/internal/model/menu.go
   - static/src/router/core
@@ -35,8 +35,9 @@ source_of_truth:
 当前静态模块主要位于：
 
 - `static/src/router/modules/dashboard.ts`
-- `static/src/router/modules/info.ts`
 - `static/src/router/modules/operation.ts`
+- `static/src/router/modules/skill-planning.ts`
+- `static/src/router/modules/info.ts`
 - `static/src/router/modules/shop.ts`
 - `static/src/router/modules/srp.ts`
 - `static/src/router/modules/system.ts`

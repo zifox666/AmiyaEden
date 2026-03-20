@@ -27,6 +27,15 @@ export const shopRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['super_admin', 'admin']
       }
+    },
+    {
+      path: 'wallet',
+      name: 'Wallet',
+      component: '/shop/wallet',
+      meta: {
+        title: 'menus.shop.wallet',
+        keepAlive: true
+      }
     }
   ]
 }

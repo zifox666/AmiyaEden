@@ -30,7 +30,16 @@
               :class="{ active: plan.id === selectedPlanId }"
               @click="selectPlan(plan.id)"
             >
-              <span class="skill-plan-item__title">{{ plan.title }}</span>
+              <div class="skill-plan-item__heading">
+                <img
+                  v-if="plan.ship_type_id"
+                  :src="getShipIconUrl(plan.ship_type_id, 64)"
+                  class="skill-plan-item__icon"
+                  alt=""
+                  loading="lazy"
+                />
+                <span class="skill-plan-item__title">{{ plan.title }}</span>
+              </div>
               <span class="skill-plan-item__desc">{{
                 plan.description || $t('skillPlan.descriptionEmpty')
               }}</span>
@@ -61,9 +70,21 @@
         <div v-loading="detailLoading" class="skill-plan-detail">
           <template v-if="selectedPlan">
             <div class="skill-plan-detail__header">
-              <div>
-                <div class="skill-plan-detail__eyebrow">{{ $t('skillPlan.detailTitle') }}</div>
-                <h2 class="skill-plan-detail__title">{{ selectedPlan.title }}</h2>
+              <div class="skill-plan-detail__identity">
+                <img
+                  v-if="selectedPlan.ship_type_id"
+                  :src="getShipIconUrl(selectedPlan.ship_type_id, 64)"
+                  class="skill-plan-detail__icon"
+                  alt=""
+                  loading="lazy"
+                />
+                <div class="skill-plan-detail__text">
+                  <div class="skill-plan-detail__eyebrow">{{ $t('skillPlan.detailTitle') }}</div>
+                  <h2 class="skill-plan-detail__title">{{ selectedPlan.title }}</h2>
+                  <div v-if="selectedPlan.ship_name" class="skill-plan-detail__ship-name">
+                    {{ selectedPlan.ship_name }}
+                  </div>
+                </div>
               </div>
 
               <div v-if="canManage" class="skill-plan-detail__actions">
@@ -146,6 +167,10 @@
 
   type SkillPlanListItem = Api.SkillPlan.SkillPlanListItem
   type SkillPlanDetail = Api.SkillPlan.SkillPlanDetail
+  type SkillPlanDisplayState = Pick<
+    Api.SkillPlan.SkillPlanDetail,
+    'id' | 'ship_type_id' | 'ship_name'
+  >
 
   const { t } = useI18n()
   const userStore = useUserStore()
@@ -165,6 +190,7 @@
   const dialogVisible = ref(false)
   const listLoading = ref(false)
   const detailLoading = ref(false)
+  const planDisplayState = reactive<Record<number, SkillPlanDisplayState>>({})
 
   const pagination = reactive({
     current: 1,
@@ -173,6 +199,38 @@
   })
 
   const formatTime = (value: string) => (value ? new Date(value).toLocaleString() : '-')
+  const getShipIconUrl = (shipTypeId: number, size = 64) =>
+    `https://images.evetech.net/types/${shipTypeId}/icon?size=${size}`
+
+  function mergePlanDisplayState(plan: SkillPlanDisplayState) {
+    planDisplayState[plan.id] = {
+      id: plan.id,
+      ship_type_id: plan.ship_type_id,
+      ship_name: plan.ship_name
+    }
+
+    const index = plans.value.findIndex((item) => item.id === plan.id)
+    if (index >= 0) {
+      plans.value[index] = {
+        ...plans.value[index],
+        ship_type_id: plan.ship_type_id
+      }
+    }
+  }
+
+  async function hydratePlanListShipIcons(planIds: number[]) {
+    const uniqueIds = [...new Set(planIds.filter(Boolean))]
+    if (!uniqueIds.length) return
+
+    const results = await Promise.allSettled(
+      uniqueIds.map((id) => fetchSkillPlanDetail(id, currentLang.value))
+    )
+
+    for (const result of results) {
+      if (result.status !== 'fulfilled') continue
+      mergePlanDisplayState(result.value)
+    }
+  }
 
   async function loadPlans(preferredPlanId?: number | null) {
     listLoading.value = true
@@ -197,6 +255,7 @@
         targetId && plans.value.some((plan) => plan.id === targetId) ? targetId : plans.value[0].id
 
       await loadPlanDetail(nextPlanId)
+      void hydratePlanListShipIcons(plans.value.map((plan) => plan.id))
     } catch {
       plans.value = []
       pagination.total = 0
@@ -213,6 +272,7 @@
     try {
       selectedPlan.value = await fetchSkillPlanDetail(planId, currentLang.value)
       selectedPlanId.value = planId
+      mergePlanDisplayState(selectedPlan.value)
     } catch (error: any) {
       selectedPlan.value = null
       ElMessage.error(error?.message ?? t('httpMsg.requestFailed'))
@@ -283,6 +343,7 @@
     editingPlan.value = null
     selectedPlanId.value = plan.id
     selectedPlan.value = plan
+    mergePlanDisplayState(plan)
     await loadPlans(plan.id)
   }
 
@@ -383,6 +444,19 @@
     color: var(--el-text-color-primary);
   }
 
+  .skill-plan-item__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .skill-plan-item__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
   .skill-plan-item__desc {
     display: block;
     margin-top: 6px;
@@ -424,6 +498,22 @@
     margin-bottom: 18px;
   }
 
+  .skill-plan-detail__identity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .skill-plan-detail__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+  }
+
+  .skill-plan-detail__text {
+    min-width: 0;
+  }
+
   .skill-plan-detail__eyebrow {
     color: var(--el-color-primary);
     font-size: 12px;
@@ -437,6 +527,12 @@
     font-size: 28px;
     line-height: 1.2;
     color: var(--el-text-color-primary);
+  }
+
+  .skill-plan-detail__ship-name {
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   .skill-plan-detail__actions {
@@ -529,6 +625,17 @@
 
     .skill-plan-detail__title {
       font-size: 22px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .skill-plan-detail__identity {
+      align-items: flex-start;
+    }
+
+    .skill-plan-detail__icon {
+      width: 48px;
+      height: 48px;
     }
   }
 </style>

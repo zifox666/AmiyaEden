@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-21
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/shop.go
@@ -34,7 +34,6 @@ source_of_truth:
 ### 后端路由
 
 - `/api/v1/shop/*`
-- `/api/v1/operation/wallet/*`
 - `/api/v1/system/wallet/*`
 - `/api/v1/system/shop/*`
 
@@ -47,6 +46,7 @@ source_of_truth:
 
 - 系统钱包是多个模块共享的资金载体，不能按单一页面理解
 - 钱包流水与调整日志属于不同查询面
+- 用户侧钱包页面与其后端接口当前都归属 `Shop` 模块
 - 商店、兑换码虽然都在 `Shop` 目录下，但用户态与管理态接口是分开的
 
 ## 主要代码文件

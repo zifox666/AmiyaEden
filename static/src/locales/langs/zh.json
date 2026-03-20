@@ -267,12 +267,16 @@
       "fleetDetail": "舰队详情",
       "fleetConfigs": "舰队配置",
       "corporationPap": "军团PAP",
-      "skillPlans": "制定军团技能",
       "pap": "我的 PAP",
       "join": "加入舰队",
       "srpApply": "申请补损",
       "srpManage": "补损审批",
       "srpPrices": "补损价格表"
+    },
+    "skillPlanning": {
+      "title": "技能规划",
+      "skillPlans": "管理军团规划",
+      "completionCheck": "检查完成度"
     },
     "role": {
       "title": "权限组",
@@ -856,6 +860,9 @@
       "titlePlaceholder": "请输入技能计划标题",
       "description": "计划说明",
       "descriptionPlaceholder": "请输入此技能计划的适用说明",
+      "ship": "计划舰船图标",
+      "shipPlaceholder": "搜索并选择舰船",
+      "shipHint": "可选。选中的舰船图标会显示在技能计划列表中。",
       "skillsText": "技能文本",
       "skillsTextPlaceholder": "每行一个技能，格式示例：\nGraviton Physics 5\nDoomsday Rapid Firing 5\nCapital Shield Operation 4",
       "skillsTextHint": "支持格式：技能名 + 空格 + 等级。等级可使用 1-5 或罗马数字 I-V；重复技能会自动保留最高等级。",
@@ -869,6 +876,29 @@
       "group": "技能组",
       "requiredLevel": "要求等级"
     }
+  },
+  "skillPlanCheck": {
+    "title": "检查完成度",
+    "subtitle": "将已选择角色的技能与军团规划进行逐项比对，快速查看完成情况。",
+    "selectCharacters": "选择角色",
+    "selectedCharacters": "已选择角色",
+    "noCharactersSelected": "尚未选择角色",
+    "noAvailableCharacters": "当前用户没有可用角色",
+    "selectionSaved": "角色选择已保存",
+    "selectCharactersFirst": "请先选择至少一个角色",
+    "startCheck": "开始检查",
+    "resultTitle": "检查结果",
+    "resultSubtitle": "按角色展开，再按技能规划展开查看完成情况。",
+    "planCount": "规划数 {count}",
+    "emptyResult": "选择角色后点击开始检查以查看完成度结果",
+    "characterSummary": "已完成 {completed} / {total} 个规划",
+    "planCompleted": "已满足",
+    "planIncomplete": "未满足",
+    "missingCount": "缺失 {count} 项",
+    "missingSkillsTitle": "缺失技能",
+    "requiredVsCurrent": "需求 {required} 级，当前 {current} 级",
+    "planCompleteSummary": "该角色已完整满足此技能规划。",
+    "planIncompleteSummary": "当前完成 {matched} / {total} 项技能要求。"
   },
   "characters": {
     "title": "EVE 角色管理",

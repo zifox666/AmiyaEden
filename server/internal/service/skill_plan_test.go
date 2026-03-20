@@ -2,6 +2,7 @@ package service
 
 import (
 	"amiya-eden/internal/model"
+	"amiya-eden/internal/repository"
 	"strings"
 	"testing"
 )
@@ -136,6 +137,29 @@ func TestNormalizeSkillPlanRequirements(t *testing.T) {
 	}
 }
 
+func TestNormalizeOptionalSkillPlanShipTypeID(t *testing.T) {
+	t.Run("nil remains nil", func(t *testing.T) {
+		if got := normalizeOptionalSkillPlanShipTypeID(nil); got != nil {
+			t.Fatalf("expected nil, got %+v", got)
+		}
+	})
+
+	t.Run("non-positive clears selection", func(t *testing.T) {
+		value := 0
+		if got := normalizeOptionalSkillPlanShipTypeID(&value); got != nil {
+			t.Fatalf("expected nil for zero ship type, got %+v", got)
+		}
+	})
+
+	t.Run("positive value is preserved", func(t *testing.T) {
+		value := 22444
+		got := normalizeOptionalSkillPlanShipTypeID(&value)
+		if got == nil || *got != value {
+			t.Fatalf("expected %d, got %+v", value, got)
+		}
+	})
+}
+
 func TestParseSkillPlanLevelToken(t *testing.T) {
 	cases := map[string]int{
 		"1":   1,
@@ -189,6 +213,44 @@ func TestNormalizeSkillPlanName(t *testing.T) {
 				t.Fatalf("normalizeSkillPlanName(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestCompareSkillPlanRequirements(t *testing.T) {
+	plan := model.SkillPlan{ID: 7, Title: "Logistics Core"}
+	skills := []model.SkillPlanSkill{
+		{SkillPlanID: 7, SkillTypeID: 3300, RequiredLevel: 5},
+		{SkillPlanID: 7, SkillTypeID: 3301, RequiredLevel: 4},
+	}
+	typeInfoMap := map[int]repository.TypeInfo{
+		3300: {TypeID: 3300, TypeName: "Shield Emission Systems", GroupName: "Engineering"},
+		3301: {TypeID: 3301, TypeName: "Logistics Cruisers", GroupName: "Spaceship Command"},
+	}
+	levelMap := map[int]int{
+		3300: 5,
+		3301: 2,
+	}
+
+	got := compareSkillPlanRequirements(plan, skills, typeInfoMap, levelMap)
+	if got.PlanID != 7 || got.PlanTitle != "Logistics Core" {
+		t.Fatalf("unexpected plan identity: %+v", got)
+	}
+	if got.MatchedSkills != 1 || got.TotalSkills != 2 {
+		t.Fatalf("expected 1/2 matched, got %d/%d", got.MatchedSkills, got.TotalSkills)
+	}
+	if got.FullySatisfied {
+		t.Fatal("expected plan to be incomplete")
+	}
+	if len(got.MissingSkills) != 1 {
+		t.Fatalf("expected 1 missing skill, got %d", len(got.MissingSkills))
+	}
+
+	missing := got.MissingSkills[0]
+	if missing.SkillTypeID != 3301 || missing.SkillName != "Logistics Cruisers" {
+		t.Fatalf("unexpected missing skill identity: %+v", missing)
+	}
+	if missing.RequiredLevel != 4 || missing.CurrentLevel != 2 {
+		t.Fatalf("unexpected missing skill levels: %+v", missing)
 	}
 }
 

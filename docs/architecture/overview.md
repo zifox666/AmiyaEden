@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-21
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/model/menu.go
@@ -19,6 +19,7 @@ source_of_truth:
 - RBAC 角色、菜单、按钮权限
 - 动态菜单与动态路由
 - 舰队、PAP、舰队配置、自动 SRP 模式
+- 技能规划、军团技能计划与完成度检查
 - EVE 角色信息查询与 NPC 刷怪报表
 - SRP 价格、申请、审核、发放
 - 系统钱包、商店
@@ -64,17 +65,23 @@ source_of_truth:
 
 - Dashboard
 - Operation
+- SkillPlanning
 - EveInfo
 - SRP
 - Shop
 - System
-- Result
 
-这些模块同时存在于：
+这些业务模块通常同时存在于：
 
-- 后端路由分组
+- 后端路由注册点
 - 菜单种子
 - 前端路由模块或后端菜单模式
+
+### 辅助路由模块
+
+- Result
+
+这类模块主要承担前端结果页或辅助导航职责，可能只存在于菜单种子与前端路由层，不一定对应独立的后端业务路由分组。
 
 ## 关键不变量
 

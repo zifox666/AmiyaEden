@@ -64,6 +64,13 @@ func (r *SkillPlanRepository) List(page, pageSize int, keyword string) ([]model.
 	return plans, total, nil
 }
 
+// ListAll 获取全部技能计划
+func (r *SkillPlanRepository) ListAll() ([]model.SkillPlan, error) {
+	var plans []model.SkillPlan
+	err := global.DB.Order("updated_at DESC, id DESC").Find(&plans).Error
+	return plans, err
+}
+
 // Update 更新技能计划及技能要求
 func (r *SkillPlanRepository) Update(plan *model.SkillPlan, skills []model.SkillPlanSkill) error {
 	tx := global.DB.Begin()
@@ -123,4 +130,44 @@ func (r *SkillPlanRepository) ListSkillsByPlanIDs(planIDs []uint) ([]model.Skill
 	}
 	err := global.DB.Where("skill_plan_id IN ?", planIDs).Order("sort ASC, id ASC").Find(&skills).Error
 	return skills, err
+}
+
+// ListCheckCharacterIDsByUserID 获取用户保存的技能检查角色
+func (r *SkillPlanRepository) ListCheckCharacterIDsByUserID(userID uint) ([]int64, error) {
+	var rows []model.SkillPlanCheckCharacter
+	if err := global.DB.Where("user_id = ?", userID).Order("id ASC").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]int64, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, row.CharacterID)
+	}
+	return result, nil
+}
+
+// ReplaceCheckCharacters 替换用户保存的技能检查角色
+func (r *SkillPlanRepository) ReplaceCheckCharacters(userID uint, characterIDs []int64) error {
+	tx := global.DB.Begin()
+
+	if err := tx.Where("user_id = ?", userID).Delete(&model.SkillPlanCheckCharacter{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if len(characterIDs) > 0 {
+		rows := make([]model.SkillPlanCheckCharacter, 0, len(characterIDs))
+		for _, characterID := range characterIDs {
+			rows = append(rows, model.SkillPlanCheckCharacter{
+				UserID:      userID,
+				CharacterID: characterID,
+			})
+		}
+		if err := tx.Create(&rows).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
 }

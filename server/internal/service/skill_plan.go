@@ -13,14 +13,18 @@ import (
 
 // SkillPlanService 军团技能计划业务逻辑层
 type SkillPlanService struct {
-	repo    *repository.SkillPlanRepository
-	sdeRepo *repository.SdeRepository
+	repo      *repository.SkillPlanRepository
+	sdeRepo   *repository.SdeRepository
+	charRepo  *repository.EveCharacterRepository
+	skillRepo *repository.EveSkillRepository
 }
 
 func NewSkillPlanService() *SkillPlanService {
 	return &SkillPlanService{
-		repo:    repository.NewSkillPlanRepository(),
-		sdeRepo: repository.NewSdeRepository(),
+		repo:      repository.NewSkillPlanRepository(),
+		sdeRepo:   repository.NewSdeRepository(),
+		charRepo:  repository.NewEveCharacterRepository(),
+		skillRepo: repository.NewEveSkillRepository(),
 	}
 }
 
@@ -34,6 +38,7 @@ type SkillPlanSkillReq struct {
 type CreateSkillPlanRequest struct {
 	Title       string              `json:"title" binding:"required"`
 	Description string              `json:"description"`
+	ShipTypeID  *int                `json:"ship_type_id"`
 	Skills      []SkillPlanSkillReq `json:"skills"`
 	SkillsText  string              `json:"skills_text"`
 }
@@ -42,6 +47,7 @@ type CreateSkillPlanRequest struct {
 type UpdateSkillPlanRequest struct {
 	Title       string              `json:"title" binding:"required"`
 	Description string              `json:"description"`
+	ShipTypeID  *int                `json:"ship_type_id"`
 	Skills      []SkillPlanSkillReq `json:"skills"`
 	SkillsText  string              `json:"skills_text"`
 }
@@ -51,6 +57,7 @@ type SkillPlanListItemResp struct {
 	ID          uint   `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	ShipTypeID  *int   `json:"ship_type_id"`
 	CreatedBy   uint   `json:"created_by"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
@@ -73,11 +80,59 @@ type SkillPlanDetailResp struct {
 	ID          uint                 `json:"id"`
 	Title       string               `json:"title"`
 	Description string               `json:"description"`
+	ShipTypeID  *int                 `json:"ship_type_id"`
+	ShipName    string               `json:"ship_name"`
 	CreatedBy   uint                 `json:"created_by"`
 	CreatedAt   string               `json:"created_at"`
 	UpdatedAt   string               `json:"updated_at"`
 	SkillCount  int                  `json:"skill_count"`
 	Skills      []SkillPlanSkillResp `json:"skills"`
+}
+
+type SkillPlanCheckSelectionRequest struct {
+	CharacterIDs []int64 `json:"character_ids"`
+}
+
+type SkillPlanCheckSelectionResp struct {
+	CharacterIDs []int64 `json:"character_ids"`
+}
+
+type RunSkillPlanCheckRequest struct {
+	CharacterIDs []int64 `json:"character_ids"`
+	Language     string  `json:"language"`
+}
+
+type SkillPlanCheckMissingSkillResp struct {
+	SkillTypeID   int    `json:"skill_type_id"`
+	SkillName     string `json:"skill_name"`
+	GroupName     string `json:"group_name"`
+	RequiredLevel int    `json:"required_level"`
+	CurrentLevel  int    `json:"current_level"`
+}
+
+type SkillPlanCheckPlanResp struct {
+	PlanID          uint                             `json:"plan_id"`
+	PlanTitle       string                           `json:"plan_title"`
+	PlanDescription string                           `json:"plan_description"`
+	ShipTypeID      *int                             `json:"ship_type_id"`
+	MatchedSkills   int                              `json:"matched_skills"`
+	TotalSkills     int                              `json:"total_skills"`
+	FullySatisfied  bool                             `json:"fully_satisfied"`
+	MissingSkills   []SkillPlanCheckMissingSkillResp `json:"missing_skills"`
+}
+
+type SkillPlanCheckCharacterResp struct {
+	CharacterID    int64                    `json:"character_id"`
+	CharacterName  string                   `json:"character_name"`
+	PortraitURL    string                   `json:"portrait_url"`
+	CompletedPlans int                      `json:"completed_plans"`
+	TotalPlans     int                      `json:"total_plans"`
+	Plans          []SkillPlanCheckPlanResp `json:"plans"`
+}
+
+type SkillPlanCheckResultResp struct {
+	Characters []SkillPlanCheckCharacterResp `json:"characters"`
+	PlanCount  int                           `json:"plan_count"`
 }
 
 // CreateSkillPlan 创建技能计划
@@ -96,6 +151,7 @@ func (s *SkillPlanService) CreateSkillPlan(userID uint, req *CreateSkillPlanRequ
 	plan := &model.SkillPlan{
 		Title:       title,
 		Description: description,
+		ShipTypeID:  normalizeOptionalSkillPlanShipTypeID(req.ShipTypeID),
 		CreatedBy:   userID,
 	}
 	skills := buildSkillPlanModels(normalizedSkills)
@@ -147,6 +203,7 @@ func (s *SkillPlanService) ListSkillPlans(page, pageSize int, keyword string) ([
 			ID:          plan.ID,
 			Title:       plan.Title,
 			Description: plan.Description,
+			ShipTypeID:  plan.ShipTypeID,
 			CreatedBy:   plan.CreatedBy,
 			CreatedAt:   plan.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:   plan.UpdatedAt.Format(time.RFC3339),
@@ -194,6 +251,7 @@ func (s *SkillPlanService) UpdateSkillPlan(id uint, userID uint, userRoles []str
 
 	plan.Title = title
 	plan.Description = description
+	plan.ShipTypeID = normalizeOptionalSkillPlanShipTypeID(req.ShipTypeID)
 
 	skills := buildSkillPlanModels(normalizedSkills)
 	if err := s.repo.Update(plan, skills); err != nil {
@@ -218,6 +276,155 @@ func (s *SkillPlanService) DeleteSkillPlan(id uint, userID uint, userRoles []str
 		return errors.New("权限不足")
 	}
 	return s.repo.Delete(id)
+}
+
+func (s *SkillPlanService) GetCheckSelection(userID uint) (*SkillPlanCheckSelectionResp, error) {
+	owned, err := s.charRepo.ListByUserID(userID)
+	if err != nil {
+		return nil, errors.New("获取角色列表失败")
+	}
+
+	ownedSet := make(map[int64]struct{}, len(owned))
+	for _, char := range owned {
+		ownedSet[char.CharacterID] = struct{}{}
+	}
+
+	selectedIDs, err := s.repo.ListCheckCharacterIDsByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := make([]int64, 0, len(selectedIDs))
+	changed := false
+	for _, characterID := range selectedIDs {
+		if _, ok := ownedSet[characterID]; !ok {
+			changed = true
+			continue
+		}
+		filtered = append(filtered, characterID)
+	}
+
+	if changed {
+		if err := s.repo.ReplaceCheckCharacters(userID, filtered); err != nil {
+			return nil, err
+		}
+	}
+
+	return &SkillPlanCheckSelectionResp{CharacterIDs: filtered}, nil
+}
+
+func (s *SkillPlanService) SaveCheckSelection(userID uint, req *SkillPlanCheckSelectionRequest) (*SkillPlanCheckSelectionResp, error) {
+	characterIDs, err := s.validateAndNormalizeOwnedCharacterIDs(userID, req.CharacterIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.repo.ReplaceCheckCharacters(userID, characterIDs); err != nil {
+		return nil, err
+	}
+
+	return &SkillPlanCheckSelectionResp{CharacterIDs: characterIDs}, nil
+}
+
+func (s *SkillPlanService) RunCompletionCheck(userID uint, req *RunSkillPlanCheckRequest) (*SkillPlanCheckResultResp, error) {
+	lang := req.Language
+	if lang == "" {
+		lang = "zh"
+	}
+
+	characterIDs := req.CharacterIDs
+	var err error
+	if len(characterIDs) == 0 {
+		selection, selectionErr := s.GetCheckSelection(userID)
+		if selectionErr != nil {
+			return nil, selectionErr
+		}
+		characterIDs = selection.CharacterIDs
+	} else {
+		characterIDs, err = s.validateAndNormalizeOwnedCharacterIDs(userID, characterIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(characterIDs) == 0 {
+		return nil, errors.New("请先选择至少一个角色")
+	}
+
+	characters, err := s.charRepo.ListByCharacterIDs(characterIDs)
+	if err != nil {
+		return nil, errors.New("获取角色信息失败")
+	}
+
+	characterMap := make(map[int64]model.EveCharacter, len(characters))
+	for _, char := range characters {
+		characterMap[char.CharacterID] = char
+	}
+
+	plans, err := s.repo.ListAll()
+	if err != nil {
+		return nil, err
+	}
+
+	planIDs := make([]uint, 0, len(plans))
+	for _, plan := range plans {
+		planIDs = append(planIDs, plan.ID)
+	}
+
+	planSkills, err := s.repo.ListSkillsByPlanIDs(planIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	planSkillsMap := make(map[uint][]model.SkillPlanSkill, len(planIDs))
+	for _, skill := range planSkills {
+		planSkillsMap[skill.SkillPlanID] = append(planSkillsMap[skill.SkillPlanID], skill)
+	}
+
+	allSkillRequirements := make([]model.SkillPlanSkill, 0, len(planSkills))
+	allSkillRequirements = append(allSkillRequirements, planSkills...)
+	typeInfoMap, err := s.loadSkillTypeInfoMap(allSkillRequirements, lang)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &SkillPlanCheckResultResp{
+		Characters: make([]SkillPlanCheckCharacterResp, 0, len(characterIDs)),
+		PlanCount:  len(plans),
+	}
+
+	for _, characterID := range characterIDs {
+		char, ok := characterMap[characterID]
+		if !ok {
+			continue
+		}
+
+		skills, err := s.skillRepo.GetSkillList(int(characterID))
+		if err != nil {
+			return nil, errors.New("获取角色技能数据失败")
+		}
+
+		levelMap := buildCharacterSkillLevelMap(skills)
+		charResp := SkillPlanCheckCharacterResp{
+			CharacterID:   characterID,
+			CharacterName: char.CharacterName,
+			PortraitURL:   char.PortraitURL,
+			Plans:         make([]SkillPlanCheckPlanResp, 0, len(plans)),
+			TotalPlans:    len(plans),
+		}
+
+		for _, plan := range plans {
+			planResp := compareSkillPlanRequirements(plan, planSkillsMap[plan.ID], typeInfoMap, levelMap)
+			charResp.Plans = append(charResp.Plans, planResp)
+			if planResp.FullySatisfied {
+				charResp.CompletedPlans++
+			}
+		}
+
+		result.Characters = append(result.Characters, charResp)
+	}
+
+	return result, nil
 }
 
 func validateSkillPlanPayload(title string, skills []SkillPlanSkillReq) error {
@@ -296,6 +503,45 @@ func normalizeSkillPlanRequirements(skills []SkillPlanSkillReq) []SkillPlanSkill
 	}
 
 	return result
+}
+
+func normalizeOptionalSkillPlanShipTypeID(shipTypeID *int) *int {
+	if shipTypeID == nil || *shipTypeID <= 0 {
+		return nil
+	}
+
+	normalized := *shipTypeID
+	return &normalized
+}
+
+func (s *SkillPlanService) validateAndNormalizeOwnedCharacterIDs(userID uint, characterIDs []int64) ([]int64, error) {
+	ownedChars, err := s.charRepo.ListByUserID(userID)
+	if err != nil {
+		return nil, errors.New("获取角色列表失败")
+	}
+
+	ownedSet := make(map[int64]struct{}, len(ownedChars))
+	for _, char := range ownedChars {
+		ownedSet[char.CharacterID] = struct{}{}
+	}
+
+	seen := make(map[int64]struct{}, len(characterIDs))
+	result := make([]int64, 0, len(characterIDs))
+	for _, characterID := range characterIDs {
+		if characterID <= 0 {
+			continue
+		}
+		if _, exists := seen[characterID]; exists {
+			continue
+		}
+		if _, ok := ownedSet[characterID]; !ok {
+			return nil, fmt.Errorf("角色 %d 不属于当前用户", characterID)
+		}
+		seen[characterID] = struct{}{}
+		result = append(result, characterID)
+	}
+
+	return result, nil
 }
 
 func (s *SkillPlanService) parseSkillPlanText(skillsText string, lang string) ([]SkillPlanSkillReq, error) {
@@ -473,6 +719,15 @@ func (s *SkillPlanService) buildDetailResp(plan *model.SkillPlan, skills []model
 		return nil, err
 	}
 
+	shipName := ""
+	if plan.ShipTypeID != nil && *plan.ShipTypeID > 0 {
+		shipTypeInfoMap, err := s.loadTypeInfoMap([]int{*plan.ShipTypeID}, lang)
+		if err != nil {
+			return nil, err
+		}
+		shipName = shipTypeInfoMap[*plan.ShipTypeID].TypeName
+	}
+
 	detailSkills := make([]SkillPlanSkillResp, 0, len(skills))
 	for _, skill := range skills {
 		typeInfo := typeInfoMap[skill.SkillTypeID]
@@ -491,6 +746,8 @@ func (s *SkillPlanService) buildDetailResp(plan *model.SkillPlan, skills []model
 		ID:          plan.ID,
 		Title:       plan.Title,
 		Description: plan.Description,
+		ShipTypeID:  plan.ShipTypeID,
+		ShipName:    shipName,
 		CreatedBy:   plan.CreatedBy,
 		CreatedAt:   plan.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   plan.UpdatedAt.Format(time.RFC3339),
@@ -500,13 +757,8 @@ func (s *SkillPlanService) buildDetailResp(plan *model.SkillPlan, skills []model
 }
 
 func (s *SkillPlanService) loadSkillTypeInfoMap(skills []model.SkillPlanSkill, lang string) (map[int]repository.TypeInfo, error) {
-	typeInfoMap := make(map[int]repository.TypeInfo, len(skills))
 	if len(skills) == 0 {
-		return typeInfoMap, nil
-	}
-
-	if lang == "" {
-		lang = "zh"
+		return map[int]repository.TypeInfo{}, nil
 	}
 
 	skillIDs := make([]int, 0, len(skills))
@@ -519,8 +771,21 @@ func (s *SkillPlanService) loadSkillTypeInfoMap(skills []model.SkillPlanSkill, l
 		skillIDs = append(skillIDs, skill.SkillTypeID)
 	}
 
+	return s.loadTypeInfoMap(skillIDs, lang)
+}
+
+func (s *SkillPlanService) loadTypeInfoMap(typeIDs []int, lang string) (map[int]repository.TypeInfo, error) {
+	typeInfoMap := make(map[int]repository.TypeInfo, len(typeIDs))
+	if len(typeIDs) == 0 {
+		return typeInfoMap, nil
+	}
+
+	if lang == "" {
+		lang = "zh"
+	}
+
 	published := true
-	typeInfos, err := s.sdeRepo.GetTypes(skillIDs, &published, lang)
+	typeInfos, err := s.sdeRepo.GetTypes(typeIDs, &published, lang)
 	if err != nil {
 		return nil, err
 	}
@@ -529,10 +794,10 @@ func (s *SkillPlanService) loadSkillTypeInfoMap(skills []model.SkillPlanSkill, l
 	}
 
 	missingIDs := make([]int, 0)
-	for _, skillID := range skillIDs {
-		info, ok := typeInfoMap[skillID]
+	for _, typeID := range typeIDs {
+		info, ok := typeInfoMap[typeID]
 		if !ok || info.TypeName == "" || info.GroupName == "" {
-			missingIDs = append(missingIDs, skillID)
+			missingIDs = append(missingIDs, typeID)
 		}
 	}
 
@@ -554,19 +819,67 @@ func (s *SkillPlanService) loadSkillTypeInfoMap(skills []model.SkillPlanSkill, l
 		}
 	}
 
-	for _, skillID := range skillIDs {
-		info := typeInfoMap[skillID]
+	for _, typeID := range typeIDs {
+		info := typeInfoMap[typeID]
 		if info.TypeID == 0 {
-			info.TypeID = skillID
+			info.TypeID = typeID
 		}
 		if info.TypeName == "" {
-			info.TypeName = fmt.Sprintf("Type %d", skillID)
+			info.TypeName = fmt.Sprintf("Type %d", typeID)
 		}
 		if info.GroupName == "" {
 			info.GroupName = "-"
 		}
-		typeInfoMap[skillID] = info
+		typeInfoMap[typeID] = info
 	}
 
 	return typeInfoMap, nil
+}
+
+func buildCharacterSkillLevelMap(skills []model.EveCharacterSkills) map[int]int {
+	result := make(map[int]int, len(skills))
+	for _, skill := range skills {
+		level := skill.ActiveLevel
+		if skill.TrainedLevel > level {
+			level = skill.TrainedLevel
+		}
+		result[skill.SkillID] = level
+	}
+	return result
+}
+
+func compareSkillPlanRequirements(
+	plan model.SkillPlan,
+	skills []model.SkillPlanSkill,
+	typeInfoMap map[int]repository.TypeInfo,
+	levelMap map[int]int,
+) SkillPlanCheckPlanResp {
+	resp := SkillPlanCheckPlanResp{
+		PlanID:          plan.ID,
+		PlanTitle:       plan.Title,
+		PlanDescription: plan.Description,
+		ShipTypeID:      plan.ShipTypeID,
+		TotalSkills:     len(skills),
+		MissingSkills:   make([]SkillPlanCheckMissingSkillResp, 0),
+	}
+
+	for _, skill := range skills {
+		currentLevel := levelMap[skill.SkillTypeID]
+		if currentLevel >= skill.RequiredLevel {
+			resp.MatchedSkills++
+			continue
+		}
+
+		typeInfo := typeInfoMap[skill.SkillTypeID]
+		resp.MissingSkills = append(resp.MissingSkills, SkillPlanCheckMissingSkillResp{
+			SkillTypeID:   skill.SkillTypeID,
+			SkillName:     typeInfo.TypeName,
+			GroupName:     typeInfo.GroupName,
+			RequiredLevel: skill.RequiredLevel,
+			CurrentLevel:  currentLevel,
+		})
+	}
+
+	resp.FullySatisfied = resp.MatchedSkills == resp.TotalSkills
+	return resp
 }

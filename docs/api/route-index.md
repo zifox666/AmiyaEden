@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-21
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -91,22 +91,20 @@ source_of_truth:
 | GET | `/operation/fleet-configs/:id/fittings/:fitting_id/items` | 装配物品 | `RequireRole(admin, fc, user)` |
 | PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(admin, fc)` |
 
+## Skill Planning
+
 ### Skill Plans
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/operation/skill-plans` | 技能计划列表 | `RequireRole(admin, fc)` |
-| GET | `/operation/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, fc)` |
-| POST | `/operation/skill-plans` | 创建技能计划 | `RequireRole(admin, fc)` |
-| PUT | `/operation/skill-plans/:id` | 更新技能计划 | `RequireRole(admin, fc)` |
-| DELETE | `/operation/skill-plans/:id` | 删除技能计划 | `RequireRole(admin, fc)` |
-
-### User Wallet
-
-| Method | Path | 说明 | 权限 |
-| --- | --- | --- | --- |
-| POST | `/operation/wallet/my` | 我的钱包 | Login |
-| POST | `/operation/wallet/my/transactions` | 我的钱包流水 | Login |
+| GET | `/skill-planning/skill-plans/check/selection` | 获取当前用户保存的完成度检查角色选择 | `RequireRole(admin, fc, user)` |
+| PUT | `/skill-planning/skill-plans/check/selection` | 保存当前用户的完成度检查角色选择 | `RequireRole(admin, fc, user)` |
+| POST | `/skill-planning/skill-plans/check/run` | 执行技能规划完成度检查 | `RequireRole(admin, fc, user)` |
+| GET | `/skill-planning/skill-plans` | 技能计划列表 | `RequireRole(admin, fc)` |
+| GET | `/skill-planning/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, fc)` |
+| POST | `/skill-planning/skill-plans` | 创建技能计划 | `RequireRole(admin, fc)` |
+| PUT | `/skill-planning/skill-plans/:id` | 更新技能计划 | `RequireRole(admin, fc)` |
+| DELETE | `/skill-planning/skill-plans/:id` | 删除技能计划 | `RequireRole(admin, fc)` |
 
 ## Info
 
@@ -130,6 +128,8 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
+| POST | `/shop/wallet/my` | 我的钱包 | Login |
+| POST | `/shop/wallet/my/transactions` | 我的钱包流水 | Login |
 | POST | `/shop/products` | 商品列表 | Login |
 | POST | `/shop/product/detail` | 商品详情 | Login |
 | POST | `/shop/buy` | 购买商品 | Login |
