@@ -37,6 +37,12 @@ jobs:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
 
+      - name: Setup pnpm
+        if: needs.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         if: needs.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
@@ -44,12 +50,6 @@ jobs:
           node-version: '24'
           cache: pnpm
           cache-dependency-path: static/pnpm-lock.yaml
-
-      - name: Setup pnpm
-        if: needs.changes.outputs.frontend == 'true'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install frontend dependencies
         if: needs.changes.outputs.frontend == 'true'
