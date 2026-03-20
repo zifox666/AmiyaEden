@@ -51,7 +51,9 @@
     "createdAt": "Created At",
     "logOutTips": "Do you want to log out?",
     "search": "Search",
-    "reset": "Reset"
+    "reset": "Reset",
+    "createSuccess": "Created successfully",
+    "updateSuccess": "Updated successfully"
   },
   "search": {
     "placeholder": "Search page",
@@ -1644,6 +1646,9 @@
     "allSatisfied": "All skills satisfied!",
     "selectAndCheck": "Select a skill plan and click check",
     "noCharacters": "No character data found",
-    "noDescription": "No description"
+    "noDescription": "No description",
+    "copyMissing": "Copy Missing Skills",
+    "copySuccess": "Copied to clipboard",
+    "copyEmpty": "No missing skills"
   }
 }

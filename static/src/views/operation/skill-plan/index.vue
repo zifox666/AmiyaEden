@@ -55,13 +55,23 @@
                 </div>
               </div>
             </div>
-            <ElTag :type="char.status === 'satisfied' ? 'success' : 'warning'" size="default">
-              {{
-                char.status === 'satisfied'
-                  ? $t('skillPlan.status.satisfied')
-                  : $t('skillPlan.status.unsatisfied')
-              }}
-            </ElTag>
+            <div class="flex items-center gap-2">
+              <ElButton
+                v-if="char.missing_skills && char.missing_skills.length > 0"
+                size="small"
+                :icon="CopyDocument"
+                @click="copyMissingSkills(char)"
+              >
+                {{ $t('skillPlan.copyMissing') }}
+              </ElButton>
+              <ElTag :type="char.status === 'satisfied' ? 'success' : 'warning'" size="default">
+                {{
+                  char.status === 'satisfied'
+                    ? $t('skillPlan.status.satisfied')
+                    : $t('skillPlan.status.unsatisfied')
+                }}
+              </ElTag>
+            </div>
           </div>
         </template>
 
@@ -117,12 +127,12 @@
     ElEmpty,
     ElMessage
   } from 'element-plus'
-  import { Search, Right } from '@element-plus/icons-vue'
+  import { Search, Right, CopyDocument } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'UserSkillPlan' })
 
-  const { locale } = useI18n()
+  const { t, locale } = useI18n()
 
   const planList = ref<Api.SkillPlan.SkillPlanDTO[]>([])
   const selectedPlanId = ref<number | ''>('')
@@ -141,6 +151,17 @@
 
   function onPlanChange() {
     checkResult.value = null
+  }
+
+  function copyMissingSkills(char: Api.SkillPlan.SkillCheckCharacterResult) {
+    if (!char.missing_skills || char.missing_skills.length === 0) {
+      ElMessage.info(t('skillPlan.copyEmpty'))
+      return
+    }
+    const text = char.missing_skills.map((ms) => `${ms.skill_name} ${ms.required_level}`).join('\n')
+    navigator.clipboard.writeText(text).then(() => {
+      ElMessage.success(t('skillPlan.copySuccess'))
+    })
   }
 
   async function doCheck() {
