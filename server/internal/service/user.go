@@ -41,20 +41,31 @@ func (s *UserService) GetUserByID(id uint) (*model.User, error) {
 	return s.repo.GetByID(id)
 }
 
-func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter) ([]model.User, int64, error) {
+func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter) ([]model.UserListItem, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 10
 	}
-	return s.repo.List(page, pageSize, filter)
+	users, total, err := s.repo.List(page, pageSize, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+	return s.buildUserListItems(users), total, nil
 }
 
-func (s *UserService) UpdateUserByAdmin(id uint, patch UserPatch) error {
+func (s *UserService) UpdateUserByAdmin(id uint, operatorRoles []string, patch UserPatch) error {
 	current, err := s.repo.GetByID(id)
 	if err != nil {
 		return errors.New("用户不存在")
+	}
+	targetRoles, err := s.roleRepo.GetUserRoleCodes(id)
+	if err != nil {
+		return err
+	}
+	if err := validateManageUserPermission(operatorRoles, targetRoles); err != nil {
+		return err
 	}
 	next, updates, err := buildUserPatchUpdates(current, patch, false)
 	if err != nil {
@@ -86,9 +97,16 @@ func (s *UserService) UpdateCurrentProfile(id uint, patch UserPatch) (*model.Use
 	return s.repo.GetByID(id)
 }
 
-func (s *UserService) DeleteUser(id uint) error {
+func (s *UserService) DeleteUser(id uint, operatorRoles []string) error {
 	if _, err := s.repo.GetByID(id); err != nil {
 		return errors.New("用户不存在")
+	}
+	targetRoles, err := s.roleRepo.GetUserRoleCodes(id)
+	if err != nil {
+		return err
+	}
+	if err := validateManageUserPermission(operatorRoles, targetRoles); err != nil {
+		return err
 	}
 	return s.repo.Delete(id)
 }
@@ -202,4 +220,36 @@ func isDigitsOnly(value string) bool {
 		}
 	}
 	return value != ""
+}
+
+func validateManageUserPermission(operatorRoles, targetRoles []string) error {
+	if model.IsSuperAdmin(operatorRoles) {
+		return nil
+	}
+	if model.ContainsAnyRole(targetRoles, model.RoleSuperAdmin, model.RoleAdmin) {
+		return errors.New("管理员不能编辑或删除超级管理员或其他管理员")
+	}
+	return nil
+}
+
+func (s *UserService) buildUserListItems(users []model.User) []model.UserListItem {
+	if len(users) == 0 {
+		return []model.UserListItem{}
+	}
+
+	userIDs := make([]uint, 0, len(users))
+	for _, user := range users {
+		userIDs = append(userIDs, user.ID)
+	}
+
+	roleCodesByUserID, err := s.roleRepo.GetUserRoleCodesByUserIDs(userIDs)
+	if err != nil {
+		roleCodesByUserID = map[uint][]string{}
+	}
+
+	items := make([]model.UserListItem, 0, len(users))
+	for _, user := range users {
+		items = append(items, model.NewUserListItem(user, roleCodesByUserID[user.ID]))
+	}
+	return items
 }

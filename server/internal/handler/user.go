@@ -78,7 +78,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
-	if err := h.svc.UpdateUserByAdmin(uint(id), service.UserPatch{
+	operatorRoles := middleware.GetUserRoles(c)
+	if err := h.svc.UpdateUserByAdmin(uint(id), operatorRoles, service.UserPatch{
 		Nickname:  req.Nickname,
 		QQ:        req.QQ,
 		DiscordID: req.DiscordID,
@@ -96,7 +97,8 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "无效的用户ID")
 		return
 	}
-	if err := h.svc.DeleteUser(uint(id)); err != nil {
+	operatorRoles := middleware.GetUserRoles(c)
+	if err := h.svc.DeleteUser(uint(id), operatorRoles); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}

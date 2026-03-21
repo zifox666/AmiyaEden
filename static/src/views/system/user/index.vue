@@ -34,12 +34,18 @@
   import { useI18n } from 'vue-i18n'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetUserList, fetchDeleteUser, fetchImpersonateUser } from '@/api/system-manage'
+  import {
+    fetchGetUserList,
+    fetchDeleteUser,
+    fetchImpersonateUser,
+    fetchGetAllRoles,
+    fetchGetUserRoles
+  } from '@/api/system-manage'
   import { fetchGetUserInfo } from '@/api/auth'
   import { useUserStore } from '@/store/modules/user'
   import UserSearch from './modules/user-search.vue'
   import UserRoleDialog from './modules/user-role-dialog.vue'
-  import { ElTag, ElMessageBox, ElAvatar } from 'element-plus'
+  import { ElTag, ElMessage, ElMessageBox, ElAvatar } from 'element-plus'
 
   defineOptions({ name: 'User' })
   const { t } = useI18n()
@@ -61,12 +67,24 @@
     status: undefined
   })
 
+  const DEFAULT_ROLE_PRIORITY: Record<string, number> = {
+    super_admin: 100,
+    admin: 90,
+    srp: 80,
+    fc: 70,
+    user: 10,
+    guest: 0
+  }
+  const rolePriorityMap = ref<Record<string, number>>({ ...DEFAULT_ROLE_PRIORITY })
+  const rolePriorityLoaded = ref(false)
+  let roleHydrationVersion = 0
+
   // 角色显示配置
   const ROLE_CONFIG: Record<string, { type: string; text: string }> = {
     super_admin: { type: 'danger', text: t('userAdmin.roles.super_admin') },
     admin: { type: 'warning', text: t('userAdmin.roles.admin') },
     srp: { type: 'success', text: t('userAdmin.roles.srp') },
-    fc: { type: 'warning', text: 'FC' },
+    fc: { type: 'warning', text: t('userAdmin.roles.fc') },
     user: { type: 'success', text: t('userAdmin.roles.user') },
     guest: { type: 'info', text: t('userAdmin.roles.guest') }
   }
@@ -80,6 +98,88 @@
   const getRoleConfig = (role: string) => ROLE_CONFIG[role] || { type: 'info', text: role }
   const getStatusConfig = (status: number) =>
     STATUS_CONFIG[status] || { type: 'info', text: t('userAdmin.status.unknown') }
+  const getRolePriority = (role: string) =>
+    rolePriorityMap.value[role] ?? DEFAULT_ROLE_PRIORITY[role] ?? -1
+  const sortRoles = (roles: string[]) =>
+    [...new Set(roles)].sort((a, b) => {
+      const diff = getRolePriority(b) - getRolePriority(a)
+      return diff !== 0 ? diff : a.localeCompare(b)
+    })
+  const getDisplayRoles = (row: UserListItem) => {
+    const sortedRoles = sortRoles(row.roles ?? [])
+    return sortedRoles.length > 0 ? sortedRoles : ['guest']
+  }
+  const getContactEntries = (row: UserListItem) => {
+    const contacts = [
+      row.qq
+        ? {
+            label: t('characters.profile.qq'),
+            value: row.qq
+          }
+        : null,
+      row.discord_id
+        ? {
+            label: t('characters.profile.discordId'),
+            value: row.discord_id
+          }
+        : null
+    ]
+
+    return contacts.filter((entry): entry is { label: string; value: string } => entry !== null)
+  }
+  const isProtectedUser = (row: UserListItem) =>
+    getDisplayRoles(row).some((role) => ['super_admin', 'admin'].includes(role))
+  const canEditUser = (row: UserListItem) => isSuperAdmin.value || !isProtectedUser(row)
+  const canDeleteUser = (row: UserListItem) => isSuperAdmin.value || !isProtectedUser(row)
+
+  const ensureRolePriorityMap = async () => {
+    if (rolePriorityLoaded.value) return
+    try {
+      const allRoles = await fetchGetAllRoles()
+      rolePriorityMap.value = allRoles.reduce<Record<string, number>>(
+        (acc, role) => {
+          acc[role.code] = role.sort
+          return acc
+        },
+        { ...DEFAULT_ROLE_PRIORITY }
+      )
+    } catch (error) {
+      console.error('Failed to load role priorities', error)
+      rolePriorityMap.value = { ...DEFAULT_ROLE_PRIORITY }
+    } finally {
+      rolePriorityLoaded.value = true
+    }
+  }
+
+  const hydrateUserRoles = async (rows: UserListItem[]) => {
+    if (rows.length === 0) return
+
+    const hydrationVersion = ++roleHydrationVersion
+    await ensureRolePriorityMap()
+
+    const hydratedRows = await Promise.all(
+      rows.map(async (row) => {
+        try {
+          const userRoles = await fetchGetUserRoles(row.id)
+          const roles = sortRoles(userRoles.map((role) => role.code))
+          return {
+            ...row,
+            roles: roles.length > 0 ? roles : ['guest']
+          }
+        } catch (error) {
+          const roles = getDisplayRoles(row)
+          console.error(`Failed to load roles for user ${row.id}`, error)
+          return {
+            ...row,
+            roles
+          }
+        }
+      })
+    )
+
+    if (hydrationVersion !== roleHydrationVersion) return
+    data.value = hydratedRows
+  }
 
   const {
     columns,
@@ -122,12 +222,38 @@
           }
         },
         {
-          prop: 'role',
+          prop: 'roles',
           label: t('common.role'),
-          width: 140,
+          width: 220,
           formatter: (row) => {
-            const cfg = getRoleConfig(row.role)
-            return h(ElTag, { type: cfg.type as any, size: 'small' }, () => cfg.text)
+            return h(
+              'div',
+              { class: 'flex flex-wrap gap-1' },
+              getDisplayRoles(row).map((role) => {
+                const cfg = getRoleConfig(role)
+                return h(ElTag, { type: cfg.type as any, size: 'small' }, () => cfg.text)
+              })
+            )
+          }
+        },
+        {
+          prop: 'contact',
+          label: t('userAdmin.table.contact'),
+          width: 220,
+          formatter: (row) => {
+            const contacts = getContactEntries(row)
+            if (contacts.length === 0) return '-'
+
+            return h(
+              'div',
+              { class: 'flex flex-col gap-1 text-xs' },
+              contacts.map((contact) =>
+                h('div', { class: 'leading-5' }, [
+                  h('span', { class: 'text-gray-500' }, `${contact.label}: `),
+                  h('span', { class: 'font-medium text-gray-700' }, contact.value)
+                ])
+              )
+            )
           }
         },
         {
@@ -172,17 +298,34 @@
                   title: t('userAdmin.impersonate'),
                   onClick: () => impersonateUser(row)
                 }),
-              h(ArtButtonTable, {
-                type: 'edit',
-                onClick: () => showRoleDialog(row)
-              }),
-              h(ArtButtonTable, {
-                type: 'delete',
-                onClick: () => deleteUser(row)
-              })
+              canEditUser(row) &&
+                h(ArtButtonTable, {
+                  type: 'edit',
+                  onClick: () => showRoleDialog(row)
+                }),
+              canDeleteUser(row) &&
+                h(ArtButtonTable, {
+                  type: 'delete',
+                  onClick: () => deleteUser(row)
+                })
             ])
         }
       ]
+    },
+    transform: {
+      dataTransformer: (rows) =>
+        rows.map((row) => {
+          const roles = getDisplayRoles(row as UserListItem)
+          return {
+            ...row,
+            roles
+          }
+        })
+    },
+    hooks: {
+      onSuccess: (rows) => {
+        void hydrateUserRoles(rows as UserListItem[])
+      }
     }
   })
 
@@ -194,6 +337,10 @@
 
   /** 打开角色编辑弹窗 */
   const showRoleDialog = (row: UserListItem): void => {
+    if (!canEditUser(row)) {
+      ElMessage.error(t('userAdmin.editProtectedDenied'))
+      return
+    }
     currentUserData.value = row
     nextTick(() => {
       dialogVisible.value = true
@@ -202,6 +349,10 @@
 
   /** 删除用户 */
   const deleteUser = (row: UserListItem): void => {
+    if (!canDeleteUser(row)) {
+      ElMessage.error(t('userAdmin.deleteProtectedDenied'))
+      return
+    }
     ElMessageBox.confirm(
       t('userAdmin.deleteConfirm', { name: row.nickname || row.id }),
       t('common.tips'),

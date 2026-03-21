@@ -89,6 +89,18 @@ func HasNonGuestRole(roleCodes []string) bool {
 	return false
 }
 
+// NormalizeRoleCodes returns active role codes ordered by priority, falling back
+// to the legacy single-role field when the association table is empty.
+func NormalizeRoleCodes(roleCodes []string, fallback string) []string {
+	if len(roleCodes) > 0 {
+		return roleCodes
+	}
+	if fallback != "" {
+		return []string{fallback}
+	}
+	return []string{RoleGuest}
+}
+
 // HasAnyRoleMatch 检查用户角色列表中是否有满足 requiredRole 的角色
 // 超级管理员拥有所有权限
 func HasAnyRoleMatch(userRoles []string, requiredRole string) bool {

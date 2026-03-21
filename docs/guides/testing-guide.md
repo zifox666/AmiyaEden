@@ -6,6 +6,7 @@ last_reviewed: 2026-03-21
 source_of_truth:
   - AGENTS.md
   - docs/standards/testing-and-verification.md
+  - docs/guides/regression-test-plan.md
   - server/go.mod
   - static/package.json
 ---
@@ -19,6 +20,8 @@ source_of_truth:
 - 测试通常写在哪
 - 什么时候该写 unit test，什么时候只做构建验证
 - 这个仓库目前适合怎样写测试
+
+如果你要规划“接下来该优先补哪些回归测试、分几阶段推进”，看 `docs/guides/regression-test-plan.md`。
 
 ## 当前测试落点
 

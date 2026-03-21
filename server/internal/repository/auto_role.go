@@ -124,6 +124,12 @@ func (r *AutoRoleRepository) ListAllCharacterCorpRoles() ([]model.EveCharacterCo
 	return roles, err
 }
 
+func (r *AutoRoleRepository) ListCharacterTitles(characterID int64) ([]model.EveCharacterTitle, error) {
+	var titles []model.EveCharacterTitle
+	err := global.DB.Where("character_id = ?", characterID).Find(&titles).Error
+	return titles, err
+}
+
 // ─── Corp Titles ───
 
 // CorpTitleInfo 军团头衔去重信息（用于前端下拉选择）

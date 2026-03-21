@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-21
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/model/menu.go
@@ -61,6 +61,11 @@ source_of_truth:
 - `/api/v1/sso/eve/*`
 - `/api/v1/me`
 
+说明：
+
+- SSO 成功后，用户先依赖 `/api/v1/me` 建立前端权限上下文
+- 当前有效 JWT 不等于“非 guest 产品用户”；guest onboarding 能力与 `RequireLoginUser()` 能力是分开的
+
 ### 业务模块
 
 - Dashboard
@@ -80,6 +85,7 @@ source_of_truth:
 ## 关键不变量
 
 - 当前产品认证主路径是 EVE SSO，不是用户名密码
+- `guest` 是已认证用户，但不是 `Login` 意义上的产品用户
 - 角色编码以 `server/internal/model/role.go` 为准
 - 菜单 / 按钮权限以 `server/internal/model/menu.go` 与 `/api/v1/menu/list` 为准
 - 前端支持 `frontend` 与 `backend` 两种菜单模式，修改时不能只改一边

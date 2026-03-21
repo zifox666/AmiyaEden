@@ -139,7 +139,7 @@ declare namespace Api {
     /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
-    /** 用户列表项（匹配后端 model.User） */
+    /** 用户列表项（匹配后端 model.UserListItem） */
     interface UserListItem {
       id: number
       nickname: string
@@ -147,7 +147,23 @@ declare namespace Api {
       discord_id: string
       avatar: string
       status: number // 1:正常 0:禁用
-      role: string // 历史兼容字段
+      roles: string[]
+      last_login_at: string | null
+      last_login_ip: string
+      created_at: string
+      updated_at: string
+    }
+
+    /** 用户详情（匹配后端 model.User） */
+    interface UserDetail {
+      id: number
+      nickname: string
+      qq: string
+      discord_id: string
+      avatar: string
+      status: number
+      role: string
+      primary_character_id: number
       last_login_at: string | null
       last_login_ip: string
       created_at: string
@@ -362,6 +378,7 @@ declare namespace Api {
       fc_user_id: number
       fc_character_id: number
       fc_character_name: string
+      fc_display_name?: string
       esi_fleet_id: number | null
       fleet_config_id: number | null
       auto_srp_mode: 'disabled' | 'submit_only' | 'auto_approve'

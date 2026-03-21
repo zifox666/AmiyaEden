@@ -102,7 +102,7 @@
       apiFn: fetchGetRoleList,
       apiParams: { current: 1, size: 20 },
       columnsFactory: () => [
-        { type: 'index', width: 60, label: '序号' },
+        { type: 'index', width: 60, label: '#' },
         {
           prop: 'code',
           label: '角色编码',

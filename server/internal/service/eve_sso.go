@@ -135,6 +135,29 @@ func NewEveSSOService() *EveSSOService {
 	}
 }
 
+func buildDefaultSSOUser(portraitURL string, primaryCharacterID int64, clientIP string, now time.Time) *model.User {
+	return &model.User{
+		Nickname:           "",
+		Avatar:             portraitURL,
+		Status:             1,
+		Role:               model.RoleGuest,
+		PrimaryCharacterID: primaryCharacterID,
+		LastLoginAt:        &now,
+		LastLoginIP:        clientIP,
+	}
+}
+
+func (s *EveSSOService) createDefaultSSOUser(ctx context.Context, portraitURL string, primaryCharacterID int64, clientIP string, now time.Time) (*model.User, error) {
+	user := buildDefaultSSOUser(portraitURL, primaryCharacterID, clientIP, now)
+	if err := s.userRepo.Create(user); err != nil {
+		return nil, err
+	}
+
+	// SSO 首次登录默认落为 guest；后续再由准入/人工授权提升为 user 或更高角色。
+	s.roleSvc.EnsureUserHasDefaultRole(ctx, user.ID)
+	return user, nil
+}
+
 // GetAuthURL 生成 EVE SSO 授权 URL，并将 state 存入 Redis
 //
 //	extraScopes: 额外需要的 scope，传 nil 则使用所有已注册 scope
@@ -277,21 +300,10 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		}
 
 		// ── 登录流程：首次登录，创建新用户 + 新角色 ──
-		user := &model.User{
-			Nickname:           "",
-			Avatar:             portraitURL,
-			Status:             1,
-			Role:               "user",
-			PrimaryCharacterID: characterID,
-			LastLoginAt:        &now,
-			LastLoginIP:        clientIP,
-		}
-		if err := s.userRepo.Create(user); err != nil {
+		user, err := s.createDefaultSSOUser(ctx, portraitURL, characterID, clientIP, now)
+		if err != nil {
 			return nil, err
 		}
-
-		// 确保新用户拥有默认角色（写入 user_roles 表）
-		s.roleSvc.EnsureUserHasDefaultRole(context.Background(), user.ID)
 
 		char = &model.EveCharacter{
 			CharacterID:   characterID,
@@ -423,7 +435,25 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	// 更新用户最后登录信息
 	user, err := s.userRepo.GetByID(char.UserID)
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+
+		oldUserID := char.UserID
+		user, err = s.createDefaultSSOUser(ctx, portraitURL, characterID, clientIP, now)
+		if err != nil {
+			return nil, err
+		}
+
+		char.UserID = user.ID
+		if err := s.charRepo.Update(char); err != nil {
+			return nil, err
+		}
+
+		global.Logger.Info("孤儿角色重新创建用户（登录流程）",
+			zap.Int64("characterID", characterID),
+			zap.Uint("oldUserID", oldUserID),
+			zap.Uint("newUserID", user.ID))
 	}
 	user.LastLoginAt = &now
 	user.LastLoginIP = clientIP

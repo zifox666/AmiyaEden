@@ -84,3 +84,45 @@ func TestBuildUserPatchUpdates(t *testing.T) {
 		}
 	})
 }
+
+func TestValidateManageUserPermission(t *testing.T) {
+	t.Run("super admin can manage admin users", func(t *testing.T) {
+		err := validateManageUserPermission(
+			[]string{model.RoleSuperAdmin},
+			[]string{model.RoleAdmin},
+		)
+		if err != nil {
+			t.Fatalf("expected super admin manage to pass, got %v", err)
+		}
+	})
+
+	t.Run("admin cannot edit super admin", func(t *testing.T) {
+		err := validateManageUserPermission(
+			[]string{model.RoleAdmin},
+			[]string{model.RoleSuperAdmin},
+		)
+		if err == nil || !strings.Contains(err.Error(), "不能编辑或删除") {
+			t.Fatalf("expected protected edit error, got %v", err)
+		}
+	})
+
+	t.Run("admin cannot edit another admin", func(t *testing.T) {
+		err := validateManageUserPermission(
+			[]string{model.RoleAdmin},
+			[]string{model.RoleAdmin, model.RoleUser},
+		)
+		if err == nil || !strings.Contains(err.Error(), "不能编辑或删除") {
+			t.Fatalf("expected peer admin edit to be blocked, got %v", err)
+		}
+	})
+
+	t.Run("admin can manage normal user", func(t *testing.T) {
+		err := validateManageUserPermission(
+			[]string{model.RoleAdmin},
+			[]string{model.RoleUser},
+		)
+		if err != nil {
+			t.Fatalf("expected normal user manage to pass, got %v", err)
+		}
+	})
+}

@@ -5,6 +5,7 @@ owner: engineering
 last_reviewed: 2026-03-21
 source_of_truth:
   - AGENTS.md
+  - docs/guides/regression-test-plan.md
   - server/go.mod
   - static/package.json
 ---
@@ -42,6 +43,7 @@ source_of_truth:
 - `static/src/types/import/auto-imports.d.ts` 与 `static/src/types/import/components.d.ts` 属于 frontend 自动导入的声明文件，当前默认作为仓库工件保留，以保证干净检出也能通过 lint / typecheck。
 - `static/.auto-import.json` 仅是本地开发辅助文件，不应作为 CI lint 的前置依赖。
 - 具体测试落点、命名与编写建议，见 `docs/guides/testing-guide.md`。
+- 项目级的渐进式回归测试落地计划，见 `docs/guides/regression-test-plan.md`。
 
 ## 必须遵守
 

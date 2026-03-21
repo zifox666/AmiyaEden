@@ -2,7 +2,7 @@
 status: active
 doc_type: index
 owner: engineering
-last_reviewed: 2026-03-21
+last_reviewed: 2026-03-22
 source_of_truth:
   - AGENTS.md
 ---
@@ -66,6 +66,25 @@ source_of_truth:
 - 不要在多个文件里重复维护同一份角色定义、路由表、权限矩阵。
 - 不要保留并行的“第二套文档入口”。
 - 仓库内允许存在少量模块级 `README.md` 作为局部实现说明，但它们不是 repo-level canonical doc，不能覆盖 `AGENTS.md` 与 `docs/`。
+
+如果变更属于高风险行为边界，必须把 caveat 明确写出来，不能只靠上下文暗示。
+
+典型场景：
+
+- 认证 / 鉴权边界
+- RBAC 角色提升规则
+- 自动权限映射的特殊分支
+- 兼容字段与当前权威字段的区别
+
+这类 caveat 至少要同时落在：
+
+- `docs/architecture/*.md`，说明系统规则
+- `docs/features/current/*.md`，说明模块当前行为
+
+当前如果变更数据库表、核心关系或历史兼容列，应同时更新：
+
+- `docs/architecture/database-schema.md`
+- 受影响的 architecture / api / feature 文档
 
 ## 推荐阅读顺序
 

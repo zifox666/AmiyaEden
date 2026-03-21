@@ -330,7 +330,7 @@ func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRoles 
 }
 
 // ListFleets 分页查询舰队列表
-func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFilter) ([]model.Fleet, int64, error) {
+func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFilter) ([]model.FleetListItem, int64, error) {
 	if page < 1 {
 		page = 1
 	}

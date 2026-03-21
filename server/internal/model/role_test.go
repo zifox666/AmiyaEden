@@ -23,3 +23,30 @@ func TestHasNonGuestRole(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeRoleCodes(t *testing.T) {
+	tests := []struct {
+		name     string
+		roles    []string
+		fallback string
+		want     []string
+	}{
+		{name: "keep active roles", roles: []string{RoleAdmin, RoleGuest}, fallback: RoleGuest, want: []string{RoleAdmin, RoleGuest}},
+		{name: "fallback to legacy role", roles: nil, fallback: RoleUser, want: []string{RoleUser}},
+		{name: "fallback to guest", roles: nil, fallback: "", want: []string{RoleGuest}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NormalizeRoleCodes(tt.roles, tt.fallback)
+			if len(got) != len(tt.want) {
+				t.Fatalf("expected %d roles, got %d (%v)", len(tt.want), len(got), got)
+			}
+			for i := range tt.want {
+				if got[i] != tt.want[i] {
+					t.Fatalf("expected role %q at %d, got %q", tt.want[i], i, got[i])
+				}
+			}
+		})
+	}
+}

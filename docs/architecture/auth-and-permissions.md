@@ -28,6 +28,14 @@ source_of_truth:
 - 角色列表
 - 按钮权限列表
 
+`guest` 角色当前仍是已认证用户，但不是 `RequireLoginUser` 意义上的产品用户。
+因此需要把 guest onboarding / self-service 能力单独挂在仅需 `JWTAuth()` 的路由上，而不是 `RequireLoginUser()`。
+
+文档上应把这两类边界区分开：
+
+- `JWT`：任意持有有效 JWT 的已认证用户，包含 `guest`
+- `Login`：任意已认证且非 `guest` 的产品用户
+
 ## 绑定角色能力
 
 登录后可继续管理绑定角色：
@@ -36,6 +44,8 @@ source_of_truth:
 - `GET /api/v1/sso/eve/bind`
 - `PUT /api/v1/sso/eve/primary/:character_id`
 - `DELETE /api/v1/sso/eve/characters/:character_id`
+
+这些接口与 `/api/v1/me` 一样，当前都属于 guest 可用的自助能力，权限边界应记为 `JWT`，不是 `Login`。
 
 ## 当前系统角色
 
@@ -81,6 +91,27 @@ source_of_truth:
 - 判断请求方是否至少拥有一个非 `guest` 角色
 - 用于实现 API 文档中的 `Login` 边界
 - 适合“任意产品用户可访问”的能力，不再用 `RequireRole(..., user)` 代替
+- 不适用于 SSO 首次登录后的 guest onboarding 页面，例如 `/me`、`/sso/eve/characters`、`/menu/list` 以及 guest 可访问的自助信息页
+
+### JWT-only 自助能力
+
+当前这类路由的共同点是：用户已经完成 SSO 并拿到平台 JWT，但还可能停留在 `guest`。
+
+典型例子：
+
+- `/api/v1/me`
+- `/api/v1/sso/eve/characters`
+- `/api/v1/sso/eve/bind`
+- `/api/v1/sso/eve/primary/:character_id`
+- `/api/v1/sso/eve/characters/:character_id`
+- `/api/v1/menu/list`
+- `/api/v1/info/*`
+
+这类接口主要用于：
+
+- 建立前端权限上下文
+- 完成角色绑定与主角色调整
+- 让 guest 在准入完成前仍能查看自己的基础信息或自助完成资料
 
 ### RequirePermission
 
@@ -129,5 +160,25 @@ source_of_truth:
 
 - 当前产品不是用户名 / 密码登录系统
 - 角色编码以代码常量为准，不以文档中文称呼为准
+- `allow_corporations` 的基线准入当前以主角色军团为准，不再按任意绑定角色放行
+- 自动补 `admin` 的内置快捷规则当前仅接受允许军团中的 ESI corp role `Director`
+- corp title 只参与显式 title mapping，不会因为标题名为 `Director` 就自动抬升为 `admin`
+- 用户删除当前不是纯路由级能力：即使请求方拥有 `admin`，后端仍会阻止其删除 `super_admin` 或其他 `admin`
+- 用户编辑当前也不是纯路由级能力：即使请求方拥有 `admin`，后端仍会阻止其编辑 `super_admin` 或其他 `admin`，且仅 `super_admin` 可分配 `admin/super_admin`
+- 管理员用户列表 `/api/v1/system/user` 的角色展示与接口契约当前只认 `roles[]`，不应再依赖历史单值 `role`
 - 细粒度权限不能只靠前端控制
 - 旧兼容文档不能重新定义角色体系
+
+## 重要 Caveat
+
+### Auto-role Director Signal
+
+自动权限映射里的 `Director -> admin` 内置快捷规则，使用的是 ESI corporation role 信号，不是 title 文本匹配。
+
+因此：
+
+- 真实判断输入来自 `eve_character_corp_role`
+- `Director` 只是 corp title 名称时，不应被当作管理员快捷信号
+- corp title 仍然可以通过 `esi_title_mapping` 参与显式映射，但那是配置行为，不是内置特判
+
+这个区别是权限边界的一部分，文档和实现都必须保持一致。

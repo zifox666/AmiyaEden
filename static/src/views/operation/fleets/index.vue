@@ -232,7 +232,8 @@
           prop: 'fc_character_name',
           label: t('fleet.fields.fc'),
           width: 160,
-          showOverflowTooltip: true
+          showOverflowTooltip: true,
+          formatter: (row: FleetItem) => row.fc_display_name || row.fc_character_name || '-'
         },
         {
           prop: 'pap_count',

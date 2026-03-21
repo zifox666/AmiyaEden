@@ -48,25 +48,39 @@ type FleetFilter struct {
 	FCUserID   *uint
 }
 
+func buildFleetListBaseQuery(db *gorm.DB, filter FleetFilter) *gorm.DB {
+	query := db.Model(&model.Fleet{}).Where("fleet.deleted_at IS NULL")
+
+	if filter.Importance != "" {
+		query = query.Where("importance = ?", filter.Importance)
+	}
+	if filter.FCUserID != nil {
+		query = query.Where("fc_user_id = ?", *filter.FCUserID)
+	}
+
+	return query
+}
+
+func buildFleetListSelectQuery(db *gorm.DB) *gorm.DB {
+	return db.
+		Select(`fleet.*,
+			COALESCE(NULLIF("user".nickname, ''), fleet.fc_character_name) AS fc_display_name`).
+		Joins(`LEFT JOIN "user" ON "user".id = fleet.fc_user_id`)
+}
+
 // List 分页查询舰队列表
-func (r *FleetRepository) List(page, pageSize int, filter FleetFilter) ([]model.Fleet, int64, error) {
-	var fleets []model.Fleet
+func (r *FleetRepository) List(page, pageSize int, filter FleetFilter) ([]model.FleetListItem, int64, error) {
+	var fleets []model.FleetListItem
 	var total int64
 
 	offset := (page - 1) * pageSize
-	db := global.DB.Model(&model.Fleet{}).Where("deleted_at IS NULL")
-
-	if filter.Importance != "" {
-		db = db.Where("importance = ?", filter.Importance)
-	}
-	if filter.FCUserID != nil {
-		db = db.Where("fc_user_id = ?", *filter.FCUserID)
-	}
+	db := buildFleetListBaseQuery(global.DB, filter)
 
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	if err := db.Order("start_at DESC").Offset(offset).Limit(pageSize).Find(&fleets).Error; err != nil {
+	queryDB := buildFleetListSelectQuery(db)
+	if err := queryDB.Order("fleet.start_at DESC").Offset(offset).Limit(pageSize).Find(&fleets).Error; err != nil {
 		return nil, 0, err
 	}
 	return fleets, total, nil

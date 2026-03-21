@@ -4,7 +4,7 @@ export const infoRoutes: AppRouteRecord = {
   path: '/info',
   name: 'EveInfo',
   component: '/index/index',
-  meta: { title: 'menus.info.title', icon: 'ri:user-star-line', login: true },
+  meta: { title: 'menus.info.title', icon: 'ri:user-star-line' },
   children: [
     {
       path: 'wallet',

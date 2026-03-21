@@ -57,7 +57,7 @@ source_of_truth:
 
 ## 权限边界
 
-- 用户侧信息查询要求 `Login`
+- 用户侧信息查询要求有效 `JWT`，允许 `guest` 访问
 - 公司级 NPC 刷怪报表属于 `/system` 管理能力，要求 `admin`
 
 ## 关键不变量

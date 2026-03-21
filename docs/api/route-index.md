@@ -12,7 +12,10 @@ source_of_truth:
 ## 说明
 
 本文件只记录当前 `server/internal/router/router.go` 已注册的路由分组、路径与主要权限边界。
-权限列中的 `Login` 统一表示“任意已认证且非 `guest` 的产品用户可访问”。
+权限列说明：
+
+- `JWT`：任意持有有效 JWT 的已认证用户可访问，包含 `guest`
+- `Login`：任意已认证且非 `guest` 的产品用户可访问
 
 ## Public
 
@@ -37,18 +40,18 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/sso/eve/characters` | 当前用户绑定角色 | Login |
-| GET | `/sso/eve/bind` | 获取绑定新角色的 SSO 地址 | Login |
-| PUT | `/sso/eve/primary/:character_id` | 设为主角色 | Login |
-| DELETE | `/sso/eve/characters/:character_id` | 解绑角色 | Login |
-| GET | `/me` | 当前用户、角色、权限、绑定角色 | Login |
-| PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | Login |
-| POST | `/dashboard` | Dashboard 聚合数据 | Login |
-| POST | `/notification/list` | 通知列表 | Login |
-| POST | `/notification/unread-count` | 未读数 | Login |
+| GET | `/sso/eve/characters` | 当前用户绑定角色 | JWT |
+| GET | `/sso/eve/bind` | 获取绑定新角色的 SSO 地址 | JWT |
+| PUT | `/sso/eve/primary/:character_id` | 设为主角色 | JWT |
+| DELETE | `/sso/eve/characters/:character_id` | 解绑角色 | JWT |
+| GET | `/me` | 当前用户、角色、权限、绑定角色 | JWT |
+| PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | JWT |
+| POST | `/dashboard` | Dashboard 聚合数据 | JWT |
+| POST | `/notification/list` | 通知列表 | JWT |
+| POST | `/notification/unread-count` | 未读数 | JWT |
 | POST | `/notification/read` | 标记已读 | Login |
 | POST | `/notification/read-all` | 全部已读 | Login |
-| GET | `/menu/list` | 当前用户菜单树 | Login |
+| GET | `/menu/list` | 当前用户菜单树 | JWT |
 
 ## Operation
 
@@ -113,17 +116,17 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/info/wallet` | 钱包流水 | Login |
-| POST | `/info/skills` | 技能列表 | Login |
-| POST | `/info/ships` | 舰船列表 | Login |
-| POST | `/info/implants` | 植入体 | Login |
-| POST | `/info/assets` | 资产 | Login |
-| POST | `/info/contracts` | 合同列表 | Login |
-| POST | `/info/contracts/detail` | 合同详情 | Login |
-| POST | `/info/fittings` | 装配列表 | Login |
-| POST | `/info/fittings/save` | 保存装配 | Login |
-| POST | `/info/npc-kills` | 个人 NPC 刷怪报表 | Login |
-| POST | `/info/npc-kills/all` | 全部 NPC 刷怪报表 | Login |
+| POST | `/info/wallet` | 钱包流水 | JWT |
+| POST | `/info/skills` | 技能列表 | JWT |
+| POST | `/info/ships` | 舰船列表 | JWT |
+| POST | `/info/implants` | 植入体 | JWT |
+| POST | `/info/assets` | 资产 | JWT |
+| POST | `/info/contracts` | 合同列表 | JWT |
+| POST | `/info/contracts/detail` | 合同详情 | JWT |
+| POST | `/info/fittings` | 装配列表 | JWT |
+| POST | `/info/fittings/save` | 保存装配 | JWT |
+| POST | `/info/npc-kills` | 个人 NPC 刷怪报表 | JWT |
+| POST | `/info/npc-kills/all` | 全部 NPC 刷怪报表 | JWT |
 
 ## Shop
 
@@ -214,12 +217,12 @@ source_of_truth:
 | DELETE | `/system/role/:id` | 删除角色 | `RequireRole(admin)` |
 | GET | `/system/role/:id/menus` | 获取角色菜单 | `RequireRole(admin)` |
 | PUT | `/system/role/:id/menus` | 设置角色菜单 | `RequireRole(admin)` |
-| GET | `/system/user` | 用户列表 | `RequireRole(admin)` |
+| GET | `/system/user` | 用户列表；角色字段仅返回有序 `roles[]`，不再返回历史单值 `role` | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
-| PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态 | `RequireRole(admin)` |
-| DELETE | `/system/user/:id` | 删除用户 | `RequireRole(admin)` |
+| PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态；`admin` 不可编辑 `super_admin` 或其他 `admin` | `RequireRole(admin)` |
+| DELETE | `/system/user/:id` | 删除用户；`admin` 不可删除 `super_admin` 或其他 `admin` | `RequireRole(admin)` |
 | GET | `/system/user/:id/roles` | 获取用户角色 | `RequireRole(admin)` |
-| PUT | `/system/user/:id/roles` | 设置用户角色 | `RequireRole(admin)` |
+| PUT | `/system/user/:id/roles` | 设置用户角色；仅 `super_admin` 可编辑管理员账号或分配 `admin/super_admin` | `RequireRole(admin)` |
 | POST | `/system/user/:id/impersonate` | 模拟登录，需 `super_admin` | `RequireRole(admin)` + `super_admin` |
 
 ### System Wallet

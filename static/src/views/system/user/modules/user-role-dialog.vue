@@ -19,7 +19,7 @@
             v-for="role in allRoles"
             :key="role.id"
             :label="role.id"
-            :disabled="role.code === 'super_admin' && !isSuperAdmin"
+            :disabled="['super_admin', 'admin'].includes(role.code) && !isSuperAdmin"
           >
             {{ role.name }}
             <span v-if="role.is_system" class="text-xs text-gray-400 ml-1">

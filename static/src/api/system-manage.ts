@@ -11,7 +11,7 @@ export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
 }
 
 export function fetchGetUser(id: number) {
-  return request.get<Api.SystemManage.UserListItem>({
+  return request.get<Api.SystemManage.UserDetail>({
     url: `/api/v1/system/user/${id}`
   })
 }
@@ -33,7 +33,7 @@ export function fetchDeleteUser(id: number) {
 }
 
 export function fetchImpersonateUser(id: number) {
-  return request.post<{ token: string; user: Api.SystemManage.UserListItem }>({
+  return request.post<{ token: string; user: Api.SystemManage.UserDetail }>({
     url: `/api/v1/system/user/${id}/impersonate`
   })
 }

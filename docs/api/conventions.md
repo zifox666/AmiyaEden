@@ -19,10 +19,15 @@ source_of_truth:
 
 ## 认证方式
 
-需要登录的接口通过以下任一方式携带 JWT：
+需要认证的接口通过以下任一方式携带 JWT：
 
 - `Authorization: Bearer <token>`
 - `?token=<token>`
+
+说明：
+
+- 持有有效 JWT 的请求方可能仍是 `guest`
+- 只有显式标为 `Login` 的接口才要求“已认证且非 `guest`”， 如 `user` or `admin`
 
 ## 统一响应
 
@@ -78,15 +83,18 @@ source_of_truth:
 ## 权限标注规则
 
 - `Public`: 无需登录
+- `JWT`: 任意持有有效 JWT 的已认证用户都可访问，包含 `guest`
 - `Login`: 任意已认证且非 `guest` 的产品用户都可访问
 - `RequireRole(...)`: 只有显式列出的角色边界可访问
 - `RequirePermission(...)`: 只有显式列出的权限边界可访问
 
 说明：
 
+- 当真实边界是“只要 JWT 有效即可访问”时，统一写成 `JWT`
 - 不要用 `RequireRole(..., user)` 作为“任意登录用户”的文档缩写
 - 当真实含义是“所有非 guest 登录用户都能访问”时，统一写成 `Login`
 - 当真实边界是具体角色白名单时，继续写 `RequireRole(...)`
+- guest onboarding / self-service 路由如 `/me`、`/sso/eve/characters`、`/menu/list` 应明确标注为 `JWT`
 
 ## 禁止事项
 

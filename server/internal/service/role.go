@@ -248,15 +248,25 @@ func (s *RoleService) GetUserRoles(userID uint) ([]model.Role, error) {
 }
 
 func (s *RoleService) SetUserRoles(ctx context.Context, operatorRoles []string, userID uint, roleIDs []uint) error {
+	currentCodes, err := s.repo.GetUserRoleCodes(userID)
+	if err != nil {
+		return err
+	}
+
+	requestedCodes := make([]string, 0, len(roleIDs))
 	// 检查是否包含 super_admin 角色
 	for _, rid := range roleIDs {
 		role, err := s.repo.GetByID(rid)
 		if err != nil {
 			return fmt.Errorf("角色ID %d 不存在", rid)
 		}
+		requestedCodes = append(requestedCodes, role.Code)
 		if role.Code == model.RoleSuperAdmin && !model.IsSuperAdmin(operatorRoles) {
 			return errors.New("只有超级管理员可以分配该角色")
 		}
+	}
+	if err := validateSetUserRolesPermission(operatorRoles, currentCodes, requestedCodes); err != nil {
+		return err
 	}
 
 	if err := s.repo.SetUserRoles(userID, roleIDs); err != nil {
@@ -269,12 +279,25 @@ func (s *RoleService) SetUserRoles(ctx context.Context, operatorRoles []string, 
 	return nil
 }
 
+func validateSetUserRolesPermission(operatorRoles, currentCodes, requestedCodes []string) error {
+	if err := validateManageUserPermission(operatorRoles, currentCodes); err != nil {
+		return err
+	}
+	if model.IsSuperAdmin(operatorRoles) {
+		return nil
+	}
+	if model.ContainsAnyRole(requestedCodes, model.RoleAdmin, model.RoleSuperAdmin) {
+		return errors.New("只有超级管理员可以分配管理员角色")
+	}
+	return nil
+}
+
 // ─── 内部辅助 ───
 
 func (s *RoleService) SyncUserPrimaryRole(userID uint) {
 	codes, err := s.repo.GetUserRoleCodes(userID)
 	if err != nil || len(codes) == 0 {
-		_ = s.userRepo.UpdateRole(userID, model.RoleUser)
+		_ = s.userRepo.UpdateRole(userID, model.RoleGuest)
 		return
 	}
 	// 取第一个（已按 sort 排序）
@@ -467,7 +490,7 @@ func (s *RoleService) seedAdminMenus(nameToID map[string]uint) error {
 // 规则：
 //   - AllowCorporations 为空 → 不限制，直接返回
 //   - admin / super_admin → 不受影响
-//   - 至少有一个角色的 CorporationID 在允许列表内 → 确保拥有 user 角色（从 guest 升级）
+//   - 主角色的 CorporationID 在允许列表内 → 确保拥有 user 角色（从 guest 升级）
 //   - 没有符合条件的角色 → 降级为 guest（清除所有非高级角色）
 func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID uint) error {
 	allowCorps := global.Config.App.AllowCorporations
@@ -480,6 +503,11 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 		allowSet[id] = struct{}{}
 	}
 
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return err
+	}
+
 	// 查询该用户绑定的所有 EVE 角色
 	charRepo := repository.NewEveCharacterRepository()
 	chars, err := charRepo.ListByUserID(userID)
@@ -487,16 +515,8 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 		return err
 	}
 
-	// 检查是否有角色属于允许军团
-	hasAccess := false
-	for _, c := range chars {
-		if c.CorporationID != 0 {
-			if _, ok := allowSet[c.CorporationID]; ok {
-				hasAccess = true
-				break
-			}
-		}
-	}
+	// 检查主角色是否属于允许军团
+	hasAccess := hasAllowedPrimaryCharacter(user.PrimaryCharacterID, chars, allowSet)
 
 	// 获取用户当前拥有的角色
 	rollCodes, err := s.repo.GetUserRoleCodes(userID)
@@ -526,6 +546,7 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 			return err
 		}
 		s.InvalidateUserCache(ctx, userID)
+		s.SyncUserPrimaryRole(userID)
 		global.Logger.Info("[CorpCheck] 用户升级为 user",
 			zap.Uint("user_id", userID))
 	} else {
@@ -546,26 +567,32 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 			return err
 		}
 		s.InvalidateUserCache(ctx, userID)
+		s.SyncUserPrimaryRole(userID)
 		global.Logger.Info("[CorpCheck] 用户降级为 guest",
 			zap.Uint("user_id", userID))
 	}
 	return nil
 }
 
-// EnsureUserHasDefaultRole 确保用户拥有默认角色
-func (s *RoleService) EnsureUserHasDefaultRole(ctx context.Context, userID uint) {
+// EnsureUserHasRole 确保用户至少拥有指定角色（当用户还没有任何 user_role 记录时）
+func (s *RoleService) EnsureUserHasRole(ctx context.Context, userID uint, roleCode string) {
 	codes, err := s.repo.GetUserRoleCodes(userID)
 	if err != nil || len(codes) == 0 {
-		role, err := s.repo.GetByCode(model.RoleGuest)
+		role, err := s.repo.GetByCode(roleCode)
 		if err != nil {
-			global.Logger.Error("查找默认角色失败", zap.Error(err))
+			global.Logger.Error("查找角色失败", zap.String("role", roleCode), zap.Error(err))
 			return
 		}
 		if err := s.repo.AddUserRole(userID, role.ID); err != nil {
-			global.Logger.Error("分配默认角色失败", zap.Uint("userID", userID), zap.Error(err))
+			global.Logger.Error("分配角色失败", zap.Uint("userID", userID), zap.String("role", roleCode), zap.Error(err))
 		}
 		s.InvalidateUserCache(ctx, userID)
 	}
+}
+
+// EnsureUserHasDefaultRole 兼容旧接口，默认补 guest
+func (s *RoleService) EnsureUserHasDefaultRole(ctx context.Context, userID uint) {
+	s.EnsureUserHasRole(ctx, userID, model.RoleGuest)
 }
 
 // MigrateExistingUsers 将旧 User.Role 字段迁移到 user_role 表

@@ -39,7 +39,8 @@ func RegisterRoutes(r *gin.Engine) {
 	login := auth.Group("", middleware.RequireLoginUser())
 
 	// SSO 角色管理（绑定/解绑/设主角色）
-	ssoAuth := login.Group("/sso/eve")
+	// guest 也应可访问，用于完成初次登录后的角色管理与补充授权。
+	ssoAuth := auth.Group("/sso/eve")
 	{
 		// ssoAuth.GET("/scopes", ssoH.GetScopes)
 		ssoAuth.GET("/characters", ssoH.GetMyCharacters)
@@ -50,25 +51,28 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// ─── 当前用户 ───
 	meH := handler.NewMeHandler()
-	login.GET("/me", meH.GetMe)
-	login.PUT("/me", meH.UpdateMe)
+	auth.GET("/me", meH.GetMe)
+	auth.PUT("/me", meH.UpdateMe)
 
 	dashboardH := handler.NewDashboardHandler()
-	login.POST("/dashboard", dashboardH.GetDashboard)
+	auth.POST("/dashboard", dashboardH.GetDashboard)
 
 	// ─── 通知 ───
 	notifH := handler.NewNotificationHandler()
-	notification := login.Group("/notification")
+	notification := auth.Group("/notification")
 	{
 		notification.POST("/list", notifH.ListNotifications)
 		notification.POST("/unread-count", notifH.GetUnreadCount)
-		notification.POST("/read", notifH.MarkAsRead)
-		notification.POST("/read-all", notifH.MarkAllAsRead)
+	}
+	notificationWrite := login.Group("/notification")
+	{
+		notificationWrite.POST("/read", notifH.MarkAsRead)
+		notificationWrite.POST("/read-all", notifH.MarkAllAsRead)
 	}
 
 	// ─── 菜单 ───
 	menuH := handler.NewMenuHandler()
-	login.GET("/menu/list", menuH.GetMenuList) // 当前用户可用菜单
+	auth.GET("/menu/list", menuH.GetMenuList) // 当前用户可用菜单
 
 	// ─── 舰队 ───
 	fleetH := handler.NewFleetHandler()
@@ -154,7 +158,7 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// ─── EVE 角色信息 ───
 	infoH := handler.NewEveInfoHandler()
-	info := login.Group("/info")
+	info := auth.Group("/info")
 	{
 		info.POST("/wallet", infoH.GetWalletJournal)
 		info.POST("/skills", infoH.GetCharacterSkills)
