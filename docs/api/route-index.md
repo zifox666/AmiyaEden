@@ -12,6 +12,7 @@ source_of_truth:
 ## 说明
 
 本文件只记录当前 `server/internal/router/router.go` 已注册的路由分组、路径与主要权限边界。
+权限列中的 `Login` 统一表示“任意已认证且非 `guest` 的产品用户可访问”。
 
 ## Public
 
@@ -82,15 +83,15 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/operation/fleet-configs` | 配置列表 | `RequireRole(admin, fc, user)` |
-| GET | `/operation/fleet-configs/:id` | 配置详情 | `RequireRole(admin, fc, user)` |
-| GET | `/operation/fleet-configs/:id/eft` | 获取 EFT 文本 | `RequireRole(admin, fc, user)` |
+| GET | `/operation/fleet-configs` | 配置列表 | Login |
+| GET | `/operation/fleet-configs/:id` | 配置详情 | Login |
+| GET | `/operation/fleet-configs/:id/eft` | 获取 EFT 文本 | Login |
 | POST | `/operation/fleet-configs` | 创建配置 | `RequireRole(admin, fc)` |
 | PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(admin, fc)` |
 | DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(admin, fc)` |
 | POST | `/operation/fleet-configs/import-fitting` | 从角色装配导入 | `RequireRole(admin, fc)` |
-| POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | `RequireRole(admin, fc)` |
-| GET | `/operation/fleet-configs/:id/fittings/:fitting_id/items` | 装配物品 | `RequireRole(admin, fc, user)` |
+| POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | Login |
+| GET | `/operation/fleet-configs/:id/fittings/:fitting_id/items` | 装配物品 | Login |
 | PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(admin, fc)` |
 
 ## Skill Planning
@@ -99,9 +100,9 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/skill-planning/skill-plans/check/selection` | 获取当前用户保存的完成度检查角色选择 | `RequireRole(admin, fc, user)` |
-| PUT | `/skill-planning/skill-plans/check/selection` | 保存当前用户的完成度检查角色选择 | `RequireRole(admin, fc, user)` |
-| POST | `/skill-planning/skill-plans/check/run` | 执行技能规划完成度检查 | `RequireRole(admin, fc, user)` |
+| GET | `/skill-planning/skill-plans/check/selection` | 获取当前用户保存的完成度检查角色选择 | Login |
+| PUT | `/skill-planning/skill-plans/check/selection` | 保存当前用户的完成度检查角色选择 | Login |
+| POST | `/skill-planning/skill-plans/check/run` | 执行技能规划完成度检查 | Login |
 | GET | `/skill-planning/skill-plans` | 技能计划列表 | `RequireRole(admin, fc)` |
 | GET | `/skill-planning/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, fc)` |
 | POST | `/skill-planning/skill-plans` | 创建技能计划 | `RequireRole(admin, fc)` |

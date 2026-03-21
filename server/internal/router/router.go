@@ -73,17 +73,17 @@ func RegisterRoutes(r *gin.Engine) {
 	fleetH := handler.NewFleetHandler()
 	operation := auth.Group("/operation")
 	fleet := operation.Group("/fleets")
-		{
-			manageFleets := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
-			deleteFleets := middleware.RequireRole(model.RoleAdmin)
+	{
+		manageFleets := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
+		deleteFleets := middleware.RequireRole(model.RoleAdmin)
 
-			fleet.POST("", manageFleets, fleetH.CreateFleet)
-			fleet.GET("", manageFleets, fleetH.ListFleets)
-			fleet.GET("/me", fleetH.GetMyFleets)
-			fleet.GET("/:id", manageFleets, fleetH.GetFleet)
-			fleet.PUT("/:id", manageFleets, fleetH.UpdateFleet)
-			fleet.DELETE("/:id", deleteFleets, fleetH.DeleteFleet)
-			fleet.POST("/:id/refresh-esi", manageFleets, fleetH.RefreshFleetESI)
+		fleet.POST("", manageFleets, fleetH.CreateFleet)
+		fleet.GET("", manageFleets, fleetH.ListFleets)
+		fleet.GET("/me", fleetH.GetMyFleets)
+		fleet.GET("/:id", manageFleets, fleetH.GetFleet)
+		fleet.PUT("/:id", manageFleets, fleetH.UpdateFleet)
+		fleet.DELETE("/:id", deleteFleets, fleetH.DeleteFleet)
+		fleet.POST("/:id/refresh-esi", manageFleets, fleetH.RefreshFleetESI)
 
 		// 成员
 		fleet.GET("/:id/members", manageFleets, fleetH.GetMembers)
@@ -118,7 +118,7 @@ func RegisterRoutes(r *gin.Engine) {
 	fleetConfigH := handler.NewFleetConfigHandler()
 	fleetConfig := operation.Group("/fleet-configs")
 	{
-		viewFleetConfigs := middleware.RequireRole(model.RoleAdmin, model.RoleFC, model.RoleUser)
+		viewFleetConfigs := middleware.RequireLoginUser()
 		manageFleetConfigs := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
 
 		fleetConfig.GET("", viewFleetConfigs, fleetConfigH.ListFleetConfigs)
@@ -128,7 +128,7 @@ func RegisterRoutes(r *gin.Engine) {
 		fleetConfig.PUT("/:id", manageFleetConfigs, fleetConfigH.UpdateFleetConfig)
 		fleetConfig.DELETE("/:id", manageFleetConfigs, fleetConfigH.DeleteFleetConfig)
 		fleetConfig.POST("/import-fitting", manageFleetConfigs, fleetConfigH.ImportFromUserFitting)
-		fleetConfig.POST("/export-esi", manageFleetConfigs, fleetConfigH.ExportToESI)
+		fleetConfig.POST("/export-esi", viewFleetConfigs, fleetConfigH.ExportToESI)
 		fleetConfig.GET("/:id/fittings/:fitting_id/items", viewFleetConfigs, fleetConfigH.GetFittingItems)
 		fleetConfig.PUT("/:id/fittings/:fitting_id/items/settings", manageFleetConfigs, fleetConfigH.UpdateFittingItemsSettings)
 	}
@@ -139,7 +139,7 @@ func RegisterRoutes(r *gin.Engine) {
 	skillPlan := skillPlanning.Group("/skill-plans")
 	{
 		manageSkillPlans := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
-		viewSkillPlanChecks := middleware.RequireRole(model.RoleAdmin, model.RoleFC, model.RoleUser)
+		viewSkillPlanChecks := middleware.RequireLoginUser()
 
 		skillPlan.GET("/check/selection", viewSkillPlanChecks, skillPlanH.GetCheckSelection)
 		skillPlan.PUT("/check/selection", viewSkillPlanChecks, skillPlanH.SaveCheckSelection)

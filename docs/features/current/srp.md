@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/srp.go
@@ -49,7 +49,7 @@ source_of_truth:
 - 价格新增 / 更新要求 `srp:price:add`
 - 价格删除要求 `srp:price:delete`
 - 审核和发放要求 `srp:review`
-- 其余个人能力默认要求登录
+- 其余个人能力默认要求 `Login`
 
 ## 关键不变量
 

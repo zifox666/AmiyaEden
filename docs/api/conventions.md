@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
   - server/pkg/response/response.go
@@ -74,6 +74,19 @@ source_of_truth:
 - 更细的字段结构：以代码和类型文件为准
 
 `docs/api/route-index.md` 中的权限边界应尽量按路由显式写出，不要只依赖章节上下文让读者猜测是否需要登录或额外角色。
+
+## 权限标注规则
+
+- `Public`: 无需登录
+- `Login`: 任意已认证且非 `guest` 的产品用户都可访问
+- `RequireRole(...)`: 只有显式列出的角色边界可访问
+- `RequirePermission(...)`: 只有显式列出的权限边界可访问
+
+说明：
+
+- 不要用 `RequireRole(..., user)` 作为“任意登录用户”的文档缩写
+- 当真实含义是“所有非 guest 登录用户都能访问”时，统一写成 `Login`
+- 当真实边界是具体角色白名单时，继续写 `RequireRole(...)`
 
 ## 禁止事项
 

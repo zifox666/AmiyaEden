@@ -79,6 +79,18 @@ func RequireRole(codes ...string) gin.HandlerFunc {
 	}
 }
 
+// RequireLoginUser 要求请求方是已认证且非 guest 的产品用户
+func RequireLoginUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if model.HasNonGuestRole(GetUserRoles(c)) {
+			c.Next()
+			return
+		}
+		response.Fail(c, response.CodeForbidden, "权限不足，需要登录用户")
+		c.Abort()
+	}
+}
+
 // RequirePermission 要求用户拥有指定权限标识之一（super_admin 自动通过）
 // 支持前缀继承：用户拥有 "srp" 时，自动满足 "srp:review"、"srp:price:edit" 等子权限
 func RequirePermission(perms ...string) gin.HandlerFunc {

@@ -185,7 +185,7 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleFC: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "Fleets", "FleetDetail", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "Fleets", "FleetDetail", "FleetConfigs", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
 			"SkillPlanning", "SkillPlanCompletionCheck", "SkillPlans",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
@@ -193,7 +193,8 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleSRP: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "FleetConfigs", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
+			"SkillPlanning", "SkillPlanCompletionCheck",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
 		},

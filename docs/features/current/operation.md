@@ -48,11 +48,12 @@ source_of_truth:
 ## 权限边界
 
 - `fleets`、`fleet-detail` 页面访问要求 `super_admin`、`admin` 或 `fc`
-- `fleet-configs` 页面访问要求 `super_admin`、`admin`、`fc` 或 `user`
+- `fleet-configs` 页面访问要求 `Login`
 - 舰队管理动作，包括刷新 ESI、成员同步 / 手动维护、PAP 发放、邀请链接与 Ping，要求 `super_admin`、`admin` 或 `fc`
 - 舰队删除仍要求 `super_admin` 或 `admin`
-- `fleet-configs` 的只读查询要求 `super_admin`、`admin`、`fc` 或 `user`
-- `fleet-configs` 的导出到 ESI、创建、修改、删除、导入装配和物品设置要求 `super_admin`、`admin` 或 `fc`
+- `fleet-configs` 的只读查询要求 `Login`
+- `fleet-configs` 的导出到 ESI（保存到自己的游戏装配）要求 `Login`
+- `fleet-configs` 的创建、修改、删除、导入装配和物品设置要求 `super_admin`、`admin` 或 `fc`
 - `corporation-pap` 在前端静态路由模式下允许 `super_admin`、`admin`、`fc`、`srp`、`user`
 - 舰队相关角色边界同时由 router、菜单返回与前端路由元数据保持一致
 
@@ -61,6 +62,7 @@ source_of_truth:
 - 舰队、PAP、舰队配置共享同一业务切片，修改时要一起考虑
 - 自动 SRP 不是纯草案，当前模型、页面和后台处理逻辑都已存在
 - 自动 SRP 的触发与舰队成员、KM 刷新、舰队配置装配有关，不能只改 UI 字段
+- 保存到游戏是把现有舰队配置装配导出到当前用户自己的 ESI 角色，不是系统配置写操作
 - 联盟 PAP 的用户侧展示在 Operation，管理员配置与导入在 System
 - 军团 PAP 页面属于多块统计 + 表格混排的分析页，当前明确允许不走 `useTable` / `ArtTable` 默认模板
 

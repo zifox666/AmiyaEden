@@ -16,7 +16,7 @@ export const skillPlanningRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.skillPlanning.completionCheck',
         keepAlive: true,
-        roles: ['super_admin', 'admin', 'fc', 'user']
+        roles: ['super_admin', 'admin', 'fc', 'srp', 'user']
       }
     },
     {

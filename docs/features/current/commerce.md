@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-21
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/shop.go
@@ -39,7 +39,7 @@ source_of_truth:
 
 ## 权限边界
 
-- 用户侧能力要求登录
+- 用户侧能力要求 `Login`
 - `/system/wallet/*`、`/system/shop/*` 默认要求 `admin`
 
 ## 关键不变量

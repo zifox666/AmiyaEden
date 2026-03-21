@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: backend
-last_reviewed: 2026-03-21
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/handler/sde.go
   - server/internal/service/sde.go
@@ -40,7 +40,7 @@ source_of_truth:
 
 ## 权限边界
 
-- 当前这些路由在 router 中为 Public
+- 当前这些路由在 router 中为 `Public`
 - 语言优先级由 body / header / cookie 决定，最终默认 `en`
 
 ## 验证

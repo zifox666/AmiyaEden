@@ -26,7 +26,7 @@ export const operationRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.operation.fleetConfigs',
         keepAlive: true,
-        roles: ['super_admin', 'admin', 'fc', 'user']
+        roles: ['super_admin', 'admin', 'fc', 'srp', 'user']
       }
     },
     {
