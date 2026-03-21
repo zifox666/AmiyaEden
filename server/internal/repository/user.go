@@ -24,7 +24,15 @@ func (r *UserRepository) GetByID(id uint) (*model.User, error) {
 	return &user, err
 }
 
-// Update 更新用户信息
+// UpdateFields 按字段更新用户信息
+func (r *UserRepository) UpdateFields(id uint, updates map[string]any) error {
+	if len(updates) == 0 {
+		return nil
+	}
+	return global.DB.Model(&model.User{}).Where("id = ?", id).Updates(updates).Error
+}
+
+// Update 使用完整模型更新用户信息
 func (r *UserRepository) Update(user *model.User) error {
 	return global.DB.Save(user).Error
 }
@@ -68,6 +76,26 @@ type UserFilter struct {
 func (r *UserRepository) GetByPrimaryCharacterID(characterID int64) (*model.User, error) {
 	var user model.User
 	err := global.DB.Where("primary_character_id = ?", characterID).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetByQQ 根据 QQ 号码查询用户
+func (r *UserRepository) GetByQQ(qq string) (*model.User, error) {
+	var user model.User
+	err := global.DB.Where("qq = ?", qq).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetByDiscordID 根据 Discord ID 查询用户
+func (r *UserRepository) GetByDiscordID(discordID string) (*model.User, error) {
+	var user model.User
+	err := global.DB.Where("discord_id = ?", discordID).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

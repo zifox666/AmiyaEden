@@ -36,7 +36,7 @@
   import { Loading, CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
   import { useUserStore } from '@/store/modules/user'
-  import { fetchGetUserInfo } from '@/api/auth'
+  import { fetchGetUserInfo, isUserProfileComplete } from '@/api/auth'
 
   defineOptions({ name: 'AuthCallback' })
 
@@ -83,7 +83,10 @@
       status.value = 'success'
 
       // 3. 短暂停留后跳转
-      const redirect = (route.query.redirect as string) || '/'
+      const isProfileComplete = isUserProfileComplete(userInfo)
+      const redirect = isProfileComplete
+        ? (route.query.redirect as string) || '/'
+        : '/dashboard/characters'
       setTimeout(() => {
         router.replace(redirect)
       }, 1200)

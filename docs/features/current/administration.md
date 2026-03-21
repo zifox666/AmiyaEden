@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/role.go
@@ -24,6 +24,7 @@ source_of_truth:
 - 菜单管理
 - 角色管理与角色菜单分配
 - 用户管理、用户角色分配
+- 管理员可维护用户昵称、QQ、Discord ID 与状态
 - 超级管理员模拟登录
 - 自动权限映射（ESI corp roles / corp titles -> system roles）
 - 联盟 PAP 列表、抓取、导入、兑换配置、月度结算
@@ -59,6 +60,7 @@ source_of_truth:
 ## 关键不变量
 
 - 角色与菜单定义的 canonical 源在代码常量和菜单种子，不在旧文档
+- 管理员侧用户资料维护走 `/api/v1/system/user/:id`，当前支持昵称、QQ、Discord ID、状态
 - 自动权限映射已经是当前功能，不是纯想法
 - 联盟 PAP 的管理接口与用户查看接口分属不同模块
 - Webhook 是系统配置能力，不应散落到页面里直接拼接

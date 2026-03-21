@@ -212,11 +212,13 @@ type SrpApplicationResponse struct {
 	model.SrpApplication
 	FleetTitle  string `json:"fleet_title,omitempty"`
 	FleetFCName string `json:"fleet_fc_name,omitempty"`
+	Nickname    string `json:"nickname,omitempty"`
 }
 
 // SrpBatchPayoutSummaryResponse 按用户聚合的批量发放摘要
 type SrpBatchPayoutSummaryResponse struct {
 	UserID            uint    `json:"user_id"`
+	Nickname          string  `json:"nickname,omitempty"`
 	MainCharacterID   int64   `json:"main_character_id"`
 	MainCharacterName string  `json:"main_character_name"`
 	TotalAmount       float64 `json:"total_amount"`
@@ -226,11 +228,27 @@ type SrpBatchPayoutSummaryResponse struct {
 // enrichWithFleetInfo 为申请列表填充舰队信息
 func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpApplicationResponse {
 	result := make([]SrpApplicationResponse, len(apps))
+	userIDSet := make(map[uint]bool)
 	// 收集所有非空 fleet_id
 	fleetIDSet := make(map[string]bool)
 	for _, app := range apps {
+		userIDSet[app.UserID] = true
 		if app.FleetID != nil && *app.FleetID != "" {
 			fleetIDSet[*app.FleetID] = true
+		}
+	}
+	userIDs := make([]uint, 0, len(userIDSet))
+	for userID := range userIDSet {
+		userIDs = append(userIDs, userID)
+	}
+	userMap := make(map[uint]model.User)
+	if len(userIDs) > 0 {
+		users, err := s.userRepo.ListByIDs(userIDs)
+		if err == nil {
+			userMap = make(map[uint]model.User, len(users))
+			for _, user := range users {
+				userMap[user.ID] = user
+			}
 		}
 	}
 	// 批量查询舰队信息
@@ -243,6 +261,9 @@ func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpAppli
 	// 组装响应
 	for i, app := range apps {
 		resp := SrpApplicationResponse{SrpApplication: app}
+		if user, ok := userMap[app.UserID]; ok {
+			resp.Nickname = user.Nickname
+		}
 		if app.FleetID != nil && *app.FleetID != "" {
 			if fleet, ok := fleetMap[*app.FleetID]; ok {
 				resp.FleetTitle = fleet.Title
@@ -279,6 +300,9 @@ func (s *SrpService) GetApplication(id uint) (*SrpApplicationResponse, error) {
 		return nil, err
 	}
 	resp := &SrpApplicationResponse{SrpApplication: *app}
+	if user, uerr := s.userRepo.GetByID(app.UserID); uerr == nil {
+		resp.Nickname = user.Nickname
+	}
 	if app.FleetID != nil && *app.FleetID != "" {
 		if fleet, ferr := s.fleetRepo.GetByID(*app.FleetID); ferr == nil {
 			resp.FleetTitle = fleet.Title
@@ -333,6 +357,7 @@ func (s *SrpService) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryResponse, 
 		}
 
 		if user, ok := userMap[row.UserID]; ok {
+			resp.Nickname = user.Nickname
 			resp.MainCharacterID = user.PrimaryCharacterID
 			resp.MainCharacterName = charNameByID[user.PrimaryCharacterID]
 		}

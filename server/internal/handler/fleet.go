@@ -104,8 +104,8 @@ func (h *FleetHandler) RefreshFleetESI(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	fleet, err := h.svc.RefreshESIFleetID(fleetID, userID, userRole)
+	userRoles := middleware.GetUserRoles(c)
+	fleet, err := h.svc.RefreshESIFleetID(fleetID, userID, userRoles)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -126,8 +126,8 @@ func (h *FleetHandler) UpdateFleet(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	fleet, err := h.svc.UpdateFleet(fleetID, userID, userRole, &req)
+	userRoles := middleware.GetUserRoles(c)
+	fleet, err := h.svc.UpdateFleet(fleetID, userID, userRoles, &req)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -143,8 +143,8 @@ func (h *FleetHandler) DeleteFleet(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	if err := h.svc.DeleteFleet(fleetID, userID, userRole); err != nil {
+	userRoles := middleware.GetUserRoles(c)
+	if err := h.svc.DeleteFleet(fleetID, userID, userRoles); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
@@ -170,6 +170,10 @@ func (h *FleetHandler) GetMembers(c *gin.Context) {
 	response.OK(c, members)
 }
 
+type manualAddFleetMembersRequest struct {
+	CharacterNames []string `json:"character_names" binding:"required"`
+}
+
 // GetMembersWithPap 分页查询舰队成员（含 PAP 信息）
 func (h *FleetHandler) GetMembersWithPap(c *gin.Context) {
 	fleetID := c.Param("id")
@@ -193,6 +197,32 @@ func (h *FleetHandler) GetMembersWithPap(c *gin.Context) {
 	})
 }
 
+// ManualAddMembers 手动添加舰队成员
+func (h *FleetHandler) ManualAddMembers(c *gin.Context) {
+	fleetID := c.Param("id")
+	if fleetID == "" {
+		response.Fail(c, response.CodeParamError, "缺少舰队ID")
+		return
+	}
+
+	var req manualAddFleetMembersRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+	userRoles := middleware.GetUserRoles(c)
+	result, err := h.svc.ManualAddMembers(fleetID, userID, userRoles, &service.ManualAddFleetMembersRequest{
+		CharacterNames: req.CharacterNames,
+	})
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, result)
+}
+
 // SyncESIMembers 从 ESI 拉取当前舰队成员并同步到数据库
 func (h *FleetHandler) SyncESIMembers(c *gin.Context) {
 	fleetID := c.Param("id")
@@ -201,8 +231,8 @@ func (h *FleetHandler) SyncESIMembers(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	members, err := h.svc.SyncESIMembers(fleetID, userID, userRole)
+	userRoles := middleware.GetUserRoles(c)
+	members, err := h.svc.SyncESIMembers(fleetID, userID, userRoles)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -222,8 +252,8 @@ func (h *FleetHandler) IssuePap(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	if err := h.svc.IssuePap(fleetID, userID, userRole); err != nil {
+	userRoles := middleware.GetUserRoles(c)
+	if err := h.svc.IssuePap(fleetID, userID, userRoles); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
@@ -290,8 +320,8 @@ func (h *FleetHandler) CreateInvite(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	invite, err := h.svc.CreateInvite(fleetID, userID, userRole)
+	userRoles := middleware.GetUserRoles(c)
+	invite, err := h.svc.CreateInvite(fleetID, userID, userRoles)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -322,8 +352,8 @@ func (h *FleetHandler) DeactivateInvite(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	if err := h.svc.DeactivateInvite(uint(inviteID), userID, userRole); err != nil {
+	userRoles := middleware.GetUserRoles(c)
+	if err := h.svc.DeactivateInvite(uint(inviteID), userID, userRoles); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
@@ -386,8 +416,8 @@ func (h *FleetHandler) PingFleet(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	if err := h.svc.PingFleet(fleetID, userID, userRole); err != nil {
+	userRoles := middleware.GetUserRoles(c)
+	if err := h.svc.PingFleet(fleetID, userID, userRoles); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}

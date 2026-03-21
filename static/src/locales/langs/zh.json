@@ -643,6 +643,13 @@
       "empty": "暂无成员",
       "syncESI": "从 ESI 同步",
       "syncSuccess": "成员同步成功",
+      "manualAdd": "手动添加成员",
+      "manualAddInputLabel": "角色名列表",
+      "manualAddPlaceholder": "PlayerOne\nPlayerTwo\nPlayerThree",
+      "manualAddHint": "每行填写一个角色名，保存后会将已录入系统的角色加入舰队。",
+      "manualAddEmpty": "请至少输入一个角色名",
+      "manualAddSuccess": "已添加 {count} 名成员",
+      "manualAddMissing": "以下角色未找到：{names}",
       "characterName": "角色名",
       "characterId": "角色 ID",
       "shipType": "舰船",
@@ -651,9 +658,11 @@
     },
     "pap": {
       "title": "PAP 发放",
-      "issue": "发放 PAP",
+      "issue": "发放PAP",
       "issueConfirm": "确定要向所有成员发放 PAP 吗？",
       "issueSuccess": "PAP 已发放",
+      "issueWithSyncConfirm": "确定要先从 ESI 同步“{name}”的成员，再发放 PAP 吗？",
+      "issueWithSyncSuccess": "成员同步并发放 PAP 成功",
       "myTitle": "军团 PAP",
       "totalPap": "总 PAP",
       "participationCount": "参与次数",
@@ -714,6 +723,7 @@
       },
       "columns": {
         "corpTicker": "军团",
+        "nickname": "昵称",
         "mainCharacter": "主角色名",
         "characterCount": "角色数量",
         "stratOpPaps": "战略OP",
@@ -911,7 +921,31 @@
     "setPrimaryFailed": "设置主角色失败",
     "unbindConfirm": "确定要解绑角色 {name} 吗？解绑后该角色的授权数据将被清除。",
     "unbindSuccess": "已成功解绑 {name}",
-    "unbindFailed": "解绑失败"
+    "unbindFailed": "解绑失败",
+    "profile": {
+      "title": "联系方式与昵称",
+      "subTitle": "请填写昵称，并至少填写一个联系方式。未完成前将始终停留在本页面。",
+      "completed": "已完成",
+      "incomplete": "未完成",
+      "completedHint": "个人资料已完成，可以正常访问其他页面。",
+      "requiredHint": "需要填写昵称，并至少填写 QQ 号码或 Discord ID 后才能继续使用系统。",
+      "nickname": "昵称",
+      "nicknamePlaceholder": "请输入昵称",
+      "qq": "QQ 号码",
+      "qqPlaceholder": "请输入 QQ 号码",
+      "discordId": "Discord ID",
+      "discordPlaceholder": "请输入 Discord ID",
+      "save": "保存资料",
+      "saveSuccess": "个人资料已更新",
+      "validation": {
+        "nicknameRequired": "请输入昵称",
+        "nicknameLength": "昵称最多 20 个字符",
+        "contactRequired": "请至少填写 QQ 号码或 Discord ID",
+        "qqLength": "QQ 号码最多 20 个字符",
+        "qqDigits": "QQ 号码只能包含数字",
+        "discordLength": "Discord ID 最多 20 个字符"
+      }
+    }
   },
   "srp": {
     "apply": {
@@ -1032,6 +1066,7 @@
       "unknownMainCharacter": "未知角色",
       "columns": {
         "id": "#",
+        "nickname": "昵称",
         "character": "角色",
         "ship": "舰船",
         "system": "星系",

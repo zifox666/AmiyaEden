@@ -92,6 +92,7 @@ func (s *MenuService) GetUserMenuTree(userID uint, roleCodes []string) ([]*model
 	if err != nil {
 		return nil, err
 	}
+	menus = filterMenusBySystemRoleRestrictions(menus, roleCodes)
 
 	// 补全父菜单（确保目录菜单被包含）
 	menus = s.ensureParentMenus(menus, menuIDs)
@@ -146,6 +147,23 @@ func extractIDs(menus []model.Menu) []uint {
 		ids[i] = m.ID
 	}
 	return ids
+}
+
+func filterMenusBySystemRoleRestrictions(menus []model.Menu, roleCodes []string) []model.Menu {
+	restrictedMenus := map[string][]string{
+		"Fleets":      {model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC},
+		"FleetDetail": {model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC},
+	}
+
+	filtered := make([]model.Menu, 0, len(menus))
+	for _, menu := range menus {
+		allowedRoles, restricted := restrictedMenus[menu.Name]
+		if restricted && !model.ContainsAnyRole(roleCodes, allowedRoles...) {
+			continue
+		}
+		filtered = append(filtered, menu)
+	}
+	return filtered
 }
 
 // ─── 错误定义 ───

@@ -175,7 +175,6 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", Sort: 60, IsHide: true, KeepAlive: true, IsHideTab: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "WebhookSettings", Path: "webhook", Component: "/system/webhook", Title: "menus.system.webhook", Sort: 59, KeepAlive: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "BasicConfig", Path: "basic-config", Component: "/system/basic-config", Title: "menus.system.basicConfig", Sort: 58, KeepAlive: true, Status: 1}},
-
 	}
 }
 

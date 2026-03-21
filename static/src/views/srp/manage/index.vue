@@ -51,7 +51,7 @@
               :button-text="$t('srp.manage.exportBtn')"
               type="success"
             />
-            <ElButton type="warning" :loading="batchSummaryLoading" @click="openBatchPayoutDialog">
+            <ElButton type="warning" @click="openBatchPayoutDialog">
               {{ $t('srp.manage.batchPayoutBtn') }}
             </ElButton>
           </div>
@@ -357,6 +357,14 @@
       apiParams: { current: 1, size: 200, payout_status: 'pending' },
       columnsFactory: () => [
         { type: 'index', width: 60, label: '#' },
+        {
+          prop: 'nickname',
+          label: t('srp.manage.columns.nickname'),
+          width: 160,
+          showOverflowTooltip: true,
+          formatter: (row: SrpApp) =>
+            h('span', { class: row.nickname ? '' : 'text-gray-400' }, row.nickname || '-')
+        },
         {
           prop: 'character_name',
           label: t('srp.manage.columns.character'),

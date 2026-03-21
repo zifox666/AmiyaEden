@@ -49,9 +49,42 @@ func (h *MeHandler) GetMe(c *gin.Context) {
 	}
 
 	response.OK(c, gin.H{
-		"user":        user,
-		"characters":  characters,
-		"roles":       roles,
-		"permissions": permissions,
+		"user":             user,
+		"characters":       characters,
+		"roles":            roles,
+		"permissions":      permissions,
+		"profile_complete": user.ProfileComplete(),
+	})
+}
+
+type updateMeRequest struct {
+	Nickname  *string `json:"nickname"`
+	QQ        *string `json:"qq"`
+	DiscordID *string `json:"discord_id"`
+}
+
+// UpdateMe 更新当前登录用户的联系资料
+func (h *MeHandler) UpdateMe(c *gin.Context) {
+	userID := c.GetUint("userID")
+
+	var req updateMeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+
+	user, err := h.userSvc.UpdateCurrentProfile(userID, service.UserPatch{
+		Nickname:  req.Nickname,
+		QQ:        req.QQ,
+		DiscordID: req.DiscordID,
+	})
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{
+		"user":             user,
+		"profile_complete": user.ProfileComplete(),
 	})
 }

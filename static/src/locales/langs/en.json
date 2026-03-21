@@ -642,6 +642,13 @@
       "empty": "No members yet",
       "syncESI": "Sync from ESI",
       "syncSuccess": "Members synced",
+      "manualAdd": "Add Members",
+      "manualAddInputLabel": "Character name list",
+      "manualAddPlaceholder": "PlayerOne\nPlayerTwo\nPlayerThree",
+      "manualAddHint": "Enter one character name per line. Saved names that already exist in the system will be added to the fleet.",
+      "manualAddEmpty": "Enter at least one character name",
+      "manualAddSuccess": "{count} members added",
+      "manualAddMissing": "Characters not found: {names}",
       "characterName": "Character",
       "characterId": "Character ID",
       "shipType": "Ship",
@@ -653,6 +660,8 @@
       "issue": "Issue PAP",
       "issueConfirm": "Issue PAP to all members?",
       "issueSuccess": "PAP issued",
+      "issueWithSyncConfirm": "Sync members from ESI for \"{name}\" and then issue PAP?",
+      "issueWithSyncSuccess": "Members synced and PAP issued",
       "myTitle": "My PAP Records",
       "totalPap": "Total PAP",
       "participationCount": "Participations",
@@ -713,6 +722,7 @@
       },
       "columns": {
         "corpTicker": "Corporation",
+        "nickname": "Nickname",
         "mainCharacter": "Main Character",
         "characterCount": "Characters",
         "stratOpPaps": "Strategic OP",
@@ -910,7 +920,31 @@
     "setPrimaryFailed": "Failed to set primary character",
     "unbindConfirm": "Are you sure you want to unbind {name}? The authorization data will be removed.",
     "unbindSuccess": "Successfully unbound {name}",
-    "unbindFailed": "Failed to unbind character"
+    "unbindFailed": "Failed to unbind character",
+    "profile": {
+      "title": "Contact Details and Nickname",
+      "subTitle": "Set a nickname and at least one contact method. You will stay on this page until it is complete.",
+      "completed": "Complete",
+      "incomplete": "Incomplete",
+      "completedHint": "Your profile setup is complete. You can access the rest of the app normally.",
+      "requiredHint": "You must set a nickname and at least one of QQ number or Discord ID before continuing.",
+      "nickname": "Nickname",
+      "nicknamePlaceholder": "Enter nickname",
+      "qq": "QQ Number",
+      "qqPlaceholder": "Enter QQ number",
+      "discordId": "Discord ID",
+      "discordPlaceholder": "Enter Discord ID",
+      "save": "Save Profile",
+      "saveSuccess": "Profile updated",
+      "validation": {
+        "nicknameRequired": "Nickname is required",
+        "nicknameLength": "Nickname must be 20 characters or fewer",
+        "contactRequired": "Enter either a QQ number or a Discord ID",
+        "qqLength": "QQ number must be 20 characters or fewer",
+        "qqDigits": "QQ number must contain digits only",
+        "discordLength": "Discord ID must be 20 characters or fewer"
+      }
+    }
   },
   "srp": {
     "apply": {
@@ -1031,6 +1065,7 @@
       "unknownMainCharacter": "Unknown",
       "columns": {
         "id": "#",
+        "nickname": "Nickname",
         "character": "Character",
         "ship": "Ship",
         "system": "System",

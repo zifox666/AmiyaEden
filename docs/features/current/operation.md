@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-21
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/fleet.go
@@ -47,12 +47,14 @@ source_of_truth:
 
 ## 权限边界
 
-- 路由级别默认要求登录
+- `fleets`、`fleet-detail` 页面访问要求 `super_admin`、`admin` 或 `fc`
 - `fleet-configs` 页面访问要求 `super_admin`、`admin`、`fc` 或 `user`
-- `fleet-configs` 的创建、修改、删除、导入装配和物品设置要求 `super_admin`、`admin` 或 `fc`
-- `fleet-configs` 的导出到 ESI 与只读查询要求 `super_admin`、`admin`、`fc` 或 `user`
+- 舰队管理动作，包括刷新 ESI、成员同步 / 手动维护、PAP 发放、邀请链接与 Ping，要求 `super_admin`、`admin` 或 `fc`
+- 舰队删除仍要求 `super_admin` 或 `admin`
+- `fleet-configs` 的只读查询要求 `super_admin`、`admin`、`fc` 或 `user`
+- `fleet-configs` 的导出到 ESI、创建、修改、删除、导入装配和物品设置要求 `super_admin`、`admin` 或 `fc`
 - `corporation-pap` 在前端静态路由模式下允许 `super_admin`、`admin`、`fc`、`srp`、`user`
-- 舰队相关的细粒度拥有者 / FC / 管理员判断属于 service 层职责
+- 舰队相关角色边界同时由 router、菜单返回与前端路由元数据保持一致
 
 ## 关键不变量
 

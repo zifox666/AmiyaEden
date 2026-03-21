@@ -50,6 +50,7 @@ func RegisterRoutes(r *gin.Engine) {
 	// ─── 当前用户 ───
 	meH := handler.NewMeHandler()
 	auth.GET("/me", meH.GetMe)
+	auth.PUT("/me", meH.UpdateMe)
 
 	dashboardH := handler.NewDashboardHandler()
 	auth.POST("/dashboard", dashboardH.GetDashboard)
@@ -72,23 +73,27 @@ func RegisterRoutes(r *gin.Engine) {
 	fleetH := handler.NewFleetHandler()
 	operation := auth.Group("/operation")
 	fleet := operation.Group("/fleets")
-	{
-		fleet.POST("", fleetH.CreateFleet)
-		fleet.GET("", fleetH.ListFleets)
-		fleet.GET("/me", fleetH.GetMyFleets)
-		fleet.GET("/:id", fleetH.GetFleet)
-		fleet.PUT("/:id", fleetH.UpdateFleet)
-		fleet.DELETE("/:id", fleetH.DeleteFleet)
-		fleet.POST("/:id/refresh-esi", fleetH.RefreshFleetESI)
+		{
+			manageFleets := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
+			deleteFleets := middleware.RequireRole(model.RoleAdmin)
+
+			fleet.POST("", manageFleets, fleetH.CreateFleet)
+			fleet.GET("", manageFleets, fleetH.ListFleets)
+			fleet.GET("/me", fleetH.GetMyFleets)
+			fleet.GET("/:id", manageFleets, fleetH.GetFleet)
+			fleet.PUT("/:id", manageFleets, fleetH.UpdateFleet)
+			fleet.DELETE("/:id", deleteFleets, fleetH.DeleteFleet)
+			fleet.POST("/:id/refresh-esi", manageFleets, fleetH.RefreshFleetESI)
 
 		// 成员
-		fleet.GET("/:id/members", fleetH.GetMembers)
-		fleet.GET("/:id/members-pap", fleetH.GetMembersWithPap)
-		fleet.POST("/:id/members/sync", fleetH.SyncESIMembers)
+		fleet.GET("/:id/members", manageFleets, fleetH.GetMembers)
+		fleet.GET("/:id/members-pap", manageFleets, fleetH.GetMembersWithPap)
+		fleet.POST("/:id/members/manual", manageFleets, fleetH.ManualAddMembers)
+		fleet.POST("/:id/members/sync", manageFleets, fleetH.SyncESIMembers)
 
 		// ――― PAP
-		fleet.POST("/:id/pap", fleetH.IssuePap)
-		fleet.GET("/:id/pap", fleetH.GetPapLogs)
+		fleet.POST("/:id/pap", manageFleets, fleetH.IssuePap)
+		fleet.GET("/:id/pap", manageFleets, fleetH.GetPapLogs)
 		fleet.GET("/pap/me", fleetH.GetMyPapLogs)
 		fleet.GET("/pap/corporation", fleetH.GetCorporationPapSummary)
 
@@ -97,16 +102,16 @@ func RegisterRoutes(r *gin.Engine) {
 		fleet.GET("/pap/alliance", alliancePAPH.GetMyAlliancePAP)
 
 		// 邀请
-		fleet.POST("/:id/invites", fleetH.CreateInvite)
-		fleet.GET("/:id/invites", fleetH.GetInvites)
-		fleet.DELETE("/invites/:invite_id", fleetH.DeactivateInvite)
+		fleet.POST("/:id/invites", manageFleets, fleetH.CreateInvite)
+		fleet.GET("/:id/invites", manageFleets, fleetH.GetInvites)
+		fleet.DELETE("/invites/:invite_id", manageFleets, fleetH.DeactivateInvite)
 		fleet.POST("/join", fleetH.JoinFleet)
 
 		// 查角色所在舰队
 		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
 
 		// Webhook Ping（FC 或管理员手动触发）
-		fleet.POST("/:id/ping", fleetH.PingFleet)
+		fleet.POST("/:id/ping", manageFleets, fleetH.PingFleet)
 	}
 
 	// ─── 舰队配置 ───
@@ -123,7 +128,7 @@ func RegisterRoutes(r *gin.Engine) {
 		fleetConfig.PUT("/:id", manageFleetConfigs, fleetConfigH.UpdateFleetConfig)
 		fleetConfig.DELETE("/:id", manageFleetConfigs, fleetConfigH.DeleteFleetConfig)
 		fleetConfig.POST("/import-fitting", manageFleetConfigs, fleetConfigH.ImportFromUserFitting)
-		fleetConfig.POST("/export-esi", viewFleetConfigs, fleetConfigH.ExportToESI)
+		fleetConfig.POST("/export-esi", manageFleetConfigs, fleetConfigH.ExportToESI)
 		fleetConfig.GET("/:id/fittings/:fitting_id/items", viewFleetConfigs, fleetConfigH.GetFittingItems)
 		fleetConfig.PUT("/:id/fittings/:fitting_id/items/settings", manageFleetConfigs, fleetConfigH.UpdateFittingItemsSettings)
 	}

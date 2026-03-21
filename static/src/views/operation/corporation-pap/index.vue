@@ -81,6 +81,16 @@
             align="center"
           />
           <ElTableColumn
+            prop="nickname"
+            :label="t('fleet.corporationPap.columns.nickname')"
+            min-width="180"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <span :class="row.nickname ? '' : 'text-gray-400'">{{ row.nickname || '-' }}</span>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn
             prop="main_character_name"
             :label="t('fleet.corporationPap.columns.mainCharacter')"
             min-width="220"

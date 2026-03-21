@@ -61,8 +61,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 }
 
 type updateUserRequest struct {
-	Nickname string `json:"nickname"`
-	Status   *int8  `json:"status"`
+	Nickname  *string `json:"nickname"`
+	QQ        *string `json:"qq"`
+	DiscordID *string `json:"discord_id"`
+	Status    *int8   `json:"status"`
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
@@ -76,15 +78,12 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
-	user := &model.User{}
-	user.ID = uint(id)
-	if req.Nickname != "" {
-		user.Nickname = req.Nickname
-	}
-	if req.Status != nil {
-		user.Status = *req.Status
-	}
-	if err := h.svc.UpdateUser(user); err != nil {
+	if err := h.svc.UpdateUserByAdmin(uint(id), service.UserPatch{
+		Nickname:  req.Nickname,
+		QQ:        req.QQ,
+		DiscordID: req.DiscordID,
+		Status:    req.Status,
+	}); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}

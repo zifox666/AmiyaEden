@@ -78,6 +78,17 @@ export function syncESIFleetMembers(fleetId: string) {
   })
 }
 
+/** 手动按角色名添加舰队成员 */
+export function addFleetMembersByCharacterNames(
+  fleetId: string,
+  data: Api.Fleet.ManualAddFleetMembersParams
+) {
+  return request.post<Api.Fleet.ManualAddFleetMembersResult>({
+    url: `/api/v1/operation/fleets/${fleetId}/members/manual`,
+    data
+  })
+}
+
 // ─── PAP ───
 
 /** 发放 PAP */

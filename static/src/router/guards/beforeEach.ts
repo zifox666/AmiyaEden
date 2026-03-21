@@ -48,10 +48,12 @@ import { staticRoutes } from '../routes/staticRoutes'
 import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
-import { fetchGetUserInfo } from '@/api/auth'
+import { fetchGetUserInfo, isUserProfileComplete } from '@/api/auth'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
+
+const PROFILE_SETUP_PATH = '/dashboard/characters'
 
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
@@ -180,12 +182,17 @@ async function handleRouteGuard(
     return
   }
 
-  // 4. 处理根路径重定向
+  // 4. 强制完成资料设置
+  if (handleProfileSetupRedirect(to, userStore, next)) {
+    return
+  }
+
+  // 5. 处理根路径重定向
   if (handleRootPathRedirect(to, next)) {
     return
   }
 
-  // 5. 处理已匹配的路由
+  // 6. 处理已匹配的路由
   if (to.matched.length > 0) {
     setWorktab(to)
     setPageTitle(to)
@@ -193,7 +200,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 6. 未匹配到路由，跳转到 404
+  // 7. 未匹配到路由，跳转到 404
   next({ name: 'Exception404' })
 }
 
@@ -287,8 +294,12 @@ async function handleDynamicRoutes(
 
     // 8. 验证目标路径权限
     const { homePath } = useCommon()
+    const targetPath =
+      !isUserProfileComplete(useUserStore().getUserInfo) && to.path !== PROFILE_SETUP_PATH
+        ? PROFILE_SETUP_PATH
+        : to.path
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
-      to.path,
+      targetPath,
       menuList,
       homePath.value || '/'
     )
@@ -312,9 +323,9 @@ async function handleDynamicRoutes(
     } else {
       // 有权限，正常导航
       next({
-        path: to.path,
-        query: to.query,
-        hash: to.hash,
+        path: validatedPath,
+        query: validatedPath === to.path ? to.query : undefined,
+        hash: validatedPath === to.path ? to.hash : undefined,
         replace: true
       })
     }
@@ -355,6 +366,23 @@ async function fetchUserInfo(): Promise<void> {
   userStore.setUserInfo(data)
   // 检查并清理工作台标签页（如果是不同用户登录）
   userStore.checkAndClearWorktabs()
+}
+
+function handleProfileSetupRedirect(
+  to: RouteLocationNormalized,
+  userStore: ReturnType<typeof useUserStore>,
+  next: NavigationGuardNext
+): boolean {
+  if (to.path === PROFILE_SETUP_PATH) {
+    return false
+  }
+
+  if (!isUserProfileComplete(userStore.getUserInfo)) {
+    next({ path: PROFILE_SETUP_PATH, replace: true })
+    return true
+  }
+
+  return false
 }
 
 /**

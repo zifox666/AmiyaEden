@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-21
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -41,6 +41,7 @@ source_of_truth:
 | PUT | `/sso/eve/primary/:character_id` | 设为主角色 | Login |
 | DELETE | `/sso/eve/characters/:character_id` | 解绑角色 | Login |
 | GET | `/me` | 当前用户、角色、权限、绑定角色 | Login |
+| PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | Login |
 | POST | `/dashboard` | Dashboard 聚合数据 | Login |
 | POST | `/notification/list` | 通知列表 | Login |
 | POST | `/notification/unread-count` | 未读数 | Login |
@@ -54,27 +55,28 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/operation/fleets` | 创建舰队 | Login |
-| GET | `/operation/fleets` | 舰队列表 | Login |
+| POST | `/operation/fleets` | 创建舰队 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets` | 舰队列表 | `RequireRole(admin, fc)` |
 | GET | `/operation/fleets/me` | 我的舰队 | Login |
-| GET | `/operation/fleets/:id` | 舰队详情 | Login |
-| PUT | `/operation/fleets/:id` | 更新舰队 | Login |
-| DELETE | `/operation/fleets/:id` | 删除舰队 | Login |
-| POST | `/operation/fleets/:id/refresh-esi` | 刷新舰队 ESI 数据 | Login |
-| GET | `/operation/fleets/:id/members` | 舰队成员 | Login |
-| GET | `/operation/fleets/:id/members-pap` | 舰队成员与 PAP | Login |
-| POST | `/operation/fleets/:id/members/sync` | 同步 ESI 成员 | Login |
-| POST | `/operation/fleets/:id/pap` | 发放 PAP | Login |
-| GET | `/operation/fleets/:id/pap` | PAP 日志 | Login |
+| GET | `/operation/fleets/:id` | 舰队详情 | `RequireRole(admin, fc)` |
+| PUT | `/operation/fleets/:id` | 更新舰队 | `RequireRole(admin, fc)` |
+| DELETE | `/operation/fleets/:id` | 删除舰队 | `RequireRole(admin)` |
+| POST | `/operation/fleets/:id/refresh-esi` | 刷新舰队 ESI 数据 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/members` | 舰队成员 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/members-pap` | 舰队成员与 PAP | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/members/manual` | 手动添加成员 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/members/sync` | 同步 ESI 成员 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/pap` | 发放 PAP | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/pap` | PAP 日志 | `RequireRole(admin, fc)` |
 | GET | `/operation/fleets/pap/me` | 我的 PAP 日志 | Login |
 | GET | `/operation/fleets/pap/corporation` | 军团 PAP 汇总 | Login |
 | GET | `/operation/fleets/pap/alliance` | 我的联盟 PAP | Login |
-| POST | `/operation/fleets/:id/invites` | 创建邀请 | Login |
-| GET | `/operation/fleets/:id/invites` | 邀请列表 | Login |
-| DELETE | `/operation/fleets/invites/:invite_id` | 停用邀请 | Login |
+| POST | `/operation/fleets/:id/invites` | 创建邀请 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/invites` | 邀请列表 | `RequireRole(admin, fc)` |
+| DELETE | `/operation/fleets/invites/:invite_id` | 停用邀请 | `RequireRole(admin, fc)` |
 | POST | `/operation/fleets/join` | 加入舰队 | Login |
 | GET | `/operation/fleets/esi/:character_id` | 查询角色当前舰队 | Login |
-| POST | `/operation/fleets/:id/ping` | 发送 Webhook Ping | Login |
+| POST | `/operation/fleets/:id/ping` | 发送 Webhook Ping | `RequireRole(admin, fc)` |
 
 ### Fleet Configs
 
@@ -87,7 +89,7 @@ source_of_truth:
 | PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(admin, fc)` |
 | DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(admin, fc)` |
 | POST | `/operation/fleet-configs/import-fitting` | 从角色装配导入 | `RequireRole(admin, fc)` |
-| POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | `RequireRole(admin, fc, user)` |
+| POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | `RequireRole(admin, fc)` |
 | GET | `/operation/fleet-configs/:id/fittings/:fitting_id/items` | 装配物品 | `RequireRole(admin, fc, user)` |
 | PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(admin, fc)` |
 
@@ -213,7 +215,7 @@ source_of_truth:
 | PUT | `/system/role/:id/menus` | 设置角色菜单 | `RequireRole(admin)` |
 | GET | `/system/user` | 用户列表 | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
-| PUT | `/system/user/:id` | 更新用户 | `RequireRole(admin)` |
+| PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态 | `RequireRole(admin)` |
 | DELETE | `/system/user/:id` | 删除用户 | `RequireRole(admin)` |
 | GET | `/system/user/:id/roles` | 获取用户角色 | `RequireRole(admin)` |
 | PUT | `/system/user/:id/roles` | 设置用户角色 | `RequireRole(admin)` |

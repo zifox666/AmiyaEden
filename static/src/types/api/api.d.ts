@@ -101,11 +101,13 @@ declare namespace Api {
       user: {
         id: number
         nickname: string
+        qq: string
+        discord_id: string
         avatar: string
         status: number
         role: string
         primary_character_id: number
-        last_login_at: string
+        last_login_at: string | null
         last_login_ip: string
       }
       characters: EveCharacter[]
@@ -113,6 +115,7 @@ declare namespace Api {
       roles: string[]
       /** 用户所有权限标识列表 */
       permissions: string[]
+      profile_complete: boolean
     }
 
     /** 用户信息（路由守卫和权限指令使用） */
@@ -122,6 +125,10 @@ declare namespace Api {
       userId: number
       userName: string
       avatar: string
+      nickname: string
+      qq: string
+      discordId: string
+      profileComplete: boolean
       characters?: EveCharacter[]
       primaryCharacterId?: number
     }
@@ -136,6 +143,8 @@ declare namespace Api {
     interface UserListItem {
       id: number
       nickname: string
+      qq: string
+      discord_id: string
       avatar: string
       status: number // 1:正常 0:禁用
       role: string // 历史兼容字段
@@ -417,6 +426,17 @@ declare namespace Api {
       issued_at: string | null
     }
 
+    /** 手动按角色名添加舰队成员请求 */
+    interface ManualAddFleetMembersParams {
+      character_names: string[]
+    }
+
+    /** 手动按角色名添加舰队成员结果 */
+    interface ManualAddFleetMembersResult {
+      added_character_names: string[]
+      missing_character_names: string[]
+    }
+
     /** PAP 记录 */
     interface PapLog {
       id: number
@@ -450,6 +470,7 @@ declare namespace Api {
     /** 军团 PAP 汇总项 */
     interface CorporationPapSummaryItem {
       user_id: number
+      nickname: string
       corp_ticker: string
       main_character_name: string
       character_count: number
@@ -871,6 +892,7 @@ declare namespace Api {
     interface Application {
       id: number
       user_id: number
+      nickname?: string
       character_id: number
       character_name: string
       killmail_id: number
@@ -938,6 +960,7 @@ declare namespace Api {
     /** 批量发放汇总项 */
     interface BatchPayoutSummary {
       user_id: number
+      nickname?: string
       main_character_id: number
       main_character_name: string
       total_amount: number

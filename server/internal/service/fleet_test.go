@@ -32,23 +32,69 @@ func TestFleetServiceCanManageFleet(t *testing.T) {
 	fleet := &model.Fleet{FCUserID: 42}
 
 	tests := []struct {
-		name     string
-		userID   uint
-		userRole string
-		want     bool
+		name      string
+		userID    uint
+		userRoles []string
+		want      bool
 	}{
-		{name: "owner", userID: 42, userRole: model.RoleUser, want: true},
-		{name: "admin", userID: 7, userRole: model.RoleAdmin, want: true},
-		{name: "super admin", userID: 8, userRole: model.RoleSuperAdmin, want: true},
-		{name: "other user", userID: 9, userRole: model.RoleUser, want: false},
+		{name: "fc", userID: 42, userRoles: []string{model.RoleFC}, want: true},
+		{name: "admin", userID: 7, userRoles: []string{model.RoleAdmin}, want: true},
+		{name: "super admin", userID: 8, userRoles: []string{model.RoleSuperAdmin}, want: true},
+		{name: "user owner no longer manages", userID: 42, userRoles: []string{model.RoleUser}, want: false},
+		{name: "other user", userID: 9, userRoles: []string{model.RoleUser}, want: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := svc.canManageFleet(fleet, tt.userID, tt.userRole); got != tt.want {
+			if got := svc.canManageFleet(fleet, tt.userID, tt.userRoles); got != tt.want {
 				t.Fatalf("canManageFleet() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFleetServiceCanDeleteFleet(t *testing.T) {
+	svc := &FleetService{}
+
+	tests := []struct {
+		name      string
+		userRoles []string
+		want      bool
+	}{
+		{name: "admin", userRoles: []string{model.RoleAdmin}, want: true},
+		{name: "super admin", userRoles: []string{model.RoleSuperAdmin}, want: true},
+		{name: "fc", userRoles: []string{model.RoleFC}, want: false},
+		{name: "user", userRoles: []string{model.RoleUser}, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := svc.canDeleteFleet(tt.userRoles); got != tt.want {
+				t.Fatalf("canDeleteFleet() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNormalizeCharacterNames(t *testing.T) {
+	got := normalizeCharacterNames([]string{
+		"  PlayerOne  ",
+		"",
+		"PlayerTwo",
+		"PlayerOne",
+		"   ",
+		"PlayerThree",
+	})
+
+	want := []string{"PlayerOne", "PlayerTwo", "PlayerThree"}
+	if len(got) != len(want) {
+		t.Fatalf("normalizeCharacterNames() len = %d, want %d", len(got), len(want))
+	}
+
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("normalizeCharacterNames()[%d] = %q, want %q", i, got[i], want[i])
+		}
 	}
 }
 

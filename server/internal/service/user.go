@@ -6,11 +6,28 @@ import (
 	"amiya-eden/internal/repository"
 	"amiya-eden/pkg/jwt"
 	"errors"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+
+	"gorm.io/gorm"
 )
 
 type UserService struct {
 	repo     *repository.UserRepository
 	roleRepo *repository.RoleRepository
+}
+
+const (
+	maxUserNicknameLength = 20
+	maxUserContactLength  = 20
+)
+
+type UserPatch struct {
+	Nickname  *string
+	QQ        *string
+	DiscordID *string
+	Status    *int8
 }
 
 func NewUserService() *UserService {
@@ -34,8 +51,39 @@ func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter
 	return s.repo.List(page, pageSize, filter)
 }
 
-func (s *UserService) UpdateUser(user *model.User) error {
-	return s.repo.Update(user)
+func (s *UserService) UpdateUserByAdmin(id uint, patch UserPatch) error {
+	current, err := s.repo.GetByID(id)
+	if err != nil {
+		return errors.New("用户不存在")
+	}
+	next, updates, err := buildUserPatchUpdates(current, patch, false)
+	if err != nil {
+		return err
+	}
+	if patch.QQ != nil || patch.DiscordID != nil {
+		if err := s.validateUniqueContacts(next); err != nil {
+			return err
+		}
+	}
+	return s.repo.UpdateFields(id, updates)
+}
+
+func (s *UserService) UpdateCurrentProfile(id uint, patch UserPatch) (*model.User, error) {
+	current, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, errors.New("用户不存在")
+	}
+	next, updates, err := buildUserPatchUpdates(current, patch, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.validateUniqueContacts(next); err != nil {
+		return nil, err
+	}
+	if err := s.repo.UpdateFields(id, updates); err != nil {
+		return nil, err
+	}
+	return s.repo.GetByID(id)
 }
 
 func (s *UserService) DeleteUser(id uint) error {
@@ -56,4 +104,102 @@ func (s *UserService) ImpersonateUser(id uint) (string, *model.User, error) {
 		return "", nil, err
 	}
 	return token, user, nil
+}
+
+func (s *UserService) validateUniqueContacts(user *model.User) error {
+	if user.QQ != "" {
+		owner, err := s.repo.GetByQQ(user.QQ)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if err == nil {
+			if err := validateContactOwner(user.ID, owner, "QQ 号码"); err != nil {
+				return err
+			}
+		}
+	}
+
+	if user.DiscordID != "" {
+		owner, err := s.repo.GetByDiscordID(user.DiscordID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if err == nil {
+			if err := validateContactOwner(user.ID, owner, "Discord ID"); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func buildUserPatchUpdates(current *model.User, patch UserPatch, requireComplete bool) (*model.User, map[string]any, error) {
+	next := *current
+	updates := map[string]any{}
+
+	if patch.Nickname != nil {
+		nickname := strings.TrimSpace(*patch.Nickname)
+		if nickname == "" {
+			return nil, nil, errors.New("昵称不能为空")
+		}
+		if utf8.RuneCountInString(nickname) > maxUserNicknameLength {
+			return nil, nil, errors.New("昵称最多 20 个字符")
+		}
+		next.Nickname = nickname
+		updates["nickname"] = nickname
+	}
+
+	if patch.QQ != nil {
+		qq := strings.TrimSpace(*patch.QQ)
+		if utf8.RuneCountInString(qq) > maxUserContactLength {
+			return nil, nil, errors.New("QQ 号码最多 20 个字符")
+		}
+		if qq != "" && !isDigitsOnly(qq) {
+			return nil, nil, errors.New("QQ 号码只能包含数字")
+		}
+		next.QQ = qq
+		updates["qq"] = qq
+	}
+
+	if patch.DiscordID != nil {
+		discordID := strings.TrimSpace(*patch.DiscordID)
+		if utf8.RuneCountInString(discordID) > maxUserContactLength {
+			return nil, nil, errors.New("Discord ID 最多 20 个字符")
+		}
+		next.DiscordID = discordID
+		updates["discord_id"] = discordID
+	}
+
+	if patch.Status != nil {
+		next.Status = *patch.Status
+		updates["status"] = *patch.Status
+	}
+
+	if requireComplete {
+		if !next.HasNickname() {
+			return nil, nil, errors.New("昵称不能为空")
+		}
+		if !next.HasRequiredContact() {
+			return nil, nil, errors.New("请至少填写 QQ 号码或 Discord ID")
+		}
+	}
+
+	return &next, updates, nil
+}
+
+func validateContactOwner(currentUserID uint, owner *model.User, label string) error {
+	if owner != nil && owner.ID != currentUserID {
+		return errors.New("该" + label + "已被其他用户使用")
+	}
+	return nil
+}
+
+func isDigitsOnly(value string) bool {
+	for _, r := range value {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return value != ""
 }

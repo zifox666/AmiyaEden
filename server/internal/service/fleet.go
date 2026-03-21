@@ -63,6 +63,7 @@ const (
 // CorporationPapSummaryItem 军团 PAP 汇总项
 type CorporationPapSummaryItem struct {
 	UserID            uint    `json:"user_id"`
+	Nickname          string  `json:"nickname"`
 	CorpTicker        string  `json:"corp_ticker"`
 	MainCharacterName string  `json:"main_character_name"`
 	CharacterCount    int     `json:"character_count"`
@@ -181,12 +182,12 @@ func (s *FleetService) CreateFleet(userID uint, req *CreateFleetRequest) (*model
 }
 
 // PingFleet 手动触发舰队 Ping（仅 FC 或管理员）
-func (s *FleetService) PingFleet(fleetID string, userID uint, userRole string) error {
+func (s *FleetService) PingFleet(fleetID string, userID uint, userRoles []string) error {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return errors.New("权限不足")
 	}
 	return s.webhookSvc.SendFleetPing(fleet)
@@ -206,14 +207,23 @@ type UpdateFleetRequest struct {
 	AutoSrpMode   *string  `json:"auto_srp_mode"`
 }
 
+type ManualAddFleetMembersRequest struct {
+	CharacterNames []string `json:"character_names"`
+}
+
+type ManualAddFleetMembersResult struct {
+	AddedCharacterNames   []string `json:"added_character_names"`
+	MissingCharacterNames []string `json:"missing_character_names"`
+}
+
 // UpdateFleet 更新舰队信息
-func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string, req *UpdateFleetRequest) (*model.Fleet, error) {
+func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRoles []string, req *UpdateFleetRequest) (*model.Fleet, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
 
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 
@@ -248,7 +258,7 @@ func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string,
 		if err != nil {
 			return nil, errors.New("角色不存在")
 		}
-		if char.UserID != userID && !model.HasRole(userRole, model.RoleAdmin) {
+		if char.UserID != userID && !model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin) {
 			return nil, errors.New("该角色不属于当前用户")
 		}
 		fleet.FCCharacterID = *req.CharacterID
@@ -275,12 +285,11 @@ func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string,
 }
 
 // DeleteFleet 删除舰队
-func (s *FleetService) DeleteFleet(fleetID string, userID uint, userRole string) error {
-	fleet, err := s.repo.GetByID(fleetID)
-	if err != nil {
+func (s *FleetService) DeleteFleet(fleetID string, userID uint, userRoles []string) error {
+	if _, err := s.repo.GetByID(fleetID); err != nil {
 		return errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canDeleteFleet(userRoles) {
 		return errors.New("权限不足")
 	}
 	return s.repo.SoftDelete(fleetID)
@@ -292,12 +301,12 @@ func (s *FleetService) GetFleet(fleetID string) (*model.Fleet, error) {
 }
 
 // RefreshESIFleetID 从 ESI 刷新舰队的 esi_fleet_id 并持久化
-func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRole string) (*model.Fleet, error) {
+func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRoles []string) (*model.Fleet, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 
@@ -343,6 +352,53 @@ func (s *FleetService) GetMyFleets(userID uint) ([]model.Fleet, error) {
 // GetMembers 获取舰队成员列表
 func (s *FleetService) GetMembers(fleetID string) ([]model.FleetMember, error) {
 	return s.repo.ListMembers(fleetID)
+}
+
+// ManualAddMembers 手动按角色名添加成员到舰队
+func (s *FleetService) ManualAddMembers(fleetID string, userID uint, userRoles []string, req *ManualAddFleetMembersRequest) (*ManualAddFleetMembersResult, error) {
+	fleet, err := s.repo.GetByID(fleetID)
+	if err != nil {
+		return nil, errors.New("舰队不存在")
+	}
+	if !s.canManageFleet(fleet, userID, userRoles) {
+		return nil, errors.New("权限不足")
+	}
+
+	characterNames := normalizeCharacterNames(req.CharacterNames)
+	if len(characterNames) == 0 {
+		return nil, errors.New("请至少填写一个角色名")
+	}
+
+	result := &ManualAddFleetMembersResult{
+		AddedCharacterNames:   make([]string, 0, len(characterNames)),
+		MissingCharacterNames: make([]string, 0),
+	}
+
+	for _, name := range characterNames {
+		char, err := s.charRepo.GetByCharacterName(name)
+		if err != nil {
+			result.MissingCharacterNames = append(result.MissingCharacterNames, name)
+			continue
+		}
+
+		member := &model.FleetMember{
+			FleetID:       fleet.ID,
+			CharacterID:   char.CharacterID,
+			CharacterName: char.CharacterName,
+			UserID:        char.UserID,
+		}
+		if err := s.repo.AddMember(member); err != nil {
+			return nil, err
+		}
+
+		result.AddedCharacterNames = append(result.AddedCharacterNames, char.CharacterName)
+
+		if fleet.ESIFleetID != nil {
+			go s.esiInviteMember(fleet, char)
+		}
+	}
+
+	return result, nil
 }
 
 // JoinFleet 通过邀请码加入舰队
@@ -424,12 +480,12 @@ func (s *FleetService) esiInviteMember(fleet *model.Fleet, char *model.EveCharac
 // ─────────────────────────────────────────────
 
 // IssuePap 发放 PAP 到舰队所有成员
-func (s *FleetService) IssuePap(fleetID string, userID uint, userRole string) error {
+func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string) error {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return errors.New("权限不足")
 	}
 	if fleet.PapCount <= 0 {
@@ -438,7 +494,7 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRole string) er
 
 	// 1. 先尝试 ESI 同步成员（失败不阻断发放）
 	if fleet.ESIFleetID != nil {
-		if _, syncErr := s.SyncESIMembers(fleetID, userID, userRole); syncErr != nil {
+		if _, syncErr := s.SyncESIMembers(fleetID, userID, userRoles); syncErr != nil {
 			global.Logger.Warn("[Fleet] IssuePap ESI 同步失败，继续发放",
 				zap.String("fleet_id", fleetID),
 				zap.Error(syncErr),
@@ -716,6 +772,7 @@ func (s *FleetService) GetCorporationPapSummary(page, pageSize int, period strin
 		profile := profileByUserID[row.UserID]
 		items = append(items, CorporationPapSummaryItem{
 			UserID:            row.UserID,
+			Nickname:          profile.Nickname,
 			CorpTicker:        profile.CorpTicker,
 			MainCharacterName: profile.MainCharacterName,
 			CharacterCount:    profile.CharacterCount,
@@ -797,12 +854,12 @@ type ESIFleetMember struct {
 }
 
 // SyncESIMembers 从 ESI 获取当前舰队成员并记录到数据库
-func (s *FleetService) SyncESIMembers(fleetID string, userID uint, userRole string) ([]ESIFleetMember, error) {
+func (s *FleetService) SyncESIMembers(fleetID string, userID uint, userRoles []string) ([]ESIFleetMember, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 	if fleet.ESIFleetID == nil {
@@ -849,12 +906,12 @@ func (s *FleetService) SyncESIMembers(fleetID string, userID uint, userRole stri
 // ─────────────────────────────────────────────
 
 // CreateInvite 创建舰队邀请链接
-func (s *FleetService) CreateInvite(fleetID string, userID uint, userRole string) (*model.FleetInvite, error) {
+func (s *FleetService) CreateInvite(fleetID string, userID uint, userRoles []string) (*model.FleetInvite, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 
@@ -889,9 +946,8 @@ func (s *FleetService) GetInvites(fleetID string) ([]model.FleetInvite, error) {
 }
 
 // DeactivateInvite 禁用邀请链接
-func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRole string) error {
-	// 简单处理：admin 和 fc 都可以禁用
-	if !model.HasRole(userRole, model.RoleFC) {
+func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRoles []string) error {
+	if !s.canManageFleet(nil, userID, userRoles) {
 		return errors.New("权限不足")
 	}
 	return s.repo.DeactivateInvite(inviteID)
@@ -901,12 +957,30 @@ func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRole str
 //  权限判断
 // ─────────────────────────────────────────────
 
-// canManageFleet 判断用户是否有权管理该舰队（admin 或创建者）
-func (s *FleetService) canManageFleet(fleet *model.Fleet, userID uint, userRole string) bool {
-	if model.HasRole(userRole, model.RoleAdmin) {
-		return true
+// canManageFleet 判断用户是否有权管理舰队相关功能（super_admin / admin / fc）
+func (s *FleetService) canManageFleet(_ *model.Fleet, _ uint, userRoles []string) bool {
+	return model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC)
+}
+
+func (s *FleetService) canDeleteFleet(userRoles []string) bool {
+	return model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin)
+}
+
+func normalizeCharacterNames(names []string) []string {
+	result := make([]string, 0, len(names))
+	seen := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		trimmed := strings.TrimSpace(name)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		result = append(result, trimmed)
 	}
-	return fleet.FCUserID == userID
+	return result
 }
 
 func (s *FleetService) buildCorporationPapFilter(period string, year int, now time.Time) (repository.FleetPapSummaryFilter, string, *int, error) {
@@ -938,6 +1012,7 @@ func (s *FleetService) buildCorporationPapFilter(period string, year int, now ti
 }
 
 type corporationPapProfile struct {
+	Nickname          string
 	MainCharacterName string
 	CharacterCount    int
 	MainCharacterID   int64
@@ -994,6 +1069,7 @@ func (s *FleetService) resolveCorporationPapProfiles(userIDs []uint) (map[uint]c
 	primaryCorpIDs := make([]int64, 0, len(users))
 	for _, user := range users {
 		profile := corporationPapProfile{
+			Nickname:        user.Nickname,
 			CharacterCount:  characterCountByUserID[user.ID],
 			MainCharacterID: user.PrimaryCharacterID,
 		}
