@@ -3,6 +3,7 @@ package service
 import "testing"
 
 func TestShouldRetryWithoutProxy(t *testing.T) {
+	s := &SdeService{}
 	tests := []struct {
 		name string
 		err  error
@@ -16,7 +17,7 @@ func TestShouldRetryWithoutProxy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := shouldRetryWithoutProxy(tt.err); got != tt.want {
+			if got := s.shouldRetryWithoutProxy(tt.err); got != tt.want {
 				t.Fatalf("shouldRetryWithoutProxy() = %v, want %v", got, tt.want)
 			}
 		})
