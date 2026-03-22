@@ -19,6 +19,32 @@ The active product authentication flow is EVE SSO-based. Legacy template pages m
 
 Changes should preserve the existing architecture. Prefer consistency with the current repo over introducing new patterns.
 
+## 1.1 Quick Start Commands
+
+Most common local commands:
+
+```bash
+# backend
+cd server && go run main.go
+cd server && go test ./...
+cd server && go build ./...
+
+# frontend
+cd static && pnpm install
+cd static && pnpm dev
+cd static && pnpm lint .
+cd static && pnpm exec vue-tsc --noEmit
+cd static && pnpm test:unit
+cd static && pnpm build
+```
+
+Documentation entry points:
+
+- `docs/README.md` for documentation hierarchy and source-of-truth order
+- `docs/architecture/module-map.md` for directory ownership and module lookup
+- `docs/guides/local-development.md` for local runtime setup
+- `docs/guides/testing-guide.md` for practical testing patterns
+
 ## 2. Architecture Rules
 
 ### 2.1 Backend Layering
@@ -204,9 +230,29 @@ After editing:
 
 - validate the exact layer you changed
 - if you changed contracts, validate both backend and frontend
+- if you fixed a bug or changed risky logic, add or update regression tests when practical
 - update docs when current behavior or route surfaces changed
 
-## 9. Verification Checklist
+## 9. Testing and Verification
+
+### 9.1 Testing Expectations
+
+- build / lint / typecheck are necessary, but they do not replace regression tests for risky logic changes
+- bug fixes should add a regression test when the changed behavior can be tested reasonably
+- backend pure logic should prefer Go unit tests alongside the changed package
+- repository query-shaping helpers and response merge logic should be covered by Go tests when changed
+- frontend pure helpers and hooks should prefer `static` unit tests via `pnpm test:unit`
+- if a contract change affects both backend and frontend, add coverage on at least one side of the boundary and verify both layers
+
+Allowed exceptions:
+
+- the code depends on infrastructure that is not practically testable in the current repo setup
+- adding the test would require building a large new harness unrelated to the change
+- the change is documentation-only or mechanical formatting with no behavior impact
+
+When you skip a practical test, call that out in the change summary.
+
+### 9.2 Verification Checklist
 
 There are no repo-wide helper scripts such as `./scripts/setup-local.sh` or `./scripts/run-local-checks.sh` in the current tree. Use direct layer checks instead.
 
@@ -218,13 +264,16 @@ cd server && go build ./...
 cd static && pnpm lint .
 cd static && pnpm build
 cd static && pnpm exec vue-tsc --noEmit
+cd static && pnpm test:unit
 ```
 
 Minimum expectation:
 
 - backend changes: `go test` and `go build`
 - frontend changes: `pnpm lint .` and `vue-tsc --noEmit`
+- frontend pure helper / hook changes with unit coverage: `pnpm test:unit`
 - cross-contract changes: validate both
+- bug fixes and risky logic changes: add or update regression tests when practical, then run them
 
 ## 10. Documentation Rules
 

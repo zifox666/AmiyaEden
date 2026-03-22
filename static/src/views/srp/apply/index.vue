@@ -220,7 +220,7 @@
           minWidth: 140,
           showOverflowTooltip: true,
           formatter: (row: Api.Srp.Application) =>
-            h('span', {}, getName(row.ship_type_id, `TypeID: ${row.ship_type_id}`))
+            h('span', {}, getName(row.ship_type_id, `TypeID: ${row.ship_type_id}`, 'type'))
         },
         {
           prop: 'recommended_amount',
@@ -357,9 +357,9 @@
   }
 
   const formatKmLabel = (km: Api.Srp.FleetKillmailItem) =>
-    `${km.killmail_id}: ${getName(km.ship_type_id, `TypeID: ${km.ship_type_id}`)}` +
+    `${km.killmail_id}: ${getName(km.ship_type_id, `TypeID: ${km.ship_type_id}`, 'type')}` +
     `(${km.victim_name}) - ${formatTime(km.killmail_time)}` +
-    ` @${getName(km.solar_system_id, String(km.solar_system_id))}`
+    ` @${getName(km.solar_system_id, String(km.solar_system_id), 'solar_system')}`
 
   const loadKillmails = async () => {
     kmLoading.value = true

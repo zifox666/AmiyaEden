@@ -74,7 +74,6 @@ const (
 	WalletRefAdminAdjust = "admin_adjust"  // 管理员调整
 	WalletRefSrpPayout   = "srp_payout"    // SRP 补损发放
 	WalletRefShopBuy     = "shop_purchase" // 商城购买
-	WalletRefLotteryDraw = "lottery_draw"  // 抽奖消费
 )
 
 // 钱包操作日志动作

@@ -37,7 +37,7 @@ eve_sso:
 
 sde:
   api_key: "change_me_sde_api_key"  # 用于保护 SDE 数据查询接口的 API Key
-  proxy: "http://127.0.0.1:7890"    # 下载 SDE 时使用的代理，例如 http://127.0.0.1:7890 或 socks5://127.0.0.1:1080，留空不使用
+  proxy: ""                         # 可选代理；留空禁用。若配置了代理但连接失败，下载器会自动回退为直连
   download_url: "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"  # SDE 数据下载 URL，默认为 GitHub API 获取最新 release 信息
 
 app:

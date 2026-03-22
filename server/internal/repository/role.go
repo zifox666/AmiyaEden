@@ -124,9 +124,38 @@ func (r *RoleRepository) GetUserRoleCodes(userID uint) ([]string, error) {
 	var codes []string
 	err := global.DB.Model(&model.UserRole{}).
 		Joins("JOIN role ON role.id = user_role.role_id").
+		Order("role.sort DESC, role.id ASC").
 		Where("user_role.user_id = ? AND role.status = 1", userID).
 		Pluck("role.code", &codes).Error
 	return codes, err
+}
+
+func (r *RoleRepository) GetUserRoleCodesByUserIDs(userIDs []uint) (map[uint][]string, error) {
+	roleCodesByUserID := make(map[uint][]string, len(userIDs))
+	if len(userIDs) == 0 {
+		return roleCodesByUserID, nil
+	}
+
+	type userRoleCodeRow struct {
+		UserID uint
+		Code   string
+	}
+
+	var rows []userRoleCodeRow
+	err := global.DB.Table("user_role").
+		Select("user_role.user_id AS user_id, role.code AS code").
+		Joins("JOIN role ON role.id = user_role.role_id").
+		Where("user_role.user_id IN ? AND role.status = 1", userIDs).
+		Order("user_role.user_id ASC, role.sort DESC, role.id ASC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		roleCodesByUserID[row.UserID] = append(roleCodesByUserID[row.UserID], row.Code)
+	}
+	return roleCodesByUserID, nil
 }
 
 func (r *RoleRepository) SetUserRoles(userID uint, roleIDs []uint) error {

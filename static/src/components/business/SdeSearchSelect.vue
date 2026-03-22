@@ -19,12 +19,15 @@
     >
       <div class="sde-search-option">
         <img
-          v-if="item.category === 'type'"
+          v-if="item.category === 'type' && props.showTypeIcon"
           :src="`https://images.evetech.net/types/${item.id}/icon?size=32`"
           class="sde-search-option__icon"
           loading="lazy"
         />
-        <el-icon v-else class="sde-search-option__icon sde-search-option__icon--char">
+        <el-icon
+          v-else-if="item.category !== 'type'"
+          class="sde-search-option__icon sde-search-option__icon--char"
+        >
           <User />
         </el-icon>
         <span class="sde-search-option__name">{{ item.name }}</span>
@@ -59,6 +62,8 @@
     placeholder?: string
     /** 初始选项列表，用于编辑时回显已选项 */
     initialOptions?: Api.Sde.FuzzySearchItem[]
+    /** 是否展示 type 图标 */
+    showTypeIcon?: boolean
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -68,7 +73,8 @@
     limit: 20,
     language: 'zh',
     placeholder: '',
-    initialOptions: () => []
+    initialOptions: () => [],
+    showTypeIcon: true
   })
 
   const selectedId = defineModel<number | null>('modelValue', { default: null })

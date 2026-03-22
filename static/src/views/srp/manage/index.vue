@@ -42,14 +42,19 @@
     <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
-          <ArtExcelExport
-            :data="exportManageData"
-            :headers="manageExportHeaders"
-            :filename="`srp-manage_${new Date().toLocaleDateString()}`"
-            sheet-name="补损申请"
-            :button-text="$t('srp.manage.exportBtn')"
-            type="success"
-          />
+          <div class="flex items-center gap-2">
+            <ArtExcelExport
+              :data="exportManageData"
+              :headers="manageExportHeaders"
+              :filename="`srp-manage_${new Date().toLocaleDateString()}`"
+              sheet-name="补损申请"
+              :button-text="$t('srp.manage.exportBtn')"
+              type="success"
+            />
+            <ElButton type="warning" @click="openBatchPayoutDialog">
+              {{ $t('srp.manage.batchPayoutBtn') }}
+            </ElButton>
+          </div>
         </template>
       </ArtTableHeader>
 
@@ -58,6 +63,7 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        :pagination-options="{ pageSizes: [200, 500, 1000] }"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
       />
@@ -193,6 +199,70 @@
       </template>
     </ElDialog>
 
+    <ElDialog
+      v-model="batchPayoutDialogVisible"
+      :title="$t('srp.manage.batchPayoutDialog')"
+      width="760px"
+    >
+      <div class="mb-3 flex items-center gap-2 text-sm text-gray-500">
+        <span>{{ $t('srp.manage.batchPayoutHint') }}</span>
+        <ElButton
+          size="small"
+          :icon="CopyDocument"
+          :disabled="!batchPayoutList.length"
+          @click="copyBatchPayoutListText"
+        />
+      </div>
+      <ElTable
+        v-loading="batchSummaryLoading"
+        :data="batchPayoutList"
+        :empty-text="$t('srp.manage.batchPayoutEmpty')"
+        size="small"
+      >
+        <ElTableColumn
+          prop="main_character_name"
+          :label="$t('srp.manage.batchPayoutMainCharacter')"
+          min-width="170"
+        >
+          <template #default="{ row }">
+            {{ row.main_character_name || $t('srp.manage.unknownMainCharacter') }}
+          </template>
+        </ElTableColumn>
+        <ElTableColumn
+          prop="total_amount"
+          :label="$t('srp.manage.batchPayoutAmount')"
+          min-width="140"
+        >
+          <template #default="{ row }">
+            <span class="font-semibold text-blue-600">{{ formatISK(row.total_amount) }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn
+          prop="application_count"
+          :label="$t('srp.manage.batchPayoutCount')"
+          width="110"
+          align="center"
+        />
+        <ElTableColumn :label="$t('srp.manage.columns.action')" width="150" fixed="right">
+          <template #default="{ row }">
+            <ElButton
+              type="primary"
+              size="small"
+              :loading="batchPayoutLoadingUserId === row.user_id"
+              @click="handleBatchPayout(row)"
+            >
+              {{ $t('srp.manage.confirmPayout') }}
+            </ElButton>
+          </template>
+        </ElTableColumn>
+      </ElTable>
+      <template #footer>
+        <ElButton @click="batchPayoutDialogVisible = false">{{
+          $t('srp.apply.cancelBtn')
+        }}</ElButton>
+      </template>
+    </ElDialog>
+
     <!-- KM 预览弹窗 -->
     <KmPreviewDialog v-model="kmPreviewVisible" :killmail-id="previewKillmailId" />
   </div>
@@ -212,7 +282,10 @@
     ElInputNumber,
     ElInput,
     ElLink,
+    ElMessageBox,
     ElMessage,
+    ElTable,
+    ElTableColumn,
     ElTooltip
   } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
@@ -222,7 +295,9 @@
   import { fetchFleetList } from '@/api/fleet'
   import {
     fetchApplicationList,
+    fetchBatchPayoutSummary,
     reviewApplication,
+    batchPayoutByUser,
     payoutApplication,
     openInfoWindow
   } from '@/api/srp'
@@ -247,9 +322,10 @@
     }
   }
 
-  const filter = reactive({ review_status: 'pending', payout_status: '', fleet_id: '' })
+  const filter = reactive({ review_status: '', payout_status: 'pending', fleet_id: '' })
 
   type SrpApp = Api.Srp.Application
+  type BatchPayoutSummary = Api.Srp.BatchPayoutSummary
   type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
 
   const reviewStatusType = (s: string): TagType =>
@@ -278,9 +354,17 @@
   } = useTable({
     core: {
       apiFn: fetchApplicationList,
-      apiParams: { current: 1, size: 20, review_status: 'pending' },
+      apiParams: { current: 1, size: 200, payout_status: 'pending' },
       columnsFactory: () => [
         { type: 'index', width: 60, label: '#' },
+        {
+          prop: 'nickname',
+          label: t('srp.manage.columns.nickname'),
+          width: 160,
+          showOverflowTooltip: true,
+          formatter: (row: SrpApp) =>
+            h('span', { class: row.nickname ? '' : 'text-gray-400' }, row.nickname || '-')
+        },
         {
           prop: 'character_name',
           label: t('srp.manage.columns.character'),
@@ -293,7 +377,7 @@
           width: 180,
           showOverflowTooltip: true,
           formatter: (row: SrpApp) =>
-            h('span', {}, getName(row.ship_type_id, `TypeID: ${row.ship_type_id}`))
+            h('span', {}, getName(row.ship_type_id, `TypeID: ${row.ship_type_id}`, 'type'))
         },
         {
           prop: 'solar_system_id',
@@ -301,7 +385,7 @@
           width: 140,
           showOverflowTooltip: true,
           formatter: (row: SrpApp) =>
-            h('span', {}, getName(row.solar_system_id, String(row.solar_system_id)))
+            h('span', {}, getName(row.solar_system_id, String(row.solar_system_id), 'solar_system'))
         },
         {
           prop: 'killmail_id',
@@ -333,7 +417,11 @@
             h(
               'span',
               {},
-              getName(row.corporation_id, row.corporation_id ? `ID: ${row.corporation_id}` : '-')
+              getName(
+                row.corporation_id,
+                row.corporation_id ? `ID: ${row.corporation_id}` : '-',
+                'esi'
+              )
             )
         },
         {
@@ -345,7 +433,7 @@
             h(
               'span',
               {},
-              getName(row.alliance_id, row.alliance_id ? `ID: ${row.alliance_id}` : '-')
+              getName(row.alliance_id, row.alliance_id ? `ID: ${row.alliance_id}` : '-', 'esi')
             )
         },
         {
@@ -530,11 +618,11 @@
   }
   const resetFilter = () => {
     filter.review_status = ''
-    filter.payout_status = ''
+    filter.payout_status = 'pending'
     filter.fleet_id = ''
     Object.assign(searchParams, {
       review_status: undefined,
-      payout_status: undefined,
+      payout_status: 'pending',
       fleet_id: undefined
     })
     getData()
@@ -611,6 +699,10 @@
 
   const payoutDialogVisible = ref(false)
   const payoutTarget = ref<Api.Srp.Application | null>(null)
+  const batchPayoutDialogVisible = ref(false)
+  const batchPayoutList = ref<BatchPayoutSummary[]>([])
+  const batchSummaryLoading = ref(false)
+  const batchPayoutLoadingUserId = ref<number | null>(null)
 
   const openPayoutDialog = (row: Api.Srp.Application) => {
     payoutTarget.value = row
@@ -633,6 +725,52 @@
     }
   }
 
+  const loadBatchPayoutSummary = async () => {
+    batchSummaryLoading.value = true
+    try {
+      batchPayoutList.value = await fetchBatchPayoutSummary()
+    } catch {
+      batchPayoutList.value = []
+    } finally {
+      batchSummaryLoading.value = false
+    }
+  }
+
+  const openBatchPayoutDialog = async () => {
+    batchPayoutDialogVisible.value = true
+    await loadBatchPayoutSummary()
+  }
+
+  const handleBatchPayout = async (row: BatchPayoutSummary) => {
+    try {
+      await ElMessageBox.confirm(
+        t('srp.manage.batchPayoutConfirmText', {
+          name: row.main_character_name || t('srp.manage.unknownMainCharacter'),
+          amount: formatISK(row.total_amount)
+        }),
+        t('srp.manage.batchPayoutConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('srp.manage.confirmPayout'),
+          cancelButtonText: t('srp.apply.cancelBtn')
+        }
+      )
+    } catch {
+      return
+    }
+
+    batchPayoutLoadingUserId.value = row.user_id
+    try {
+      await batchPayoutByUser(row.user_id)
+      ElMessage.success(t('srp.manage.batchPayoutSuccess'))
+      await Promise.all([loadBatchPayoutSummary(), refreshData()])
+    } catch {
+      /* handled */
+    } finally {
+      batchPayoutLoadingUserId.value = null
+    }
+  }
+
   /* ── 复制到剪贴板 ── */
   const copyText = async (text: string) => {
     try {
@@ -641,6 +779,33 @@
     } catch {
       ElMessage.warning(t('srp.manage.copyFailed'))
     }
+  }
+
+  const formatBatchPayoutLine = (
+    characterId: number,
+    characterName: string,
+    totalAmount: number
+  ) => {
+    const fullAmount = new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0,
+      useGrouping: false
+    }).format(totalAmount ?? 0)
+    return `<a href="showinfo:1376//${characterId}">${characterName}</a>  ${fullAmount}`
+  }
+
+  const copyBatchPayoutListText = async () => {
+    const lines = batchPayoutList.value
+      .filter((row) => row.main_character_id && row.main_character_name)
+      .map((row) =>
+        formatBatchPayoutLine(row.main_character_id, row.main_character_name, row.total_amount)
+      )
+
+    if (!lines.length) {
+      ElMessage.warning(t('srp.manage.batchPayoutEmpty'))
+      return
+    }
+
+    await copyText(lines.join('\r\n'))
   }
 
   /* ── Open Info Window (ESI) ── */
@@ -675,10 +840,24 @@
   }
   const formatFleetLabel = (f: Api.Fleet.FleetItem) =>
     `${f.fc_character_name}: ${f.title} (${f.pap_count}PAP) @ ${formatShortTime(f.start_at)}~${formatShortTime(f.end_at)}`
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-      v ?? 0
-    )
+  const formatISK = (v: number) => {
+    const value = Number(v ?? 0)
+    const abs = Math.abs(value)
+    const units = [
+      { threshold: 1_000_000_000_000, suffix: 'T' },
+      { threshold: 1_000_000_000, suffix: 'B' },
+      { threshold: 1_000_000, suffix: 'M' },
+      { threshold: 1_000, suffix: 'K' }
+    ]
+
+    for (const unit of units) {
+      if (abs >= unit.threshold) {
+        return `${(value / unit.threshold).toFixed(1)}${unit.suffix}`
+      }
+    }
+
+    return value.toFixed(1)
+  }
 
   // ─── 导出 ───
   const manageExportHeaders = {
@@ -701,15 +880,16 @@
   const exportManageData = computed(() =>
     data.value.map((app) => ({
       character_name: app.character_name,
-      ship_name: getName(app.ship_type_id, `TypeID: ${app.ship_type_id}`),
-      solar_system: getName(app.solar_system_id, String(app.solar_system_id)),
+      ship_name: getName(app.ship_type_id, `TypeID: ${app.ship_type_id}`, 'type'),
+      solar_system: getName(app.solar_system_id, String(app.solar_system_id), 'solar_system'),
       killmail_id: app.killmail_id,
       killmail_time: formatTime(app.killmail_time),
       corporation: getName(
         app.corporation_id,
-        app.corporation_id ? `ID: ${app.corporation_id}` : '-'
+        app.corporation_id ? `ID: ${app.corporation_id}` : '-',
+        'esi'
       ),
-      alliance: getName(app.alliance_id, app.alliance_id ? `ID: ${app.alliance_id}` : '-'),
+      alliance: getName(app.alliance_id, app.alliance_id ? `ID: ${app.alliance_id}` : '-', 'esi'),
       fleet_title: app.fleet_title || '-',
       fleet_fc_name: app.fleet_fc_name || '-',
       note: app.note || '-',

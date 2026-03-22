@@ -2,7 +2,7 @@
 status: active
 doc_type: index
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 source_of_truth:
   - AGENTS.md
 ---
@@ -61,10 +61,30 @@ source_of_truth:
 
 - 当前行为变化时，优先更新对应的 `docs/architecture`、`docs/api`、`docs/features/current`。
 - 新增工程约束时，更新 `AGENTS.md` 或 `docs/standards`，不要把规则写进 feature doc。
+- 测试与验证规则优先维护在 `AGENTS.md` 与 `docs/standards/testing-and-verification.md`。
 - 新增尚未落地的设计时，只放进 `docs/specs/draft`。
 - 不要在多个文件里重复维护同一份角色定义、路由表、权限矩阵。
 - 不要保留并行的“第二套文档入口”。
 - 仓库内允许存在少量模块级 `README.md` 作为局部实现说明，但它们不是 repo-level canonical doc，不能覆盖 `AGENTS.md` 与 `docs/`。
+
+如果变更属于高风险行为边界，必须把 caveat 明确写出来，不能只靠上下文暗示。
+
+典型场景：
+
+- 认证 / 鉴权边界
+- RBAC 角色提升规则
+- 自动权限映射的特殊分支
+- 兼容字段与当前权威字段的区别
+
+这类 caveat 至少要同时落在：
+
+- `docs/architecture/*.md`，说明系统规则
+- `docs/features/current/*.md`，说明模块当前行为
+
+当前如果变更数据库表、核心关系或历史兼容列，应同时更新：
+
+- `docs/architecture/database-schema.md`
+- 受影响的 architecture / api / feature 文档
 
 ## 推荐阅读顺序
 
@@ -74,6 +94,7 @@ source_of_truth:
 2. `AGENTS.md`
 3. 本文件
 4. 相关架构文档
+   如果只是先找代码落点，优先补读 `docs/architecture/module-map.md`
 5. 相关 feature doc
 6. 相关 API / guide
 
@@ -82,10 +103,12 @@ source_of_truth:
 1. `AGENTS.md`
 2. `docs/ai/agent-onboarding.md`
 3. `docs/architecture/overview.md`
-4. 任务对应的标准文档
-5. 任务对应的 feature / API 文档
-6. 只有在明确做规划工作时才读取 `docs/specs/draft/`
-7. 如任务已明确落在某个子目录，再补读该目录下的局部 `README.md`，但只把它当作实现注释而不是规范裁决来源
+4. `docs/architecture/module-map.md`
+5. 任务对应的标准文档
+   如果涉及测试、验证、回归保障，优先补读 `docs/standards/testing-and-verification.md`
+6. 任务对应的 feature / API 文档
+7. 只有在明确做规划工作时才读取 `docs/specs/draft/`
+8. 如任务已明确落在某个子目录，再补读该目录下的局部 `README.md`，但只把它当作实现注释而不是规范裁决来源
 
 ## 维护原则
 

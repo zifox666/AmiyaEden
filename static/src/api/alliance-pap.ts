@@ -82,7 +82,7 @@ export interface PAPImportInfo {
   calculated_at: string
 }
 
-export function importAlliancePAP(params?: { year?: number, month?: number, data: PAPImportInfo }) {
+export function importAlliancePAP(params?: { year?: number; month?: number; data: PAPImportInfo }) {
   return request.post<PAPImportInfo>({ url: '/api/v1/system/pap/import', params })
 }
 

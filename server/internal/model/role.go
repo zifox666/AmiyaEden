@@ -79,6 +79,28 @@ func ContainsAnyRole(roleCodes []string, targets ...string) bool {
 	return false
 }
 
+// HasNonGuestRole 检查角色列表中是否存在任一非 guest 角色
+func HasNonGuestRole(roleCodes []string) bool {
+	for _, code := range roleCodes {
+		if code != RoleGuest {
+			return true
+		}
+	}
+	return false
+}
+
+// NormalizeRoleCodes returns active role codes ordered by priority, falling back
+// to the legacy single-role field when the association table is empty.
+func NormalizeRoleCodes(roleCodes []string, fallback string) []string {
+	if len(roleCodes) > 0 {
+		return roleCodes
+	}
+	if fallback != "" {
+		return []string{fallback}
+	}
+	return []string{RoleGuest}
+}
+
 // HasAnyRoleMatch 检查用户角色列表中是否有满足 requiredRole 的角色
 // 超级管理员拥有所有权限
 func HasAnyRoleMatch(userRoles []string, requiredRole string) bool {

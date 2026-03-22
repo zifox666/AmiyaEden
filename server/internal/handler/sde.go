@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/eve/esi"
 	"amiya-eden/pkg/response"
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/gin-gonic/gin"
 )
@@ -68,11 +70,57 @@ func (h *SdeHandler) GetTypes(c *gin.Context) {
 
 // GetNames godoc
 // POST /api/v1/sde/names
-// 批量查询 id -> name 映射
+// 批量查询名称映射
 type GetNamesRequest struct {
 	Language string           `json:"language"`
 	IDs      map[string][]int `json:"ids"` // key 为 tcID 名称：type/group/category/region/constellation/solar_system/market_group/tech/description
 	ESI      []int64          `json:"esi"` // character/corporation/alliance id，调用 ESI /universe/names
+}
+
+type GetNamesResponse struct {
+	Flat  map[int]string            `json:"flat"`
+	Names map[string]map[int]string `json:"names"`
+}
+
+type getNamesESIEntry struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func newGetNamesResponse() GetNamesResponse {
+	return GetNamesResponse{
+		Flat:  make(map[int]string),
+		Names: make(map[string]map[int]string),
+	}
+}
+
+func mergeGetNamesNamespaces(result *GetNamesResponse, names repository.SdeNameMap) {
+	namespaces := make([]string, 0, len(names))
+	for namespace := range names {
+		namespaces = append(namespaces, namespace)
+	}
+	sort.Strings(namespaces)
+
+	for _, namespace := range namespaces {
+		result.Names[namespace] = names[namespace]
+		for id, name := range names[namespace] {
+			if _, exists := result.Flat[id]; !exists {
+				result.Flat[id] = name
+			}
+		}
+	}
+}
+
+func mergeGetNamesESI(result *GetNamesResponse, entries []getNamesESIEntry) {
+	if _, ok := result.Names["esi"]; !ok {
+		result.Names["esi"] = make(map[int]string, len(entries))
+	}
+	for _, entry := range entries {
+		result.Names["esi"][entry.ID] = entry.Name
+		if _, exists := result.Flat[entry.ID]; !exists {
+			result.Flat[entry.ID] = entry.Name
+		}
+	}
 }
 
 func (h *SdeHandler) GetNames(c *gin.Context) {
@@ -98,7 +146,7 @@ func (h *SdeHandler) GetNames(c *gin.Context) {
 		return
 	}
 
-	result := make(map[int]string)
+	result := newGetNamesResponse()
 
 	// 查数据库翻译
 	if len(req.IDs) > 0 {
@@ -107,9 +155,7 @@ func (h *SdeHandler) GetNames(c *gin.Context) {
 			response.Fail(c, response.CodeBizError, "查询失败: "+err.Error())
 			return
 		}
-		for k, v := range dbNames {
-			result[k] = v
-		}
+		mergeGetNamesNamespaces(&result, dbNames)
 	}
 
 	// 调用 ESI /universe/names 查询 character/corporation/alliance
@@ -122,11 +168,7 @@ func (h *SdeHandler) GetNames(c *gin.Context) {
 			}
 		}
 		if len(validESI) > 0 {
-			type esiEntry struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
-			}
-			var esiResult []esiEntry
+			var esiResult []getNamesESIEntry
 			client := esi.NewClient()
 			if err := client.PostJSON(
 				context.Background(),
@@ -138,9 +180,7 @@ func (h *SdeHandler) GetNames(c *gin.Context) {
 				response.Fail(c, response.CodeBizError, fmt.Sprintf("ESI 查询失败: %v", err))
 				return
 			}
-			for _, e := range esiResult {
-				result[e.ID] = e.Name
-			}
+			mergeGetNamesESI(&result, esiResult)
 		}
 	}
 

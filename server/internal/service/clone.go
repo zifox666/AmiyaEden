@@ -260,8 +260,10 @@ func (s *CloneService) resolveLocationName(characterID, locationID int64, locati
 			"solar_system": {int(locationID)},
 		}, "zh")
 		if err == nil {
-			if name, ok := names[int(locationID)]; ok {
-				return name
+			if solarNames, ok := names["solar_system"]; ok {
+				if name, ok := solarNames[int(locationID)]; ok {
+					return name
+				}
 			}
 		}
 		// station ID 通常在 60000000–61000000 范围，尝试通过 staStations 表

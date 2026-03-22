@@ -55,7 +55,7 @@
           <ElTableColumn :label="$t('fleet.pap.ship')" min-width="160">
             <template #default="{ row }">
               <span v-if="row.ship_type_id">{{
-                getName(row.ship_type_id, String(row.ship_type_id))
+                getName(row.ship_type_id, String(row.ship_type_id), 'type')
               }}</span>
               <span v-else class="text-gray-400">-</span>
             </template>

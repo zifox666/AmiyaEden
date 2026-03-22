@@ -18,6 +18,7 @@ type SrpService struct {
 	repo      *repository.SrpRepository
 	fleetRepo *repository.FleetRepository
 	charRepo  *repository.EveCharacterRepository
+	userRepo  *repository.UserRepository
 	sdeRepo   *repository.SdeRepository
 	ssoSvc    *EveSSOService
 }
@@ -27,6 +28,7 @@ func NewSrpService() *SrpService {
 		repo:      repository.NewSrpRepository(),
 		fleetRepo: repository.NewFleetRepository(),
 		charRepo:  repository.NewEveCharacterRepository(),
+		userRepo:  repository.NewUserRepository(),
 		sdeRepo:   repository.NewSdeRepository(),
 		ssoSvc:    NewEveSSOService(),
 	}
@@ -210,16 +212,43 @@ type SrpApplicationResponse struct {
 	model.SrpApplication
 	FleetTitle  string `json:"fleet_title,omitempty"`
 	FleetFCName string `json:"fleet_fc_name,omitempty"`
+	Nickname    string `json:"nickname,omitempty"`
+}
+
+// SrpBatchPayoutSummaryResponse 按用户聚合的批量发放摘要
+type SrpBatchPayoutSummaryResponse struct {
+	UserID            uint    `json:"user_id"`
+	Nickname          string  `json:"nickname,omitempty"`
+	MainCharacterID   int64   `json:"main_character_id"`
+	MainCharacterName string  `json:"main_character_name"`
+	TotalAmount       float64 `json:"total_amount"`
+	ApplicationCount  int64   `json:"application_count"`
 }
 
 // enrichWithFleetInfo 为申请列表填充舰队信息
 func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpApplicationResponse {
 	result := make([]SrpApplicationResponse, len(apps))
+	userIDSet := make(map[uint]bool)
 	// 收集所有非空 fleet_id
 	fleetIDSet := make(map[string]bool)
 	for _, app := range apps {
+		userIDSet[app.UserID] = true
 		if app.FleetID != nil && *app.FleetID != "" {
 			fleetIDSet[*app.FleetID] = true
+		}
+	}
+	userIDs := make([]uint, 0, len(userIDSet))
+	for userID := range userIDSet {
+		userIDs = append(userIDs, userID)
+	}
+	userMap := make(map[uint]model.User)
+	if len(userIDs) > 0 {
+		users, err := s.userRepo.ListByIDs(userIDs)
+		if err == nil {
+			userMap = make(map[uint]model.User, len(users))
+			for _, user := range users {
+				userMap[user.ID] = user
+			}
 		}
 	}
 	// 批量查询舰队信息
@@ -232,6 +261,9 @@ func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpAppli
 	// 组装响应
 	for i, app := range apps {
 		resp := SrpApplicationResponse{SrpApplication: app}
+		if user, ok := userMap[app.UserID]; ok {
+			resp.Nickname = user.Nickname
+		}
 		if app.FleetID != nil && *app.FleetID != "" {
 			if fleet, ok := fleetMap[*app.FleetID]; ok {
 				resp.FleetTitle = fleet.Title
@@ -268,6 +300,9 @@ func (s *SrpService) GetApplication(id uint) (*SrpApplicationResponse, error) {
 		return nil, err
 	}
 	resp := &SrpApplicationResponse{SrpApplication: *app}
+	if user, uerr := s.userRepo.GetByID(app.UserID); uerr == nil {
+		resp.Nickname = user.Nickname
+	}
 	if app.FleetID != nil && *app.FleetID != "" {
 		if fleet, ferr := s.fleetRepo.GetByID(*app.FleetID); ferr == nil {
 			resp.FleetTitle = fleet.Title
@@ -275,6 +310,67 @@ func (s *SrpService) GetApplication(id uint) (*SrpApplicationResponse, error) {
 		}
 	}
 	return resp, nil
+}
+
+// ListBatchPayoutSummary 查询管理端批量发放汇总
+func (s *SrpService) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryResponse, error) {
+	rows, err := s.repo.ListBatchPayoutSummary()
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return []SrpBatchPayoutSummaryResponse{}, nil
+	}
+
+	userIDs := make([]uint, 0, len(rows))
+	for _, row := range rows {
+		userIDs = append(userIDs, row.UserID)
+	}
+
+	users, err := s.userRepo.ListByIDs(userIDs)
+	if err != nil {
+		return nil, err
+	}
+	chars, err := s.charRepo.ListByUserIDs(userIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	userMap := make(map[uint]model.User, len(users))
+	for _, user := range users {
+		userMap[user.ID] = user
+	}
+
+	userChars := make(map[uint][]model.EveCharacter)
+	charNameByID := make(map[int64]string, len(chars))
+	for _, char := range chars {
+		userChars[char.UserID] = append(userChars[char.UserID], char)
+		charNameByID[char.CharacterID] = char.CharacterName
+	}
+
+	result := make([]SrpBatchPayoutSummaryResponse, 0, len(rows))
+	for _, row := range rows {
+		resp := SrpBatchPayoutSummaryResponse{
+			UserID:           row.UserID,
+			TotalAmount:      row.TotalAmount,
+			ApplicationCount: row.ApplicationCount,
+		}
+
+		if user, ok := userMap[row.UserID]; ok {
+			resp.Nickname = user.Nickname
+			resp.MainCharacterID = user.PrimaryCharacterID
+			resp.MainCharacterName = charNameByID[user.PrimaryCharacterID]
+		}
+		if resp.MainCharacterName == "" {
+			if chars := userChars[row.UserID]; len(chars) > 0 {
+				resp.MainCharacterID = chars[0].CharacterID
+				resp.MainCharacterName = chars[0].CharacterName
+			}
+		}
+
+		result = append(result, resp)
+	}
+	return result, nil
 }
 
 // ─────────────────────────────────────────────
@@ -357,6 +453,35 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 		return nil, err
 	}
 	return app, nil
+}
+
+// BatchPayoutByUser 批量发放某用户所有已批准且未发放的 SRP
+func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, error) {
+	summaries, err := s.ListBatchPayoutSummary()
+	if err != nil {
+		return nil, err
+	}
+
+	var target *SrpBatchPayoutSummaryResponse
+	for i := range summaries {
+		if summaries[i].UserID == userID {
+			target = &summaries[i]
+			break
+		}
+	}
+	if target == nil {
+		return nil, errors.New("该用户没有可批量发放的 SRP 申请")
+	}
+
+	now := time.Now()
+	affected, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
+	if err != nil {
+		return nil, err
+	}
+	if affected == 0 {
+		return nil, errors.New("该用户没有可批量发放的 SRP 申请")
+	}
+	return target, nil
 }
 
 // ─────────────────────────────────────────────
@@ -690,9 +815,11 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 	if err != nil {
 		return nil, err
 	}
+	typeNames := nameMap["type"]
 
 	// 5. 查星系名
 	sysNameMap, _ := s.sdeRepo.GetNames(map[string][]int{"solar_system": {int(km.SolarSystemID)}}, lang)
+	solarSystemNames := sysNameMap["solar_system"]
 
 	// 6. 查角色名
 	charName := ""
@@ -742,7 +869,7 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 		if existing, ok := merged[key]; ok {
 			existing.Quantity += it.ItemNum
 		} else {
-			itemName := nameMap[it.ItemID]
+			itemName := typeNames[it.ItemID]
 			if itemName == "" {
 				itemName = "Unknown"
 			}
@@ -776,11 +903,11 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 		}
 	}
 
-	shipName := nameMap[int(km.ShipTypeID)]
+	shipName := typeNames[int(km.ShipTypeID)]
 	if shipName == "" {
 		shipName = "Unknown"
 	}
-	sysName := sysNameMap[int(km.SolarSystemID)]
+	sysName := solarSystemNames[int(km.SolarSystemID)]
 
 	return &KillmailDetailResponse{
 		KillmailID:    km.KillmailID,

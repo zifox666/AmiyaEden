@@ -45,6 +45,7 @@
     "user": "User",
     "role": "Role",
     "name": "Name",
+    "quantity": "Quantity",
     "status": "Status",
     "save": "Save",
     "updatedAt": "Updated At",
@@ -61,20 +62,11 @@
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": [
-        "Vertical",
-        "Horizontal",
-        "Mixed",
-        "Dual"
-      ]
+      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
     },
     "theme": {
       "title": "Theme Style",
-      "list": [
-        "Light",
-        "Dark",
-        "System"
-      ]
+      "list": ["Light", "Dark", "System"]
     },
     "menu": {
       "title": "Menu Style"
@@ -84,17 +76,11 @@
     },
     "box": {
       "title": "Box Style",
-      "list": [
-        "Border",
-        "Shadow"
-      ]
+      "list": ["Border", "Shadow"]
     },
     "container": {
       "title": "Container Width",
-      "list": [
-        "Full",
-        "Boxed"
-      ]
+      "list": ["Full", "Boxed"]
     },
     "basics": {
       "title": "Basic Config",
@@ -140,14 +126,8 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": [
-      "Notice",
-      "Message",
-      "Todo"
-    ],
-    "text": [
-      "No"
-    ],
+    "bar": ["Notice", "Message", "Todo"],
+    "text": ["No"],
     "viewAll": "View all"
   },
   "worktab": {
@@ -262,11 +242,6 @@
       "title": "Dashboard",
       "console": "Console"
     },
-    "result": {
-      "title": "Result Page",
-      "success": "Success",
-      "fail": "Fail"
-    },
     "exception": {
       "title": "Exception",
       "forbidden": "403",
@@ -302,11 +277,17 @@
       "fleets": "Fleet Management",
       "fleetDetail": "Fleet Detail",
       "fleetConfigs": "Fleet Configs",
+      "corporationPap": "Corporation PAP",
       "pap": "My PAP",
       "join": "Join Fleet",
       "srpApply": "SRP Apply",
       "srpManage": "SRP Review",
       "srpPrices": "SRP Price List"
+    },
+    "skillPlanning": {
+      "title": "Skill Planning",
+      "skillPlans": "Manage Corp Plans",
+      "completionCheck": "Check Completion"
     },
     "role": {
       "title": "Roles",
@@ -583,114 +564,6 @@
       "validType": "Please select a type"
     }
   },
-  "lottery": {
-    "noActivities": "No lottery activities available",
-    "startDraw": "Draw Now",
-    "points": "Points",
-    "perDraw": "draw",
-    "free": "Free",
-    "more": "more",
-    "myRecords": "My Lottery Records",
-    "draw": "Lottery",
-    "costLabel": "Cost per draw:",
-    "balance": "Balance",
-    "prizePool": "Prize Pool",
-    "drawing": "Drawing...",
-    "close": "Close",
-    "drawAgain": "Draw Again",
-    "loadFailed": "Failed to load",
-    "drawFailed": "Draw failed",
-    "tier": {
-      "normal": "Normal",
-      "rare": "Rare",
-      "legendary": "Legendary"
-    },
-    "status": {
-      "active": "Active",
-      "closed": "Closed"
-    },
-    "manage": {
-      "activitiesTab": "Activities",
-      "createActivity": "Create Activity",
-      "editActivity": "Edit Activity",
-      "noActivities": "No activities",
-      "costPerDraw": "Cost per draw",
-      "startAt": "Start time",
-      "endAt": "End time",
-      "managePrizes": "Manage Prizes",
-      "prizeCount": "Prizes: {n}",
-      "noPrizes": "No prizes",
-      "recordsTab": "Records",
-      "filterActivity": "Filter by activity",
-      "uploading": "Uploading...",
-      "uploadCover": "Upload Cover",
-      "uploadImage": "Upload Image",
-      "managePrizesTitle": "Manage Prizes - {name}",
-      "addPrize": "Add Prize",
-      "editPrize": "Edit Prize",
-      "noPrizesHint": "No prizes yet. Click the button above to add one.",
-      "weight": "Weight",
-      "stock": "Stock",
-      "stockUnlimited": "Unlimited",
-      "totalWeight": "Total weight",
-      "loadFailed": "Failed to load",
-      "updateSuccess": "Updated",
-      "createSuccess": "Created",
-      "addSuccess": "Added",
-      "operationFailed": "Operation failed",
-      "deleteActivityConfirm": "Delete activity \"{name}\"? All associated prizes will also be removed.",
-      "deleteSuccess": "Deleted",
-      "deleteFailed": "Delete failed",
-      "imageTooLarge": "Image must be under 2MB",
-      "uploadSuccess": "Uploaded",
-      "uploadFailed": "Upload failed",
-      "validName": "Activity name is required",
-      "validCost": "Cost per draw is required",
-      "validPrizeName": "Prize name is required",
-      "validTier": "Please select a tier",
-      "deletePrizeConfirm": "Delete prize \"{name}\"?",
-      "fields": {
-        "name": "Name",
-        "namePlaceholder": "Activity name",
-        "description": "Description",
-        "descriptionPlaceholder": "Description (optional)",
-        "coverImage": "Cover Image",
-        "costPerDraw": "Cost per draw",
-        "costHint": "0 means free",
-        "status": "Status",
-        "startAt": "Start time",
-        "endAt": "End time",
-        "noLimit": "No limit",
-        "sortOrder": "Sort order",
-        "sortHint": "Higher number = higher priority"
-      },
-      "prizeFields": {
-        "name": "Prize name",
-        "namePlaceholder": "Enter prize name",
-        "image": "Prize image",
-        "sdeSearchPlaceholder": "Search EVE items to auto-set image",
-        "tier": "Tier",
-        "weight": "Probability weight",
-        "weightHint": "Higher weight = higher chance",
-        "totalStock": "Total stock",
-        "stockHint": "0 means unlimited"
-      },
-      "recordColumns": {
-        "userId": "User ID",
-        "activity": "Activity",
-        "prize": "Prize",
-        "cost": "Cost",
-        "time": "Time",
-        "deliveryStatus": "Delivery"
-      }
-    },
-    "delivery": {
-      "pending": "Pending",
-      "delivered": "Delivered",
-      "markDelivered": "Mark Delivered",
-      "markSuccess": "Marked as delivered"
-    }
-  },
   "userAdmin": {
     "status": {
       "active": "Active",
@@ -712,13 +585,16 @@
     },
     "table": {
       "userInfo": "User Info",
+      "contact": "Contact",
       "lastLogin": "Last Login",
       "loginIp": "Login IP",
       "registeredAt": "Registered At"
     },
     "unnamed": "Unnamed",
     "impersonate": "Impersonate",
+    "editProtectedDenied": "Admins cannot edit super admins or other admins.",
     "deleteConfirm": "Are you sure you want to delete user \"{name}\"? This cannot be undone.",
+    "deleteProtectedDenied": "Admins cannot delete super admins or other admins.",
     "deleteSuccess": "Deleted",
     "deleteFailed": "Failed to delete",
     "impersonateConfirm": "Are you sure you want to sign in as \"{name}\"? Your current admin session will be replaced. Save your current token first or use a new tab.",
@@ -770,6 +646,13 @@
       "empty": "No members yet",
       "syncESI": "Sync from ESI",
       "syncSuccess": "Members synced",
+      "manualAdd": "Add Members",
+      "manualAddInputLabel": "Character name list",
+      "manualAddPlaceholder": "PlayerOne\nPlayerTwo\nPlayerThree",
+      "manualAddHint": "Enter one character name per line. Saved names that already exist in the system will be added to the fleet.",
+      "manualAddEmpty": "Enter at least one character name",
+      "manualAddSuccess": "{count} members added",
+      "manualAddMissing": "Characters not found: {names}",
       "characterName": "Character",
       "characterId": "Character ID",
       "shipType": "Ship",
@@ -781,7 +664,9 @@
       "issue": "Issue PAP",
       "issueConfirm": "Issue PAP to all members?",
       "issueSuccess": "PAP issued",
-      "myTitle": "My PAP Records",
+      "issueWithSyncConfirm": "Sync members from ESI for \"{name}\" and then issue PAP?",
+      "issueWithSyncSuccess": "Members synced and PAP issued",
+      "myTitle": "My PAP",
       "totalPap": "Total PAP",
       "participationCount": "Participations",
       "fleetId": "Fleet ID",
@@ -815,6 +700,39 @@
       "allianceOperationName": "Operation Name",
       "allianceStartTime": "Start Time",
       "allianceEndTime": "End Time"
+    },
+    "corporationPap": {
+      "title": "Corporation PAP",
+      "summaryTitle": "Corporation PAP Summary",
+      "empty": "No corporation PAP summary records",
+      "search": "Search",
+      "reset": "Reset",
+      "filters": {
+        "period": "Period",
+        "year": "Year",
+        "corpTickers": "Corporations"
+      },
+      "periods": {
+        "currentMonth": "Current Month",
+        "lastMonth": "Last Month",
+        "atYear": "At Year",
+        "all": "All"
+      },
+      "stats": {
+        "filteredPap": "Filtered PAP",
+        "filteredStratOp": "Strategic OP PAP",
+        "allPap": "All PAP",
+        "users": "Users"
+      },
+      "columns": {
+        "corpTicker": "Corporation",
+        "nickname": "Nickname",
+        "mainCharacter": "Main Character",
+        "characterCount": "Characters",
+        "stratOpPaps": "Strategic OP",
+        "skirmishPaps": "Skirmish",
+        "allianceStratPaps": "Alliance Strategic"
+      }
     },
     "invite": {
       "title": "Invite Links",
@@ -920,6 +838,76 @@
       "fittingPlaceholder": "Select a fitting"
     }
   },
+  "skillPlan": {
+    "title": "Corp Skill Plans",
+    "create": "Create Plan",
+    "edit": "Edit Plan",
+    "delete": "Delete Plan",
+    "createSuccess": "Skill plan created",
+    "updateSuccess": "Skill plan updated",
+    "deleteSuccess": "Skill plan deleted",
+    "deleteConfirm": "Are you sure you want to delete skill plan \"{title}\"? This cannot be undone.",
+    "searchPlaceholder": "Search skill plan title or description",
+    "listTitle": "Skill Plans",
+    "detailTitle": "Plan Details",
+    "emptyList": "No skill plans",
+    "emptyDetail": "Select a skill plan on the left to view details",
+    "descriptionEmpty": "No description",
+    "skillCount": "Skill Requirements",
+    "skillListTitle": "Required Skills",
+    "addSkill": "Add Skill Requirement",
+    "noSkills": "Please add at least one skill requirement",
+    "duplicateSkill": "Duplicate skills are not allowed in one plan",
+    "textInputActive": "Pasted skill text will be used as the source of truth on save; duplicate skills keep the highest level automatically.",
+    "manualInputHint": "Clear the pasted skill text above to switch back to manual skill selection.",
+    "level": "Level {level}",
+    "levelLabel": "Required Level",
+    "order": "Order",
+    "fields": {
+      "title": "Plan Title",
+      "titlePlaceholder": "Enter the skill plan title",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe what this skill plan is for",
+      "ship": "Plan Ship Icon",
+      "shipPlaceholder": "Search and select a ship",
+      "shipHint": "Optional. The selected ship icon will be shown in the plan list.",
+      "skillsText": "Skill Text",
+      "skillsTextPlaceholder": "One skill per line, for example:\nGraviton Physics 5\nDoomsday Rapid Firing 5\nCapital Shield Operation 4",
+      "skillsTextHint": "Supported format: skill name + space + level. Levels may use 1-5 or Roman numerals I-V. Duplicate skills automatically keep the highest level.",
+      "skill": "Skill",
+      "skillPlaceholder": "Search and select a skill",
+      "group": "Skill Group",
+      "requiredLevel": "Required Level"
+    },
+    "table": {
+      "skill": "Skill",
+      "group": "Group",
+      "requiredLevel": "Required Level"
+    }
+  },
+  "skillPlanCheck": {
+    "title": "Check Completion",
+    "subtitle": "Compare the selected characters' skills against the saved corp plans and review completion at a glance.",
+    "selectCharacters": "Select Characters",
+    "selectedCharacters": "Selected Characters",
+    "noCharactersSelected": "No characters selected yet",
+    "noAvailableCharacters": "No available characters for this user",
+    "selectionSaved": "Character selection saved",
+    "selectCharactersFirst": "Please select at least one character first",
+    "startCheck": "Start Check",
+    "resultTitle": "Check Results",
+    "resultSubtitle": "Expand by character, then by skill plan, to inspect completion details.",
+    "planCount": "{count} plans",
+    "emptyResult": "Select characters and start the check to view completion results",
+    "characterSummary": "{completed} / {total} plans completed",
+    "planCompleted": "Completed",
+    "planIncomplete": "Incomplete",
+    "missingCount": "{count} missing",
+    "missingSkillsTitle": "Missing Skills",
+    "requiredVsCurrent": "Required Lv.{required}, current Lv.{current}",
+    "planCompleteSummary": "This character fully satisfies the selected skill plan.",
+    "planIncompleteSummary": "{matched} / {total} skill requirements are currently satisfied."
+  },
   "characters": {
     "title": "EVE Characters",
     "subTitle": "Manage EVE Online characters linked to your account. You can bind multiple characters and switch the primary one.",
@@ -936,7 +924,31 @@
     "setPrimaryFailed": "Failed to set primary character",
     "unbindConfirm": "Are you sure you want to unbind {name}? The authorization data will be removed.",
     "unbindSuccess": "Successfully unbound {name}",
-    "unbindFailed": "Failed to unbind character"
+    "unbindFailed": "Failed to unbind character",
+    "profile": {
+      "title": "Contact Details and Nickname",
+      "subTitle": "Set a nickname and at least one contact method. You will stay on this page until it is complete.",
+      "completed": "Complete",
+      "incomplete": "Incomplete",
+      "completedHint": "Your profile setup is complete. You can access the rest of the app normally.",
+      "requiredHint": "You must set a nickname and at least one of QQ number or Discord ID before continuing.",
+      "nickname": "Nickname",
+      "nicknamePlaceholder": "Enter nickname",
+      "qq": "QQ Number",
+      "qqPlaceholder": "Enter QQ number",
+      "discordId": "Discord ID",
+      "discordPlaceholder": "Enter Discord ID",
+      "save": "Save Profile",
+      "saveSuccess": "Profile updated",
+      "validation": {
+        "nicknameRequired": "Nickname is required",
+        "nicknameLength": "Nickname must be 20 characters or fewer",
+        "contactRequired": "Enter either a QQ number or a Discord ID",
+        "qqLength": "QQ number must be 20 characters or fewer",
+        "qqDigits": "QQ number must contain digits only",
+        "discordLength": "Discord ID must be 20 characters or fewer"
+      }
+    }
   },
   "srp": {
     "apply": {
@@ -1009,12 +1021,25 @@
       "searchBtn": "Search",
       "resetBtn": "Reset",
       "exportBtn": "Export Data",
+      "batchPayoutBtn": "Batch Payout",
       "approveBtn": "Approve",
       "rejectBtn": "Reject",
       "payoutBtn": "Payout",
       "approveDialog": "Approve Application",
       "rejectDialog": "Reject Application",
       "payoutDialog": "Confirm Payout",
+      "batchPayoutDialog": "Batch Payout",
+      "batchPayoutHint": "Click the copy button on the right, then paste the content into an in-game note.",
+      "batchPayoutMainCharacter": "Main Character",
+      "batchPayoutAmount": "Amount",
+      "batchPayoutApprovedAmount": "Approved Amount",
+      "batchPayoutPendingAmount": "Pending Amount",
+      "batchPayoutTotalAmount": "Total Amount",
+      "batchPayoutCount": "Requests",
+      "batchPayoutEmpty": "No eligible SRP requests to batch payout",
+      "batchPayoutConfirmTitle": "Batch Payout",
+      "batchPayoutConfirmText": "Mark all approved unpaid SRP requests for {name} as paid? Total: {amount} ISK",
+      "batchPayoutSuccess": "Batch payout successful",
       "finalAmount": "Final Amount",
       "finalAmountHint": "Enter 0 to keep the current amount",
       "reviewNote": "Review Note",
@@ -1041,8 +1066,10 @@
       "copyFailed": "Copy failed",
       "noPrimaryCharacter": "Please set a primary character first",
       "openInfoWindowSuccess": "Open window request sent",
+      "unknownMainCharacter": "Unknown",
       "columns": {
         "id": "#",
+        "nickname": "Nickname",
         "character": "Character",
         "ship": "Ship",
         "system": "System",
@@ -1182,25 +1209,6 @@
       "resultWallet": "Total wallet issued: {amount}"
     }
   },
-  "resultPage": {
-    "success": {
-      "title": "Submitted Successfully",
-      "message": "The result page is used to present the outcome of a sequence of operations. For simple actions, a global message is usually enough. The gray area can show extra information.",
-      "content": "Your request has been submitted and is awaiting review.",
-      "back": "Back to Edit",
-      "view": "View",
-      "print": "Print"
-    },
-    "fail": {
-      "title": "Submission Failed",
-      "message": "Please review and correct the following items before submitting again.",
-      "content": "The following issues were found in your submission:",
-      "frozen": "Your account has been frozen",
-      "ineligible": "Your account is not eligible to apply yet",
-      "back": "Back to Edit",
-      "view": "View"
-    }
-  },
   "roleUi": {
     "userRoleDialog": {
       "title": "Assign Roles",
@@ -1225,7 +1233,7 @@
   "autoRolePage": {
     "title": "ESI Auto Roles",
     "description": "Automatically assign system roles based on a character's EVE corporation roles and titles.",
-    "directorHint": "Director is always mapped to the admin role automatically.",
+    "directorHint": "Only characters with the ESI corporation role `Director` in allow_corporations are auto-mapped to admin.",
     "triggerSync": "Trigger Sync",
     "syncTriggered": "Sync task triggered and will run in the background",
     "syncFailed": "Failed to trigger sync",

@@ -6,8 +6,7 @@ export const dashboardRoutes: AppRouteRecord = {
   component: '/index/index',
   meta: {
     title: 'menus.dashboard.title',
-    icon: 'ri:pie-chart-line',
-    roles: ['super_admin', 'admin', 'srp', 'fc', 'user', 'guest']
+    icon: 'ri:pie-chart-line'
   },
   children: [
     {

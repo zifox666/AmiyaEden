@@ -8,9 +8,10 @@
 - RBAC 角色 / 菜单 / 按钮权限
 - 动态菜单与动态路由
 - 舰队行动、PAP、舰队配置
+- 技能规划、军团技能计划与完成度检查
 - ESI 角色信息查询（钱包、技能、舰船、植入体、资产、合同、装配）
 - SRP 补损申请、审核、价格表
-- 系统钱包、商店、抽奖
+- 系统钱包、商店
 - 联盟 PAP、自动权限映射、Webhook 配置
 - ESI 刷新队列与 SDE 查询接口
 
@@ -148,12 +149,14 @@ cd server && go build ./...
 cd static && pnpm lint .
 cd static && pnpm build
 cd static && pnpm exec vue-tsc --noEmit
+cd static && pnpm test:unit
 ```
 
 ## 文档入口
 
 - 文档索引与信任顺序：[docs/README.md](docs/README.md)
 - 仓库工程规范：[AGENTS.md](AGENTS.md)
+- 测试与验证标准：[docs/standards/testing-and-verification.md](docs/standards/testing-and-verification.md)
 - 当前架构：[docs/architecture/overview.md](docs/architecture/overview.md)
 - API 路由索引：[docs/api/route-index.md](docs/api/route-index.md)
 - Feature 状态说明：[docs/features/README.md](docs/features/README.md)

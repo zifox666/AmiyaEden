@@ -54,6 +54,8 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   isFirstLevel?: boolean
   /** 角色权限 */
   roles?: string[]
+  /** 任意非 guest 已登录产品用户可访问 */
+  login?: boolean
   /** 是否固定标签页 */
   fixedTab?: boolean
   /** 激活菜单路径 */

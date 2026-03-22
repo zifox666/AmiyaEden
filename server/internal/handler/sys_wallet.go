@@ -23,7 +23,7 @@ func NewSysWalletHandler() *SysWalletHandler {
 //  用户端（POST 接口）
 // ─────────────────────────────────────────────
 
-// GetMyWallet POST /wallet/my
+// GetMyWallet POST /shop/wallet/my
 // 获取当前用户钱包信息
 func (h *SysWalletHandler) GetMyWallet(c *gin.Context) {
 	userID := middleware.GetUserID(c)
@@ -41,7 +41,7 @@ type walletListRequest struct {
 	Size    int `json:"size"`
 }
 
-// GetMyTransactions POST /wallet/my/transactions
+// GetMyTransactions POST /shop/wallet/my/transactions
 // 获取当前用户钱包流水
 func (h *SysWalletHandler) GetMyTransactions(c *gin.Context) {
 	var req walletListRequest

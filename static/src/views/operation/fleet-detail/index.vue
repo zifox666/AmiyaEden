@@ -57,11 +57,18 @@
       <ElCard class="art-table-card mt-4" shadow="never">
         <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
           <template #left>
-            <ElButton type="primary" size="small" :loading="syncLoading" @click="handleSyncESI">
+            <ElButton
+              v-if="canManageFleet"
+              type="primary"
+              size="small"
+              :loading="syncLoading"
+              @click="handleSyncESI"
+            >
               <el-icon class="mr-1"><Refresh /></el-icon>
               {{ $t('fleet.members.syncESI') }}
             </ElButton>
             <ElButton
+              v-if="canManageFleet"
               type="success"
               size="small"
               :loading="papIssueLoading"
@@ -69,7 +76,16 @@
             >
               {{ $t('fleet.pap.issue') }}
             </ElButton>
-            <ElButton type="warning" size="small" :loading="pingLoading" @click="handlePing">
+            <ElButton v-if="canManageFleet" type="info" size="small" @click="openManualAddDialog">
+              {{ $t('fleet.members.manualAdd') }}
+            </ElButton>
+            <ElButton
+              v-if="canManageFleet"
+              type="warning"
+              size="small"
+              :loading="pingLoading"
+              @click="handlePing"
+            >
               {{ $t('fleet.ping.send') }}
             </ElButton>
           </template>
@@ -80,10 +96,41 @@
           :data="data"
           :columns="columns"
           :pagination="pagination"
+          :pagination-options="{
+            layout: 'total, prev, pager, next',
+            hideOnSinglePage: true
+          }"
           @pagination:size-change="handleSizeChange"
           @pagination:current-change="handleCurrentChange"
         />
       </ElCard>
+
+      <ElDialog
+        v-model="manualAddDialogVisible"
+        :title="$t('fleet.members.manualAdd')"
+        width="520px"
+        destroy-on-close
+      >
+        <ElForm label-position="top">
+          <ElFormItem :label="$t('fleet.members.manualAddInputLabel')">
+            <ElInput
+              v-model="manualAddText"
+              type="textarea"
+              :rows="8"
+              :placeholder="$t('fleet.members.manualAddPlaceholder')"
+            />
+          </ElFormItem>
+          <div class="text-xs text-gray-400">
+            {{ $t('fleet.members.manualAddHint') }}
+          </div>
+        </ElForm>
+        <template #footer>
+          <ElButton @click="manualAddDialogVisible = false">{{ $t('common.cancel') }}</ElButton>
+          <ElButton type="primary" :loading="manualAddLoading" @click="handleManualAddMembers">
+            {{ $t('common.save') }}
+          </ElButton>
+        </template>
+      </ElDialog>
 
       <!-- 邀请链接 -->
       <ElCard class="mt-4" shadow="never">
@@ -91,6 +138,7 @@
           <div class="flex items-center justify-between">
             <span class="card-title">{{ $t('fleet.invite.title') }}</span>
             <ElButton
+              v-if="canManageFleet"
               type="primary"
               size="small"
               :loading="inviteCreateLoading"
@@ -126,7 +174,7 @@
                 {{ $t('fleet.invite.copyLink') }}
               </ElButton>
               <ElButton
-                v-if="row.active"
+                v-if="canManageFleet && row.active"
                 type="danger"
                 link
                 size="small"
@@ -146,8 +194,12 @@
   import { ArrowLeft, Refresh, Plus } from '@element-plus/icons-vue'
   import {
     ElCard,
+    ElDialog,
     ElDescriptions,
     ElDescriptionsItem,
+    ElForm,
+    ElFormItem,
+    ElInput,
     ElTable,
     ElTableColumn,
     ElTag,
@@ -157,10 +209,12 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { useTable } from '@/hooks/core/useTable'
+  import { useUserStore } from '@/store/modules/user'
   import {
     fetchFleetDetail,
     syncESIFleetMembers,
     issuePap,
+    addFleetMembersByCharacterNames,
     fetchFleetInvites,
     createFleetInvite,
     deactivateFleetInvite,
@@ -175,8 +229,13 @@
   const { t } = useI18n()
   const route = useRoute()
   const router = useRouter()
+  const userStore = useUserStore()
   const fleetId = computed(() => route.params.id as string)
   const { getName, resolve: resolveNames } = useNameResolver()
+  const canManageFleet = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((role) => ['super_admin', 'admin', 'fc'].includes(role))
+  })
 
   // ---- 舰队信息 ----
   const fleet = ref<Api.Fleet.FleetItem | null>(null)
@@ -210,10 +269,15 @@
   // ---- 成员 & PAP 表格 ----
   const syncLoading = ref(false)
   const papIssueLoading = ref(false)
+  const manualAddDialogVisible = ref(false)
+  const manualAddLoading = ref(false)
+  const manualAddText = ref('')
   const pingLoading = ref(false)
 
+  const memberPageSize = 260
+
   const apiFn = (params: { current: number; size: number }) =>
-    fetchMembersWithPap(fleetId.value, params)
+    fetchMembersWithPap(fleetId.value, { current: params.current, size: memberPageSize })
 
   const {
     columns,
@@ -227,7 +291,7 @@
   } = useTable({
     core: {
       apiFn,
-      apiParams: { current: 1, size: 20 },
+      apiParams: { current: 1, size: memberPageSize },
       columnsFactory: () => [
         { type: 'index', width: 60, label: '#' },
         {
@@ -241,7 +305,8 @@
           label: t('fleet.members.shipType'),
           width: 160,
           showOverflowTooltip: true,
-          formatter: (row: Api.Fleet.MemberWithPap) => h('span', {}, getName(row.ship_type_id, '-'))
+          formatter: (row: Api.Fleet.MemberWithPap) =>
+            h('span', {}, getName(row.ship_type_id, '-', 'type'))
         },
         {
           prop: 'solar_system_id',
@@ -249,7 +314,7 @@
           width: 140,
           showOverflowTooltip: true,
           formatter: (row: Api.Fleet.MemberWithPap) =>
-            h('span', {}, getName(row.solar_system_id, '-'))
+            h('span', {}, getName(row.solar_system_id, '-', 'solar_system'))
         },
         {
           prop: 'joined_at',
@@ -315,6 +380,62 @@
       /* handled */
     } finally {
       papIssueLoading.value = false
+    }
+  }
+
+  // ---- 手动添加成员 ----
+  const openManualAddDialog = () => {
+    manualAddText.value = ''
+    manualAddDialogVisible.value = true
+  }
+
+  const parseCharacterNames = (value: string) => [
+    ...new Set(
+      value
+        .split('\n')
+        .map((name) => name.trim())
+        .filter(Boolean)
+    )
+  ]
+
+  const handleManualAddMembers = async () => {
+    const characterNames = parseCharacterNames(manualAddText.value)
+    if (!characterNames.length) {
+      ElMessage.warning(t('fleet.members.manualAddEmpty'))
+      return
+    }
+
+    manualAddLoading.value = true
+    try {
+      const result = await addFleetMembersByCharacterNames(fleetId.value, {
+        character_names: characterNames
+      })
+
+      const messages: string[] = []
+      if (result.added_character_names.length) {
+        messages.push(
+          t('fleet.members.manualAddSuccess', { count: result.added_character_names.length })
+        )
+      }
+      if (result.missing_character_names.length) {
+        messages.push(
+          t('fleet.members.manualAddMissing', {
+            names: result.missing_character_names.join(', ')
+          })
+        )
+      }
+
+      if (result.added_character_names.length) {
+        ElMessage.success(messages.join(' '))
+      } else {
+        ElMessage.warning(messages.join(' '))
+      }
+      manualAddDialogVisible.value = false
+      refreshData()
+    } catch {
+      /* handled */
+    } finally {
+      manualAddLoading.value = false
     }
   }
 

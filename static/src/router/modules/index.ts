@@ -2,7 +2,7 @@ import { AppRouteRecord } from '@/types/router'
 import { dashboardRoutes } from './dashboard'
 import { systemRoutes } from './system'
 import { operationRoutes } from './operation'
-import { resultRoutes } from './result'
+import { skillPlanningRoutes } from './skill-planning'
 import { exceptionRoutes } from './exception'
 import { srpRoutes } from './srp'
 import { shopRoutes } from './shop'
@@ -13,11 +13,11 @@ import { infoRoutes } from './info'
  */
 export const routeModules: AppRouteRecord[] = [
   dashboardRoutes,
-  infoRoutes,
   operationRoutes,
+  skillPlanningRoutes,
+  infoRoutes,
   shopRoutes,
   systemRoutes,
-  resultRoutes,
   exceptionRoutes,
   srpRoutes
 ]

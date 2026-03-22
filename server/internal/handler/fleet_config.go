@@ -82,8 +82,8 @@ func (h *FleetConfigHandler) UpdateFleetConfig(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	result, err := h.svc.UpdateFleetConfig(uint(id), userID, userRole, &req)
+	userRoles := middleware.GetUserRoles(c)
+	result, err := h.svc.UpdateFleetConfig(uint(id), userID, userRoles, &req)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -99,8 +99,8 @@ func (h *FleetConfigHandler) DeleteFleetConfig(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	if err := h.svc.DeleteFleetConfig(uint(id), userID, userRole); err != nil {
+	userRoles := middleware.GetUserRoles(c)
+	if err := h.svc.DeleteFleetConfig(uint(id), userID, userRoles); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
@@ -193,8 +193,8 @@ func (h *FleetConfigHandler) UpdateFittingItemsSettings(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	userRole := middleware.GetUserRole(c)
-	if err := h.svc.UpdateFittingItemsSettings(uint(configID), uint(fittingID), userID, userRole, &req); err != nil {
+	userRoles := middleware.GetUserRoles(c)
+	if err := h.svc.UpdateFittingItemsSettings(uint(configID), uint(fittingID), userID, userRoles, &req); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}

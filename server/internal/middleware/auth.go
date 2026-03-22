@@ -64,6 +64,10 @@ func JWTAuth() gin.HandlerFunc {
 func RequireRole(codes ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roles := GetUserRoles(c)
+		if model.IsSuperAdmin(roles) {
+			c.Next()
+			return
+		}
 		for _, code := range codes {
 			if model.HasAnyRoleMatch(roles, code) {
 				c.Next()
@@ -71,6 +75,18 @@ func RequireRole(codes ...string) gin.HandlerFunc {
 			}
 		}
 		response.Fail(c, response.CodeForbidden, "权限不足，需要角色: "+strings.Join(codes, "/"))
+		c.Abort()
+	}
+}
+
+// RequireLoginUser 要求请求方是已认证且非 guest 的产品用户
+func RequireLoginUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if model.HasNonGuestRole(GetUserRoles(c)) {
+			c.Next()
+			return
+		}
+		response.Fail(c, response.CodeForbidden, "权限不足，需要登录用户")
 		c.Abort()
 	}
 }

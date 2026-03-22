@@ -11,6 +11,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "lint": "eslint",
+    "test:unit": "tsx --test src/hooks/core/useNameResolver.helpers.test.ts",
     "fix": "eslint --fix",
     "lint:prettier": "prettier --write \"**/*.{js,cjs,ts,json,tsx,css,less,scss,vue,html,md}\"",
     "lint:stylelint": "stylelint  \"**/*.{css,scss,vue}\" --fix",

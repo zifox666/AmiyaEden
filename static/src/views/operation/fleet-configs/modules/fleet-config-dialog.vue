@@ -119,13 +119,10 @@
           </ElFormItem>
 
           <div class="fitting-actions">
-            <!-- 查看模式：复制 + 保存到游戏 -->
+            <!-- 查看模式：复制 -->
             <template v-if="readonly">
               <ElButton size="small" @click="copyEFT(eftMap[fit.id ?? 0] ?? '')">
                 {{ $t('fleetConfig.copyEFT') }}
-              </ElButton>
-              <ElButton size="small" type="primary" @click="openSaveToGame(fit.id ?? 0)">
-                {{ $t('fleetConfig.saveToGame') }}
               </ElButton>
             </template>
             <!-- 编辑模式：仅复制 -->
@@ -134,6 +131,9 @@
                 {{ $t('fleetConfig.copyEFT') }}
               </ElButton>
             </template>
+            <ElButton v-if="fit.id" size="small" type="primary" @click="openSaveToGame(fit.id)">
+              {{ $t('fleetConfig.saveToGame') }}
+            </ElButton>
             <!-- 装备设置：所有用户均可查看，管理员可编辑 -->
             <ElButton v-if="fit.id" size="small" type="warning" @click="openItemSettings(fit.id)">
               {{ $t('fleetConfig.itemSettings') }}
@@ -352,7 +352,7 @@
   const userStore = useUserStore()
   const canManage = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
-    return roles.some((r) => ['super_admin', 'admin', 'fc', 'srp'].includes(r))
+    return roles.some((r) => ['super_admin', 'admin', 'fc'].includes(r))
   })
 
   const formRef = ref<FormInstance>()

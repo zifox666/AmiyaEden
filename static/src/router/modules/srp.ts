@@ -6,7 +6,8 @@ export const srpRoutes: AppRouteRecord = {
   component: '/index/index',
   meta: {
     title: 'menus.srp.title',
-    icon: 'ri:shield-user-line'
+    icon: 'ri:shield-user-line',
+    login: true
   },
   children: [
     {
@@ -15,7 +16,8 @@ export const srpRoutes: AppRouteRecord = {
       component: '/srp/apply',
       meta: {
         title: 'menus.srp.srpApply',
-        keepAlive: true
+        keepAlive: true,
+        login: true
       }
     },
     {
@@ -35,7 +37,7 @@ export const srpRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.srp.srpPrices',
         keepAlive: true,
-        roles: ['super_admin', 'admin', 'srp']
+        login: true
       }
     }
   ]

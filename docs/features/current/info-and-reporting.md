@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/eve_info.go
@@ -57,7 +57,7 @@ source_of_truth:
 
 ## 权限边界
 
-- 用户侧信息查询要求登录
+- 用户侧信息查询要求有效 `JWT`，允许 `guest` 访问
 - 公司级 NPC 刷怪报表属于 `/system` 管理能力，要求 `admin`
 
 ## 关键不变量

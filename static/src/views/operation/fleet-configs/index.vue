@@ -50,7 +50,7 @@
   const userStore = useUserStore()
   const canManage = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
-    return roles.some((r) => ['super_admin', 'admin', 'fc', 'srp'].includes(r))
+    return roles.some((r) => ['super_admin', 'admin', 'fc'].includes(r))
   })
 
   const formatTime = (v: string) => {
@@ -72,7 +72,7 @@
       apiFn: fetchFleetConfigList,
       apiParams: { current: 1, size: 20 },
       columnsFactory: () => [
-        { type: 'index', width: 60, label: '序号' },
+        { type: 'index', width: 60, label: '#' },
         {
           prop: 'name',
           label: t('fleetConfig.fields.name'),

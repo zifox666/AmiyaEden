@@ -110,8 +110,14 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "Fleets", Path: "fleets", Component: "/operation/fleets", Title: "menus.operation.fleets", Sort: 100, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "FleetConfigs", Path: "fleet-configs", Component: "/operation/fleet-configs", Title: "menus.operation.fleetConfigs", Sort: 95, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "FleetDetail", Path: "fleet-detail/:id", Component: "/operation/fleet-detail", Title: "menus.operation.fleetDetail", Sort: 90, IsHide: true, Status: 1}},
+		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "CorporationPap", Path: "corporation-pap", Component: "/operation/corporation-pap", Title: "menus.operation.corporationPap", Sort: 85, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "MyPap", Path: "pap", Component: "/operation/pap", Title: "menus.operation.pap", Sort: 80, KeepAlive: true, Status: 1}},
 		{ParentName: "Operation", Menu: Menu{Type: MenuTypeMenu, Name: "JoinFleet", Path: "join", Component: "/operation/join", Title: "menus.operation.join", Sort: 60, IsHide: true, Status: 1}},
+
+		// ── Skill Planning ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "SkillPlanning", Path: "/skill-planning", Component: "/index/index", Title: "menus.skillPlanning.title", Icon: "ri:brain-line", Sort: 89, Status: 1}},
+		{ParentName: "SkillPlanning", Menu: Menu{Type: MenuTypeMenu, Name: "SkillPlanCompletionCheck", Path: "completion-check", Component: "/skill-planning/completion-check", Title: "menus.skillPlanning.completionCheck", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "SkillPlanning", Menu: Menu{Type: MenuTypeMenu, Name: "SkillPlans", Path: "skill-plans", Component: "/skill-planning/skill-plans", Title: "menus.skillPlanning.skillPlans", Sort: 90, KeepAlive: true, Status: 1}},
 
 		// ── Shop ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "ShopRoot", Path: "/shop", Component: "/index/index", Title: "menus.shop.title", Icon: "ri:shopping-bag-line", Sort: 85, Status: 1}},
@@ -169,11 +175,6 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", Sort: 60, IsHide: true, KeepAlive: true, IsHideTab: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "WebhookSettings", Path: "webhook", Component: "/system/webhook", Title: "menus.system.webhook", Sort: 59, KeepAlive: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "BasicConfig", Path: "basic-config", Component: "/system/basic-config", Title: "menus.system.basicConfig", Sort: 58, KeepAlive: true, Status: 1}},
-
-		// ── Result ──
-		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", Sort: 10, IsHide: true, Status: 1}},
-		{ParentName: "Result", Menu: Menu{Type: MenuTypeMenu, Name: "ResultSuccess", Path: "success", Component: "/result/success", Title: "menus.result.success", Sort: 100, IsHide: true, Status: 1}},
-		{ParentName: "Result", Menu: Menu{Type: MenuTypeMenu, Name: "ResultFail", Path: "fail", Component: "/result/fail", Title: "menus.result.fail", Sort: 90, IsHide: true, Status: 1}},
 	}
 }
 
@@ -184,32 +185,31 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleFC: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "Fleets", "FleetDetail", "FleetConfigs", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
+			"SkillPlanning", "SkillPlanCompletionCheck", "SkillPlans",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
-			"Result", "ResultSuccess", "ResultFail",
 		},
 		RoleSRP: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "MyPap", "Wallet", "JoinFleet",
+			"Operation", "FleetConfigs", "CorporationPap", "MyPap", "Wallet", "JoinFleet",
+			"SkillPlanning", "SkillPlanCompletionCheck",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
-			"Result", "ResultSuccess", "ResultFail",
 		},
 		RoleUser: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "MyPap", "Wallet", "JoinFleet", "FleetConfigs",
+			"Operation", "CorporationPap", "MyPap", "Wallet", "JoinFleet", "FleetConfigs",
+			"SkillPlanning", "SkillPlanCompletionCheck",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply",
-			"Result", "ResultSuccess", "ResultFail",
 			"UserCenter",
 		},
 		RoleGuest: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Result", "ResultSuccess", "ResultFail",
 		},
 	}
 }

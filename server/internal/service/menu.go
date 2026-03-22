@@ -3,12 +3,15 @@ package service
 import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"sync"
 )
 
 type MenuService struct {
 	repo     *repository.MenuRepository
 	roleRepo *repository.RoleRepository
 }
+
+var ensureSystemMenusOnce sync.Once
 
 func NewMenuService() *MenuService {
 	return &MenuService{
@@ -55,6 +58,8 @@ func (s *MenuService) DeleteMenu(id uint) error {
 
 // GetUserMenuTree 获取用户可访问的菜单树（前端路由格式）
 func (s *MenuService) GetUserMenuTree(userID uint, roleCodes []string) ([]*model.MenuItem, error) {
+	s.ensureSystemMenusSeeded()
+
 	// super_admin 返回全部菜单
 	if model.IsSuperAdmin(roleCodes) {
 		allMenus, err := s.repo.ListAll()
@@ -87,11 +92,18 @@ func (s *MenuService) GetUserMenuTree(userID uint, roleCodes []string) ([]*model
 	if err != nil {
 		return nil, err
 	}
+	menus = filterMenusBySystemRoleRestrictions(menus, roleCodes)
 
 	// 补全父菜单（确保目录菜单被包含）
 	menus = s.ensureParentMenus(menus, menuIDs)
 
 	return repository.BuildMenuTree(menus), nil
+}
+
+func (s *MenuService) ensureSystemMenusSeeded() {
+	ensureSystemMenusOnce.Do(func() {
+		NewRoleService().SeedSystemMenus()
+	})
 }
 
 // ensureParentMenus 确保所有菜单的父目录菜单也被包含
@@ -135,6 +147,23 @@ func extractIDs(menus []model.Menu) []uint {
 		ids[i] = m.ID
 	}
 	return ids
+}
+
+func filterMenusBySystemRoleRestrictions(menus []model.Menu, roleCodes []string) []model.Menu {
+	restrictedMenus := map[string][]string{
+		"Fleets":      {model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC},
+		"FleetDetail": {model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC},
+	}
+
+	filtered := make([]model.Menu, 0, len(menus))
+	for _, menu := range menus {
+		allowedRoles, restricted := restrictedMenus[menu.Name]
+		if restricted && !model.ContainsAnyRole(roleCodes, allowedRoles...) {
+			continue
+		}
+		filtered = append(filtered, menu)
+	}
+	return filtered
 }
 
 // ─── 错误定义 ───

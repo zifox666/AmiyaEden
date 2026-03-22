@@ -162,6 +162,16 @@ func (h *SrpHandler) ListApplications(c *gin.Context) {
 	response.OKWithPage(c, list, total, page, size)
 }
 
+// ListBatchPayoutSummary GET /srp/applications/batch-payout-summary
+func (h *SrpHandler) ListBatchPayoutSummary(c *gin.Context) {
+	list, err := h.svc.ListBatchPayoutSummary()
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, list)
+}
+
 // GetApplication GET /srp/manage/applications/:id
 func (h *SrpHandler) GetApplication(c *gin.Context) {
 	idStr := c.Param("id")
@@ -220,6 +230,23 @@ func (h *SrpHandler) Payout(c *gin.Context) {
 		return
 	}
 	response.OK(c, app)
+}
+
+// BatchPayoutByUser PUT /srp/applications/users/:user_id/payout
+func (h *SrpHandler) BatchPayoutByUser(c *gin.Context) {
+	userIDStr := c.Param("user_id")
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil || userID == 0 {
+		response.Fail(c, response.CodeParamError, "无效的用户 ID")
+		return
+	}
+	payerID := middleware.GetUserID(c)
+	result, err := h.svc.BatchPayoutByUser(payerID, uint(userID))
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, result)
 }
 
 // OpenInfoWindow POST /srp/open-info-window

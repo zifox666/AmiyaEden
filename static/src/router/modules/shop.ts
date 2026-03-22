@@ -6,7 +6,8 @@ export const shopRoutes: AppRouteRecord = {
   component: '/index/index',
   meta: {
     title: 'menus.shop.title',
-    icon: 'ri:shopping-bag-line'
+    icon: 'ri:shopping-bag-line',
+    login: true
   },
   children: [
     {
@@ -26,6 +27,15 @@ export const shopRoutes: AppRouteRecord = {
         title: 'menus.shop.manage',
         keepAlive: true,
         roles: ['super_admin', 'admin']
+      }
+    },
+    {
+      path: 'wallet',
+      name: 'Wallet',
+      component: '/shop/wallet',
+      meta: {
+        title: 'menus.shop.wallet',
+        keepAlive: true
       }
     }
   ]

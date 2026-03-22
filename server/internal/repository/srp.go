@@ -3,6 +3,7 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"time"
 )
 
 // SrpRepository SRP 数据访问层
@@ -83,6 +84,13 @@ type SrpApplicationFilter struct {
 	PayoutStatus string
 }
 
+// SrpBatchPayoutSummaryRow 按用户聚合的待批量发放汇总
+type SrpBatchPayoutSummaryRow struct {
+	UserID           uint    `json:"user_id"`
+	TotalAmount      float64 `json:"total_amount"`
+	ApplicationCount int64   `json:"application_count"`
+}
+
 // ListApplications 分页查询申请列表
 func (r *SrpRepository) ListApplications(page, pageSize int, filter SrpApplicationFilter) ([]model.SrpApplication, int64, error) {
 	var list []model.SrpApplication
@@ -117,4 +125,32 @@ func (r *SrpRepository) ListApplications(page, pageSize int, filter SrpApplicati
 func (r *SrpRepository) ListMyApplications(userID uint, page, pageSize int) ([]model.SrpApplication, int64, error) {
 	uid := &userID
 	return r.ListApplications(page, pageSize, SrpApplicationFilter{UserID: uid})
+}
+
+// ListBatchPayoutSummary 查询所有可批量发放的按用户汇总数据
+func (r *SrpRepository) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryRow, error) {
+	var list []SrpBatchPayoutSummaryRow
+	err := global.DB.Model(&model.SrpApplication{}).
+		Select(`
+			user_id,
+			SUM(final_amount) AS total_amount,
+			COUNT(id) AS application_count
+		`).
+		Where("payout_status = ? AND review_status = ?", model.SrpPayoutPending, model.SrpReviewApproved).
+		Group("user_id").
+		Order("total_amount DESC, user_id ASC").
+		Scan(&list).Error
+	return list, err
+}
+
+// BatchPayoutApplicationsByUser 将某用户所有已批准且待发放的申请标记为已发放
+func (r *SrpRepository) BatchPayoutApplicationsByUser(userID uint, payerID uint, paidAt time.Time) (int64, error) {
+	tx := global.DB.Model(&model.SrpApplication{}).
+		Where("user_id = ? AND payout_status = ? AND review_status = ?", userID, model.SrpPayoutPending, model.SrpReviewApproved).
+		Updates(map[string]interface{}{
+			"payout_status": model.SrpPayoutPaid,
+			"paid_by":       payerID,
+			"paid_at":       paidAt,
+		})
+	return tx.RowsAffected, tx.Error
 }

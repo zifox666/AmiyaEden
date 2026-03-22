@@ -64,10 +64,7 @@ export function fetchFleetMembers(fleetId: string) {
 }
 
 /** 获取舰队成员列表（含 PAP 信息，分页） */
-export function fetchMembersWithPap(
-  fleetId: string,
-  params: { current: number; size: number }
-) {
+export function fetchMembersWithPap(fleetId: string, params: { current: number; size: number }) {
   return request.get<Api.Common.PaginatedResponse<Api.Fleet.MemberWithPap>>({
     url: `/api/v1/operation/fleets/${fleetId}/members-pap`,
     params
@@ -78,6 +75,17 @@ export function fetchMembersWithPap(
 export function syncESIFleetMembers(fleetId: string) {
   return request.post<Api.Fleet.ESIFleetMember[]>({
     url: `/api/v1/operation/fleets/${fleetId}/members/sync`
+  })
+}
+
+/** 手动按角色名添加舰队成员 */
+export function addFleetMembersByCharacterNames(
+  fleetId: string,
+  data: Api.Fleet.ManualAddFleetMembersParams
+) {
+  return request.post<Api.Fleet.ManualAddFleetMembersResult>({
+    url: `/api/v1/operation/fleets/${fleetId}/members/manual`,
+    data
   })
 }
 
@@ -101,6 +109,14 @@ export function fetchFleetPapLogs(fleetId: string) {
 export function fetchMyPapLogs() {
   return request.get<Api.Fleet.PapLog[]>({
     url: '/api/v1/operation/fleets/pap/me'
+  })
+}
+
+/** 获取军团 PAP 汇总 */
+export function fetchCorporationPapSummary(params?: Api.Fleet.CorporationPapSummaryParams) {
+  return request.get<Api.Fleet.CorporationPapSummaryList>({
+    url: '/api/v1/operation/fleets/pap/corporation',
+    params
   })
 }
 

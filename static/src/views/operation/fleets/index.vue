@@ -7,7 +7,7 @@
     <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
-          <ElButton type="primary" :icon="Plus" @click="openCreateDialog">
+          <ElButton v-if="canManageFleet" type="primary" :icon="Plus" @click="openCreateDialog">
             {{ $t('fleet.create') }}
           </ElButton>
         </template>
@@ -114,7 +114,15 @@
   import { useTable } from '@/hooks/core/useTable'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import FleetSearch from './modules/fleet-search.vue'
-  import { fetchFleetList, createFleet, updateFleet, deleteFleet } from '@/api/fleet'
+  import {
+    fetchFleetList,
+    createFleet,
+    updateFleet,
+    deleteFleet,
+    refreshFleetESI,
+    syncESIFleetMembers,
+    issuePap
+  } from '@/api/fleet'
   import { fetchFleetConfigList } from '@/api/fleet-config'
   import { fetchMyCharacters } from '@/api/auth'
   import {
@@ -128,6 +136,7 @@
   import { Plus } from '@element-plus/icons-vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'Fleets' })
 
@@ -135,6 +144,16 @@
 
   const { t } = useI18n()
   const router = useRouter()
+  const userStore = useUserStore()
+  const papActionFleetId = ref<string | null>(null)
+  const canManageFleet = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((role) => ['super_admin', 'admin', 'fc'].includes(role))
+  })
+  const canDeleteFleet = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((role) => ['super_admin', 'admin'].includes(role))
+  })
 
   // ─── 重要度颜色映射 ───
   const IMPORTANCE_MAP: Record<string, string> = {
@@ -213,12 +232,13 @@
           prop: 'fc_character_name',
           label: t('fleet.fields.fc'),
           width: 160,
-          showOverflowTooltip: true
+          showOverflowTooltip: true,
+          formatter: (row: FleetItem) => row.fc_display_name || row.fc_character_name || '-'
         },
         {
           prop: 'pap_count',
-          label: t('fleet.fields.papCount'),
-          width: 100
+          label: t('common.quantity'),
+          width: 80
         },
         {
           prop: 'start_at',
@@ -240,13 +260,32 @@
         {
           prop: 'actions',
           label: t('common.operation'),
-          width: 200,
+          width: 300,
           fixed: 'right',
           formatter: (row: FleetItem) =>
-            h('div', { class: 'flex gap-1' }, [
+            h('div', { class: 'flex items-center gap-2' }, [
+              ...(canManageFleet.value
+                ? [
+                    h(
+                      ElButton,
+                      {
+                        type: 'success',
+                        size: 'small',
+                        class: '!h-8 !px-3',
+                        loading: papActionFleetId.value === row.id,
+                        onClick: () => handleIssuePapFromList(row)
+                      },
+                      () => t('fleet.pap.issue')
+                    )
+                  ]
+                : []),
               h(ArtButtonTable, { type: 'view', onClick: () => goDetail(row) }),
-              h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
-              h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) })
+              ...(canManageFleet.value
+                ? [h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) })]
+                : []),
+              ...(canDeleteFleet.value
+                ? [h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) })]
+                : [])
             ])
         }
       ]
@@ -392,6 +431,39 @@
       refreshData()
     } catch (e: any) {
       ElMessage.error(e?.message ?? t('common.error'))
+    }
+  }
+
+  async function handleIssuePapFromList(row: FleetItem) {
+    try {
+      await ElMessageBox.confirm(
+        t('fleet.pap.issueWithSyncConfirm', { name: row.title }),
+        t('fleet.pap.title'),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          type: 'warning'
+        }
+      )
+    } catch {
+      return
+    }
+
+    papActionFleetId.value = row.id
+    try {
+      if (!row.esi_fleet_id) {
+        const refreshedFleet = await refreshFleetESI(row.id)
+        row.esi_fleet_id = refreshedFleet.esi_fleet_id ?? row.esi_fleet_id
+      }
+
+      await syncESIFleetMembers(row.id)
+      await issuePap(row.id)
+      ElMessage.success(t('fleet.pap.issueWithSyncSuccess'))
+      refreshData()
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('common.error'))
+    } finally {
+      papActionFleetId.value = null
     }
   }
 

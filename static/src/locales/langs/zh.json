@@ -45,6 +45,7 @@
     "user": "用户",
     "role": "角色",
     "name": "名称",
+    "quantity": "数量",
     "status": "状态",
     "save": "保存",
     "updatedAt": "更新时间",
@@ -61,20 +62,11 @@
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": [
-        "垂直",
-        "水平",
-        "混合",
-        "双列"
-      ]
+      "list": ["垂直", "水平", "混合", "双列"]
     },
     "theme": {
       "title": "主题风格",
-      "list": [
-        "浅色",
-        "深色",
-        "系统"
-      ]
+      "list": ["浅色", "深色", "系统"]
     },
     "menu": {
       "title": "菜单风格"
@@ -84,17 +76,11 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": [
-        "边框",
-        "阴影"
-      ]
+      "list": ["边框", "阴影"]
     },
     "container": {
       "title": "容器宽度",
-      "list": [
-        "铺满",
-        "定宽"
-      ]
+      "list": ["铺满", "定宽"]
     },
     "basics": {
       "title": "基础配置",
@@ -140,14 +126,8 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": [
-      "通知",
-      "消息",
-      "代办"
-    ],
-    "text": [
-      "暂无"
-    ],
+    "bar": ["通知", "消息", "代办"],
+    "text": ["暂无"],
     "viewAll": "查看全部"
   },
   "console": {
@@ -262,11 +242,6 @@
       "title": "仪表盘",
       "console": "工作台"
     },
-    "result": {
-      "title": "结果页面",
-      "success": "成功页",
-      "fail": "失败页"
-    },
     "exception": {
       "title": "异常页面",
       "forbidden": "403",
@@ -287,11 +262,17 @@
       "fleets": "舰队管理",
       "fleetDetail": "舰队详情",
       "fleetConfigs": "舰队配置",
-      "pap": "我的 PAP",
+      "corporationPap": "军团PAP",
+      "pap": "我的PAP",
       "join": "加入舰队",
       "srpApply": "申请补损",
       "srpManage": "补损审批",
       "srpPrices": "补损价格表"
+    },
+    "skillPlanning": {
+      "title": "技能规划",
+      "skillPlans": "管理军团规划",
+      "completionCheck": "检查完成度"
     },
     "role": {
       "title": "权限组",
@@ -332,7 +313,7 @@
       "webhook": "Webhook 通知",
       "basicConfig": "基础配置"
     }
-    },
+  },
   "info": {
     "selectCharacter": "选择角色",
     "selectCharacterPlaceholder": "请选择一个角色",
@@ -584,115 +565,6 @@
       "validType": "请选择类型"
     }
   },
-  "lottery": {
-    "noActivities": "暂无进行中的抽奖活动",
-    "startDraw": "开始抽奖",
-    "points": "积分",
-    "perDraw": "次",
-    "free": "免费",
-    "more": "更多",
-    "myRecords": "我的抽奖记录",
-    "draw": "抽奖",
-    "costLabel": "每次费用：",
-    "balance": "余额",
-    "prizePool": "奖品池",
-    "drawing": "抽奖中...",
-    "close": "关闭",
-    "drawAgain": "再抽一次",
-    "loadFailed": "加载失败",
-    "drawFailed": "抽奖失败",
-    "tier": {
-      "normal": "普通",
-      "rare": "稀有",
-      "legendary": "传说"
-    },
-    "status": {
-      "active": "进行中",
-      "closed": "已关闭"
-    },
-    "manage": {
-      "activitiesTab": "抽奖活动",
-      "createActivity": "创建活动",
-      "editActivity": "编辑活动",
-      "noActivities": "暂无活动",
-      "costPerDraw": "每次费用",
-      "startAt": "开始时间",
-      "endAt": "结束时间",
-      "managePrizes": "管理奖品",
-      "prizeCount": "奖品数: {n}",
-      "noPrizes": "暂无奖品",
-      "recordsTab": "抽奖记录",
-      "filterActivity": "筛选活动",
-      "uploading": "上传中...",
-      "uploadCover": "上传封面",
-      "uploadImage": "上传图片",
-      "managePrizesTitle": "管理奖品 - {name}",
-      "addPrize": "添加奖品",
-      "editPrize": "编辑奖品",
-      "noPrizesHint": "暂无奖品，请点击上方按钮添加",
-      "weight": "权重",
-      "stock": "库存",
-      "sdeSearch": "搜索 EVE 物品",
-      "stockUnlimited": "不限量",
-      "totalWeight": "总权重",
-      "loadFailed": "加载失败",
-      "updateSuccess": "更新成功",
-      "createSuccess": "创建成功",
-      "addSuccess": "添加成功",
-      "operationFailed": "操作失败",
-      "deleteActivityConfirm": "确定要删除活动「{name}」吗？关联的奖品也会被删除。",
-      "deleteSuccess": "删除成功",
-      "deleteFailed": "删除失败",
-      "imageTooLarge": "图片大小不能超过 2MB",
-      "uploadSuccess": "上传成功",
-      "uploadFailed": "上传失败",
-      "validName": "请输入活动名称",
-      "validCost": "请设置每次费用",
-      "validPrizeName": "请输入奖品名称",
-      "validTier": "请选择稀有度",
-      "deletePrizeConfirm": "确定要删除奖品「{name}」吗？",
-      "fields": {
-        "name": "活动名称",
-        "namePlaceholder": "请输入活动名称",
-        "description": "描述",
-        "descriptionPlaceholder": "活动描述（可选）",
-        "coverImage": "封面图片",
-        "costPerDraw": "每次费用",
-        "costHint": "0 表示免费",
-        "status": "状态",
-        "startAt": "开始时间",
-        "endAt": "结束时间",
-        "noLimit": "不限",
-        "sortOrder": "排序",
-        "sortHint": "数字越大越靠前"
-      },
-      "prizeFields": {
-        "name": "奖品名称",
-        "namePlaceholder": "请输入奖品名称",
-        "image": "奖品图片",
-        "sdeSearchPlaceholder": "搜索 EVE 物品自动设置图片",
-        "tier": "稀有度",
-        "weight": "概率权重",
-        "weightHint": "权重越高概率越大",
-        "totalStock": "总库存",
-        "stockHint": "0 表示不限量"
-      },
-      "recordColumns": {
-        "userId": "用户 ID",
-        "activity": "活动",
-        "prize": "奖品",
-        "cost": "花费",
-        "time": "时间",
-        "deliveryStatus": "发放状态"
-      }
-    },
-    "delivery": {
-      "pending": "待发放",
-      "delivered": "已发放",
-      "markDelivered": "标记已发放",
-      "markSuccess": "已标记为已发放"
-    }
-  },
   "userAdmin": {
     "status": {
       "active": "正常",
@@ -714,13 +586,16 @@
     },
     "table": {
       "userInfo": "用户信息",
+      "contact": "联系方式",
       "lastLogin": "最后登录",
       "loginIp": "登录IP",
       "registeredAt": "注册时间"
     },
     "unnamed": "未命名",
     "impersonate": "模拟登录",
+    "editProtectedDenied": "管理员不能编辑超级管理员或其他管理员。",
     "deleteConfirm": "确定要删除用户「{name}」吗？此操作不可恢复。",
+    "deleteProtectedDenied": "管理员不能删除超级管理员或其他管理员。",
     "deleteSuccess": "删除成功",
     "deleteFailed": "删除失败",
     "impersonateConfirm": "确定要以「{name}」的身份登录吗？当前管理员会话将被替换，请提前记录当前 Token 或在新标签页中操作。",
@@ -772,6 +647,13 @@
       "empty": "暂无成员",
       "syncESI": "从 ESI 同步",
       "syncSuccess": "成员同步成功",
+      "manualAdd": "手动添加成员",
+      "manualAddInputLabel": "角色名列表",
+      "manualAddPlaceholder": "PlayerOne\nPlayerTwo\nPlayerThree",
+      "manualAddHint": "每行填写一个角色名，保存后会将已录入系统的角色加入舰队。",
+      "manualAddEmpty": "请至少输入一个角色名",
+      "manualAddSuccess": "已添加 {count} 名成员",
+      "manualAddMissing": "以下角色未找到：{names}",
       "characterName": "角色名",
       "characterId": "角色 ID",
       "shipType": "舰船",
@@ -780,10 +662,12 @@
     },
     "pap": {
       "title": "PAP 发放",
-      "issue": "发放 PAP",
+      "issue": "发放PAP",
       "issueConfirm": "确定要向所有成员发放 PAP 吗？",
       "issueSuccess": "PAP 已发放",
-      "myTitle": "军团 PAP",
+      "issueWithSyncConfirm": "确定要先从 ESI 同步“{name}”的成员，再发放 PAP 吗？",
+      "issueWithSyncSuccess": "成员同步并发放 PAP 成功",
+      "myTitle": "我的PAP",
       "totalPap": "总 PAP",
       "participationCount": "参与次数",
       "fleetId": "舰队 ID",
@@ -817,6 +701,39 @@
       "allianceOperationName": "行动名称",
       "allianceStartTime": "开始时间",
       "allianceEndTime": "结束时间"
+    },
+    "corporationPap": {
+      "title": "军团PAP",
+      "summaryTitle": "军团 PAP 汇总",
+      "empty": "暂无军团 PAP 汇总记录",
+      "search": "查询",
+      "reset": "重置",
+      "filters": {
+        "period": "时间范围",
+        "year": "年份",
+        "corpTickers": "军团"
+      },
+      "periods": {
+        "currentMonth": "本月",
+        "lastMonth": "上月",
+        "atYear": "指定年份",
+        "all": "全部"
+      },
+      "stats": {
+        "filteredPap": "当前筛选 PAP",
+        "filteredStratOp": "战略 OP PAP",
+        "allPap": "全部 PAP",
+        "users": "用户数"
+      },
+      "columns": {
+        "corpTicker": "军团",
+        "nickname": "昵称",
+        "mainCharacter": "主角色名",
+        "characterCount": "角色数量",
+        "stratOpPaps": "战略OP",
+        "skirmishPaps": "散打",
+        "allianceStratPaps": "联盟战略"
+      }
     },
     "invite": {
       "title": "邀请链接",
@@ -922,6 +839,76 @@
       "fittingPlaceholder": "选择一个装配"
     }
   },
+  "skillPlan": {
+    "title": "制定军团技能",
+    "create": "创建技能计划",
+    "edit": "编辑技能计划",
+    "delete": "删除技能计划",
+    "createSuccess": "技能计划创建成功",
+    "updateSuccess": "技能计划更新成功",
+    "deleteSuccess": "技能计划删除成功",
+    "deleteConfirm": "确定要删除技能计划「{title}」吗？此操作不可恢复。",
+    "searchPlaceholder": "搜索技能计划标题或描述",
+    "listTitle": "技能计划列表",
+    "detailTitle": "计划详情",
+    "emptyList": "暂无技能计划",
+    "emptyDetail": "请选择左侧技能计划查看详情",
+    "descriptionEmpty": "暂无描述",
+    "skillCount": "技能要求",
+    "skillListTitle": "技能要求明细",
+    "addSkill": "添加技能要求",
+    "noSkills": "请至少添加一个技能要求",
+    "duplicateSkill": "技能要求中不能包含重复技能",
+    "textInputActive": "当前将以粘贴的技能文本为准进行解析与保存；重复技能会自动保留最高等级。",
+    "manualInputHint": "清空上方粘贴文本后，可切换回手动逐条选择技能。",
+    "level": "等级 {level}",
+    "levelLabel": "要求等级",
+    "order": "排序",
+    "fields": {
+      "title": "计划标题",
+      "titlePlaceholder": "请输入技能计划标题",
+      "description": "计划说明",
+      "descriptionPlaceholder": "请输入此技能计划的适用说明",
+      "ship": "计划舰船图标",
+      "shipPlaceholder": "搜索并选择舰船",
+      "shipHint": "可选。选中的舰船图标会显示在技能计划列表中。",
+      "skillsText": "技能文本",
+      "skillsTextPlaceholder": "每行一个技能，格式示例：\nGraviton Physics 5\nDoomsday Rapid Firing 5\nCapital Shield Operation 4",
+      "skillsTextHint": "支持格式：技能名 + 空格 + 等级。等级可使用 1-5 或罗马数字 I-V；重复技能会自动保留最高等级。",
+      "skill": "技能",
+      "skillPlaceholder": "搜索并选择技能",
+      "group": "技能组",
+      "requiredLevel": "要求等级"
+    },
+    "table": {
+      "skill": "技能",
+      "group": "技能组",
+      "requiredLevel": "要求等级"
+    }
+  },
+  "skillPlanCheck": {
+    "title": "检查完成度",
+    "subtitle": "将已选择角色的技能与军团规划进行逐项比对，快速查看完成情况。",
+    "selectCharacters": "选择角色",
+    "selectedCharacters": "已选择角色",
+    "noCharactersSelected": "尚未选择角色",
+    "noAvailableCharacters": "当前用户没有可用角色",
+    "selectionSaved": "角色选择已保存",
+    "selectCharactersFirst": "请先选择至少一个角色",
+    "startCheck": "开始检查",
+    "resultTitle": "检查结果",
+    "resultSubtitle": "按角色展开，再按技能规划展开查看完成情况。",
+    "planCount": "规划数 {count}",
+    "emptyResult": "选择角色后点击开始检查以查看完成度结果",
+    "characterSummary": "已完成 {completed} / {total} 个规划",
+    "planCompleted": "已满足",
+    "planIncomplete": "未满足",
+    "missingCount": "缺失 {count} 项",
+    "missingSkillsTitle": "缺失技能",
+    "requiredVsCurrent": "需求 {required} 级，当前 {current} 级",
+    "planCompleteSummary": "该角色已完整满足此技能规划。",
+    "planIncompleteSummary": "当前完成 {matched} / {total} 项技能要求。"
+  },
   "characters": {
     "title": "EVE 角色管理",
     "subTitle": "管理账号下绑定的 EVE Online 角色，可绑定多个角色并切换主角色",
@@ -938,7 +925,31 @@
     "setPrimaryFailed": "设置主角色失败",
     "unbindConfirm": "确定要解绑角色 {name} 吗？解绑后该角色的授权数据将被清除。",
     "unbindSuccess": "已成功解绑 {name}",
-    "unbindFailed": "解绑失败"
+    "unbindFailed": "解绑失败",
+    "profile": {
+      "title": "联系方式与昵称",
+      "subTitle": "请填写昵称，并至少填写一个联系方式。未完成前将始终停留在本页面。",
+      "completed": "已完成",
+      "incomplete": "未完成",
+      "completedHint": "个人资料已完成，可以正常访问其他页面。",
+      "requiredHint": "需要填写昵称，并至少填写 QQ 号码或 Discord ID 后才能继续使用系统。",
+      "nickname": "昵称",
+      "nicknamePlaceholder": "请输入昵称",
+      "qq": "QQ 号码",
+      "qqPlaceholder": "请输入 QQ 号码",
+      "discordId": "Discord ID",
+      "discordPlaceholder": "请输入 Discord ID",
+      "save": "保存资料",
+      "saveSuccess": "个人资料已更新",
+      "validation": {
+        "nicknameRequired": "请输入昵称",
+        "nicknameLength": "昵称最多 20 个字符",
+        "contactRequired": "请至少填写 QQ 号码或 Discord ID",
+        "qqLength": "QQ 号码最多 20 个字符",
+        "qqDigits": "QQ 号码只能包含数字",
+        "discordLength": "Discord ID 最多 20 个字符"
+      }
+    }
   },
   "srp": {
     "apply": {
@@ -1011,12 +1022,25 @@
       "searchBtn": "查询",
       "resetBtn": "重置",
       "exportBtn": "导出当前数据",
+      "batchPayoutBtn": "批量发放",
       "approveBtn": "批准",
       "rejectBtn": "拒绝",
       "payoutBtn": "发放",
       "approveDialog": "批准申请",
       "rejectDialog": "拒绝申请",
       "payoutDialog": "确认发放补损",
+      "batchPayoutDialog": "批量发放",
+      "batchPayoutHint": "点击右侧复制按钮，将内容粘贴至游戏内记事本",
+      "batchPayoutMainCharacter": "主角色",
+      "batchPayoutAmount": "金额",
+      "batchPayoutApprovedAmount": "已批准金额",
+      "batchPayoutPendingAmount": "待审批金额",
+      "batchPayoutTotalAmount": "合计金额",
+      "batchPayoutCount": "申请数",
+      "batchPayoutEmpty": "暂无可批量发放的 SRP 申请",
+      "batchPayoutConfirmTitle": "批量发放",
+      "batchPayoutConfirmText": "确认将 {name} 的所有已批准且未发放 SRP 申请标记为已发放吗？合计：{amount} ISK",
+      "batchPayoutSuccess": "批量发放成功",
       "finalAmount": "最终金额",
       "finalAmountHint": "填 0 则保持原申请金额",
       "reviewNote": "审批备注",
@@ -1043,8 +1067,10 @@
       "copyFailed": "复制失败",
       "noPrimaryCharacter": "请先设置主角色",
       "openInfoWindowSuccess": "已发送打开信息窗口请求",
+      "unknownMainCharacter": "未知角色",
       "columns": {
         "id": "#",
+        "nickname": "昵称",
         "character": "角色",
         "ship": "舰船",
         "system": "星系",
@@ -1184,25 +1210,6 @@
       "resultWallet": "共发放系统钱包 {amount}"
     }
   },
-  "resultPage": {
-    "success": {
-      "title": "提交成功",
-      "message": "提交结果页用于反馈一系列操作任务的处理结果，如果仅是简单操作，使用 Message 全局提示反馈即可。灰色区域可以显示一些补充的信息。",
-      "content": "已提交申请，等待部门审核。",
-      "back": "返回修改",
-      "view": "查看",
-      "print": "打印"
-    },
-    "fail": {
-      "title": "提交失败",
-      "message": "请核对并修改以下信息后，再重新提交。",
-      "content": "您提交的内容有如下错误：",
-      "frozen": "您的账户已被冻结",
-      "ineligible": "您的账户还不具备申请资格",
-      "back": "返回修改",
-      "view": "查看"
-    }
-  },
   "roleUi": {
     "userRoleDialog": {
       "title": "分配角色",
@@ -1227,7 +1234,7 @@
   "autoRolePage": {
     "title": "ESI 自动权限",
     "description": "根据角色的 EVE 军团职位和头衔，自动分配系统权限。",
-    "directorHint": "Director 始终自动映射为 admin 角色。",
+    "directorHint": "只有 allow_corporations 中具备 ESI corporation role `Director` 的角色才会自动映射为 admin 角色。",
     "triggerSync": "手动触发同步",
     "syncTriggered": "同步任务已触发，将在后台执行",
     "syncFailed": "触发失败",

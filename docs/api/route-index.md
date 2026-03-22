@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -12,6 +12,10 @@ source_of_truth:
 ## 说明
 
 本文件只记录当前 `server/internal/router/router.go` 已注册的路由分组、路径与主要权限边界。
+权限列说明：
+
+- `JWT`：任意持有有效 JWT 的已认证用户可访问，包含 `guest`
+- `Login`：任意已认证且非 `guest` 的产品用户可访问
 
 ## Public
 
@@ -36,17 +40,18 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/sso/eve/characters` | 当前用户绑定角色 | Login |
-| GET | `/sso/eve/bind` | 获取绑定新角色的 SSO 地址 | Login |
-| PUT | `/sso/eve/primary/:character_id` | 设为主角色 | Login |
-| DELETE | `/sso/eve/characters/:character_id` | 解绑角色 | Login |
-| GET | `/me` | 当前用户、角色、权限、绑定角色 | Login |
-| POST | `/dashboard` | Dashboard 聚合数据 | Login |
-| POST | `/notification/list` | 通知列表 | Login |
-| POST | `/notification/unread-count` | 未读数 | Login |
+| GET | `/sso/eve/characters` | 当前用户绑定角色 | JWT |
+| GET | `/sso/eve/bind` | 获取绑定新角色的 SSO 地址 | JWT |
+| PUT | `/sso/eve/primary/:character_id` | 设为主角色 | JWT |
+| DELETE | `/sso/eve/characters/:character_id` | 解绑角色 | JWT |
+| GET | `/me` | 当前用户、角色、权限、绑定角色 | JWT |
+| PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | JWT |
+| POST | `/dashboard` | Dashboard 聚合数据 | JWT |
+| POST | `/notification/list` | 通知列表 | JWT |
+| POST | `/notification/unread-count` | 未读数 | JWT |
 | POST | `/notification/read` | 标记已读 | Login |
 | POST | `/notification/read-all` | 全部已读 | Login |
-| GET | `/menu/list` | 当前用户菜单树 | Login |
+| GET | `/menu/list` | 当前用户菜单树 | JWT |
 
 ## Operation
 
@@ -54,26 +59,28 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/operation/fleets` | 创建舰队 | Login |
-| GET | `/operation/fleets` | 舰队列表 | Login |
+| POST | `/operation/fleets` | 创建舰队 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets` | 舰队列表 | `RequireRole(admin, fc)` |
 | GET | `/operation/fleets/me` | 我的舰队 | Login |
-| GET | `/operation/fleets/:id` | 舰队详情 | Login |
-| PUT | `/operation/fleets/:id` | 更新舰队 | Login |
-| DELETE | `/operation/fleets/:id` | 删除舰队 | Login |
-| POST | `/operation/fleets/:id/refresh-esi` | 刷新舰队 ESI 数据 | Login |
-| GET | `/operation/fleets/:id/members` | 舰队成员 | Login |
-| GET | `/operation/fleets/:id/members-pap` | 舰队成员与 PAP | Login |
-| POST | `/operation/fleets/:id/members/sync` | 同步 ESI 成员 | Login |
-| POST | `/operation/fleets/:id/pap` | 发放 PAP | Login |
-| GET | `/operation/fleets/:id/pap` | PAP 日志 | Login |
+| GET | `/operation/fleets/:id` | 舰队详情 | `RequireRole(admin, fc)` |
+| PUT | `/operation/fleets/:id` | 更新舰队 | `RequireRole(admin, fc)` |
+| DELETE | `/operation/fleets/:id` | 删除舰队 | `RequireRole(admin)` |
+| POST | `/operation/fleets/:id/refresh-esi` | 刷新舰队 ESI 数据 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/members` | 舰队成员 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/members-pap` | 舰队成员与 PAP | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/members/manual` | 手动添加成员 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/members/sync` | 同步 ESI 成员 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/pap` | 发放 PAP | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/pap` | PAP 日志 | `RequireRole(admin, fc)` |
 | GET | `/operation/fleets/pap/me` | 我的 PAP 日志 | Login |
+| GET | `/operation/fleets/pap/corporation` | 军团 PAP 汇总 | Login |
 | GET | `/operation/fleets/pap/alliance` | 我的联盟 PAP | Login |
-| POST | `/operation/fleets/:id/invites` | 创建邀请 | Login |
-| GET | `/operation/fleets/:id/invites` | 邀请列表 | Login |
-| DELETE | `/operation/fleets/invites/:invite_id` | 停用邀请 | Login |
+| POST | `/operation/fleets/:id/invites` | 创建邀请 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id/invites` | 邀请列表 | `RequireRole(admin, fc)` |
+| DELETE | `/operation/fleets/invites/:invite_id` | 停用邀请 | `RequireRole(admin, fc)` |
 | POST | `/operation/fleets/join` | 加入舰队 | Login |
 | GET | `/operation/fleets/esi/:character_id` | 查询角色当前舰队 | Login |
-| POST | `/operation/fleets/:id/ping` | 发送 Webhook Ping | Login |
+| POST | `/operation/fleets/:id/ping` | 发送 Webhook Ping | `RequireRole(admin, fc)` |
 
 ### Fleet Configs
 
@@ -82,36 +89,44 @@ source_of_truth:
 | GET | `/operation/fleet-configs` | 配置列表 | Login |
 | GET | `/operation/fleet-configs/:id` | 配置详情 | Login |
 | GET | `/operation/fleet-configs/:id/eft` | 获取 EFT 文本 | Login |
-| POST | `/operation/fleet-configs` | 创建配置 | `RequireRole(fc, srp)` |
-| PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(fc, srp)` |
-| DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(fc, srp)` |
-| POST | `/operation/fleet-configs/import-fitting` | 从角色装配导入 | Login |
+| POST | `/operation/fleet-configs` | 创建配置 | `RequireRole(admin, fc)` |
+| PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(admin, fc)` |
+| DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleet-configs/import-fitting` | 从角色装配导入 | `RequireRole(admin, fc)` |
 | POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | Login |
 | GET | `/operation/fleet-configs/:id/fittings/:fitting_id/items` | 装配物品 | Login |
-| PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(fc, srp)` |
+| PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(admin, fc)` |
 
-### User Wallet
+## Skill Planning
+
+### Skill Plans
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/operation/wallet/my` | 我的钱包 | Login |
-| POST | `/operation/wallet/my/transactions` | 我的钱包流水 | Login |
+| GET | `/skill-planning/skill-plans/check/selection` | 获取当前用户保存的完成度检查角色选择 | Login |
+| PUT | `/skill-planning/skill-plans/check/selection` | 保存当前用户的完成度检查角色选择 | Login |
+| POST | `/skill-planning/skill-plans/check/run` | 执行技能规划完成度检查 | Login |
+| GET | `/skill-planning/skill-plans` | 技能计划列表 | `RequireRole(admin, fc)` |
+| GET | `/skill-planning/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, fc)` |
+| POST | `/skill-planning/skill-plans` | 创建技能计划 | `RequireRole(admin, fc)` |
+| PUT | `/skill-planning/skill-plans/:id` | 更新技能计划 | `RequireRole(admin, fc)` |
+| DELETE | `/skill-planning/skill-plans/:id` | 删除技能计划 | `RequireRole(admin, fc)` |
 
 ## Info
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/info/wallet` | 钱包流水 | Login |
-| POST | `/info/skills` | 技能列表 | Login |
-| POST | `/info/ships` | 舰船列表 | Login |
-| POST | `/info/implants` | 植入体 | Login |
-| POST | `/info/assets` | 资产 | Login |
-| POST | `/info/contracts` | 合同列表 | Login |
-| POST | `/info/contracts/detail` | 合同详情 | Login |
-| POST | `/info/fittings` | 装配列表 | Login |
-| POST | `/info/fittings/save` | 保存装配 | Login |
-| POST | `/info/npc-kills` | 个人 NPC 刷怪报表 | Login |
-| POST | `/info/npc-kills/all` | 全部 NPC 刷怪报表 | Login |
+| POST | `/info/wallet` | 钱包流水 | JWT |
+| POST | `/info/skills` | 技能列表 | JWT |
+| POST | `/info/ships` | 舰船列表 | JWT |
+| POST | `/info/implants` | 植入体 | JWT |
+| POST | `/info/assets` | 资产 | JWT |
+| POST | `/info/contracts` | 合同列表 | JWT |
+| POST | `/info/contracts/detail` | 合同详情 | JWT |
+| POST | `/info/fittings` | 装配列表 | JWT |
+| POST | `/info/fittings/save` | 保存装配 | JWT |
+| POST | `/info/npc-kills` | 个人 NPC 刷怪报表 | JWT |
+| POST | `/info/npc-kills/all` | 全部 NPC 刷怪报表 | JWT |
 
 ## Shop
 
@@ -119,14 +134,13 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
+| POST | `/shop/wallet/my` | 我的钱包 | Login |
+| POST | `/shop/wallet/my/transactions` | 我的钱包流水 | Login |
 | POST | `/shop/products` | 商品列表 | Login |
 | POST | `/shop/product/detail` | 商品详情 | Login |
 | POST | `/shop/buy` | 购买商品 | Login |
 | POST | `/shop/orders` | 我的订单 | Login |
 | POST | `/shop/redeem/list` | 我的兑换码 | Login |
-| POST | `/shop/lottery/list` | 抽奖活动列表 | Login |
-| POST | `/shop/lottery/draw` | 抽奖 | Login |
-| POST | `/shop/lottery/records` | 我的抽奖记录 | Login |
 
 ## Upload
 
@@ -148,9 +162,11 @@ source_of_truth:
 | POST | `/srp/killmails/detail` | KM 详情 | Login |
 | POST | `/srp/open-info-window` | 打开游戏内信息窗口 | Login |
 | GET | `/srp/applications` | 审核列表 | `RequirePermission(srp:review)` |
+| GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequirePermission(srp:review)` |
 | GET | `/srp/applications/:id` | 审核详情 | `RequirePermission(srp:review)` |
 | PUT | `/srp/applications/:id/review` | 审核申请 | `RequirePermission(srp:review)` |
 | PUT | `/srp/applications/:id/payout` | 发放补损 | `RequirePermission(srp:review)` |
+| PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequirePermission(srp:review)` |
 
 ## ESI Refresh
 
@@ -201,12 +217,12 @@ source_of_truth:
 | DELETE | `/system/role/:id` | 删除角色 | `RequireRole(admin)` |
 | GET | `/system/role/:id/menus` | 获取角色菜单 | `RequireRole(admin)` |
 | PUT | `/system/role/:id/menus` | 设置角色菜单 | `RequireRole(admin)` |
-| GET | `/system/user` | 用户列表 | `RequireRole(admin)` |
+| GET | `/system/user` | 用户列表；角色字段仅返回有序 `roles[]`，不再返回历史单值 `role` | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
-| PUT | `/system/user/:id` | 更新用户 | `RequireRole(admin)` |
-| DELETE | `/system/user/:id` | 删除用户 | `RequireRole(admin)` |
+| PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态；`admin` 不可编辑 `super_admin` 或其他 `admin` | `RequireRole(admin)` |
+| DELETE | `/system/user/:id` | 删除用户；`admin` 不可删除 `super_admin` 或其他 `admin` | `RequireRole(admin)` |
 | GET | `/system/user/:id/roles` | 获取用户角色 | `RequireRole(admin)` |
-| PUT | `/system/user/:id/roles` | 设置用户角色 | `RequireRole(admin)` |
+| PUT | `/system/user/:id/roles` | 设置用户角色；仅 `super_admin` 可编辑管理员账号或分配 `admin/super_admin` | `RequireRole(admin)` |
 | POST | `/system/user/:id/impersonate` | 模拟登录，需 `super_admin` | `RequireRole(admin)` + `super_admin` |
 
 ### System Wallet
@@ -219,7 +235,7 @@ source_of_truth:
 | POST | `/system/wallet/transactions` | 钱包流水 | `RequireRole(admin)` |
 | POST | `/system/wallet/logs` | 调整日志 | `RequireRole(admin)` |
 
-### Shop / Lottery Admin
+### Shop Admin
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
@@ -231,15 +247,6 @@ source_of_truth:
 | POST | `/system/shop/order/approve` | 审批订单 | `RequireRole(admin)` |
 | POST | `/system/shop/order/reject` | 驳回订单 | `RequireRole(admin)` |
 | POST | `/system/shop/redeem/list` | 兑换码列表 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/list` | 活动列表 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/add` | 新增活动 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/edit` | 编辑活动 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/delete` | 删除活动 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/prize/add` | 新增奖品 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/prize/edit` | 编辑奖品 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/prize/delete` | 删除奖品 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/records` | 抽奖记录 | `RequireRole(admin)` |
-| POST | `/system/shop/lottery/records/deliver` | 更新奖品发放状态 | `RequireRole(admin)` |
 
 ### Auto Role / Webhook
 

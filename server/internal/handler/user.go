@@ -61,8 +61,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 }
 
 type updateUserRequest struct {
-	Nickname string `json:"nickname"`
-	Status   *int8  `json:"status"`
+	Nickname  *string `json:"nickname"`
+	QQ        *string `json:"qq"`
+	DiscordID *string `json:"discord_id"`
+	Status    *int8   `json:"status"`
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
@@ -76,15 +78,13 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
-	user := &model.User{}
-	user.ID = uint(id)
-	if req.Nickname != "" {
-		user.Nickname = req.Nickname
-	}
-	if req.Status != nil {
-		user.Status = *req.Status
-	}
-	if err := h.svc.UpdateUser(user); err != nil {
+	operatorRoles := middleware.GetUserRoles(c)
+	if err := h.svc.UpdateUserByAdmin(uint(id), operatorRoles, service.UserPatch{
+		Nickname:  req.Nickname,
+		QQ:        req.QQ,
+		DiscordID: req.DiscordID,
+		Status:    req.Status,
+	}); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
@@ -97,7 +97,8 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "无效的用户ID")
 		return
 	}
-	if err := h.svc.DeleteUser(uint(id)); err != nil {
+	operatorRoles := middleware.GetUserRoles(c)
+	if err := h.svc.DeleteUser(uint(id), operatorRoles); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}

@@ -5,13 +5,72 @@ on:
     branches: [ main ]
 
 jobs:
+  changes:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'server/**'
+            frontend:
+              - 'static/**'
 
   build:
-
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        if: needs.changes.outputs.backend == 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Setup pnpm
+        if: needs.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: static/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        if: needs.changes.outputs.frontend == 'true'
+        working-directory: static
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify backend
+        if: needs.changes.outputs.backend == 'true'
+        working-directory: server
+        run: |
+          go test ./...
+          go build ./...
+
+      - name: Verify frontend
+        if: needs.changes.outputs.frontend == 'true'
+        working-directory: static
+        run: |
+          pnpm lint .
+          pnpm exec vue-tsc --noEmit
+          pnpm test:unit
+          pnpm build
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
@@ -26,6 +85,7 @@ jobs:
         run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Build and push Backend image
+        if: needs.changes.outputs.backend == 'true'
         uses: docker/build-push-action@v2
         with:
           context: ./server
@@ -38,6 +98,7 @@ jobs:
             ${{ secrets.DOCKER_HUB_REPO }}:${{ env.SHORT_SHA }}
 
       - name: Build and push Frontend image
+        if: needs.changes.outputs.frontend == 'true'
         uses: docker/build-push-action@v2
         with:
           context: ./static

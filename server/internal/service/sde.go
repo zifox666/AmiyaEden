@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -26,6 +27,17 @@ import (
 
 // sdeDownloadDir 临时文件存放目录
 const sdeDownloadDir = "tmp/sde"
+
+const (
+	sdeCheckMinInterval = 30 * time.Minute
+	sdeUserAgent        = "AmiyaEden-SDE-Updater/1.0"
+)
+
+var sdeUpdateState = struct {
+	mu              sync.Mutex
+	lastAutoCheckAt time.Time
+	lastSeenVersion string
+}{}
 
 // SdeService SDE 业务逻辑层
 type SdeService struct {
@@ -63,12 +75,26 @@ type githubAsset struct {
 // CheckAndUpdate 检查最新 SDE 版本，若有新版本则自动下载并导入
 // 返回 (isUpdated, version, error)
 func (s *SdeService) CheckAndUpdate() (bool, string, error) {
+	sdeUpdateState.mu.Lock()
+	defer sdeUpdateState.mu.Unlock()
+
+	now := time.Now()
+	if !sdeUpdateState.lastAutoCheckAt.IsZero() && now.Sub(sdeUpdateState.lastAutoCheckAt) < sdeCheckMinInterval {
+		global.Logger.Info("[SDE] 跳过重复自动检查",
+			zap.Duration("min_interval", sdeCheckMinInterval),
+			zap.Time("last_check_at", sdeUpdateState.lastAutoCheckAt),
+			zap.String("last_seen_version", sdeUpdateState.lastSeenVersion))
+		return false, sdeUpdateState.lastSeenVersion, nil
+	}
+	sdeUpdateState.lastAutoCheckAt = now
+
 	release, err := fetchLatestRelease()
 	if err != nil {
 		return false, "", fmt.Errorf("获取 GitHub Release 失败: %w", err)
 	}
 
 	version := release.TagName
+	sdeUpdateState.lastSeenVersion = version
 	exists, err := s.repo.VersionExists(version)
 	if err != nil {
 		global.Logger.Error("[SDE] 查询版本记录失败", zap.String("version", version), zap.Error(err))
@@ -99,12 +125,16 @@ func (s *SdeService) CheckAndUpdate() (bool, string, error) {
 
 // TriggerManualUpdate 手动触发更新，强制重新导入
 func (s *SdeService) TriggerManualUpdate() (string, error) {
+	sdeUpdateState.mu.Lock()
+	defer sdeUpdateState.mu.Unlock()
+
 	release, err := fetchLatestRelease()
 	if err != nil {
 		return "", fmt.Errorf("获取 GitHub Release 失败: %w", err)
 	}
 
 	version := release.TagName
+	sdeUpdateState.lastSeenVersion = version
 	global.Logger.Info("[SDE] 手动触发更新", zap.String("version", version))
 
 	if err := s.doImport(release); err != nil {
@@ -188,24 +218,58 @@ func (s *SdeService) doImport(release *githubRelease) error {
 
 // newHTTPClient 根据配置创建 http.Client，若设置了代理则使用代理
 func newHTTPClient(timeout time.Duration) *http.Client {
+	return newHTTPClientWithProxy(timeout, true)
+}
+
+func newHTTPClientWithProxy(timeout time.Duration, useProxy bool) *http.Client {
 	transport := &http.Transport{}
-	if proxyAddr := global.Config.SDE.Proxy; proxyAddr != "" {
-		if proxyURL, err := url.Parse(proxyAddr); err == nil {
-			transport.Proxy = http.ProxyURL(proxyURL)
-		} else {
-			global.Logger.Warn("[SDE] 代理地址解析失败，将不使用代理", zap.String("proxy", proxyAddr), zap.Error(err))
+	if useProxy {
+		if proxyAddr := global.Config.SDE.Proxy; proxyAddr != "" {
+			if proxyURL, err := url.Parse(proxyAddr); err == nil {
+				transport.Proxy = http.ProxyURL(proxyURL)
+			} else {
+				global.Logger.Warn("[SDE] 代理地址解析失败，将不使用代理", zap.String("proxy", proxyAddr), zap.Error(err))
+			}
 		}
 	}
 	return &http.Client{Timeout: timeout, Transport: transport}
 }
 
+func doRequestWithProxyFallback(timeout time.Duration, build func(*http.Client) (*http.Response, error)) (*http.Response, error) {
+	client := newHTTPClientWithProxy(timeout, true)
+	resp, err := build(client)
+	if err == nil {
+		return resp, nil
+	}
+
+	if !shouldRetryWithoutProxy(err) {
+		return nil, err
+	}
+
+	global.Logger.Warn("[SDE] 代理请求失败，回退为直连重试", zap.Error(err))
+	directClient := newHTTPClientWithProxy(timeout, false)
+	return build(directClient)
+}
+
+func shouldRetryWithoutProxy(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "proxyconnect") ||
+		strings.Contains(msg, "connect: connection refused") ||
+		strings.Contains(msg, "socks")
+}
+
 // fetchLatestRelease 获取 GitHub 最新 release 信息
 func fetchLatestRelease() (*githubRelease, error) {
 	url := global.Config.SDE.DownloadURL
-	client := newHTTPClient(30 * time.Second)
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Accept", "application/vnd.github+json")
-	resp, err := client.Do(req)
+	req.Header.Set("User-Agent", sdeUserAgent)
+	resp, err := doRequestWithProxyFallback(30*time.Second, func(client *http.Client) (*http.Response, error) {
+		return client.Do(req.Clone(context.Background()))
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -224,8 +288,15 @@ func fetchLatestRelease() (*githubRelease, error) {
 
 // downloadFile 下载文件到指定路径
 func downloadFile(url, destPath string) error {
-	client := newHTTPClient(10 * time.Minute)
-	resp, err := client.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", sdeUserAgent)
+
+	resp, err := doRequestWithProxyFallback(10*time.Minute, func(client *http.Client) (*http.Response, error) {
+		return client.Do(req.Clone(context.Background()))
+	})
 	if err != nil {
 		return err
 	}
@@ -392,11 +463,19 @@ func extractZip(srcPath, destDir string) (string, error) {
 }
 
 // importSQL 读取 PostgreSQL SQL dump 文件并执行
-// 上游已提供批量 INSERT，直接按语句顺序在事务中执行即可：
+// 上游 SQL 以多行 INSERT ... VALUES (...) 形式组织大量数据（尤其是 trnTranslations）。
+// 为避免超大单条 INSERT 导致执行失败或导入不完整，这里会按行流式拆分为较小块执行。
+//
+// 执行策略：
 //  1. 使用专用连接，确保 session_replication_role 全程生效
-//  2. DDL（CREATE/DROP/ALTER/SET）自动提交当前事务后立即执行
-//  3. DML 每 batchSize 条提交一次事务；DML 失败时立即回滚并开新事务继续
-const batchSize = 200
+//  2. DDL（CREATE/DROP/ALTER/TRUNCATE/SET）自动提交当前 DML 事务后立即执行
+//  3. DML 每 batchSize 条提交一次事务
+//  4. 多行 INSERT ... VALUES 每 insertChunkSize 行拆分为独立 INSERT 执行
+//  5. DML 失败视为致命错误，立即中止，避免产生“成功但数据不完整”的导入结果
+const (
+	batchSize       = 200
+	insertChunkSize = 1000
+)
 
 func importSQL(sqlPath string) error {
 	sqlDB, err := global.DB.DB()
@@ -435,7 +514,9 @@ func importSQL(sqlPath string) error {
 	scanner.Buffer(make([]byte, 1024*1024), 64*1024*1024)
 
 	var stmt strings.Builder
-	var stmtCount, errCount int
+	var stmtCount, ddlErrCount int
+	var insertHeader string
+	var insertRows []string
 
 	// 开启第一个事务
 	tx, err := conn.BeginTx(context.Background(), nil)
@@ -478,6 +559,79 @@ func importSQL(sqlPath string) error {
 		return false
 	}
 
+	execDDL := func(sql string) {
+		commitTx()
+		if _, execErr := conn.ExecContext(context.Background(), sql); execErr != nil {
+			ddlErrCount++
+			global.Logger.Warn("[SDE] DDL 执行失败，已跳过",
+				zap.String("err", execErr.Error()),
+				zap.String("sql_prefix", truncate(sql, 120)))
+			return
+		}
+		stmtCount++
+	}
+
+	execDML := func(sql string) error {
+		if _, execErr := tx.Exec(sql); execErr != nil {
+			global.Logger.Error("[SDE] DML 执行失败，导入终止",
+				zap.String("err", execErr.Error()),
+				zap.String("sql_prefix", truncate(sql, 160)))
+			rollbackTx()
+			return execErr
+		}
+
+		stmtCount++
+		txCount++
+		if txCount >= batchSize {
+			commitTx()
+		}
+		return nil
+	}
+
+	normalizeInsertRow := func(row string, isLast bool) string {
+		trimmed := strings.TrimSpace(row)
+		trimmed = strings.TrimSuffix(trimmed, ",")
+		trimmed = strings.TrimSuffix(trimmed, ";")
+		if isLast {
+			return trimmed + ";"
+		}
+		return trimmed + ","
+	}
+
+	flushInsertRows := func(final bool) error {
+		if insertHeader == "" || len(insertRows) == 0 {
+			if final {
+				insertHeader = ""
+				insertRows = nil
+			}
+			return nil
+		}
+
+		for len(insertRows) > 0 {
+			chunkSize := insertChunkSize
+			if len(insertRows) < chunkSize {
+				chunkSize = len(insertRows)
+			}
+
+			rows := make([]string, chunkSize)
+			for i := 0; i < chunkSize; i++ {
+				rows[i] = normalizeInsertRow(insertRows[i], i == chunkSize-1)
+			}
+
+			sql := insertHeader + "\n" + strings.Join(rows, "\n")
+			if err := execDML(sql); err != nil {
+				return err
+			}
+			insertRows = insertRows[chunkSize:]
+		}
+
+		if final {
+			insertHeader = ""
+			insertRows = nil
+		}
+		return nil
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		trimmed := strings.TrimSpace(line)
@@ -493,6 +647,30 @@ func importSQL(sqlPath string) error {
 			continue
 		}
 
+		if insertHeader != "" {
+			insertRows = append(insertRows, trimmed)
+
+			if strings.HasSuffix(trimmed, ";") {
+				if err := flushInsertRows(true); err != nil {
+					return fmt.Errorf("执行批量 INSERT 失败: %w", err)
+				}
+				continue
+			}
+
+			if len(insertRows) >= insertChunkSize {
+				if err := flushInsertRows(false); err != nil {
+					return fmt.Errorf("执行批量 INSERT 失败: %w", err)
+				}
+			}
+			continue
+		}
+
+		if upperTrimmed == "INSERT INTO" || (strings.HasPrefix(upperTrimmed, "INSERT INTO ") && strings.HasSuffix(upperTrimmed, " VALUES")) {
+			insertHeader = trimmed
+			insertRows = insertRows[:0]
+			continue
+		}
+
 		stmt.WriteString(line)
 		stmt.WriteByte('\n')
 
@@ -505,33 +683,17 @@ func importSQL(sqlPath string) error {
 
 			upper := strings.ToUpper(sql)
 			if isDDL(upper) {
-				// DDL：先提交当前 DML 事务，然后在事务外直接执行
-				commitTx()
-				if _, execErr := conn.ExecContext(context.Background(), sql); execErr != nil {
-					errCount++
-					global.Logger.Warn("[SDE] DDL 执行失败，已跳过",
-						zap.String("err", execErr.Error()),
-						zap.String("sql_prefix", truncate(sql, 120)))
-				} else {
-					stmtCount++
-				}
+				execDDL(sql)
 			} else {
-				if _, execErr := tx.Exec(sql); execErr != nil {
-					errCount++
-					global.Logger.Warn("[SDE] DML 执行失败，回滚当前批次",
-						zap.String("err", execErr.Error()),
-						zap.String("sql_prefix", truncate(sql, 120)))
-					// 立即回滚，避免事务进入 aborted 状态导致后续语句全部失败
-					rollbackTx()
-				} else {
-					stmtCount++
-					txCount++
-					if txCount >= batchSize {
-						commitTx()
-					}
+				if err := execDML(sql); err != nil {
+					return fmt.Errorf("执行 SQL 失败: %w", err)
 				}
 			}
 		}
+	}
+
+	if insertHeader != "" {
+		return errors.New("SQL dump 以未结束的 INSERT 语句结尾")
 	}
 
 	// 提交剩余事务（最后一次不再开启新事务）
@@ -543,7 +705,7 @@ func importSQL(sqlPath string) error {
 
 	global.Logger.Info("[SDE] SQL 导入完成",
 		zap.Int("成功语句数", stmtCount),
-		zap.Int("失败语句数", errCount))
+		zap.Int("DDL失败语句数", ddlErrCount))
 	return nil
 }
 
@@ -562,8 +724,8 @@ func (s *SdeService) GetTypes(typeIDs []int, published *bool, languageID string)
 	return s.repo.GetTypes(typeIDs, published, languageID)
 }
 
-// GetNames 批量查询 id -> name 映射（仅查数据库翻译表）
-func (s *SdeService) GetNames(ids map[string][]int, languageID string) (map[int]string, error) {
+// GetNames 批量查询按 namespace 分组的 id -> name 映射（仅查数据库翻译表）
+func (s *SdeService) GetNames(ids map[string][]int, languageID string) (repository.SdeNameMap, error) {
 	return s.repo.GetNames(ids, languageID)
 }
 

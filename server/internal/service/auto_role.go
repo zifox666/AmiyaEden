@@ -15,6 +15,7 @@ type AutoRoleService struct {
 	autoRoleRepo *repository.AutoRoleRepository
 	roleRepo     *repository.RoleRepository
 	charRepo     *repository.EveCharacterRepository
+	userRepo     *repository.UserRepository
 	roleSvc      *RoleService
 }
 
@@ -23,6 +24,7 @@ func NewAutoRoleService() *AutoRoleService {
 		autoRoleRepo: repository.NewAutoRoleRepository(),
 		roleRepo:     repository.NewRoleRepository(),
 		charRepo:     repository.NewEveCharacterRepository(),
+		userRepo:     repository.NewUserRepository(),
 		roleSvc:      NewRoleService(),
 	}
 }
@@ -129,7 +131,8 @@ func (s *AutoRoleService) DeleteEsiTitleMapping(id uint) error {
 
 // SyncUserAutoRoles 根据 ESI 军团角色 + 头衔，自动同步用户的系统权限
 // 规则：
-//   - Director 始终对应 admin 角色
+//   - 主角色在 allow_corporations 内时自动补 user 角色
+//   - 任一允许军团角色拥有 ESI corp role `Director` 时自动补 admin 角色
 //   - 根据 esi_role_mapping 表的配置，将 ESI 角色映射到系统角色
 //   - 根据 esi_title_mapping 表的配置，将 ESI 头衔映射到系统角色
 //   - super_admin 不受影响
@@ -142,6 +145,11 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 	}
 	if model.ContainsAnyRole(currentCodes, model.RoleSuperAdmin) {
 		return nil
+	}
+
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return err
 	}
 
 	// 获取用户绑定的所有角色
@@ -160,16 +168,28 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		allowCorpSet[id] = struct{}{}
 	}
 
-	// 收集所有角色的 ESI 军团角色（仅限允许军团）
+	autoRoleIDs := make(map[uint]struct{})
+	if hasAllowedPrimaryCharacter(user.PrimaryCharacterID, chars, allowCorpSet) {
+		userRole, err := s.roleRepo.GetByCode(model.RoleUser)
+		if err != nil {
+			global.Logger.Warn("[AutoRole] 查询 user 角色失败", zap.Error(err))
+		} else {
+			autoRoleIDs[userRole.ID] = struct{}{}
+		}
+	}
+
+	// 收集所有角色的 ESI 军团角色。
+	// 当配置了 allow_corporations 时，仅允许名单内军团参与自动映射；
+	// 基于主角色/Director corp role 的内置快捷规则则始终要求命中 allow_corporations。
 	allEsiRoles := make(map[string]struct{})
-	hasDirector := false
 
 	for _, char := range chars {
-		// 跳过不在允许军团中的角色
+		inAllowedCorp := true
 		if len(allowCorpSet) > 0 {
-			if _, ok := allowCorpSet[char.CorporationID]; !ok {
-				continue
-			}
+			_, inAllowedCorp = allowCorpSet[char.CorporationID]
+		}
+		if !inAllowedCorp {
+			continue
 		}
 
 		corpRoles, err := s.autoRoleRepo.ListCharacterCorpRoles(char.CharacterID)
@@ -181,23 +201,10 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		for _, r := range corpRoles {
 			allEsiRoles[r] = struct{}{}
-			if r == "Director" {
-				hasDirector = true
-			}
 		}
 	}
 
 	// 根据所有 ESI 角色查找映射
-	autoRoleIDs := make(map[uint]struct{})
-
-	// Director → admin
-	if hasDirector {
-		adminRole, err := s.roleRepo.GetByCode(model.RoleAdmin)
-		if err == nil {
-			autoRoleIDs[adminRole.ID] = struct{}{}
-		}
-	}
-
 	// 查找 ESI 角色映射
 	if len(allEsiRoles) > 0 {
 		esiRoleNames := make([]string, 0, len(allEsiRoles))
@@ -226,8 +233,11 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 			}
 		}
 		// 查询角色头衔
-		var titles []model.EveCharacterTitle
-		if err := global.DB.Where("character_id = ?", char.CharacterID).Find(&titles).Error; err != nil {
+		titles, err := s.autoRoleRepo.ListCharacterTitles(char.CharacterID)
+		if err != nil {
+			global.Logger.Warn("[AutoRole] 查询角色头衔失败",
+				zap.Int64("character_id", char.CharacterID),
+				zap.Error(err))
 			continue
 		}
 		if len(titles) == 0 {
@@ -243,6 +253,15 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		for _, m := range titleMappings {
 			autoRoleIDs[m.RoleID] = struct{}{}
+		}
+	}
+
+	if hasDirectorCorpRole(allEsiRoles) {
+		adminRole, err := s.roleRepo.GetByCode(model.RoleAdmin)
+		if err != nil {
+			global.Logger.Warn("[AutoRole] 查询 admin 角色失败", zap.Error(err))
+		} else {
+			autoRoleIDs[adminRole.ID] = struct{}{}
 		}
 	}
 

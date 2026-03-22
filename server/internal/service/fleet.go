@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,6 +31,8 @@ var FleetAutoSRPFunc func(fleetID string)
 // FleetService 舰队业务逻辑层
 type FleetService struct {
 	repo       *repository.FleetRepository
+	papRepo    *repository.AlliancePAPRepository
+	userRepo   *repository.UserRepository
 	charRepo   *repository.EveCharacterRepository
 	ssoSvc     *EveSSOService
 	walletSvc  *SysWalletService
@@ -40,12 +43,52 @@ type FleetService struct {
 func NewFleetService() *FleetService {
 	return &FleetService{
 		repo:       repository.NewFleetRepository(),
+		papRepo:    repository.NewAlliancePAPRepository(),
+		userRepo:   repository.NewUserRepository(),
 		charRepo:   repository.NewEveCharacterRepository(),
 		ssoSvc:     NewEveSSOService(),
 		walletSvc:  NewSysWalletService(),
 		webhookSvc: NewWebhookService(),
 		http:       &http.Client{Timeout: 30 * time.Second},
 	}
+}
+
+const (
+	CorporationPapPeriodCurrentMonth = "current_month"
+	CorporationPapPeriodLastMonth    = "last_month"
+	CorporationPapPeriodAtYear       = "at_year"
+	CorporationPapPeriodAll          = "all"
+)
+
+// CorporationPapSummaryItem 军团 PAP 汇总项
+type CorporationPapSummaryItem struct {
+	UserID            uint    `json:"user_id"`
+	Nickname          string  `json:"nickname"`
+	CorpTicker        string  `json:"corp_ticker"`
+	MainCharacterName string  `json:"main_character_name"`
+	CharacterCount    int     `json:"character_count"`
+	StratOpPaps       float64 `json:"strat_op_paps"`
+	SkirmishPaps      float64 `json:"skirmish_paps"`
+	AllianceStratPaps float64 `json:"alliance_strat_paps"`
+}
+
+// CorporationPapOverview 军团 PAP 页面顶部概览
+type CorporationPapOverview struct {
+	FilteredPapTotal     float64 `json:"filtered_pap_total"`
+	FilteredStratOpTotal float64 `json:"filtered_strat_op_total"`
+	AllPapTotal          float64 `json:"all_pap_total"`
+	FilteredUserCount    int64   `json:"filtered_user_count"`
+	Period               string  `json:"period"`
+	Year                 *int    `json:"year,omitempty"`
+}
+
+// CorporationPapSummaryResponse 军团 PAP 汇总响应
+type CorporationPapSummaryResponse struct {
+	List     []CorporationPapSummaryItem `json:"list"`
+	Total    int64                       `json:"total"`
+	Page     int                         `json:"page"`
+	PageSize int                         `json:"pageSize"`
+	Overview CorporationPapOverview      `json:"overview"`
 }
 
 // ─────────────────────────────────────────────
@@ -139,12 +182,12 @@ func (s *FleetService) CreateFleet(userID uint, req *CreateFleetRequest) (*model
 }
 
 // PingFleet 手动触发舰队 Ping（仅 FC 或管理员）
-func (s *FleetService) PingFleet(fleetID string, userID uint, userRole string) error {
+func (s *FleetService) PingFleet(fleetID string, userID uint, userRoles []string) error {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return errors.New("权限不足")
 	}
 	return s.webhookSvc.SendFleetPing(fleet)
@@ -164,14 +207,23 @@ type UpdateFleetRequest struct {
 	AutoSrpMode   *string  `json:"auto_srp_mode"`
 }
 
+type ManualAddFleetMembersRequest struct {
+	CharacterNames []string `json:"character_names"`
+}
+
+type ManualAddFleetMembersResult struct {
+	AddedCharacterNames   []string `json:"added_character_names"`
+	MissingCharacterNames []string `json:"missing_character_names"`
+}
+
 // UpdateFleet 更新舰队信息
-func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string, req *UpdateFleetRequest) (*model.Fleet, error) {
+func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRoles []string, req *UpdateFleetRequest) (*model.Fleet, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
 
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 
@@ -206,7 +258,7 @@ func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string,
 		if err != nil {
 			return nil, errors.New("角色不存在")
 		}
-		if char.UserID != userID && !model.HasRole(userRole, model.RoleAdmin) {
+		if char.UserID != userID && !model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin) {
 			return nil, errors.New("该角色不属于当前用户")
 		}
 		fleet.FCCharacterID = *req.CharacterID
@@ -233,12 +285,11 @@ func (s *FleetService) UpdateFleet(fleetID string, userID uint, userRole string,
 }
 
 // DeleteFleet 删除舰队
-func (s *FleetService) DeleteFleet(fleetID string, userID uint, userRole string) error {
-	fleet, err := s.repo.GetByID(fleetID)
-	if err != nil {
+func (s *FleetService) DeleteFleet(fleetID string, userID uint, userRoles []string) error {
+	if _, err := s.repo.GetByID(fleetID); err != nil {
 		return errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canDeleteFleet(userRoles) {
 		return errors.New("权限不足")
 	}
 	return s.repo.SoftDelete(fleetID)
@@ -250,12 +301,12 @@ func (s *FleetService) GetFleet(fleetID string) (*model.Fleet, error) {
 }
 
 // RefreshESIFleetID 从 ESI 刷新舰队的 esi_fleet_id 并持久化
-func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRole string) (*model.Fleet, error) {
+func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRoles []string) (*model.Fleet, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 
@@ -279,7 +330,7 @@ func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRole s
 }
 
 // ListFleets 分页查询舰队列表
-func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFilter) ([]model.Fleet, int64, error) {
+func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFilter) ([]model.FleetListItem, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -301,6 +352,53 @@ func (s *FleetService) GetMyFleets(userID uint) ([]model.Fleet, error) {
 // GetMembers 获取舰队成员列表
 func (s *FleetService) GetMembers(fleetID string) ([]model.FleetMember, error) {
 	return s.repo.ListMembers(fleetID)
+}
+
+// ManualAddMembers 手动按角色名添加成员到舰队
+func (s *FleetService) ManualAddMembers(fleetID string, userID uint, userRoles []string, req *ManualAddFleetMembersRequest) (*ManualAddFleetMembersResult, error) {
+	fleet, err := s.repo.GetByID(fleetID)
+	if err != nil {
+		return nil, errors.New("舰队不存在")
+	}
+	if !s.canManageFleet(fleet, userID, userRoles) {
+		return nil, errors.New("权限不足")
+	}
+
+	characterNames := normalizeCharacterNames(req.CharacterNames)
+	if len(characterNames) == 0 {
+		return nil, errors.New("请至少填写一个角色名")
+	}
+
+	result := &ManualAddFleetMembersResult{
+		AddedCharacterNames:   make([]string, 0, len(characterNames)),
+		MissingCharacterNames: make([]string, 0),
+	}
+
+	for _, name := range characterNames {
+		char, err := s.charRepo.GetByCharacterName(name)
+		if err != nil {
+			result.MissingCharacterNames = append(result.MissingCharacterNames, name)
+			continue
+		}
+
+		member := &model.FleetMember{
+			FleetID:       fleet.ID,
+			CharacterID:   char.CharacterID,
+			CharacterName: char.CharacterName,
+			UserID:        char.UserID,
+		}
+		if err := s.repo.AddMember(member); err != nil {
+			return nil, err
+		}
+
+		result.AddedCharacterNames = append(result.AddedCharacterNames, char.CharacterName)
+
+		if fleet.ESIFleetID != nil {
+			go s.esiInviteMember(fleet, char)
+		}
+	}
+
+	return result, nil
 }
 
 // JoinFleet 通过邀请码加入舰队
@@ -382,12 +480,12 @@ func (s *FleetService) esiInviteMember(fleet *model.Fleet, char *model.EveCharac
 // ─────────────────────────────────────────────
 
 // IssuePap 发放 PAP 到舰队所有成员
-func (s *FleetService) IssuePap(fleetID string, userID uint, userRole string) error {
+func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string) error {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return errors.New("权限不足")
 	}
 	if fleet.PapCount <= 0 {
@@ -396,7 +494,7 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRole string) er
 
 	// 1. 先尝试 ESI 同步成员（失败不阻断发放）
 	if fleet.ESIFleetID != nil {
-		if _, syncErr := s.SyncESIMembers(fleetID, userID, userRole); syncErr != nil {
+		if _, syncErr := s.SyncESIMembers(fleetID, userID, userRoles); syncErr != nil {
 			global.Logger.Warn("[Fleet] IssuePap ESI 同步失败，继续发放",
 				zap.String("fleet_id", fleetID),
 				zap.Error(syncErr),
@@ -601,6 +699,144 @@ func (s *FleetService) GetUserPapLogs(userID uint) ([]repository.PapLogDetail, e
 	return s.repo.ListPapLogsDetailByUser(userID)
 }
 
+// GetCorporationPapSummary 获取军团维度 PAP 汇总
+func (s *FleetService) GetCorporationPapSummary(page, pageSize int, period string, year int, corpTickers []string) (*CorporationPapSummaryResponse, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 1000 {
+		pageSize = 200
+	}
+
+	now := time.Now()
+	filter, normalizedPeriod, normalizedYear, err := s.buildCorporationPapFilter(period, year, now)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.repo.ListCorporationPapSummaryAll(filter)
+	if err != nil {
+		return nil, err
+	}
+	allRows, err := s.repo.ListCorporationPapSummaryAll(repository.FleetPapSummaryFilter{})
+	if err != nil {
+		return nil, err
+	}
+
+	userIDs := make([]uint, 0, len(rows)+len(allRows))
+	seenUsers := make(map[uint]struct{}, len(rows)+len(allRows))
+	for _, row := range rows {
+		if _, ok := seenUsers[row.UserID]; ok {
+			continue
+		}
+		seenUsers[row.UserID] = struct{}{}
+		userIDs = append(userIDs, row.UserID)
+	}
+	for _, row := range allRows {
+		if _, ok := seenUsers[row.UserID]; ok {
+			continue
+		}
+		seenUsers[row.UserID] = struct{}{}
+		userIDs = append(userIDs, row.UserID)
+	}
+
+	profileByUserID, err := s.resolveCorporationPapProfiles(userIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	allowedTickerSet := make(map[string]struct{})
+	for _, ticker := range corpTickers {
+		normalized := strings.ToUpper(strings.TrimSpace(ticker))
+		if normalized != "" {
+			allowedTickerSet[normalized] = struct{}{}
+		}
+	}
+
+	matchesCorpFilter := func(userID uint) bool {
+		if len(allowedTickerSet) == 0 {
+			return true
+		}
+		profile := profileByUserID[userID]
+		_, ok := allowedTickerSet[strings.ToUpper(profile.CorpTicker)]
+		return ok
+	}
+
+	items := make([]CorporationPapSummaryItem, 0, len(rows))
+	var filteredPapTotal float64
+	var filteredStratOpTotal float64
+	for _, row := range rows {
+		if !matchesCorpFilter(row.UserID) {
+			continue
+		}
+		profile := profileByUserID[row.UserID]
+		items = append(items, CorporationPapSummaryItem{
+			UserID:            row.UserID,
+			Nickname:          profile.Nickname,
+			CorpTicker:        profile.CorpTicker,
+			MainCharacterName: profile.MainCharacterName,
+			CharacterCount:    profile.CharacterCount,
+			StratOpPaps:       row.StratOpPaps,
+			SkirmishPaps:      row.SkirmishPaps,
+		})
+		filteredPapTotal += row.StratOpPaps + row.SkirmishPaps
+		filteredStratOpTotal += row.StratOpPaps
+	}
+
+	var allPapTotal float64
+	for _, row := range allRows {
+		if !matchesCorpFilter(row.UserID) {
+			continue
+		}
+		allPapTotal += row.StratOpPaps + row.SkirmishPaps
+	}
+
+	total := int64(len(items))
+	start := (page - 1) * pageSize
+	if start > len(items) {
+		start = len(items)
+	}
+	end := start + pageSize
+	if end > len(items) {
+		end = len(items)
+	}
+	pagedItems := items[start:end]
+
+	mainChars := make([]string, 0, len(pagedItems))
+	for _, item := range pagedItems {
+		if item.MainCharacterName != "" {
+			mainChars = append(mainChars, item.MainCharacterName)
+		}
+	}
+
+	allianceStratPapByMainChar, err := s.papRepo.SumStrategicPapByMainCharacters(mainChars, filter.StartAt, filter.EndAt)
+	if err != nil {
+		return nil, err
+	}
+	for i := range pagedItems {
+		pagedItems[i].AllianceStratPaps = allianceStratPapByMainChar[pagedItems[i].MainCharacterName]
+	}
+
+	overview := CorporationPapOverview{
+		FilteredPapTotal:     filteredPapTotal,
+		FilteredStratOpTotal: filteredStratOpTotal,
+		AllPapTotal:          allPapTotal,
+		FilteredUserCount:    total,
+		Period:               normalizedPeriod,
+	}
+	if normalizedYear != nil {
+		overview.Year = normalizedYear
+	}
+
+	return &CorporationPapSummaryResponse{
+		List:     pagedItems,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Overview: overview,
+	}, nil
+}
+
 // ─────────────────────────────────────────────
 //  从 ESI 拉取舰队成员并记录
 // ─────────────────────────────────────────────
@@ -618,12 +854,12 @@ type ESIFleetMember struct {
 }
 
 // SyncESIMembers 从 ESI 获取当前舰队成员并记录到数据库
-func (s *FleetService) SyncESIMembers(fleetID string, userID uint, userRole string) ([]ESIFleetMember, error) {
+func (s *FleetService) SyncESIMembers(fleetID string, userID uint, userRoles []string) ([]ESIFleetMember, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 	if fleet.ESIFleetID == nil {
@@ -670,12 +906,12 @@ func (s *FleetService) SyncESIMembers(fleetID string, userID uint, userRole stri
 // ─────────────────────────────────────────────
 
 // CreateInvite 创建舰队邀请链接
-func (s *FleetService) CreateInvite(fleetID string, userID uint, userRole string) (*model.FleetInvite, error) {
+func (s *FleetService) CreateInvite(fleetID string, userID uint, userRoles []string) (*model.FleetInvite, error) {
 	fleet, err := s.repo.GetByID(fleetID)
 	if err != nil {
 		return nil, errors.New("舰队不存在")
 	}
-	if !s.canManageFleet(fleet, userID, userRole) {
+	if !s.canManageFleet(fleet, userID, userRoles) {
 		return nil, errors.New("权限不足")
 	}
 
@@ -710,9 +946,8 @@ func (s *FleetService) GetInvites(fleetID string) ([]model.FleetInvite, error) {
 }
 
 // DeactivateInvite 禁用邀请链接
-func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRole string) error {
-	// 简单处理：admin 和 fc 都可以禁用
-	if !model.HasRole(userRole, model.RoleFC) {
+func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRoles []string) error {
+	if !s.canManageFleet(nil, userID, userRoles) {
 		return errors.New("权限不足")
 	}
 	return s.repo.DeactivateInvite(inviteID)
@@ -722,12 +957,190 @@ func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRole str
 //  权限判断
 // ─────────────────────────────────────────────
 
-// canManageFleet 判断用户是否有权管理该舰队（admin 或创建者）
-func (s *FleetService) canManageFleet(fleet *model.Fleet, userID uint, userRole string) bool {
-	if model.HasRole(userRole, model.RoleAdmin) {
-		return true
+// canManageFleet 判断用户是否有权管理舰队相关功能（super_admin / admin / fc）
+func (s *FleetService) canManageFleet(_ *model.Fleet, _ uint, userRoles []string) bool {
+	return model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC)
+}
+
+func (s *FleetService) canDeleteFleet(userRoles []string) bool {
+	return model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin)
+}
+
+func normalizeCharacterNames(names []string) []string {
+	result := make([]string, 0, len(names))
+	seen := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		trimmed := strings.TrimSpace(name)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		result = append(result, trimmed)
 	}
-	return fleet.FCUserID == userID
+	return result
+}
+
+func (s *FleetService) buildCorporationPapFilter(period string, year int, now time.Time) (repository.FleetPapSummaryFilter, string, *int, error) {
+	location := now.Location()
+
+	switch period {
+	case CorporationPapPeriodCurrentMonth:
+		startAt := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, location)
+		return repository.FleetPapSummaryFilter{StartAt: &startAt}, CorporationPapPeriodCurrentMonth, nil, nil
+	case "", CorporationPapPeriodLastMonth:
+		startAt := time.Date(now.Year(), now.Month()-1, 1, 0, 0, 0, 0, location)
+		endAt := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, location)
+		return repository.FleetPapSummaryFilter{StartAt: &startAt, EndAt: &endAt}, CorporationPapPeriodLastMonth, nil, nil
+	case CorporationPapPeriodAtYear, "last_year":
+		if period == "last_year" {
+			year = now.Year() - 1
+		}
+		if year <= 0 {
+			year = now.Year()
+		}
+		startAt := time.Date(year, time.January, 1, 0, 0, 0, 0, location)
+		endAt := time.Date(year+1, time.January, 1, 0, 0, 0, 0, location)
+		return repository.FleetPapSummaryFilter{StartAt: &startAt, EndAt: &endAt}, CorporationPapPeriodAtYear, &year, nil
+	case CorporationPapPeriodAll:
+		return repository.FleetPapSummaryFilter{}, CorporationPapPeriodAll, nil, nil
+	default:
+		return repository.FleetPapSummaryFilter{}, "", nil, errors.New("无效的 PAP 时间筛选条件")
+	}
+}
+
+type corporationPapProfile struct {
+	Nickname          string
+	MainCharacterName string
+	CharacterCount    int
+	MainCharacterID   int64
+	CorporationID     int64
+	CorpTicker        string
+}
+
+func (s *FleetService) resolveCorporationPapProfiles(userIDs []uint) (map[uint]corporationPapProfile, error) {
+	profileByUserID := make(map[uint]corporationPapProfile, len(userIDs))
+	if len(userIDs) == 0 {
+		return profileByUserID, nil
+	}
+
+	users, err := s.userRepo.ListByIDs(userIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	primaryCharacterIDs := make([]int64, 0, len(users))
+	for _, user := range users {
+		if user.PrimaryCharacterID > 0 {
+			primaryCharacterIDs = append(primaryCharacterIDs, user.PrimaryCharacterID)
+		}
+	}
+
+	primaryChars, err := s.charRepo.ListByCharacterIDs(primaryCharacterIDs)
+	if err != nil {
+		return nil, err
+	}
+	primaryNameByCharacterID := make(map[int64]string, len(primaryChars))
+	primaryCharByCharacterID := make(map[int64]model.EveCharacter, len(primaryChars))
+	for _, char := range primaryChars {
+		primaryNameByCharacterID[char.CharacterID] = char.CharacterName
+		primaryCharByCharacterID[char.CharacterID] = char
+	}
+
+	fallbackChars, err := s.charRepo.ListByUserIDs(userIDs)
+	if err != nil {
+		return nil, err
+	}
+	fallbackNameByUserID := make(map[uint]string, len(fallbackChars))
+	characterCountByUserID := make(map[uint]int, len(fallbackChars))
+	fallbackCorpIDByUserID := make(map[uint]int64, len(fallbackChars))
+	for _, char := range fallbackChars {
+		characterCountByUserID[char.UserID]++
+		if fallbackNameByUserID[char.UserID] == "" {
+			fallbackNameByUserID[char.UserID] = char.CharacterName
+		}
+		if fallbackCorpIDByUserID[char.UserID] == 0 {
+			fallbackCorpIDByUserID[char.UserID] = char.CorporationID
+		}
+	}
+
+	primaryCorpIDs := make([]int64, 0, len(users))
+	for _, user := range users {
+		profile := corporationPapProfile{
+			Nickname:        user.Nickname,
+			CharacterCount:  characterCountByUserID[user.ID],
+			MainCharacterID: user.PrimaryCharacterID,
+		}
+		if primaryChar, ok := primaryCharByCharacterID[user.PrimaryCharacterID]; ok {
+			profile.CorporationID = primaryChar.CorporationID
+			if primaryChar.CorporationID > 0 {
+				primaryCorpIDs = append(primaryCorpIDs, primaryChar.CorporationID)
+			}
+		} else if fallbackCorpIDByUserID[user.ID] > 0 {
+			profile.CorporationID = fallbackCorpIDByUserID[user.ID]
+			primaryCorpIDs = append(primaryCorpIDs, fallbackCorpIDByUserID[user.ID])
+		}
+
+		if name := primaryNameByCharacterID[user.PrimaryCharacterID]; name != "" {
+			profile.MainCharacterName = name
+		} else if name := fallbackNameByUserID[user.ID]; name != "" {
+			profile.MainCharacterName = name
+		} else if user.Nickname != "" {
+			profile.MainCharacterName = user.Nickname
+		} else {
+			profile.MainCharacterName = fmt.Sprintf("User#%d", user.ID)
+		}
+		profileByUserID[user.ID] = profile
+	}
+
+	tickerByCorpID, err := s.resolveCorporationTickers(primaryCorpIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, userID := range userIDs {
+		if _, ok := profileByUserID[userID]; !ok {
+			profileByUserID[userID] = corporationPapProfile{
+				MainCharacterName: fmt.Sprintf("User#%d", userID),
+				CharacterCount:    characterCountByUserID[userID],
+			}
+		}
+		profile := profileByUserID[userID]
+		if profile.CorporationID > 0 {
+			profile.CorpTicker = tickerByCorpID[profile.CorporationID]
+		}
+		profileByUserID[userID] = profile
+	}
+
+	return profileByUserID, nil
+}
+
+func (s *FleetService) resolveCorporationTickers(corporationIDs []int64) (map[int64]string, error) {
+	tickerByCorpID := make(map[int64]string)
+	seen := make(map[int64]struct{})
+
+	for _, corpID := range corporationIDs {
+		if corpID <= 0 {
+			continue
+		}
+		if _, ok := seen[corpID]; ok {
+			continue
+		}
+		seen[corpID] = struct{}{}
+
+		var corpInfo struct {
+			Ticker string `json:"ticker"`
+		}
+		if err := s.esiGetPublic(context.Background(), fmt.Sprintf("/corporations/%d/", corpID), &corpInfo); err != nil {
+			global.Logger.Warn("解析军团 ticker 失败", zap.Int64("corporation_id", corpID), zap.Error(err))
+			continue
+		}
+		tickerByCorpID[corpID] = corpInfo.Ticker
+	}
+
+	return tickerByCorpID, nil
 }
 
 // ─────────────────────────────────────────────
@@ -855,4 +1268,26 @@ func (s *FleetService) esiPut(ctx context.Context, path, accessToken string, bod
 		return fmt.Errorf("ESI PUT %s 返回 %d: %s", path, resp.StatusCode, string(respBody))
 	}
 	return nil
+}
+
+// esiGetPublic GET 公共 ESI 接口并解析 JSON 响应
+func (s *FleetService) esiGetPublic(ctx context.Context, path string, out interface{}) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, esiBaseURL+path, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := s.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("ESI GET %s 返回 %d: %s", path, resp.StatusCode, string(body))
+	}
+
+	return json.NewDecoder(resp.Body).Decode(out)
 }

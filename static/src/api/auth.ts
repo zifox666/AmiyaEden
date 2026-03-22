@@ -1,5 +1,19 @@
 import request from '@/utils/http'
 
+export function isUserProfileComplete(
+  user?: Partial<Pick<Api.Auth.UserInfo, 'nickname' | 'qq' | 'discordId' | 'profileComplete'>>
+): boolean {
+  if (!user) return false
+  if (typeof user.profileComplete === 'boolean') {
+    return user.profileComplete
+  }
+
+  const nickname = user.nickname?.trim() ?? ''
+  const qq = user.qq?.trim() ?? ''
+  const discordId = user.discordId?.trim() ?? ''
+  return nickname.length > 0 && (qq.length > 0 || discordId.length > 0)
+}
+
 /**
  * 获取 EVE SSO 授权 URL（通过后端接口获取，前端直接跳转）
  * @param scopes 额外 ESI scopes（可选）
@@ -74,6 +88,16 @@ export function unbindCharacter(characterId: number) {
 }
 
 /**
+ * 更新当前登录用户的联系资料
+ */
+export function updateMyProfile(data: { nickname?: string; qq?: string; discord_id?: string }) {
+  return request.put({
+    url: '/api/v1/me',
+    data
+  })
+}
+
+/**
  * 获取当前登录用户信息（从 /me 接口获取并封装成统一格式）
  * @returns 用户信息
  */
@@ -95,6 +119,16 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
     userId: user.id,
     userName: primaryChar?.character_name ?? user.nickname ?? `Capsuleer#${user.id}`,
     avatar: primaryChar?.portrait_url ?? user.avatar ?? '',
+    nickname: user.nickname ?? '',
+    qq: user.qq ?? '',
+    discordId: user.discord_id ?? '',
+    profileComplete:
+      data.profile_complete ??
+      isUserProfileComplete({
+        nickname: user.nickname ?? '',
+        qq: user.qq ?? '',
+        discordId: user.discord_id ?? ''
+      }),
     roles,
     buttons: permissions ?? [],
     characters: characters ?? [],

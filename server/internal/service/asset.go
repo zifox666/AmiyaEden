@@ -260,8 +260,10 @@ func (s *AssetService) resolveLocationName(chars []model.EveCharacter, locationI
 			"solar_system": {int(locationID)},
 		}, "zh")
 		if err == nil {
-			if name, ok := names[int(locationID)]; ok {
-				return name
+			if solarNames, ok := names["solar_system"]; ok {
+				if name, ok := solarNames[int(locationID)]; ok {
+					return name
+				}
 			}
 		}
 		return fmt.Sprintf("System-%d", locationID)

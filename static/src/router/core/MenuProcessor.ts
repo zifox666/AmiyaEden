@@ -41,14 +41,12 @@ export class MenuProcessor {
    */
   private async processFrontendMenu(): Promise<AppRouteRecord[]> {
     const userStore = useUserStore()
-    const roles = userStore.info?.roles
+    const roles = userStore.info?.roles ?? []
 
     let menuList = [...asyncRoutes]
 
-    // 根据角色过滤菜单
-    if (roles && roles.length > 0) {
-      menuList = this.filterMenuByRoles(menuList, roles)
-    }
+    // 根据静态路由访问边界过滤菜单
+    menuList = this.filterMenuByAccess(menuList, roles)
 
     return this.filterEmptyMenus(menuList)
   }
@@ -62,23 +60,30 @@ export class MenuProcessor {
   }
 
   /**
-   * 根据角色过滤菜单
+   * 根据静态路由访问边界过滤菜单
    */
-  private filterMenuByRoles(menu: AppRouteRecord[], roles: string[]): AppRouteRecord[] {
+  private filterMenuByAccess(menu: AppRouteRecord[], roles: string[]): AppRouteRecord[] {
     return menu.reduce((acc: AppRouteRecord[], item) => {
       const itemRoles = item.meta?.roles
-      const hasPermission = !itemRoles || itemRoles.some((role) => roles?.includes(role))
+      const requiresLogin = item.meta?.login === true
+      const hasRolePermission = !itemRoles || itemRoles.some((role) => roles.includes(role))
+      const hasLoginPermission = !requiresLogin || this.hasNonGuestRole(roles)
+      const hasPermission = hasRolePermission && hasLoginPermission
 
       if (hasPermission) {
         const filteredItem = { ...item }
         if (filteredItem.children?.length) {
-          filteredItem.children = this.filterMenuByRoles(filteredItem.children, roles)
+          filteredItem.children = this.filterMenuByAccess(filteredItem.children, roles)
         }
         acc.push(filteredItem)
       }
 
       return acc
     }, [])
+  }
+
+  private hasNonGuestRole(roles: string[]): boolean {
+    return roles.some((role) => role !== 'guest')
   }
 
   /**

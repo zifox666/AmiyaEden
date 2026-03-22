@@ -5,6 +5,7 @@ import (
 	"amiya-eden/internal/model"
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -143,6 +144,43 @@ func (r *AlliancePAPRepository) ListRecentRecordsByMainChar(mainChar string, lim
 		Limit(limit).
 		Find(&records).Error
 	return records, err
+}
+
+// SumStrategicPapByMainCharacters 汇总多个主角色在给定时间范围内的战略联盟 PAP
+// 当前将 CTA 与 Strat Op 一并视为战略 PAP
+func (r *AlliancePAPRepository) SumStrategicPapByMainCharacters(mainChars []string, startAt, endAt *time.Time) (map[string]float64, error) {
+	result := make(map[string]float64, len(mainChars))
+	if len(mainChars) == 0 {
+		return result, nil
+	}
+
+	type row struct {
+		MainCharacter string  `json:"main_character"`
+		TotalPap      float64 `json:"total_pap"`
+	}
+
+	var rows []row
+	db := global.DB.Model(&model.AlliancePAPRecord{}).
+		Select("main_character, COALESCE(SUM(pap), 0) as total_pap").
+		Where("main_character IN ?", mainChars).
+		Where("level IN ?", []string{"CTA", "Strat Op"})
+
+	if startAt != nil {
+		db = db.Where("start_at >= ?", *startAt)
+	}
+	if endAt != nil {
+		db = db.Where("start_at < ?", *endAt)
+	}
+
+	if err := db.Group("main_character").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	for _, item := range rows {
+		result[item.MainCharacter] = item.TotalPap
+	}
+
+	return result, nil
 }
 
 // ─────────────────────────────────────────────
