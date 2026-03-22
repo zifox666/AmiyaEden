@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/pkg/eve/esi"
 	"context"
 	"errors"
 
@@ -90,8 +91,76 @@ func (s *AutoRoleService) ListEsiTitleMappings() ([]model.EsiTitleMapping, error
 }
 
 // ListCorpTitles 获取数据库中所有去重的军团头衔（用于前端下拉选择）
+// 返回结果包含从 ESI 查询的军团名称
 func (s *AutoRoleService) ListCorpTitles() ([]repository.CorpTitleInfo, error) {
-	return s.autoRoleRepo.ListDistinctCorpTitles()
+	titles, err := s.autoRoleRepo.ListDistinctCorpTitles()
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch corporation names from ESI
+	corpNames, err := s.fetchCorporationNames(titles)
+	if err != nil {
+		// Log error but don't fail - names will be empty and frontend will fall back to ID
+		global.Logger.Warn("[AutoRole] Failed to fetch corporation names from ESI",
+			zap.Error(err),
+		)
+	} else {
+		// Populate corporation names
+		for i := range titles {
+			if name, ok := corpNames[titles[i].CorporationID]; ok {
+				titles[i].CorporationName = name
+			}
+		}
+	}
+
+	return titles, nil
+}
+
+// fetchCorporationNames 批量查询军团名称，通过 ESI /universe/names 端点
+type esiNameEntry struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func (s *AutoRoleService) fetchCorporationNames(titles []repository.CorpTitleInfo) (map[int64]string, error) {
+	// Collect unique corporation IDs
+	corpIDSet := make(map[int64]struct{})
+	for _, t := range titles {
+		if t.CorporationID > 0 {
+			corpIDSet[t.CorporationID] = struct{}{}
+		}
+	}
+	if len(corpIDSet) == 0 {
+		return nil, nil
+	}
+
+	// Convert to slice for ESI request
+	corpIDs := make([]int64, 0, len(corpIDSet))
+	for id := range corpIDSet {
+		corpIDs = append(corpIDs, id)
+	}
+
+	// Call ESI /universe/names
+	client := esi.NewClient()
+	var esiResults []esiNameEntry
+	if err := client.PostJSON(
+		context.Background(),
+		"/universe/names?datasource=tranquility",
+		"",
+		corpIDs,
+		&esiResults,
+	); err != nil {
+		return nil, err
+	}
+
+	// Build map of corporation_id -> corporation_name
+	nameMap := make(map[int64]string, len(esiResults))
+	for _, entry := range esiResults {
+		nameMap[int64(entry.ID)] = entry.Name
+	}
+
+	return nameMap, nil
 }
 
 // CreateEsiTitleMapping 创建 ESI 头衔映射

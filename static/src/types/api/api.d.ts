@@ -305,6 +305,7 @@ declare namespace Api {
     /** 军团头衔信息（从头衔快照获取，用于前端下拉选择） */
     interface CorpTitleInfo {
       corporation_id: number
+      corporation_name: string
       title_id: number
       title_name: string
     }

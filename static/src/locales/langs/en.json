@@ -1274,6 +1274,7 @@
     },
     "titleFallback": "Title {id}",
     "corpPrefix": "Corp {id}",
+    "corpFallback": "Corp {id}",
     "mappingCreated": "Mapping created",
     "createFailed": "Failed to create mapping",
     "deleteSuccess": "Deleted",

@@ -263,7 +263,7 @@ source_of_truth:
 | GET | `/system/auto-role/esi-role-mappings` | ESI role 映射列表 | `RequireRole(admin)` |
 | POST | `/system/auto-role/esi-role-mappings` | 新增 ESI role 映射 | `RequireRole(admin)` |
 | DELETE | `/system/auto-role/esi-role-mappings/:id` | 删除 ESI role 映射 | `RequireRole(admin)` |
-| GET | `/system/auto-role/corp-titles` | Corp titles 列表 | `RequireRole(admin)` |
+| GET | `/system/auto-role/corp-titles` | Corp titles 列表（含军团名称） | `RequireRole(admin)` |
 | GET | `/system/auto-role/esi-title-mappings` | Title 映射列表 | `RequireRole(admin)` |
 | POST | `/system/auto-role/esi-title-mappings` | 新增 title 映射 | `RequireRole(admin)` |
 | DELETE | `/system/auto-role/esi-title-mappings/:id` | 删除 title 映射 | `RequireRole(admin)` |

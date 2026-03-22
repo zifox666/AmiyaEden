@@ -83,7 +83,11 @@
             :label="t('autoRolePage.columns.corporationId')"
             prop="corporation_id"
             width="160"
-          />
+          >
+            <template #default="{ row }">
+              {{ row.corporation_name || row.corporation_id }}
+            </template>
+          </ElTableColumn>
           <ElTableColumn :label="t('autoRolePage.columns.titleId')" prop="title_id" width="100" />
           <ElTableColumn
             :label="t('autoRolePage.columns.titleName')"
@@ -204,7 +208,9 @@
                   t.title_name || $t('autoRolePage.titleFallback', { id: t.title_id })
                 }}</span>
                 <span class="ml-3 text-xs text-gray-400">
-                  {{ $t('autoRolePage.corpPrefix', { id: t.corporation_id }) }}
+                  {{
+                    t.corporation_name || $t('autoRolePage.corpFallback', { id: t.corporation_id })
+                  }}
                 </span>
               </div>
             </ElOption>

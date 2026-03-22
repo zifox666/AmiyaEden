@@ -1275,6 +1275,7 @@
     },
     "titleFallback": "头衔 {id}",
     "corpPrefix": "Corp {id}",
+    "corpFallback": "军团 {id}",
     "mappingCreated": "映射创建成功",
     "createFailed": "创建失败",
     "deleteSuccess": "删除成功",

@@ -3,6 +3,8 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"amiya-eden/pkg/eve/esi"
+	"context"
 	"regexp"
 	"strings"
 )
@@ -134,9 +136,10 @@ func (r *AutoRoleRepository) ListCharacterTitles(characterID int64) ([]model.Eve
 
 // CorpTitleInfo 军团头衔去重信息（用于前端下拉选择）
 type CorpTitleInfo struct {
-	CorporationID int64  `json:"corporation_id"`
-	TitleID       int    `json:"title_id"`
-	TitleName     string `json:"title_name"`
+	CorporationID   int64  `json:"corporation_id"`
+	CorporationName string `json:"corporation_name"`
+	TitleID         int    `json:"title_id"`
+	TitleName       string `json:"title_name"`
 }
 
 var eveTagRe = regexp.MustCompile(`<[^>]+>`)
@@ -146,6 +149,7 @@ func stripEveTags(s string) string {
 }
 
 // ListDistinctCorpTitles 获取所有去重的(军团+头衔)组合，来源于 ESI 头衔快照
+// 返回结果包含从 ESI 查询的军团名称
 func (r *AutoRoleRepository) ListDistinctCorpTitles() ([]CorpTitleInfo, error) {
 	var results []CorpTitleInfo
 	err := global.DB.
@@ -162,5 +166,68 @@ func (r *AutoRoleRepository) ListDistinctCorpTitles() ([]CorpTitleInfo, error) {
 	for i := range results {
 		results[i].TitleName = stripEveTags(results[i].TitleName)
 	}
+
+	// Fetch corporation names from ESI
+	corpNames, err := r.fetchCorporationNames(results)
+	if err != nil {
+		// Log error but don't fail - names will be empty and frontend will fall back to ID
+		global.Logger.Warn("[AutoRole] Failed to fetch corporation names from ESI",
+			err,
+		)
+	} else {
+		// Populate corporation names
+		for i := range results {
+			if name, ok := corpNames[results[i].CorporationID]; ok {
+				results[i].CorporationName = name
+			}
+		}
+	}
+
 	return results, nil
+}
+
+// fetchCorporationNames 批量查询军团名称，通过 ESI /universe/names 端点
+type esiNameEntry struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func (r *AutoRoleRepository) fetchCorporationNames(titles []CorpTitleInfo) (map[int64]string, error) {
+	// Collect unique corporation IDs
+	corpIDSet := make(map[int64]struct{})
+	for _, t := range titles {
+		if t.CorporationID > 0 {
+			corpIDSet[t.CorporationID] = struct{}{}
+		}
+	}
+	if len(corpIDSet) == 0 {
+		return nil, nil
+	}
+
+	// Convert to slice for ESI request
+	corpIDs := make([]int64, 0, len(corpIDSet))
+	for id := range corpIDSet {
+		corpIDs = append(corpIDs, id)
+	}
+
+	// Call ESI /universe/names
+	client := esi.NewClient()
+	var esiResults []esiNameEntry
+	if err := client.PostJSON(
+		context.Background(),
+		"/universe/names?datasource=tranquility",
+		"",
+		corpIDs,
+		&esiResults,
+	); err != nil {
+		return nil, err
+	}
+
+	// Build map of corporation_id -> corporation_name
+	nameMap := make(map[int64]string, len(esiResults))
+	for _, entry := range esiResults {
+		nameMap[int64(entry.ID)] = entry.Name
+	}
+
+	return nameMap, nil
 }
