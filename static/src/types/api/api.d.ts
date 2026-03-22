@@ -1736,5 +1736,17 @@ declare namespace Api {
       corp_id?: number
       site_title?: string
     }
+
+    interface SDEConfig {
+      api_key: string
+      proxy: string
+      download_url: string
+    }
+
+    interface UpdateSDEConfigParams {
+      api_key?: string
+      proxy?: string
+      download_url?: string
+    }
   }
 }

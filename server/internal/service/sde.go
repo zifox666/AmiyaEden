@@ -41,11 +41,31 @@ var sdeUpdateState = struct {
 
 // SdeService SDE 业务逻辑层
 type SdeService struct {
-	repo *repository.SdeRepository
+	repo      *repository.SdeRepository
+	sysConfig *repository.SysConfigRepository
 }
 
 func NewSdeService() *SdeService {
-	return &SdeService{repo: repository.NewSdeRepository()}
+	return &SdeService{
+		repo:      repository.NewSdeRepository(),
+		sysConfig: repository.NewSysConfigRepository(),
+	}
+}
+
+// 获取配置的辅助方法
+func (s *SdeService) getAPIKey() string {
+	key, _ := s.sysConfig.Get(model.SysConfigSDEAPIKey, global.Config.SDE.APIKey)
+	return key
+}
+
+func (s *SdeService) getProxy() string {
+	proxy, _ := s.sysConfig.Get(model.SysConfigSDEProxy, global.Config.SDE.Proxy)
+	return proxy
+}
+
+func (s *SdeService) getDownloadURL() string {
+	url, _ := s.sysConfig.Get(model.SysConfigSDEDownloadURL, global.Config.SDE.DownloadURL)
+	return url
 }
 
 // ---- 版本管理 ----
@@ -88,7 +108,7 @@ func (s *SdeService) CheckAndUpdate() (bool, string, error) {
 	}
 	sdeUpdateState.lastAutoCheckAt = now
 
-	release, err := fetchLatestRelease()
+	release, err := s.fetchLatestRelease()
 	if err != nil {
 		return false, "", fmt.Errorf("获取 GitHub Release 失败: %w", err)
 	}
@@ -128,7 +148,7 @@ func (s *SdeService) TriggerManualUpdate() (string, error) {
 	sdeUpdateState.mu.Lock()
 	defer sdeUpdateState.mu.Unlock()
 
-	release, err := fetchLatestRelease()
+	release, err := s.fetchLatestRelease()
 	if err != nil {
 		return "", fmt.Errorf("获取 GitHub Release 失败: %w", err)
 	}
@@ -191,7 +211,7 @@ func (s *SdeService) doImport(release *githubRelease) error {
 	// 下载
 	dlPath := filepath.Join(sdeDownloadDir, asset.Name)
 	global.Logger.Info("[SDE] 下载中", zap.String("url", asset.BrowserDownloadURL))
-	if err := downloadFile(asset.BrowserDownloadURL, dlPath); err != nil {
+	if err := s.downloadFile(asset.BrowserDownloadURL, dlPath); err != nil {
 		return fmt.Errorf("下载失败: %w", err)
 	}
 	defer os.Remove(dlPath)
@@ -217,14 +237,14 @@ func (s *SdeService) doImport(release *githubRelease) error {
 // ---- 工具函数 ----
 
 // newHTTPClient 根据配置创建 http.Client，若设置了代理则使用代理
-func newHTTPClient(timeout time.Duration) *http.Client {
-	return newHTTPClientWithProxy(timeout, true)
+func (s *SdeService) newHTTPClient(timeout time.Duration) *http.Client {
+	return s.newHTTPClientWithProxy(timeout, true)
 }
 
-func newHTTPClientWithProxy(timeout time.Duration, useProxy bool) *http.Client {
+func (s *SdeService) newHTTPClientWithProxy(timeout time.Duration, useProxy bool) *http.Client {
 	transport := &http.Transport{}
 	if useProxy {
-		if proxyAddr := global.Config.SDE.Proxy; proxyAddr != "" {
+		if proxyAddr := s.getProxy(); proxyAddr != "" {
 			if proxyURL, err := url.Parse(proxyAddr); err == nil {
 				transport.Proxy = http.ProxyURL(proxyURL)
 			} else {
@@ -235,23 +255,23 @@ func newHTTPClientWithProxy(timeout time.Duration, useProxy bool) *http.Client {
 	return &http.Client{Timeout: timeout, Transport: transport}
 }
 
-func doRequestWithProxyFallback(timeout time.Duration, build func(*http.Client) (*http.Response, error)) (*http.Response, error) {
-	client := newHTTPClientWithProxy(timeout, true)
+func (s *SdeService) doRequestWithProxyFallback(timeout time.Duration, build func(*http.Client) (*http.Response, error)) (*http.Response, error) {
+	client := s.newHTTPClientWithProxy(timeout, true)
 	resp, err := build(client)
 	if err == nil {
 		return resp, nil
 	}
 
-	if !shouldRetryWithoutProxy(err) {
+	if !s.shouldRetryWithoutProxy(err) {
 		return nil, err
 	}
 
 	global.Logger.Warn("[SDE] 代理请求失败，回退为直连重试", zap.Error(err))
-	directClient := newHTTPClientWithProxy(timeout, false)
+	directClient := s.newHTTPClientWithProxy(timeout, false)
 	return build(directClient)
 }
 
-func shouldRetryWithoutProxy(err error) bool {
+func (s *SdeService) shouldRetryWithoutProxy(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -262,12 +282,12 @@ func shouldRetryWithoutProxy(err error) bool {
 }
 
 // fetchLatestRelease 获取 GitHub 最新 release 信息
-func fetchLatestRelease() (*githubRelease, error) {
-	url := global.Config.SDE.DownloadURL
+func (s *SdeService) fetchLatestRelease() (*githubRelease, error) {
+	url := s.getDownloadURL()
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", sdeUserAgent)
-	resp, err := doRequestWithProxyFallback(30*time.Second, func(client *http.Client) (*http.Response, error) {
+	resp, err := s.doRequestWithProxyFallback(30*time.Second, func(client *http.Client) (*http.Response, error) {
 		return client.Do(req.Clone(context.Background()))
 	})
 	if err != nil {
@@ -287,14 +307,14 @@ func fetchLatestRelease() (*githubRelease, error) {
 }
 
 // downloadFile 下载文件到指定路径
-func downloadFile(url, destPath string) error {
+func (s *SdeService) downloadFile(url, destPath string) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("User-Agent", sdeUserAgent)
 
-	resp, err := doRequestWithProxyFallback(10*time.Minute, func(client *http.Client) (*http.Response, error) {
+	resp, err := s.doRequestWithProxyFallback(10*time.Minute, func(client *http.Client) (*http.Response, error) {
 		return client.Do(req.Clone(context.Background()))
 	})
 	if err != nil {

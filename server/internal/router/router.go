@@ -24,7 +24,7 @@ func RegisterRoutes(r *gin.Engine) {
 		sso.GET("/scopes", ssoH.GetScopes)
 	}
 
-	// ─── SDE 公开查询（API Key 鉴权）───
+	// ─── SDE 公开查询 ──
 	sdeH := handler.NewSdeHandler()
 	sde := api.Group("/sde")
 	{
@@ -246,6 +246,10 @@ func RegisterRoutes(r *gin.Engine) {
 	sysConfigH := handler.NewSysConfigHandler()
 	admin.GET("/basic-config", sysConfigH.GetBasicConfig)
 	admin.PUT("/basic-config", sysConfigH.UpdateBasicConfig)
+
+	// SDE 配置管理
+	admin.GET("/sde-config", sysConfigH.GetSDEConfig)
+	admin.PUT("/sde-config", sysConfigH.UpdateSDEConfig)
 
 	// NPC 刷怪报表（管理员 — 公司级）
 	admin.POST("/npc-kills", npcKillH.GetCorpNpcKills)

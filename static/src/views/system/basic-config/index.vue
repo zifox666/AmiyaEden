@@ -38,6 +38,53 @@
         </ElFormItem>
       </ElForm>
     </ElCard>
+
+    <ElCard shadow="never" style="margin-top: 16px">
+      <template #header>
+        <h2 class="section-title">{{ $t('system.basicConfig.sdeConfig') }}</h2>
+      </template>
+
+      <ElForm
+        :model="sdeForm"
+        label-width="120px"
+        style="max-width: 680px"
+        v-loading="loadingSDEConfig"
+      >
+        <ElFormItem :label="$t('system.basicConfig.sdeApiKey')" prop="api_key">
+          <ElInput
+            v-model="sdeForm.api_key"
+            clearable
+            show-password
+            :placeholder="$t('system.basicConfig.sdeApiKeyPlaceholder')"
+            style="width: 400px"
+          />
+        </ElFormItem>
+
+        <ElFormItem :label="$t('system.basicConfig.sdeProxy')" prop="proxy">
+          <ElInput
+            v-model="sdeForm.proxy"
+            clearable
+            :placeholder="$t('system.basicConfig.sdeProxyPlaceholder')"
+            style="width: 400px"
+          />
+        </ElFormItem>
+
+        <ElFormItem :label="$t('system.basicConfig.sdeDownloadUrl')" prop="download_url">
+          <ElInput
+            v-model="sdeForm.download_url"
+            clearable
+            :placeholder="$t('system.basicConfig.sdeDownloadUrlPlaceholder')"
+            style="width: 500px"
+          />
+        </ElFormItem>
+
+        <ElFormItem>
+          <ElButton type="primary" :loading="savingSDE" @click="handleSaveSDE">
+            {{ $t('system.basicConfig.save') }}
+          </ElButton>
+        </ElFormItem>
+      </ElForm>
+    </ElCard>
   </div>
 </template>
 
@@ -53,6 +100,7 @@
     ElMessage
   } from 'element-plus'
   import { useSysConfigStore } from '@/store/modules/sys-config'
+  import { fetchSDEConfig, updateSDEConfig } from '@/api/sys-config'
 
   defineOptions({ name: 'BasicConfig' })
 
@@ -61,10 +109,18 @@
 
   const loadingConfig = ref(false)
   const saving = ref(false)
+  const loadingSDEConfig = ref(false)
+  const savingSDE = ref(false)
 
   const form = reactive<Api.SysConfig.BasicConfig>({
     corp_id: sysConfigStore.config.corp_id,
     site_title: sysConfigStore.config.site_title
+  })
+
+  const sdeForm = reactive<Api.SysConfig.SDEConfig>({
+    api_key: '',
+    proxy: '',
+    download_url: ''
   })
 
   const loadConfig = async () => {
@@ -95,8 +151,39 @@
     }
   }
 
+  const loadSDEConfig = async () => {
+    loadingSDEConfig.value = true
+    try {
+      const res = await fetchSDEConfig()
+      sdeForm.api_key = res.api_key
+      sdeForm.proxy = res.proxy
+      sdeForm.download_url = res.download_url
+    } catch {
+      /* empty */
+    } finally {
+      loadingSDEConfig.value = false
+    }
+  }
+
+  const handleSaveSDE = async () => {
+    savingSDE.value = true
+    try {
+      await updateSDEConfig({
+        api_key: sdeForm.api_key,
+        proxy: sdeForm.proxy,
+        download_url: sdeForm.download_url
+      })
+      ElMessage.success(t('system.basicConfig.saveSuccess'))
+    } catch {
+      /* empty */
+    } finally {
+      savingSDE.value = false
+    }
+  }
+
   onMounted(() => {
     loadConfig()
+    loadSDEConfig()
   })
 </script>
 

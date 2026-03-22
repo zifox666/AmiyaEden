@@ -1576,7 +1576,14 @@
       "save": "Save",
       "corpIdPlaceholder": "Please enter corporation ID",
       "siteTitlePlaceholder": "Please enter site title",
-      "saveSuccess": "Configuration saved"
+      "saveSuccess": "Configuration saved",
+      "sdeConfig": "SDE Configuration",
+      "sdeApiKey": "API Key",
+      "sdeApiKeyPlaceholder": "API key for protecting SDE data query endpoints",
+      "sdeProxy": "Proxy Address",
+      "sdeProxyPlaceholder": "Leave empty to disable proxy, e.g. http://127.0.0.1:7890",
+      "sdeDownloadUrl": "Download URL",
+      "sdeDownloadUrlPlaceholder": "SDE data download API URL"
     }
   }
 }

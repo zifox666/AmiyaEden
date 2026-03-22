@@ -12,3 +12,18 @@ export function updateBasicConfig(data: Api.SysConfig.UpdateBasicConfigParams) {
     data
   })
 }
+
+/** 获取 SDE 配置 */
+export function fetchSDEConfig() {
+  return request.get<Api.SysConfig.SDEConfig>({
+    url: '/api/v1/system/sde-config'
+  })
+}
+
+/** 更新 SDE 配置 */
+export function updateSDEConfig(data: Api.SysConfig.UpdateSDEConfigParams) {
+  return request.put({
+    url: '/api/v1/system/sde-config',
+    data
+  })
+}

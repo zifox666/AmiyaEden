@@ -30,6 +30,14 @@ const (
 	SysConfigCorpID    = "corp.id"    // 军团ID (int64) - 用于获取Logo
 	SysConfigSiteTitle = "site.title" // 网站标题 (string)
 
+	SysConfigSDEAPIKey      = "sde.api_key"       // SDE 查询 API Key
+	SysConfigSDEProxy       = "sde.proxy"         // SDE 下载代理
+	SysConfigSDEDownloadURL = "sde.download_url"  // SDE 下载地址
+
 	SysConfigDefaultCorpID    int64  = 1
 	SysConfigDefaultSiteTitle string = "Amiya eden"
+
+	SysConfigDefaultSDEAPIKey      = "modify_your_api_key"
+	SysConfigDefaultSDEProxy       = ""
+	SysConfigDefaultSDEDownloadURL = "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"
 )

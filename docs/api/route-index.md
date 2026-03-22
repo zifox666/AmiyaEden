@@ -189,6 +189,13 @@ source_of_truth:
 | GET | `/system/basic-config` | 获取基础配置 | `RequireRole(admin)` |
 | PUT | `/system/basic-config` | 更新基础配置 | `RequireRole(admin)` |
 
+### SDE Config
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/system/sde-config` | 获取 SDE 配置 | `RequireRole(admin)` |
+| PUT | `/system/sde-config` | 更新 SDE 配置 | `RequireRole(admin)` |
+
 ### NPC Kills / Alliance PAP
 
 | Method | Path | 说明 | 权限 |
