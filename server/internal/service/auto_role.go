@@ -161,7 +161,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		return nil
 	}
 
-	// 构建允许军团白名单（为空表示不限制）
+	// 构建允许军团白名单（为空表示不信任任何军团信号）
 	allowCorps := global.Config.App.AllowCorporations
 	allowCorpSet := make(map[int64]struct{}, len(allowCorps))
 	for _, id := range allowCorps {
@@ -179,16 +179,12 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 	}
 
 	// 收集所有角色的 ESI 军团角色。
-	// 当配置了 allow_corporations 时，仅允许名单内军团参与自动映射；
-	// 基于主角色/Director corp role 的内置快捷规则则始终要求命中 allow_corporations。
+	// 仅允许 allow_corporations 名单内军团参与自动映射。
+	// 当名单为空时，不信任任何 ESI 军团角色信号。
 	allEsiRoles := make(map[string]struct{})
 
 	for _, char := range chars {
-		inAllowedCorp := true
-		if len(allowCorpSet) > 0 {
-			_, inAllowedCorp = allowCorpSet[char.CorporationID]
-		}
-		if !inAllowedCorp {
+		if !isAllowedCorporation(char.CorporationID, allowCorpSet) {
 			continue
 		}
 
@@ -223,14 +219,8 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 
 	// 查找 ESI 头衔映射（仅限允许军团）
 	for _, char := range chars {
-		if char.CorporationID == 0 {
+		if !isAllowedCorporation(char.CorporationID, allowCorpSet) {
 			continue
-		}
-		// 跳过不在允许军团中的角色
-		if len(allowCorpSet) > 0 {
-			if _, ok := allowCorpSet[char.CorporationID]; !ok {
-				continue
-			}
 		}
 		// 查询角色头衔
 		titles, err := s.autoRoleRepo.ListCharacterTitles(char.CharacterID)

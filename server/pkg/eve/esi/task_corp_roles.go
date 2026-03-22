@@ -2,6 +2,7 @@ package esi
 
 import (
 	"amiya-eden/global"
+	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"context"
 	"fmt"
@@ -78,14 +79,32 @@ func (t *CorpRolesTask) Execute(ctx *TaskContext) error {
 		roles = append(roles, r)
 	}
 
+	var corpID int64
+	if err := global.DB.Model(&model.EveCharacter{}).
+		Where("character_id = ?", ctx.CharacterID).
+		Pluck("corporation_id", &corpID).Error; err != nil {
+		return fmt.Errorf("query corporation id: %w", err)
+	}
+
 	global.Logger.Debug("[ESI] 角色军团权限刷新完成",
 		zap.Int64("character_id", ctx.CharacterID),
+		zap.Int64("corporation_id", corpID),
 		zap.Int("count", len(roles)),
 		zap.Strings("roles", roles),
 	)
 
 	// 入库：同步角色的军团角色
 	autoRoleRepo := repository.NewAutoRoleRepository()
+	if !isCorporationAllowed(corpID, global.Config.App.AllowCorporations) {
+		if err := autoRoleRepo.SyncCharacterCorpRoles(ctx.CharacterID, nil); err != nil {
+			return fmt.Errorf("clear corp roles for disallowed corporation: %w", err)
+		}
+		global.Logger.Debug("[ESI] 角色所在军团不在 allow_corporations，已忽略军团权限信号",
+			zap.Int64("character_id", ctx.CharacterID),
+			zap.Int64("corporation_id", corpID))
+		return nil
+	}
+
 	if err := autoRoleRepo.SyncCharacterCorpRoles(ctx.CharacterID, roles); err != nil {
 		return fmt.Errorf("sync corp roles: %w", err)
 	}

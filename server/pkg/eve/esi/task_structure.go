@@ -97,6 +97,12 @@ func (t *StructureTask) Execute(ctx *TaskContext) error {
 	if err != nil {
 		return fmt.Errorf("query corporation id: %w", err)
 	}
+	if !isCorporationAllowed(corpID, global.Config.App.AllowCorporations) {
+		global.Logger.Debug("[ESI] 角色所在军团不在 allow_corporations，跳过建筑信息刷新",
+			zap.Int64("character_id", ctx.CharacterID),
+			zap.Int64("corporation_id", corpID))
+		return nil
+	}
 
 	// 1. 获取角色所在军团的建筑列表
 	var esiStructures []corpStructureESIResp

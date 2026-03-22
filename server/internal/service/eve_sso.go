@@ -101,14 +101,14 @@ const (
 // 在后台 goroutine 中运行，用于全量 ESI 刷新。全量刷新完成后应执行一次权限检查。
 var OnNewCharacterFunc func(characterID int64, userID uint)
 
-// OnNewCharacterSyncFunc 新角色同步钩子：在返回 JWT 之前调用，仅执行 affiliation 拉取 + 军团准入检查。
+// OnNewCharacterSyncFunc 新角色同步钩子：在返回 JWT 之前调用。
+// 负责刷新最小安全相关数据（如 affiliation / corp roles）并完成权限重算。
 // 必须快速返回（< 1s），调用方不会使用 goroutine。
 var OnNewCharacterSyncFunc func(characterID int64, userID uint)
 
-// OnCharacterBindFunc 已有角色完成绑定/重新登录时触发的钩子
-// 此时角色的 CorporationID 已存在于数据库，可立即进行军团准入检查
-// 注入示例：service.OnCharacterBindFunc = func(userID uint) { roleSvc.CheckCorpAccessAndAdjustRole(ctx, userID) }
-var OnCharacterBindFunc func(userID uint)
+// OnExistingCharacterSyncFunc 已有角色完成绑定/重新登录时触发的同步钩子。
+// 必须在签发 JWT 前完成，用于刷新 affiliation / corp roles 并重算权限。
+var OnExistingCharacterSyncFunc func(characterID int64, userID uint)
 
 // stateData OAuth state 中存储的数据
 type stateData struct {
@@ -133,6 +133,20 @@ func NewEveSSOService() *EveSSOService {
 		roleSvc:   NewRoleService(),
 		eveClient: eve.NewClient(cfg.ClientID, cfg.ClientSecret, cfg.CallbackURL),
 	}
+}
+
+func (s *EveSSOService) loadUserAndGenerateToken(userID uint) (string, *model.User, error) {
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	token, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return token, user, nil
 }
 
 func buildDefaultSSOUser(portraitURL string, primaryCharacterID int64, clientIP string, now time.Time) *model.User {
@@ -274,7 +288,15 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 				return nil, err
 			}
 
-			// 同步执行 affiliation 拉取 + 军团准入检查，确保 JWT 生成前角色已正确设置
+			// 如果用户还没有主角色，自动设为主角色
+			if user.PrimaryCharacterID == 0 {
+				user.PrimaryCharacterID = characterID
+				if err := s.userRepo.Update(user); err != nil {
+					return nil, err
+				}
+			}
+
+			// 同步执行 affiliation / corp roles 拉取与权限重算，确保 JWT 生成前角色已正确设置
 			if OnNewCharacterSyncFunc != nil {
 				OnNewCharacterSyncFunc(characterID, user.ID)
 			}
@@ -284,15 +306,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 				go OnNewCharacterFunc(characterID, user.ID)
 			}
 
-			// 如果用户还没有主角色，自动设为主角色
-			if user.PrimaryCharacterID == 0 {
-				user.PrimaryCharacterID = characterID
-				if err := s.userRepo.Update(user); err != nil {
-					return nil, err
-				}
-			}
-
-			jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+			jwtToken, user, err := s.loadUserAndGenerateToken(user.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -319,7 +333,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 			return nil, err
 		}
 
-		// 同步执行 affiliation 拉取 + 军团准入检查，确保 JWT 生成前角色已正确设置
+		// 同步执行 affiliation / corp roles 拉取与权限重算，确保 JWT 生成前角色已正确设置
 		if OnNewCharacterSyncFunc != nil {
 			OnNewCharacterSyncFunc(characterID, user.ID)
 		}
@@ -329,7 +343,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 			go OnNewCharacterFunc(characterID, user.ID)
 		}
 
-		jwtToken, err := jwt.GenerateToken(user.ID, characterID, user.Role, global.Config.JWT.ExpireDay)
+		jwtToken, user, err := s.loadUserAndGenerateToken(user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -343,7 +357,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		if char.UserID != sd.BindToUserID {
 			// 保存原用户ID
 			oldUserID := char.UserID
-			
+
 			// 检查原用户是否存在（是否被软删除）
 			_, err := s.userRepo.GetByID(oldUserID)
 			if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
@@ -365,7 +379,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 				if err != nil {
 					return nil, err
 				}
-				
+
 				// 如果用户还没有主角色，自动设为主角色
 				if user.PrimaryCharacterID == 0 {
 					user.PrimaryCharacterID = characterID
@@ -374,9 +388,9 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 					}
 				}
 
-				// 触发绑定钩子
-				if OnCharacterBindFunc != nil {
-					go OnCharacterBindFunc(user.ID)
+				// 同步刷新 affiliation / corp roles 并重算权限，确保 JWT 基于最新安全状态签发
+				if OnExistingCharacterSyncFunc != nil {
+					OnExistingCharacterSyncFunc(characterID, user.ID)
 				}
 
 				global.Logger.Info("孤儿角色重新绑定到新用户（绑定流程）",
@@ -384,7 +398,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 					zap.Uint("oldUserID", oldUserID),
 					zap.Uint("newUserID", sd.BindToUserID))
 
-				jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+				jwtToken, user, err := s.loadUserAndGenerateToken(user.ID)
 				if err != nil {
 					return nil, err
 				}
@@ -409,11 +423,11 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		if err != nil {
 			return nil, err
 		}
-		// 已有角色，corp_id 有历史数据，立即触发军团准入检查
-		if OnCharacterBindFunc != nil {
-			go OnCharacterBindFunc(user.ID)
+		// 同步刷新 affiliation / corp roles 并重算权限，确保 JWT 基于最新安全状态签发
+		if OnExistingCharacterSyncFunc != nil {
+			OnExistingCharacterSyncFunc(characterID, user.ID)
 		}
-		jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+		jwtToken, user, err := s.loadUserAndGenerateToken(user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -467,12 +481,12 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		return nil, err
 	}
 
-	// 已有角色重新登录，corp_id 有历史数据，立即触发军团准入检查
-	if OnCharacterBindFunc != nil {
-		go OnCharacterBindFunc(user.ID)
+	// 同步刷新 affiliation / corp roles 并重算权限，确保 JWT 基于最新安全状态签发
+	if OnExistingCharacterSyncFunc != nil {
+		OnExistingCharacterSyncFunc(characterID, user.ID)
 	}
 
-	jwtToken, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
+	jwtToken, user, err := s.loadUserAndGenerateToken(user.ID)
 	if err != nil {
 		return nil, err
 	}

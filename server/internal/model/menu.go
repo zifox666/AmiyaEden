@@ -209,7 +209,6 @@ func DefaultRoleMenuMap() map[string][]string {
 		},
 		RoleGuest: {
 			"Dashboard", "Console", "Characters",
-			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
 		},
 	}
 }

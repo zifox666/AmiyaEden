@@ -67,6 +67,8 @@ source_of_truth:
 - 自动权限映射已经是当前功能，不是纯想法
 - 主角色在 `allow_corporations` 中时会自动补 `user`
 - 任一 `allow_corporations` 角色拥有 ESI corp role `Director` 时会自动补 `admin`
+- 非 `allow_corporations` 军团角色的 ESI corp role 信号不会参与权限判定或相关刷新任务
+- 当 `allow_corporations` 为空时，当前默认回退到伏羲军团 Fuxi Legion（`98185110`）
 - corp title 仍可通过 title mapping 表显式映射，但不会因为标题名恰好叫 `Director` 而触发内置快捷规则
 - 联盟 PAP 的管理接口与用户查看接口分属不同模块
 - Webhook 是系统配置能力，不应散落到页面里直接拼接
@@ -81,6 +83,7 @@ source_of_truth:
 
 - 角色必须在允许的 `allow_corporations` 军团内
 - 必须命中 `eve_character_corp_role` 快照中的真实 `corp_role = Director`
+- 当角色不在允许军团时，其 `eve_character_corp_role` 快照会被清空，不再供后续逻辑使用
 - corp title 名称即使显示为 `Director`，也不会触发这条内置快捷规则
 - 如果确实想让某个 title 触发系统角色，必须通过 `esi_title_mapping` 显式配置
 

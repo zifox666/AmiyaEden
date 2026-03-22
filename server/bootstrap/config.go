@@ -26,6 +26,7 @@ func InitConfig() {
 	if err := viper.Unmarshal(&cfg); err != nil {
 		panic(fmt.Sprintf("解析配置文件失败: %v", err))
 	}
+	config.ApplyDefaults(&cfg)
 
 	global.Config = &cfg
 

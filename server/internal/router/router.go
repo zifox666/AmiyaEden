@@ -158,7 +158,7 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// ─── EVE 角色信息 ───
 	infoH := handler.NewEveInfoHandler()
-	info := auth.Group("/info")
+	info := login.Group("/info")
 	{
 		info.POST("/wallet", infoH.GetWalletJournal)
 		info.POST("/skills", infoH.GetCharacterSkills)

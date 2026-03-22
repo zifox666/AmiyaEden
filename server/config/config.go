@@ -1,5 +1,7 @@
 package config
 
+const DefaultAllowCorporationID int64 = 98185110
+
 // Config 全局配置根结构
 type Config struct {
 	Server      ServerConfig      `mapstructure:"server"`
@@ -71,7 +73,16 @@ type SDEConfig struct {
 
 // AppConfig 全局应用配置实例
 type AppConfig struct {
-	AllowCorporations []int64 `mapstructure:"allow_corporations"` // 允许访问的公司 ID 列表，空表示不限制
+	AllowCorporations []int64 `mapstructure:"allow_corporations"` // 允许访问的公司 ID 列表；空时默认回退到伏羲军团（98185110）
+}
+
+func ApplyDefaults(cfg *Config) {
+	if cfg == nil {
+		return
+	}
+	if len(cfg.App.AllowCorporations) == 0 {
+		cfg.App.AllowCorporations = []int64{DefaultAllowCorporationID}
+	}
 }
 
 // AlliancePAPConfig 联盟 PAP 外部 API 配置

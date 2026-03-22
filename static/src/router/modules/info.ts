@@ -4,43 +4,43 @@ export const infoRoutes: AppRouteRecord = {
   path: '/info',
   name: 'EveInfo',
   component: '/index/index',
-  meta: { title: 'menus.info.title', icon: 'ri:user-star-line' },
+  meta: { title: 'menus.info.title', icon: 'ri:user-star-line', login: true },
   children: [
     {
       path: 'wallet',
       name: 'EveInfoWallet',
       component: '/info/wallet',
-      meta: { title: 'menus.info.wallet', keepAlive: true }
+      meta: { title: 'menus.info.wallet', keepAlive: true, login: true }
     },
     {
       path: 'skill',
       name: 'EveInfoSkill',
       component: '/info/skill',
-      meta: { title: 'menus.info.skill', keepAlive: true }
+      meta: { title: 'menus.info.skill', keepAlive: true, login: true }
     },
     {
       path: 'ships',
       name: 'EveInfoShips',
       component: '/info/ships',
-      meta: { title: 'menus.info.ships', keepAlive: true }
+      meta: { title: 'menus.info.ships', keepAlive: true, login: true }
     },
     {
       path: 'implants',
       name: 'EveInfoImplants',
       component: '/info/implants',
-      meta: { title: 'menus.info.implants', keepAlive: true }
+      meta: { title: 'menus.info.implants', keepAlive: true, login: true }
     },
     {
       path: 'fittings',
       name: 'EveInfoFittings',
       component: '/info/fittings',
-      meta: { title: 'menus.info.fittings', keepAlive: true }
+      meta: { title: 'menus.info.fittings', keepAlive: true, login: true }
     },
     {
       path: 'npc-kills',
       name: 'NpcKillReport',
       component: '/info/npc-kills',
-      meta: { title: 'menus.info.npcKills', keepAlive: true }
+      meta: { title: 'menus.info.npcKills', keepAlive: true, login: true }
     }
   ]
 }

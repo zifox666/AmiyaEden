@@ -25,17 +25,44 @@ func registerESIRefreshJob(c *cron.Cron) {
 	rollSvc := service.NewRoleService()
 	autoRoleSvc := service.NewAutoRoleService()
 
-	// 注入同步钩子：仅执行 affiliation 拉取 + 军团准入检查（在 JWT 生成前同步调用）
-	service.OnNewCharacterSyncFunc = func(characterID int64, userID uint) {
+	runSigninSecuritySync := func(characterID int64, userID uint) {
 		ctx := context.Background()
-		// RunTask 内部同步执行，affiliation 为公开接口，速度快（~100ms）
+
+		// 先刷新 affiliation，确保 corporation_id 是当前值。
 		if err := esiQueue.RunTask("character_affiliation", characterID); err != nil {
 			global.Logger.Warn("[ESI SyncHook] affiliation 任务执行失败",
 				zap.Int64("character_id", characterID),
 				zap.Error(err),
 			)
 		}
-		_ = rollSvc.CheckCorpAccessAndAdjustRole(ctx, userID)
+
+		// 再刷新 corp roles，让 allow_corporations 过滤作用在最新军团上。
+		if err := esiQueue.RunTask("character_corp_roles", characterID); err != nil {
+			global.Logger.Warn("[ESI SyncHook] corp roles 任务执行失败",
+				zap.Int64("character_id", characterID),
+				zap.Error(err),
+			)
+		}
+
+		if err := rollSvc.CheckCorpAccessAndAdjustRole(ctx, userID); err != nil {
+			global.Logger.Warn("[ESI SyncHook] 权限检查失败",
+				zap.Int64("character_id", characterID),
+				zap.Uint("user_id", userID),
+				zap.Error(err),
+			)
+		}
+		if err := autoRoleSvc.SyncUserAutoRoles(ctx, userID); err != nil {
+			global.Logger.Warn("[ESI SyncHook] 自动权限同步失败",
+				zap.Int64("character_id", characterID),
+				zap.Uint("user_id", userID),
+				zap.Error(err),
+			)
+		}
+	}
+
+	// 注入同步钩子：在 JWT 生成前同步拉取最小安全数据并重算权限
+	service.OnNewCharacterSyncFunc = func(characterID int64, userID uint) {
+		runSigninSecuritySync(characterID, userID)
 	}
 
 	// 注入新角色全量刷新钩子：SSO 回调完成后后台异步执行，跑全部 ESI 任务，完成后补一次军团准入检查 + 自动权限同步
@@ -53,11 +80,9 @@ func registerESIRefreshJob(c *cron.Cron) {
 		_ = autoRoleSvc.SyncUserAutoRoles(ctx, userID)
 	}
 
-	// 注入已有角色绑定/重登录钩子：corp_id 已知，直接检查准入 + 自动权限同步
-	service.OnCharacterBindFunc = func(userID uint) {
-		ctx := context.Background()
-		_ = rollSvc.CheckCorpAccessAndAdjustRole(ctx, userID)
-		_ = autoRoleSvc.SyncUserAutoRoles(ctx, userID)
+	// 注入已有角色绑定/重登录同步钩子：JWT 生成前先刷新 affiliation / corp roles，再重算权限
+	service.OnExistingCharacterSyncFunc = func(characterID int64, userID uint) {
+		runSigninSecuritySync(characterID, userID)
 	}
 
 	// 注入舰队 PAP 发放时的 KM 刷新触发钩子
