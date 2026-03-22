@@ -2,7 +2,7 @@
 status: active
 doc_type: standard
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 source_of_truth:
   - docs/README.md
   - AGENTS.md
@@ -17,6 +17,7 @@ source_of_truth:
 - 当前实现、工程规则、未来提案必须分开存放。
 - 不要保留第二套并行文档树。
 - repo-level canonical 文档只放在根目录 `AGENTS.md` 与 `docs/`。
+- 根目录 `README.md` 可以作为 onboarding / product-facing 入口长期维护，但不裁决工程规则；冲突时以 `AGENTS.md` 与 `docs/` 为准。
 - 目录内局部 `README.md` 只可作为实现注释，不能重新定义全局规则、路由面或产品行为。
 
 ## 2. 文档类型
@@ -28,6 +29,7 @@ source_of_truth:
 | `api` | `docs/api/` | 路由、认证、响应约定 |
 | `feature` | `docs/features/current/` | 当前模块能力、入口、权限、关键不变量 |
 | `guide` | `docs/guides/` | 分步骤操作指南 |
+| `reference` | `docs/reference/` | 离线参考资产，不作为当前实现裁决依据 |
 | `draft` | `docs/specs/draft/` | 提案、增强、未落地设计 |
 | `template` | `docs/templates/` | 创建新文档的模板 |
 
@@ -100,6 +102,13 @@ source_of_truth:
 - 关键不变量
 - 主要代码文件
 
+### reference
+
+- 资产用途
+- 文件清单
+- 非权威性声明
+- 使用限制或刷新说明
+
 ### draft
 
 - 背景
@@ -133,6 +142,7 @@ source_of_truth:
 ## 8. 常见反模式
 
 - 在 README、guide、feature doc 里各写一份角色枚举
+- 把根目录 `README.md` 写成另一份与 `AGENTS.md` / `docs/` 并列竞争的工程规范
 - 在 current-state 文档中混入“以后准备这样做”
 - 建立第二套并行文档树，导致 AI 读取到多份互相矛盾的说明
 - 把代码引用写得太泛，导致读者找不到真实入口文件

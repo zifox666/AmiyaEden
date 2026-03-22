@@ -2,6 +2,8 @@
 
 面向 EVE Online 联盟 / 军团的一体化运营平台。
 
+本文件是仓库的 onboarding / product-facing 入口。若与工程规则、当前架构边界或接口裁决相关的说明发生冲突，以 [AGENTS.md](AGENTS.md) 与 [docs/](docs/README.md) 为准。
+
 当前仓库的活跃实现包含：
 
 - EVE SSO 登录与多角色绑定
@@ -112,7 +114,13 @@ go run main.go
 
 ### 4. 启动前端
 
-当前仓库没有提交前端 `.env.example`，本地开发通常至少需要提供以下 Vite 变量：
+当前仓库没有提交前端 `.env.example`，但已经提交了可直接作为起点的默认环境文件：
+
+- `static/.env.development`
+- `static/.env.development.local`
+- `static/.env.production`
+
+本地开发通常不需要从空白开始创建全部 Vite 变量；大多数情况下只需确认或覆盖以下常用项：
 
 ```bash
 VITE_VERSION=dev
@@ -125,6 +133,11 @@ VITE_WITH_CREDENTIALS=false
 VITE_LOCK_ENCRYPT_KEY=change_me
 VITE_OPEN_ROUTE_INFO=false
 ```
+
+默认本地联调场景下：
+
+- `VITE_API_PROXY_URL` 已指向 `http://localhost:8080`
+- `VITE_API_URL` 在开发环境下可保持为 `/`
 
 然后启动前端：
 

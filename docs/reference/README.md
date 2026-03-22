@@ -1,8 +1,8 @@
 ---
 status: active
-doc_type: guide
+doc_type: reference
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-22
 ---
 
 # Reference Assets

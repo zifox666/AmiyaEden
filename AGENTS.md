@@ -281,7 +281,7 @@ Update documentation when behavior changes materially.
 
 Usually relevant files:
 
-- `README.md` for setup or product-facing workflow changes
+- `README.md` for onboarding, setup, or product-facing workflow changes
 - `docs/README.md` for documentation structure changes
 - `docs/architecture/*` for current architecture or runtime workflow changes
 - `docs/api/route-index.md` for API route / permission surface changes
@@ -291,6 +291,7 @@ Usually relevant files:
 Notes:
 
 - The maintained documentation tree lives under `docs/`
+- Root `README.md` is a maintained onboarding / product-facing entrypoint, but engineering-rule arbitration still belongs to `AGENTS.md` and `docs/`
 
 ## 11. Anti-Patterns
 

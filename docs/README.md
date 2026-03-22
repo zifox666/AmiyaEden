@@ -13,6 +13,8 @@ source_of_truth:
 
 `docs/` 是仓库内除根目录 `AGENTS.md` 之外的规范化文档树，用来把“工程标准”“当前架构”“API 路由面”“当前功能状态”“未来提案”彻底分开，避免文档互相覆盖、过期后继续误导人或 AI。
 
+根目录 `README.md` 仍然保留为面向人类的 onboarding / 产品入口，但它不是 repo-level engineering rule 的裁决来源；如与 `AGENTS.md` 或 `docs/` 冲突，以后者为准。
+
 ## 信任顺序
 
 当多个文件描述同一件事时，按以下顺序判断权威性：
@@ -48,7 +50,7 @@ source_of_truth:
 所有新的规范性文档都应包含 front matter，并至少声明：
 
 - `status`: `active` / `draft` / `deprecated` / `template`
-- `doc_type`: `standard` / `architecture` / `api` / `feature` / `guide` / `draft` / `template` / `index`
+- `doc_type`: `standard` / `architecture` / `api` / `feature` / `guide` / `reference` / `draft` / `template` / `index`
 - `owner`
 - `last_reviewed`
 
@@ -66,6 +68,7 @@ source_of_truth:
 - 不要在多个文件里重复维护同一份角色定义、路由表、权限矩阵。
 - 不要保留并行的“第二套文档入口”。
 - 仓库内允许存在少量模块级 `README.md` 作为局部实现说明，但它们不是 repo-level canonical doc，不能覆盖 `AGENTS.md` 与 `docs/`。
+- 根目录 `README.md` 应保持适合新开发者快速上手，但若涉及工程规则、当前架构边界、接口裁决，仍以 `AGENTS.md` 与 `docs/` 为准。
 
 如果变更属于高风险行为边界，必须把 caveat 明确写出来，不能只靠上下文暗示。
 
@@ -91,6 +94,7 @@ source_of_truth:
 ### 对人类开发者
 
 1. `README.md`
+   把它当作 onboarding / 产品入口，而不是工程规则裁决文件
 2. `AGENTS.md`
 3. 本文件
 4. 相关架构文档
@@ -113,3 +117,5 @@ source_of_truth:
 ## 维护原则
 
 `AGENTS.md` 与 `docs/` 是唯一维护中的 repo-level canonical Markdown 文档体系。局部 `README.md` 可以存在，但只能补充子目录实现细节，不能重新建立影子规范树。
+
+根目录 `README.md` 是例外中的入口文档：应持续维护，但定位是 onboarding / product-facing guide，而不是与 `AGENTS.md`、`docs/` 并列的工程规则源。

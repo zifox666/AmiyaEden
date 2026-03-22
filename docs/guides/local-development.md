@@ -2,19 +2,20 @@
 status: active
 doc_type: guide
 owner: engineering
-last_reviewed: 2026-03-21
+last_reviewed: 2026-03-22
 source_of_truth:
-  - README.md
   - server/config/config.example.yaml
   - server/go.mod
   - static/package.json
+  - static/.env.development
+  - static/.env.development.local
 ---
 
 # 本地开发指南
 
 ## 目的
 
-本文件提供一个比 `README.md` 更面向开发者日常工作的入口，覆盖：
+本文件提供一个比根目录 `README.md` 更面向开发者日常工作的入口，覆盖：
 
 - 本地依赖
 - 最小启动步骤
@@ -72,7 +73,13 @@ pnpm install
 
 ### 2. 准备 Vite 环境变量
 
-当前仓库没有提交前端 `.env.example`。本地开发通常至少需要：
+当前仓库没有提交前端 `.env.example`，但已经提交了可直接作为起点的默认文件：
+
+- `static/.env.development`
+- `static/.env.development.local`
+- `static/.env.production`
+
+本地开发通常不需要从空白开始创建环境变量；大多数情况下只要按机器环境覆盖其中少量值即可。常见需要关注的变量是：
 
 ```bash
 VITE_VERSION=dev
@@ -85,6 +92,12 @@ VITE_WITH_CREDENTIALS=false
 VITE_LOCK_ENCRYPT_KEY=change_me
 VITE_OPEN_ROUTE_INFO=false
 ```
+
+说明：
+
+- 当前仓库默认通过 `VITE_API_PROXY_URL=http://localhost:8080` 把 `/api` 代理到本地后端
+- `VITE_API_URL` 在开发环境下默认可保持为 `/`
+- 如果你只是在默认本地联调环境运行，通常不需要修改全部变量
 
 ### 3. 启动前端
 
