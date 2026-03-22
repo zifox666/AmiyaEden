@@ -134,6 +134,15 @@ func (c *Client) GetRaw(ctx context.Context, path string, accessToken string) ([
 
 // PostJSON 发起带认证的 POST 请求（JSON body）并将响应解码到 dest
 func (c *Client) PostJSON(ctx context.Context, path string, accessToken string, reqBody interface{}, dest interface{}) error {
+	return c.postJSON(ctx, path, accessToken, reqBody, dest, 0)
+}
+
+// PostJSONWithLimit 发起带认证的 POST 请求（JSON body），并限制最大响应字节数
+func (c *Client) PostJSONWithLimit(ctx context.Context, path string, accessToken string, reqBody interface{}, dest interface{}, maxBytes int64) error {
+	return c.postJSON(ctx, path, accessToken, reqBody, dest, maxBytes)
+}
+
+func (c *Client) postJSON(ctx context.Context, path string, accessToken string, reqBody interface{}, dest interface{}, maxBytes int64) error {
 	bodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return fmt.Errorf("marshal request body: %w", err)
@@ -157,9 +166,17 @@ func (c *Client) PostJSON(ctx context.Context, path string, accessToken string, 
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	reader := io.Reader(resp.Body)
+	if maxBytes > 0 {
+		reader = io.LimitReader(resp.Body, maxBytes+1)
+	}
+
+	respBody, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("read ESI response: %w", err)
+	}
+	if maxBytes > 0 && int64(len(respBody)) > maxBytes {
+		return fmt.Errorf("ESI POST %s response exceeds %d bytes", path, maxBytes)
 	}
 
 	if resp.StatusCode != http.StatusOK {

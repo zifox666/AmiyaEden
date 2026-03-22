@@ -2,27 +2,20 @@ package service
 
 import (
 	"amiya-eden/internal/model"
-	"amiya-eden/pkg/eve"
+	"amiya-eden/pkg/eve/esi"
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 )
 
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req)
-}
-
-func newTestEveSSOService(client *http.Client) *EveSSOService {
+func newTestEveSSOService(baseURL string) *EveSSOService {
 	return &EveSSOService{
-		eveClient: &eve.Client{
-			HTTPClient: client,
-		},
+		esiClient: esi.NewClientWithConfig(baseURL, ""),
 	}
 }
 
@@ -150,26 +143,23 @@ func TestResolveInitialSSORole(t *testing.T) {
 func TestFetchCharacterAffiliationRejectsOversizedResponse(t *testing.T) {
 	const maxAffiliationResponseBytes = 1 << 20
 
-	svc := newTestEveSSOService(&http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-			if req.Method != http.MethodPost {
-				t.Fatalf("expected POST request, got %s", req.Method)
-			}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != http.MethodPost {
+			t.Fatalf("expected POST request, got %s", req.Method)
+		}
 
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Header:     make(http.Header),
-				Body:       io.NopCloser(strings.NewReader(strings.Repeat("x", maxAffiliationResponseBytes+1))),
-				Request:    req,
-			}, nil
-		}),
-	})
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, strings.Repeat("x", maxAffiliationResponseBytes+1))
+	}))
+	t.Cleanup(server.Close)
+
+	svc := newTestEveSSOService(server.URL)
 
 	_, err := svc.fetchCharacterAffiliation(context.Background(), 90000001)
 	if err == nil {
 		t.Fatal("expected oversized affiliation response error")
 	}
-	if !strings.Contains(err.Error(), "affiliation response exceeds") {
+	if !strings.Contains(err.Error(), "response exceeds") {
 		t.Fatalf("expected oversize error, got %v", err)
 	}
 }
