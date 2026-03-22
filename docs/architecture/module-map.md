@@ -26,7 +26,7 @@ source_of_truth:
 | 路径 | 主要职责 | 修改时通常还要看 |
 | --- | --- | --- |
 | `server/bootstrap/` | 应用启动、配置装配、路由/日志/任务初始化 | `server/main.go`、`docs/architecture/runtime-and-startup.md` |
-| `server/config/` | 配置结构与配置文件模板 | `README.md`、`docs/guides/local-development.md` |
+| `server/config/` | 配置结构与配置文件模板，包括 `EveSSOConfig`（SSO/ESI 端点、ClientID/Secret 等） | `README.md`、`docs/guides/local-development.md`、`docs/features/current/auth-and-characters.md` |
 | `server/internal/router/` | 路由注册、分组、中间件挂载 | `server/internal/handler/`、`docs/api/route-index.md` |
 | `server/internal/middleware/` | JWT、日志、CORS、统一请求前置逻辑 | `server/internal/router/`、`docs/architecture/auth-and-permissions.md` |
 | `server/internal/handler/` | HTTP 请求解析与响应返回 | `server/internal/service/`、`server/pkg/response/` |

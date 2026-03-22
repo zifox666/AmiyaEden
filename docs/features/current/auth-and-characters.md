@@ -59,10 +59,11 @@ source_of_truth:
 - 当前受支持的产品登录方式是 EVE SSO
 - `register` / `forget-password` 页面源码存在，但不是当前产品规范
 - `/api/v1/me` 是前端启动权限上下文的关键接口
-- `/api/v1/me` 不是“非 guest 才可访问”的业务接口，而是登录后立即可用的自助上下文接口
+- `/api/v1/me` 不是"非 guest 才可访问"的业务接口，而是登录后立即可用的自助上下文接口
 - 当前登录后必须完成昵称与联系方式资料，才允许继续访问其他业务页面
 - QQ / Discord ID 的唯一性由后端校验
 - 角色编码与权限列表必须与后端返回保持一致，不做前端别名映射
+- 所有 EVE SSO 端点（授权、令牌、图片服务等）通过 `server/config/config.go` 中的 `EveSSOConfig` 配置管理，禁止硬编码 URL
 
 ## 主要代码文件
 

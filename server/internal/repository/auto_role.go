@@ -3,8 +3,6 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
-	"amiya-eden/pkg/eve/esi"
-	"context"
 	"regexp"
 	"strings"
 )
@@ -167,67 +165,5 @@ func (r *AutoRoleRepository) ListDistinctCorpTitles() ([]CorpTitleInfo, error) {
 		results[i].TitleName = stripEveTags(results[i].TitleName)
 	}
 
-	// Fetch corporation names from ESI
-	corpNames, err := r.fetchCorporationNames(results)
-	if err != nil {
-		// Log error but don't fail - names will be empty and frontend will fall back to ID
-		global.Logger.Warn("[AutoRole] Failed to fetch corporation names from ESI",
-			err,
-		)
-	} else {
-		// Populate corporation names
-		for i := range results {
-			if name, ok := corpNames[results[i].CorporationID]; ok {
-				results[i].CorporationName = name
-			}
-		}
-	}
-
 	return results, nil
-}
-
-// fetchCorporationNames 批量查询军团名称，通过 ESI /universe/names 端点
-type esiNameEntry struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-func (r *AutoRoleRepository) fetchCorporationNames(titles []CorpTitleInfo) (map[int64]string, error) {
-	// Collect unique corporation IDs
-	corpIDSet := make(map[int64]struct{})
-	for _, t := range titles {
-		if t.CorporationID > 0 {
-			corpIDSet[t.CorporationID] = struct{}{}
-		}
-	}
-	if len(corpIDSet) == 0 {
-		return nil, nil
-	}
-
-	// Convert to slice for ESI request
-	corpIDs := make([]int64, 0, len(corpIDSet))
-	for id := range corpIDSet {
-		corpIDs = append(corpIDs, id)
-	}
-
-	// Call ESI /universe/names
-	client := esi.NewClient()
-	var esiResults []esiNameEntry
-	if err := client.PostJSON(
-		context.Background(),
-		"/universe/names?datasource=tranquility",
-		"",
-		corpIDs,
-		&esiResults,
-	); err != nil {
-		return nil, err
-	}
-
-	// Build map of corporation_id -> corporation_name
-	nameMap := make(map[int64]string, len(esiResults))
-	for _, entry := range esiResults {
-		nameMap[int64(entry.ID)] = entry.Name
-	}
-
-	return nameMap, nil
 }

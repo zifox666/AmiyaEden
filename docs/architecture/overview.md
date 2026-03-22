@@ -90,3 +90,5 @@ source_of_truth:
 - 菜单 / 按钮权限以 `server/internal/model/menu.go` 与 `/api/v1/menu/list` 为准
 - 前端支持 `frontend` 与 `backend` 两种菜单模式，修改时不能只改一边
 - `AGENTS.md` 与 `docs/` 是唯一维护中的文档源
+- 所有 EVE SSO / ESI API 端点必须通过 `server/config/config.go` 中的 `EveSSOConfig` 配置，禁止硬编码 URL
+- ESI 刷新队列通过接口注入方式避免循环依赖（`pkg/eve/esi/queue.go`）

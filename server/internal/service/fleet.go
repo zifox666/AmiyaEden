@@ -4,23 +4,18 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
-	"bytes"
+	"amiya-eden/pkg/eve/esi"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
-
-const esiBaseURL = "https://esi.evetech.net/latest"
 
 // FleetKMRefreshFunc 触发单个角色 KM 刷新的钩子，由 jobs 层注入以避免循环依赖
 var FleetKMRefreshFunc func(characterID int64)
@@ -37,7 +32,7 @@ type FleetService struct {
 	ssoSvc     *EveSSOService
 	walletSvc  *SysWalletService
 	webhookSvc *WebhookService
-	http       *http.Client
+	esiClient  *esi.Client
 }
 
 func NewFleetService() *FleetService {
@@ -49,7 +44,7 @@ func NewFleetService() *FleetService {
 		ssoSvc:     NewEveSSOService(),
 		walletSvc:  NewSysWalletService(),
 		webhookSvc: NewWebhookService(),
-		http:       &http.Client{Timeout: 30 * time.Second},
+		esiClient:  esi.NewClientWithConfig(global.Config.EveSSO.ESIBaseURL, global.Config.EveSSO.ESIAPIPrefix),
 	}
 }
 
@@ -1197,97 +1192,20 @@ func (s *FleetService) GetCharacterFleetInfo(userID uint, characterID int64) (*C
 
 // esiGet GET 请求并解析 JSON 响应
 func (s *FleetService) esiGet(ctx context.Context, path, accessToken string, out interface{}) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, esiBaseURL+path, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := s.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("ESI GET %s 返回 %d: %s", path, resp.StatusCode, string(body))
-	}
-
-	return json.NewDecoder(resp.Body).Decode(out)
+	return s.esiClient.Get(ctx, path, accessToken, out)
 }
 
 // esiPost POST 请求（不期望响应体）
 func (s *FleetService) esiPost(ctx context.Context, path, accessToken string, body interface{}) error {
-	data, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, esiBaseURL+path, bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("ESI POST %s 返回 %d: %s", path, resp.StatusCode, string(respBody))
-	}
-	return nil
+	return s.esiClient.PostNoContent(ctx, path, accessToken, body)
 }
 
 // esiPut PUT 请求（不期望响应体）
 func (s *FleetService) esiPut(ctx context.Context, path, accessToken string, body interface{}) error {
-	data, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, esiBaseURL+path, bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("ESI PUT %s 返回 %d: %s", path, resp.StatusCode, string(respBody))
-	}
-	return nil
+	return s.esiClient.PutJSON(ctx, path, accessToken, body)
 }
 
 // esiGetPublic GET 公共 ESI 接口并解析 JSON 响应
 func (s *FleetService) esiGetPublic(ctx context.Context, path string, out interface{}) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, esiBaseURL+path, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := s.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("ESI GET %s 返回 %d: %s", path, resp.StatusCode, string(body))
-	}
-
-	return json.NewDecoder(resp.Body).Decode(out)
+	return s.esiClient.Get(ctx, path, "", out)
 }

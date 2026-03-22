@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"amiya-eden/global"
+	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/eve/esi"
 	"context"
@@ -20,7 +21,10 @@ func GetESIQueue() *esi.Queue {
 
 // registerESIRefreshJob 注册 ESI 数据刷新定时任务
 func registerESIRefreshJob(c *cron.Cron) {
-	esiQueue = esi.NewQueue()
+	esiQueue = esi.NewQueue(
+		service.NewEveSSOService(),
+		repository.NewEveCharacterRepository(),
+	)
 
 	rollSvc := service.NewRoleService()
 	autoRoleSvc := service.NewAutoRoleService()

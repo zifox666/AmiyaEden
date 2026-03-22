@@ -3,8 +3,6 @@ package esi
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
-	"amiya-eden/internal/repository"
-	"amiya-eden/internal/service"
 	"context"
 	"fmt"
 	"sort"
@@ -19,11 +17,19 @@ import (
 //  队列引擎
 // ─────────────────────────────────────────────
 
-// Queue ESI 数据刷新队列
+type TokenService interface {
+	GetValidToken(ctx context.Context, characterID int64) (string, error)
+}
+
+type CharacterRepository interface {
+	ListAllWithToken() ([]model.EveCharacter, error)
+	GetByCharacterID(characterID int64) (*model.EveCharacter, error)
+}
+
 type Queue struct {
 	client   *Client
-	ssoSvc   *service.EveSSOService
-	charRepo *repository.EveCharacterRepository
+	ssoSvc   TokenService
+	charRepo CharacterRepository
 
 	mu       sync.RWMutex
 	statuses map[string]*TaskStatus // key: "taskName:characterID"
@@ -32,14 +38,13 @@ type Queue struct {
 	concurrency int
 }
 
-// NewQueue 创建刷新队列
-func NewQueue() *Queue {
+func NewQueue(ssoSvc TokenService, charRepo CharacterRepository) *Queue {
 	return &Queue{
 		client:      NewClient(),
-		ssoSvc:      service.NewEveSSOService(),
-		charRepo:    repository.NewEveCharacterRepository(),
+		ssoSvc:      ssoSvc,
+		charRepo:    charRepo,
 		statuses:    make(map[string]*TaskStatus),
-		concurrency: 5, // 默认 5 并发
+		concurrency: 5,
 	}
 }
 

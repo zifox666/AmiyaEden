@@ -142,7 +142,7 @@ func (s *AutoRoleService) fetchCorporationNames(titles []repository.CorpTitleInf
 	}
 
 	// Call ESI /universe/names
-	client := esi.NewClient()
+	client := esi.NewClientWithConfig(global.Config.EveSSO.ESIBaseURL, global.Config.EveSSO.ESIAPIPrefix)
 	var esiResults []esiNameEntry
 	if err := client.PostJSON(
 		context.Background(),

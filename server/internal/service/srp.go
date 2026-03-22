@@ -512,7 +512,7 @@ func (s *SrpService) OpenInfoWindow(userID uint, req *OpenInfoWindowRequest) err
 	}
 
 	// 3. 调用 ESI Open Information Window
-	url := fmt.Sprintf("https://esi.evetech.net/ui/openwindow/information/?target_id=%d", req.TargetID)
+	url := fmt.Sprintf("%s/ui/openwindow/information/?target_id=%d", global.Config.EveSSO.ESIBaseURL, req.TargetID)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 	if err != nil {
 		return fmt.Errorf("构建请求失败: %w", err)

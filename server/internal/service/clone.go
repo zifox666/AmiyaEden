@@ -348,7 +348,7 @@ func (s *CloneService) fetchAndCacheStructure(characterID, structureID int64) st
 // ─────────────────────────────────────────────
 
 func (s *CloneService) esiGet(ctx context.Context, path, accessToken string, out interface{}) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, esiBaseURL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, global.Config.EveSSO.ESIBaseURL+path, nil)
 	if err != nil {
 		return err
 	}

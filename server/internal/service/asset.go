@@ -415,7 +415,7 @@ func (s *AssetService) fetchAndCacheStructure(characterID, structureID int64, ac
 // ─────────────────────────────────────────────
 
 func (s *AssetService) esiGet(ctx context.Context, path, accessToken string, out interface{}) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, esiBaseURL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, global.Config.EveSSO.ESIBaseURL+path, nil)
 	if err != nil {
 		return err
 	}
@@ -437,7 +437,7 @@ func (s *AssetService) esiGet(ctx context.Context, path, accessToken string, out
 }
 
 func (s *AssetService) esiGetPublic(ctx context.Context, path string, out interface{}) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, esiBaseURL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, global.Config.EveSSO.ESIBaseURL+path, nil)
 	if err != nil {
 		return err
 	}

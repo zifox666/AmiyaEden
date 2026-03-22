@@ -38,6 +38,8 @@ source_of_truth:
 - 新增 ESI 数据模块时，通常不只改一个 handler，还需要任务注册、scope、持久化、前端消费一起落地
 - 队列与登录后同步钩子共享同一套任务体系
 - 如果要新增模块，请先遵循 `docs/guides/adding-esi-feature.md`
+- 所有 ESI API 端点通过 `server/config/config.go` 中的 `EveSSOConfig.ESIBaseURL` 和 `ESIAPIPrefix` 配置管理，禁止在 service 层硬编码 ESI URL
+- ESI 刷新队列通过接口注入（`TokenService`、`CharacterRepository`）避免循环依赖，不直接依赖具体 service / repository 实现
 
 ## 主要代码文件
 

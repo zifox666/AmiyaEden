@@ -6,16 +6,13 @@ import (
 	"amiya-eden/internal/repository"
 	"amiya-eden/pkg/cache"
 	"amiya-eden/pkg/eve"
+	"amiya-eden/pkg/eve/esi"
 	"amiya-eden/pkg/jwt"
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -128,6 +125,7 @@ type EveSSOService struct {
 	userRepo  *repository.UserRepository
 	roleSvc   *RoleService
 	eveClient *eve.Client
+	esiClient *esi.Client
 }
 
 func NewEveSSOService() *EveSSOService {
@@ -136,7 +134,15 @@ func NewEveSSOService() *EveSSOService {
 		charRepo:  repository.NewEveCharacterRepository(),
 		userRepo:  repository.NewUserRepository(),
 		roleSvc:   NewRoleService(),
-		eveClient: eve.NewClient(cfg.ClientID, cfg.ClientSecret, cfg.CallbackURL),
+		eveClient: eve.NewClientWithEndpoints(
+			cfg.ClientID,
+			cfg.ClientSecret,
+			cfg.CallbackURL,
+			cfg.SSOAuthorizeURL,
+			cfg.SSOTokenURL,
+			cfg.EVEImagesBaseURL,
+		),
+		esiClient: esi.NewClientWithConfig(cfg.ESIBaseURL, cfg.ESIAPIPrefix),
 	}
 }
 
@@ -188,33 +194,8 @@ func buildDefaultSSOUser(portraitURL string, primaryCharacterID int64, clientIP 
 func (s *EveSSOService) fetchCharacterAffiliation(ctx context.Context, characterID int64) (*characterAffiliationSnapshot, error) {
 	var results []characterAffiliationSnapshot
 
-	bodyBytes, err := json.Marshal([]int64{characterID})
-	if err != nil {
-		return nil, fmt.Errorf("marshal affiliation request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://esi.evetech.net/characters/affiliation/", bytes.NewReader(bodyBytes))
-	if err != nil {
-		return nil, fmt.Errorf("build affiliation request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := s.eveClient.HTTPClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request affiliation: %w", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read affiliation response: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("affiliation error %d: %s", resp.StatusCode, string(respBody))
-	}
-	if err := json.Unmarshal(respBody, &results); err != nil {
-		return nil, fmt.Errorf("decode affiliation response: %w", err)
+	if err := s.esiClient.PostJSON(ctx, "/characters/affiliation/", "", []int64{characterID}, &results); err != nil {
+		return nil, fmt.Errorf("fetch affiliation: %w", err)
 	}
 	if len(results) == 0 {
 		return nil, errors.New("角色归属信息为空")
@@ -334,7 +315,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 
 	tokenExpiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 	scopesStr := strings.Join(claims.GetScopes(), " ")
-	portraitURL := eve.PortraitURL(characterID)
+	portraitURL := s.eveClient.PortraitURL(characterID)
 	initialRole, affiliation := s.resolveInitialSSOState(ctx, characterID)
 
 	// 3. 查找或创建 EveCharacter

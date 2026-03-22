@@ -35,6 +35,11 @@ source_of_truth:
 - `eve_sso.client_id`
 - `eve_sso.client_secret`
 - `eve_sso.callback_url`
+- `eve_sso.esi_base_url`
+- `eve_sso.esi_api_prefix`
+- `eve_sso.sso_authorize_url`
+- `eve_sso.sso_token_url`
+- `eve_sso.eve_images_base_url`
 - `sde.api_key`
 - `sde.proxy`（可选；留空表示不使用代理）
 

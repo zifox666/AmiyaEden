@@ -1,6 +1,7 @@
 package service
 
 import (
+	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"bytes"
@@ -396,7 +397,7 @@ func (s *FleetConfigService) ExportToESI(userID uint, req *ExportToESIRequest) e
 		return fmt.Errorf("获取 Token 失败: %w", err)
 	}
 
-	postURL := fmt.Sprintf("https://esi.evetech.net/latest/characters/%d/fittings/", req.CharacterID)
+	postURL := fmt.Sprintf("%s/latest/characters/%d/fittings/", global.Config.EveSSO.ESIBaseURL, req.CharacterID)
 	postReq, err := http.NewRequestWithContext(ctx, http.MethodPost, postURL, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return fmt.Errorf("构建请求失败: %w", err)
