@@ -373,6 +373,40 @@ func (s *SrpService) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryResponse, 
 	return result, nil
 }
 
+func (s *SrpService) buildBatchPayoutSummaryResponse(row *repository.SrpBatchPayoutSummaryRow) (*SrpBatchPayoutSummaryResponse, error) {
+	resp := &SrpBatchPayoutSummaryResponse{
+		UserID:           row.UserID,
+		TotalAmount:      row.TotalAmount,
+		ApplicationCount: row.ApplicationCount,
+	}
+
+	users, err := s.userRepo.ListByIDs([]uint{row.UserID})
+	if err != nil {
+		return nil, err
+	}
+	chars, err := s.charRepo.ListByUserIDs([]uint{row.UserID})
+	if err != nil {
+		return nil, err
+	}
+
+	charNameByID := make(map[int64]string, len(chars))
+	for _, char := range chars {
+		charNameByID[char.CharacterID] = char.CharacterName
+	}
+
+	if len(users) > 0 {
+		resp.Nickname = users[0].Nickname
+		resp.MainCharacterID = users[0].PrimaryCharacterID
+		resp.MainCharacterName = charNameByID[users[0].PrimaryCharacterID]
+	}
+	if resp.MainCharacterName == "" && len(chars) > 0 {
+		resp.MainCharacterID = chars[0].CharacterID
+		resp.MainCharacterName = chars[0].CharacterName
+	}
+
+	return resp, nil
+}
+
 // ─────────────────────────────────────────────
 //  审批
 // ─────────────────────────────────────────────
@@ -457,31 +491,24 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 
 // BatchPayoutByUser 批量发放某用户所有已批准且未发放的 SRP
 func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, error) {
-	summaries, err := s.ListBatchPayoutSummary()
+	now := time.Now()
+	summary, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
 	if err != nil {
-		return nil, err
-	}
-
-	var target *SrpBatchPayoutSummaryResponse
-	for i := range summaries {
-		if summaries[i].UserID == userID {
-			target = &summaries[i]
-			break
+		switch {
+		case errors.Is(err, repository.ErrNoPendingBatchPayoutApplications):
+			return nil, errors.New("该用户没有可批量发放的 SRP 申请")
+		case errors.Is(err, repository.ErrBatchPayoutSelectionChanged):
+			return nil, errors.New("待发放申请已变更，请刷新后重试")
+		default:
+			return nil, err
 		}
 	}
-	if target == nil {
-		return nil, errors.New("该用户没有可批量发放的 SRP 申请")
-	}
 
-	now := time.Now()
-	affected, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
+	resp, err := s.buildBatchPayoutSummaryResponse(summary)
 	if err != nil {
 		return nil, err
 	}
-	if affected == 0 {
-		return nil, errors.New("该用户没有可批量发放的 SRP 申请")
-	}
-	return target, nil
+	return resp, nil
 }
 
 // ─────────────────────────────────────────────

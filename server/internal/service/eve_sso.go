@@ -95,8 +95,9 @@ func buildLoginScopes(extraScopes []string) []string {
 // ─────────────────────────────────────────────
 
 const (
-	stateCachePrefix = "eve:sso:state:"
-	stateCacheTTL    = 10 * time.Minute
+	stateCachePrefix            = "eve:sso:state:"
+	stateCacheTTL               = 10 * time.Minute
+	affiliationResponseMaxBytes = 1 << 20
 )
 
 // OnNewCharacterFunc 新角色首次出现时触发的钩子（由 jobs 层注入以避免循环依赖）
@@ -131,9 +132,9 @@ type EveSSOService struct {
 func NewEveSSOService() *EveSSOService {
 	cfg := global.Config.EveSSO
 	return &EveSSOService{
-		charRepo:  repository.NewEveCharacterRepository(),
-		userRepo:  repository.NewUserRepository(),
-		roleSvc:   NewRoleService(),
+		charRepo: repository.NewEveCharacterRepository(),
+		userRepo: repository.NewUserRepository(),
+		roleSvc:  NewRoleService(),
 		eveClient: eve.NewClientWithEndpoints(
 			cfg.ClientID,
 			cfg.ClientSecret,
@@ -194,7 +195,7 @@ func buildDefaultSSOUser(portraitURL string, primaryCharacterID int64, clientIP 
 func (s *EveSSOService) fetchCharacterAffiliation(ctx context.Context, characterID int64) (*characterAffiliationSnapshot, error) {
 	var results []characterAffiliationSnapshot
 
-	if err := s.esiClient.PostJSON(ctx, "/characters/affiliation/", "", []int64{characterID}, &results); err != nil {
+	if err := s.esiClient.PostJSONWithLimit(ctx, "/characters/affiliation/", "", []int64{characterID}, &results, affiliationResponseMaxBytes); err != nil {
 		return nil, fmt.Errorf("fetch affiliation: %w", err)
 	}
 	if len(results) == 0 {

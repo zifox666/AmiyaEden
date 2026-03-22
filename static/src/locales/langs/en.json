@@ -873,6 +873,7 @@
       "shipHint": "Optional. The selected ship icon will be shown in the plan list.",
       "skillsText": "Skill Text",
       "skillsTextPlaceholder": "One skill per line, for example:\nGraviton Physics 5\nDoomsday Rapid Firing 5\nCapital Shield Operation 4",
+      "skillsTextGuide": "Open the in-game skill planner to view the details. Use the top-right button to copy all skills to the clipboard, then paste them into the field above.",
       "skillsTextHint": "Supported format: skill name + space + level. Levels may use 1-5 or Roman numerals I-V. Duplicate skills automatically keep the highest level.",
       "skill": "Skill",
       "skillPlaceholder": "Search and select a skill",

@@ -2,10 +2,29 @@ package service
 
 import (
 	"amiya-eden/internal/model"
+	"amiya-eden/pkg/eve"
+	"context"
+	"io"
+	"net/http"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func newTestEveSSOService(client *http.Client) *EveSSOService {
+	return &EveSSOService{
+		eveClient: &eve.Client{
+			HTTPClient: client,
+		},
+	}
+}
 
 func TestBuildLoginScopesIncludesPublicDataRegisteredAndExtraScopes(t *testing.T) {
 	scopeMu.Lock()
@@ -126,4 +145,31 @@ func TestResolveInitialSSORole(t *testing.T) {
 			t.Fatalf("expected role %q, got %q", model.RoleGuest, role)
 		}
 	})
+}
+
+func TestFetchCharacterAffiliationRejectsOversizedResponse(t *testing.T) {
+	const maxAffiliationResponseBytes = 1 << 20
+
+	svc := newTestEveSSOService(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method != http.MethodPost {
+				t.Fatalf("expected POST request, got %s", req.Method)
+			}
+
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(strings.Repeat("x", maxAffiliationResponseBytes+1))),
+				Request:    req,
+			}, nil
+		}),
+	})
+
+	_, err := svc.fetchCharacterAffiliation(context.Background(), 90000001)
+	if err == nil {
+		t.Fatal("expected oversized affiliation response error")
+	}
+	if !strings.Contains(err.Error(), "affiliation response exceeds") {
+		t.Fatalf("expected oversize error, got %v", err)
+	}
 }

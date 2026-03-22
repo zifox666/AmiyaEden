@@ -90,3 +90,7 @@ jobs:
       - name: Unit tests
         working-directory: static
         run: pnpm test:unit
+
+      - name: Build frontend
+        working-directory: static
+        run: pnpm build

@@ -44,3 +44,4 @@ static/dist/
 # Temp Logs
 server/tmp/
 server/logs/
+static/src/types/import/components.d.ts

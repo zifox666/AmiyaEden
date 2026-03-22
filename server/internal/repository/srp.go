@@ -3,7 +3,16 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"errors"
 	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+var (
+	ErrNoPendingBatchPayoutApplications = errors.New("no pending batch payout applications")
+	ErrBatchPayoutSelectionChanged      = errors.New("batch payout selection changed")
 )
 
 // SrpRepository SRP 数据访问层
@@ -143,14 +152,64 @@ func (r *SrpRepository) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryRow, er
 	return list, err
 }
 
-// BatchPayoutApplicationsByUser 将某用户所有已批准且待发放的申请标记为已发放
-func (r *SrpRepository) BatchPayoutApplicationsByUser(userID uint, payerID uint, paidAt time.Time) (int64, error) {
-	tx := global.DB.Model(&model.SrpApplication{}).
+func buildPendingBatchPayoutApplicationsQuery(db *gorm.DB, userID uint) *gorm.DB {
+	return db.Model(&model.SrpApplication{}).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Select("id", "user_id", "final_amount").
 		Where("user_id = ? AND payout_status = ? AND review_status = ?", userID, model.SrpPayoutPending, model.SrpReviewApproved).
+		Order("id ASC")
+}
+
+func summarizeBatchPayoutApplications(userID uint, apps []model.SrpApplication) (SrpBatchPayoutSummaryRow, []uint) {
+	summary := SrpBatchPayoutSummaryRow{UserID: userID}
+	ids := make([]uint, 0, len(apps))
+	for _, app := range apps {
+		summary.TotalAmount += app.FinalAmount
+		summary.ApplicationCount++
+		ids = append(ids, app.ID)
+	}
+	return summary, ids
+}
+
+func buildBatchPayoutApplicationsUpdateQuery(db *gorm.DB, applicationIDs []uint, payerID uint, paidAt time.Time) *gorm.DB {
+	return db.Model(&model.SrpApplication{}).
+		Where("id IN ?", applicationIDs).
+		Where("payout_status = ? AND review_status = ?", model.SrpPayoutPending, model.SrpReviewApproved).
 		Updates(map[string]interface{}{
 			"payout_status": model.SrpPayoutPaid,
 			"paid_by":       payerID,
 			"paid_at":       paidAt,
 		})
-	return tx.RowsAffected, tx.Error
+}
+
+// BatchPayoutApplicationsByUser 将某用户所有已批准且待发放的申请标记为已发放
+func (r *SrpRepository) BatchPayoutApplicationsByUser(userID uint, payerID uint, paidAt time.Time) (*SrpBatchPayoutSummaryRow, error) {
+	var summary *SrpBatchPayoutSummaryRow
+
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
+		var apps []model.SrpApplication
+		if err := buildPendingBatchPayoutApplicationsQuery(tx, userID).Find(&apps).Error; err != nil {
+			return err
+		}
+		if len(apps) == 0 {
+			return ErrNoPendingBatchPayoutApplications
+		}
+
+		selectedSummary, applicationIDs := summarizeBatchPayoutApplications(userID, apps)
+		updateTx := buildBatchPayoutApplicationsUpdateQuery(tx, applicationIDs, payerID, paidAt)
+		if updateTx.Error != nil {
+			return updateTx.Error
+		}
+		if updateTx.RowsAffected != int64(len(applicationIDs)) {
+			return ErrBatchPayoutSelectionChanged
+		}
+
+		summary = &selectedSummary
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return summary, nil
 }

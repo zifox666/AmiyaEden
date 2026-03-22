@@ -874,6 +874,7 @@
       "shipHint": "可选。选中的舰船图标会显示在技能计划列表中。",
       "skillsText": "技能文本",
       "skillsTextPlaceholder": "每行一个技能，格式示例：\nGraviton Physics 5\nDoomsday Rapid Firing 5\nCapital Shield Operation 4",
+      "skillsTextGuide": "打开游戏内技能规划，查看详情。右上角按钮选择复制所有技能到粘贴板，然后复制进入上方。",
       "skillsTextHint": "支持格式：技能名 + 空格 + 等级。等级可使用 1-5 或罗马数字 I-V；重复技能会自动保留最高等级。",
       "skill": "技能",
       "skillPlaceholder": "搜索并选择技能",

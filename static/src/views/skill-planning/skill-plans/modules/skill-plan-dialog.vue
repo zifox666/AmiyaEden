@@ -61,6 +61,7 @@
           :placeholder="$t('skillPlan.fields.skillsTextPlaceholder')"
         />
         <div class="skills-text-hint">
+          <div>{{ $t('skillPlan.fields.skillsTextGuide') }}</div>
           {{ $t('skillPlan.fields.skillsTextHint') }}
         </div>
       </ElFormItem>
