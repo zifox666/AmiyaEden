@@ -29,7 +29,7 @@ last_reviewed: 2026-03-20
 ## 明确声明
 
 - 本文档是提案，不代表当前已实现行为
-- 不能覆盖 `AGENTS.md`、`docs/architecture/`、`docs/api/`、`docs/features/current/`
+- 不能覆盖 `docs/ai/repo-rules.md`、`docs/architecture/`、`docs/api/`、`docs/features/current/`
 
 ## 升级路径
 

@@ -4,7 +4,7 @@ doc_type: guide
 owner: engineering
 last_reviewed: 2026-03-22
 source_of_truth:
-  - AGENTS.md
+  - docs/ai/repo-rules.md
   - docs/standards/testing-and-verification.md
   - docs/guides/testing-guide.md
   - server/
@@ -317,20 +317,7 @@ source_of_truth:
 
 ## 命令建议
 
-### 日常最小检查
-
-```bash
-cd server && go test ./...
-cd server && go build ./...
-cd static && pnpm exec vue-tsc --noEmit
-```
-
-### frontend 改动补充
-
-```bash
-cd static && pnpm lint .
-cd static && pnpm test:unit
-```
+验证命令见 `docs/standards/testing-and-verification.md`。
 
 ## 文档维护规则
 

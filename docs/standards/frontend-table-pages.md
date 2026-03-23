@@ -2,38 +2,38 @@
 status: active
 doc_type: standard
 owner: frontend
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-24
 source_of_truth:
   - static/src/hooks/core/useTable
   - static/src/components/core
 ---
 
-# 前端表格页面标准
+# Frontend Table Page Standard
 
-## 适用范围
+## Scope
 
-适用于后台管理类、带分页的列表类、标准 CRUD 表格页面。
+Applies to admin pages, paginated list pages, and standard CRUD table pages in the frontend.
 
-## 默认模式
+## Core Rules
 
-新增标准表格页时，优先遵循：
+- For standard paginated management pages, use `useTable` by default.
+- Do not make direct `axios` or `fetch` calls in view components.
+- Localize all user-visible text, including column titles, buttons, empty states, and validation messages.
+- Handle permissions through routes, `v-auth`, and shared store or hook patterns. Do not hardcode permission logic locally in the page when an existing repository pattern applies.
+- Extract reusable or page-sized search areas, edit dialogs, and column definitions into `modules/`.
 
-- 搜索区在卡片外
-- `ElCard.art-table-card` 承载表格
-- `ArtTableHeader` 承载刷新、列设置、主操作按钮
-- `ArtTable` 承载列表与分页
-- `useTable` 管理 `loading / data / pagination / searchParams`
-- 对话框放在 `ElCard` 外，作为同级节点
+## Default Page Pattern
 
-## 必须遵守
+When creating a standard table page, use this structure unless the page has a justified exception:
 
-- 需要分页的标准管理页，默认使用 `useTable`
-- 视图层不要直接 `axios` / `fetch`
-- 列标题、按钮、空态、校验提示必须走 i18n
-- 权限控制优先通过路由、`v-auth`、store / hooks 处理
-- 重复搜索区、编辑弹窗、列定义应抽到 `modules/`
+- place the search area outside the card
+- use `ElCard.art-table-card` as the table container
+- use `ArtTableHeader` for refresh, column settings, and primary actions
+- use `ArtTable` for table rendering and pagination
+- use `useTable` to manage `loading`, `data`, `pagination`, and `searchParams`
+- place dialogs outside `ElCard` as sibling nodes
 
-## 推荐结构
+## Recommended Structure
 
 ```text
 views/<module>/<page>/
@@ -44,25 +44,27 @@ views/<module>/<page>/
     └── columns.ts
 ```
 
-## 允许例外
+## Allowed Exceptions
 
-以下场景可以直接使用原生 `ElTable`，但应在页面注释或文档中说明原因：
+You may use native ElTable instead of ArtTable only when the page does not fit the standard management-page pattern, such as:
 
-- 详情页内的只读子表格
-- 多块数据混排的分析页或 dashboard
-- `ArtTable` 难以表达的树表 / 高度定制展开行
-- 第三方数据导入页、临时预览页
+- a read-only subtable inside a detail page
+- an analytics page or dashboard with mixed data blocks
+- a tree table or highly customized expandable row that ArtTable does not express well
+- a third-party import page or temporary preview page
 
-即使使用 `ElTable`，也仍需遵守：
+When using native ElTable, the following rules still apply:
 
-- API 调用放在 `static/src/api`
-- 用户可见文本本地化
-- 权限不写成页面局部硬编码
+- keep API calls in static/src/api
+- localize all user-visible text
+- do not hardcode permission logic inside the page
 
-## 提交前检查
+## Pre-Completion Checklist
 
-- 是否真的需要分页
-- 是否复用了 `useTable`
-- 是否把对话框与搜索区拆出
-- 是否所有用户可见字符串都已本地化
-- 是否没有在页面里直接创建 HTTP client
+Before considering the page complete, verify:
+
+- Does the page actually require pagination?
+- If it is a standard paginated management page, does it use useTable?
+- Were the search area and dialog extracted when they are reusable or page-sized?
+- Are all user-visible strings localized?
+- Does the page avoid direct HTTP client creation or direct HTTP calls?

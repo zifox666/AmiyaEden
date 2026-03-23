@@ -2,129 +2,124 @@
 status: active
 doc_type: standard
 owner: engineering
-last_reviewed: 2026-03-23
+last_reviewed: 2026-03-24
 source_of_truth:
-  - AGENTS.md
+  - docs/ai/repo-rules.md
   - docs/standards/testing-and-verification.md
   - docs/standards/dependency-layering.md
 ---
 
 # Pre-Completion Checklist
 
-## Purpose
+## Scope
 
-This checklist consolidates all verification steps that must be completed before any change is considered done. It is the reference implementation of `AGENTS.md` "Pre-Completion Protocol".
+Use this checklist before marking any task complete.
 
-Use this checklist at the end of every task. Skip items that genuinely don't apply to your change, but do not skip items out of convenience.
+Skip only items that do not apply to the change. Do not skip items for convenience.
+
+## Core Rules
+
+- Completion requires both correct implementation and appropriate verification.
+- `build`, `lint`, and `typecheck` do not replace regression testing where regression coverage is required.
+- If a required check or test is skipped, the omission must be stated explicitly.
 
 ## Checklist by Change Type
 
 ### Backend-Only Change
 
-```
-[ ] Code compiles:           cd server && go build ./...
-[ ] Tests pass:              cd server && go test ./...
-[ ] No layer violations:     handler doesn't import repository, repository has no business logic
-[ ] If bug fix:              regression test added
-[ ] If contract changed:     frontend API wrapper and types updated
-[ ] If route added/changed:  docs/api/route-index.md updated
-[ ] If behavior changed:     feature doc updated
-```
+- [ ] `cd server && go build ./...`
+- [ ] `cd server && go test ./...`
+- [ ] No layer violations were introduced
+- [ ] If this is a bug fix, a regression test was added or updated
+- [ ] If an API contract changed, frontend API wrappers and types were updated
+- [ ] If a route was added or changed, `docs/api/route-index.md` was updated
+- [ ] If behavior changed, the relevant feature doc was updated
 
 ### Frontend-Only Change
 
-```
-[ ] Lint passes:             cd static && pnpm lint .
-[ ] Types check:             cd static && pnpm exec vue-tsc --noEmit
-[ ] If helper/hook changed:  cd static && pnpm test:unit
-[ ] No direct HTTP calls in views
-[ ] All new strings in both zh.json and en.json
-[ ] If behavior changed:     feature doc updated
-```
+- [ ] `cd static && pnpm lint .`
+- [ ] `cd static && pnpm exec vue-tsc --noEmit`
+- [ ] If a pure helper or hook changed, `cd static && pnpm test:unit`
+- [ ] No direct HTTP calls were added to views
+- [ ] All new user-facing strings were added to both `zh.json` and `en.json`
+- [ ] If behavior changed, the relevant feature doc was updated
 
-### Cross-Contract Change (Backend + Frontend)
+### Cross-Contract Change
 
-```
-[ ] Backend compiles:        cd server && go build ./...
-[ ] Backend tests:           cd server && go test ./...
-[ ] Frontend lint:           cd static && pnpm lint .
-[ ] Frontend types:          cd static && pnpm exec vue-tsc --noEmit
-[ ] Frontend tests:          cd static && pnpm test:unit
-[ ] API wrapper updated:     static/src/api/*.ts
-[ ] TS types updated:        static/src/types/api/api.d.ts
-[ ] Field names match:       backend JSON tags = frontend type fields
-[ ] Route index updated:     docs/api/route-index.md
-[ ] Feature doc updated:     docs/features/current/*.md
-```
+- [ ] `cd server && go build ./...`
+- [ ] `cd server && go test ./...`
+- [ ] `cd static && pnpm lint .`
+- [ ] `cd static && pnpm exec vue-tsc --noEmit`
+- [ ] If relevant, `cd static && pnpm test:unit`
+- [ ] Frontend API wrapper was updated
+- [ ] Shared TypeScript types were updated
+- [ ] Backend response fields and frontend type fields match
+- [ ] `docs/api/route-index.md` was updated if the route surface or permission boundary changed
+- [ ] The relevant feature doc was updated if behavior changed
 
-### Permission / Role Change
+### Permission or Role Change
 
-```
-[ ] All of "Cross-Contract Change" above
-[ ] Backend route protection updated: router.go middleware
-[ ] Menu seeds updated:      server/internal/model/menu.go (if applicable)
-[ ] Frontend route meta:     static/src/router/modules/*.ts
-[ ] Button permissions:      v-auth usage aligned
-[ ] Both menu modes work:    frontend and backend mode not broken
-[ ] Auth doc updated:        docs/architecture/auth-and-permissions.md
-```
+- [ ] All applicable items from Cross-Contract Change were completed
+- [ ] Backend route protection was updated where required
+- [ ] `server/internal/model/menu.go` was updated if menu seeds changed
+- [ ] Frontend route metadata was updated where required
+- [ ] Button permission usage such as `v-auth` was aligned
+- [ ] Changes were validated against both frontend and backend menu modes if applicable
+- [ ] `docs/architecture/auth-and-permissions.md` was updated if the permission model or behavior changed
 
 ### Documentation-Only Change
 
-```
-[ ] Front matter updated:    status, last_reviewed
-[ ] No stale cross-references introduced
-[ ] Index updated:           docs/README.md or docs/features/README.md if applicable
-[ ] Content matches current code (verified by reading code, not assuming)
-```
+- [ ] Front matter was updated where required
+- [ ] No stale references or broken cross-links were introduced
+- [ ] Index documents were updated if required
+- [ ] Current code was checked when the document describes current implementation
 
-### New Feature / Module
+### New Feature or Module
 
-```
-[ ] All of "Cross-Contract Change" above
-[ ] Feature doc created:     docs/features/current/<module>.md
-[ ] Feature index updated:   docs/features/README.md
-[ ] Localization complete:   both zh.json and en.json
-[ ] Menu seeds added:        if menu item needed
-[ ] Route registered:        both backend and frontend
-[ ] Follows existing module structure pattern
-[ ] At least one regression test covering key behavior
-```
+- [ ] All applicable items from Cross-Contract Change were completed
+- [ ] A feature doc was created under `docs/features/current/` if the feature has durable behavior
+- [ ] Any relevant feature index was updated
+- [ ] Localization was completed in both `zh.json` and `en.json`
+- [ ] Menu seeds were added if required
+- [ ] Backend and frontend routes were registered if required
+- [ ] The change follows the existing module structure pattern
+- [ ] At least one regression test covers key behavior, unless explicitly justified otherwise
 
 ## Test Decision Matrix
 
-| What Changed | Minimum Test Required |
+| change | minimum test expectation |
 | --- | --- |
-| Service business logic | Go unit test in same package |
-| Repository query / join / fallback | Go query-shape or behavior test |
-| Handler response shape / contract | Go handler or contract test |
-| Frontend pure helper / hook | `pnpm test:unit` |
-| Bug fix (any layer) | Regression test at root cause layer |
-| Localization only | Build verification only |
-| Documentation only | No test required |
+| service business logic | Go test in the same package |
+| repository query, join, filter, or fallback logic | Go behavior or branch test |
+| handler response shape or contract logic | Go handler-boundary or contract test |
+| frontend pure helper or pure hook | `cd static && pnpm test:unit` |
+| bug fix in any layer | regression test at the root-cause layer when practical |
+| localization-only change | build-level verification only |
+| documentation-only change | no code-level test required |
 
-## When You Skip a Test
+## If a Test Is Skipped
 
-If you skip a test that would normally be required, you must:
+When a normally expected test is skipped:
 
-1. State which test was skipped
-2. Explain why (missing infrastructure, disproportionate effort, etc.)
-3. Describe where the test should be added in the future
+1. state which test was skipped
+2. state why it was skipped
+3. state where the test should be added later, if applicable
 
-Never silently skip. The absence of a test should be a conscious, documented decision.
+Never skip a normally expected test without documenting the reason.
 
-## Quick Reference Commands
+## Quick Commands
 
-```bash
-# Backend
-cd server && go build ./...
-cd server && go test ./...
+Backend:
 
-# Frontend
-cd static && pnpm lint .
-cd static && pnpm exec vue-tsc --noEmit
-cd static && pnpm test:unit
+- `cd server && go build ./...`
+- `cd server && go test ./...`
 
-# Full stack
-cd server && go build ./... && go test ./... && cd ../static && pnpm lint . && pnpm exec vue-tsc --noEmit && pnpm test:unit
-```
+Frontend:
+
+- `cd static && pnpm lint .`
+- `cd static && pnpm exec vue-tsc --noEmit`
+- `cd static && pnpm test:unit`
+
+Full stack:
+
+- `cd server && go build ./... && go test ./... && cd ../static && pnpm lint . && pnpm exec vue-tsc --noEmit && pnpm test:unit`

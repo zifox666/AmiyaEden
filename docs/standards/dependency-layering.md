@@ -4,7 +4,7 @@ doc_type: standard
 owner: engineering
 last_reviewed: 2026-03-23
 source_of_truth:
-  - AGENTS.md
+  - docs/ai/repo-rules.md
   - server/internal
   - static/src
 ---
@@ -141,7 +141,7 @@ Field names in backend JSON tags must match frontend type definitions exactly. D
 
 ### Current Mechanism
 
-Enforcement is through code review, agent verification, and the pre-completion protocol (`AGENTS.md` "Pre-Completion Protocol" + `docs/standards/pre-completion-checklist.md`).
+Enforcement is through code review, agent verification, and the pre-completion protocol (see "Verification and Completion" in `docs/ai/repo-rules.md` and `docs/standards/pre-completion-checklist.md`).
 
 ### What To Do When You Find a Violation
 

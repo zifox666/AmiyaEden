@@ -2,54 +2,79 @@
 status: active
 doc_type: guide
 owner: engineering
-last_reviewed: 2026-03-23
+last_reviewed: 2026-03-24
 source_of_truth:
-  - AGENTS.md
+  - docs/ai/repo-rules.md
   - docs/README.md
   - docs/ai/harness-principles.md
 ---
 
 # AI Agent Onboarding
 
-## 目标
+## Purpose
 
-本文件帮助未来的 AI agent 在最短路径内读到正确文档，并在代码与文档不一致时做出保守、可维护的判断。
+This guide helps AI agents reach the correct repository context quickly and make conservative, maintainable decisions when code and documentation do not fully align.
 
-## Harness Context
+It is an onboarding and routing guide, not the primary rule source.
 
-This repository uses harness engineering principles. Before starting any work:
+## Start Here
 
-1. **Load the harness**: `AGENTS.md` is the primary execution harness. It defines golden principles, architecture rules, dependency direction, pre-completion protocol, and behavioral guardrails.
-2. **Understand the trust hierarchy**: `AGENTS.md` > `docs/standards/` > `docs/architecture/` > `docs/api/` > `docs/features/current/` > `docs/guides/` > `docs/specs/draft/`
-3. **Context boundaries apply**: you can only reason about what's in the repository. External knowledge (chat threads, verbal decisions) is not context.
+Before doing any work:
 
-For the full harness engineering philosophy, see `docs/ai/harness-principles.md`.
+1. Read your agent entry point (`AGENTS.md` or `CLAUDE.md`) — both delegate to `docs/ai/repo-rules.md`.
+2. Read `docs/README.md`.
+3. Identify the change type.
+4. Read the relevant architecture, API, feature, and standard documents before editing code.
 
-## 最小阅读顺序
+For the harness model behind these rules, see `docs/ai/harness-principles.md`.
 
-### 处理后端 / API 变更
+## Trust Hierarchy
 
-1. `AGENTS.md`
+See "Authority Order" in `docs/ai/repo-rules.md` for the canonical trust hierarchy.
+
+Additional routing rules for agents:
+
+- `docs/templates/` are not current-state authority
+- subdirectory `README.md` files are local implementation notes, not repository-wide rule sources
+- legacy compatibility files are not authoritative unless the current task explicitly targets them
+
+## Context Boundaries
+
+See "Context Boundaries" in `docs/ai/repo-rules.md` for the canonical definition.
+
+In short: reason only from committed repository artifacts and information explicitly provided by the user in the current session.
+
+## Minimum Reading Order by Change Type
+
+### Backend or API Change
+
+Read in this order:
+
+1. `docs/ai/repo-rules.md` (loaded automatically via your agent entry point)
 2. `docs/README.md`
 3. `docs/architecture/overview.md`
 4. `docs/architecture/module-map.md`
 5. `docs/architecture/auth-and-permissions.md`
 6. `docs/api/conventions.md`
 7. `docs/api/route-index.md`
-8. 对应 feature doc
+8. the relevant feature document
 
-### 处理前端页面 / 路由 / 权限
+### Frontend Page, Route, or Permission Change
 
-1. `AGENTS.md`
+Read in this order:
+
+1. `docs/ai/repo-rules.md` (loaded automatically via your agent entry point)
 2. `docs/README.md`
 3. `docs/architecture/module-map.md`
 4. `docs/architecture/routing-and-menus.md`
-5. `docs/standards/frontend-table-pages.md`
-6. 对应 feature doc
+5. `docs/standards/frontend-table-pages.md` when the page is a standard table page
+6. the relevant feature document
 
-### 处理 ESI / SSO / CCP 数据同步
+### ESI, SSO, or CCP Data Sync Change
 
-1. `AGENTS.md`
+Read in this order:
+
+1. `docs/ai/repo-rules.md` (loaded automatically via your agent entry point)
 2. `docs/README.md`
 3. `docs/architecture/overview.md`
 4. `docs/architecture/module-map.md`
@@ -57,83 +82,70 @@ For the full harness engineering philosophy, see `docs/ai/harness-principles.md`
 6. `docs/features/current/auth-and-characters.md`
 7. `docs/features/current/esi-refresh.md`
 8. `docs/guides/adding-esi-feature.md`
-9. 只有在任务已经确定落在 `server/pkg/eve/esi/` 时，再读该目录下的局部 `README.md`
 
-## 冲突处理规则
+Read a local directory `README.md` under `server/pkg/eve/esi/` only after the task is clearly in that area.
 
-当文档之间互相冲突时：
+## Conflict Resolution
 
-1. 先信 `AGENTS.md`
-2. 再信 `docs/` 中更高层级的 active 文档
-3. `docs/templates/` 与局部目录 `README.md` 不作为规范裁决依据
-4. 旧兼容文件不作为裁决依据
+See "Authority Order" and "Code-vs-Docs Rule" in `docs/ai/repo-rules.md` for canonical conflict resolution.
 
-当代码与文档冲突时：
+Key routing rules for agents:
 
-1. 把代码视为当前实现
-2. 评估这是“代码漂移”还是“文档过时”
-3. 如果任务允许，优先把 canonical 文档修正到当前实现
-4. 不要为了迎合旧文档去回滚用户已有实现
+- Do not use templates or local directory `README.md` files to override canonical repository rules.
+- Do not revert working user behavior only to satisfy stale documentation.
 
-## 修改前检查
+## Before Editing Code
 
-- 阅读目标模块周边代码，而不是只看一个文件
-- 找到对应 feature doc 与 API / architecture 文档
-- 明确这次改动属于：标准、现状、接口、功能、提案中的哪一种
-- 如果只是未来想法，不要改写 current-state 文档
+Before making changes:
 
-## 修改后最少更新
+- read the surrounding module code, not just a single file
+- identify the relevant feature, API, and architecture documents
+- identify whether the task affects standards, current-state docs, API docs, feature docs, or draft proposals
+- if the content is only a future idea, do not rewrite current-state documents to describe it as implemented
 
-- 行为变化：更新对应 feature doc
-- 路由或权限边界变化：更新 `docs/api/route-index.md`
-- 运行 / 启动方式变化：更新 `docs/architecture/runtime-and-startup.md`
-- 规范变化：更新 `AGENTS.md` 或 `docs/standards`
+## Minimum Documentation Updates After Changes
 
-## 行为守则
+Update the following when applicable:
 
-### 必须遵守
+- behavior changed -> update the relevant feature document
+- route surface or permission boundary changed -> update `docs/api/route-index.md`
+- runtime or startup behavior changed -> update `docs/architecture/runtime-and-startup.md`
+- repository-wide rule or engineering standard changed -> update `docs/ai/repo-rules.md` or the relevant file under `docs/standards/`
 
-- 每次任务前加载 `AGENTS.md`
-- 修改代码前先读对应模块的现有代码和 feature doc
-- 遵循 pre-completion verification protocol (`AGENTS.md` "Pre-Completion Protocol")
-- 被阻塞时停下来重新分析，不要反复重试同一种方法
-- 发现文档与代码不一致时，评估是文档漂移还是代码漂移
+## Required Behavior
 
-### 不该做的事
+- Read `docs/ai/repo-rules.md` (via your agent entry point) before starting work.
+- Read the relevant code and feature documentation before changing code.
+- Follow the completion and verification protocol in `docs/standards/pre-completion-checklist.md`.
+- When blocked, stop and reassess instead of retrying the same approach repeatedly.
+- When code and docs disagree, determine whether the drift is in the code or in the documentation.
 
-- 重新建立第二套影子文档树
-- 把”计划中的行为”写进 architecture / feature current
-- 在多个文档里维护同一份角色、权限、路由清单
-- 看到旧标题就假设旧内容仍然正确
-- 把模板文件或模块局部 `README.md` 当成 repo-level source of truth
-- 编辑同一个文件超过 3 次仍未解决问题（loop detection — see `AGENTS.md` "Agent Behavioral Guardrails"）
-- 引入与现有仓库约定矛盾的新模式
-- 给未修改的代码添加注释、docstring 或类型注解
-- 为一次性操作创建工具函数或抽象
+## Prohibited Behavior
 
-## 调试指引
+See "Anti-Drift Rules" and "Guardrails" in `docs/ai/repo-rules.md` for the full list.
 
-遇到问题时，按照 `docs/guides/debugging-guide.md` 的系统化流程排查：
+Key prohibitions for agent onboarding:
 
-1. 分类问题（构建失败、类型错误、运行时错误、权限问题等）
-2. 定位层级（handler / service / repository / view / api）
-3. 最小范围复现
-4. 在根因处修复
-5. 补回归测试
+- do not create a second shadow documentation tree
+- do not write planned or future behavior into current-state documents
+- do not treat template files or local directory `README.md` files as repository-wide source of truth
+- do not keep editing the same file repeatedly without progress
+- do not introduce patterns that conflict with established repository conventions
 
-## 验证参考
+## Debugging Guidance
 
-完成任务后，按变更类型使用 `docs/standards/pre-completion-checklist.md` 中的对应检查清单。
+When debugging, use the repository debugging workflow in `docs/guides/debugging-guide.md`.
 
-快速命令参考：
+Default approach:
 
-```bash
-# 后端
-cd server && go build ./...
-cd server && go test ./...
+1. classify the problem
+2. locate the affected layer
+3. reproduce it with the smallest useful scope
+4. fix the root cause
+5. add regression protection where appropriate
 
-# 前端
-cd static && pnpm lint .
-cd static && pnpm exec vue-tsc --noEmit
-cd static && pnpm test:unit
-```
+## Verification Reference
+
+At the end of the task, use the relevant checklist in `docs/standards/pre-completion-checklist.md`.
+
+For verification commands, see `docs/standards/testing-and-verification.md`.

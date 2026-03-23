@@ -4,7 +4,7 @@ doc_type: guide
 owner: engineering
 last_reviewed: 2026-03-23
 source_of_truth:
-  - AGENTS.md
+  - docs/ai/repo-rules.md
   - docs/architecture/module-map.md
 ---
 
@@ -97,7 +97,7 @@ After fixing, add a test that would have caught this bug. See `docs/guides/regre
 2. Check JSON tags on backend structs match frontend field names
 3. Check if a recent backend change wasn't propagated to frontend
 
-**Prevention:** update all 5 layers when changing an endpoint (AGENTS.md "API Contract Synchronization").
+**Prevention:** update all 5 layers when changing an endpoint (see "API Change Order" in `docs/ai/repo-rules.md`).
 
 ### Permission / Menu Visibility Issues
 
@@ -111,7 +111,7 @@ After fixing, add a test that would have caught this bug. See `docs/guides/regre
 4. Check `v-auth` directives on buttons
 5. Check user's actual roles via `/api/v1/me`
 
-**Prevention:** modify all four permission touchpoints together (AGENTS.md "Routing and Menu Modes").
+**Prevention:** modify all four permission touchpoints together (see "Routing, Menu, and Permission Changes" in `docs/ai/repo-rules.md`).
 
 ### Localization Key Missing
 

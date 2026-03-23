@@ -7,7 +7,7 @@ source_of_truth:
   - server/internal
   - server/pkg
   - static/src
-  - AGENTS.md
+  - docs/ai/repo-rules.md
 ---
 
 # 模块地图
@@ -19,7 +19,7 @@ source_of_truth:
 - 这个仓库里某类职责应该去哪个目录找
 - 修改某类能力时，通常要同时看哪些文件
 
-它不是新的规范来源，而是 `AGENTS.md` 与现有 architecture / api / feature 文档的导航图。
+它不是新的规范来源，而是 `docs/ai/repo-rules.md` 与现有 architecture / api / feature 文档的导航图。
 
 ## Backend 目录职责
 
@@ -48,7 +48,7 @@ source_of_truth:
 | `static/src/store/` | Pinia 状态 | `static/src/router/`、`static/src/hooks/core/useAuth.ts` |
 | `static/src/router/` | 路由核心、守卫、菜单模式适配 | `server/internal/model/menu.go`、`docs/architecture/routing-and-menus.md` |
 | `static/src/types/` | TS 类型、导入声明、契约类型 | `static/src/api/`、`server/internal/model/` |
-| `static/src/locales/` | i18n 文案 | `AGENTS.md` 第 4 节 |
+| `static/src/locales/` | i18n 文案 | `docs/ai/repo-rules.md`「Non-Negotiable Rules」第 3 条 |
 
 ## 文档目录职责
 
