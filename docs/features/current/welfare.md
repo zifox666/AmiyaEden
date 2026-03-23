@@ -19,7 +19,7 @@ source_of_truth:
 - 可选技能计划检查：可关联多个军团技能计划，技能合格才允许申请
 - 可选角色最大年龄限制（max_char_age_months）：设置后发放模式锁定为 per_user，拥有任何超龄角色的用户不可申请
 - 用户自助申请福利，系统自动判断资格
-- 申请状态流转：pending_delivery → delivered / rejected
+- 申请状态流转：requested → delivered / rejected
 - 福利审批页面：福利官/管理员浏览待发放申请，执行发放或拒绝操作
 - 管理员可导入历史已发放记录，按行粘贴角色名和 QQ 号生成 delivered 记录
 - 福利存在申请记录时禁止删除
@@ -36,7 +36,7 @@ source_of_truth:
 ### 申请记录模型（WelfareApplication）
 
 - `welfare_id`、`user_id`、`character_id`、`character_name`、`qq`、`discord_id`
-- `status`：pending_delivery / delivered / rejected
+- `status`：requested / delivered / rejected
 - `reviewed_by`、`reviewed_at`：审批人和审批时间
 - 历史导入记录允许 `user_id` 为空；当前导入格式保存 `character_name` 与 `qq`
 
@@ -48,7 +48,7 @@ source_of_truth:
   - 申请福利 tab：显示可申请的福利，per_character 每个角色独立一行
   - 已领取福利 tab：显示所有申请记录及状态
 - `static/src/views/welfare/approval` — 福利审批（福利官、管理员）
-  - 待发放 tab：显示 pending_delivery 申请，支持发放/拒绝操作
+  - 待发放 tab：显示 requested 申请，支持发放/拒绝操作
   - 历史记录 tab：显示已发放/已拒绝的申请记录
 - `static/src/views/welfare/settings` — 福利设置（管理员）
 

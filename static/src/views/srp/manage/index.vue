@@ -16,7 +16,7 @@
           @change="handleSearch"
         >
           <template v-if="activeTab === 'pending'">
-            <ElOption :label="$t('srp.status.pending')" value="pending" />
+            <ElOption :label="$t('srp.status.submitted')" value="submitted" />
             <ElOption :label="$t('srp.status.approved')" value="approved" />
           </template>
           <template v-else>
@@ -42,7 +42,7 @@
         <template #left>
           <div class="flex items-center gap-2">
             <template v-if="activeTab === 'pending'">
-              <ElButton type="primary" :loading="autoApproveLoading" @click="handleAutoApprove">
+              <ElButton type="primary" @click="handleAutoApprove">
                 {{ $t('srp.manage.autoApproveBtn') }}
               </ElButton>
               <ElButton type="warning" @click="openBatchPayoutDialog">
@@ -305,7 +305,7 @@
   import { fetchFleetList } from '@/api/fleet'
   import {
     fetchApplicationList,
-    autoApprovePendingApplications,
+    runFleetAutoApproval,
     fetchBatchPayoutSummary,
     reviewApplication,
     batchPayoutByUser,
@@ -347,10 +347,10 @@
     ] ?? 'info'
   const reviewStatusLabel = (s: string) =>
     ({
-      pending: t('srp.status.pending'),
+      submitted: t('srp.status.submitted'),
       approved: t('srp.status.approved'),
       rejected: t('srp.status.rejected')
-    })[s as 'pending' | 'approved' | 'rejected'] ?? s
+    })[s as 'submitted' | 'approved' | 'rejected'] ?? s
   const payoutStatusType = (s: string): TagType => (s === 'paid' ? 'success' : 'warning')
 
   const {
@@ -390,7 +390,7 @@
           width: 60,
           formatter: (row: SrpApp) =>
             h(ElTag, { type: payoutStatusType(row.payout_status), size: 'small' }, () =>
-              row.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.unpaid')
+              row.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.notpaid')
             )
         },
         {
@@ -527,7 +527,7 @@
             const btns: ReturnType<typeof h>[] = [
               h(ArtButtonTable, { type: 'view', onClick: () => openKmPreview(row) })
             ]
-            if (row.review_status === 'pending') {
+            if (row.review_status === 'submitted') {
               // 待审批：批准 + 拒绝
               btns.push(
                 h(ArtButtonTable, {
@@ -541,7 +541,7 @@
                   onClick: () => openReviewDialog(row, 'reject')
                 })
               )
-            } else if (row.review_status === 'approved' && row.payout_status === 'pending') {
+            } else if (row.review_status === 'approved' && row.payout_status === 'notpaid') {
               // 已批准 + 未发放：发放 + 编辑 + 重新拒绝
               btns.push(
                 h(ArtButtonTable, {
@@ -671,7 +671,7 @@
     reviewAction.value = action
     reviewForm.review_note =
       action === 'approve'
-        ? row.review_status === 'pending'
+        ? row.review_status === 'submitted'
           ? fillTemplate(DEFAULT_APPROVE_NOTE)
           : row.review_note || ''
         : fillTemplate(DEFAULT_REJECT_NOTE)
@@ -752,9 +752,14 @@
   }
 
   const handleAutoApprove = async () => {
+    if (!filter.fleet_id) {
+      ElMessage.warning(t('srp.manage.autoApproveFleetRequired'))
+      return
+    }
+
     autoApproveLoading.value = true
     try {
-      const result = await autoApprovePendingApplications()
+      const result = await runFleetAutoApproval({ fleet_id: filter.fleet_id })
       ElMessage.success(
         t('srp.manage.autoApproveSuccess', {
           approved: result.approved_count,
@@ -925,7 +930,7 @@
       final_amount: app.final_amount,
       review_status: reviewStatusLabel(app.review_status),
       review_note: app.review_note || '-',
-      payout_status: app.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.unpaid')
+      payout_status: app.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.notpaid')
     }))
   )
 

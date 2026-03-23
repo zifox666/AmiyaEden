@@ -526,7 +526,7 @@
     "deliveryMode": "Delivery Mode",
     "appliedAt": "Applied At",
     "reviewedAt": "Reviewed At",
-    "statusPendingDelivery": "Pending Delivery",
+    "statusRequested": "Requested",
     "statusDelivered": "Delivered",
     "statusRejected": "Rejected",
     "applyBtn": "Apply",
@@ -549,7 +549,7 @@
     "status": "Status",
     "requestedAt": "Requested At",
     "processedAt": "Processed At",
-    "statusPendingDelivery": "Pending Delivery",
+    "statusRequested": "Requested",
     "statusDelivered": "Delivered",
     "statusRejected": "Rejected",
     "deliverBtn": "Deliver",
@@ -560,7 +560,7 @@
     "rejectSuccess": "Welfare application rejected",
     "copied": "Copied",
     "copyFailed": "Copy failed",
-    "noPending": "No pending delivery requests",
+    "noPending": "No requested applications",
     "noHistory": "No processed records yet",
     "searchBtn": "Search",
     "resetBtn": "Reset"
@@ -1151,6 +1151,7 @@
       "batchPayoutConfirmTitle": "Batch Payout",
       "batchPayoutConfirmText": "Mark all approved unpaid SRP requests for {name} as paid? Total: {amount} ISK",
       "batchPayoutSuccess": "Batch payout successful",
+      "autoApproveFleetRequired": "Select the fleet to run auto-approve against first",
       "autoApproveSuccess": "Auto-approve complete: approved {approved}, skipped {skipped}",
       "finalAmount": "Final Amount",
       "finalAmountHint": "Enter 0 to keep the current amount",
@@ -1238,11 +1239,11 @@
       }
     },
     "status": {
-      "pending": "Pending",
+      "submitted": "Submitted",
       "approved": "Approved",
       "rejected": "Rejected",
       "paid": "Paid",
-      "unpaid": "Pending Payout"
+      "notpaid": "Pending Payout"
     }
   },
   "alliancePap": {
@@ -1473,7 +1474,7 @@
         "reviewRemark": "Review remark (optional)"
       },
       "status": {
-        "pending": "Pending",
+        "submitted": "Submitted",
         "paid": "Paid",
         "approved": "Approved",
         "rejected": "Rejected",

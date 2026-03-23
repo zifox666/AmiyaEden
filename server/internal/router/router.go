@@ -225,7 +225,7 @@ func RegisterRoutes(r *gin.Engine) {
 		srpAdmin := srp.Group("", middleware.RequirePermission("srp:review"))
 		{
 			srpAdmin.GET("/applications", srpH.ListApplications)
-			srpAdmin.PUT("/applications/auto-approve", srpH.AutoApprovePendingApplications)
+			srpAdmin.PUT("/applications/auto-approve", srpH.RunFleetAutoApproval)
 			srpAdmin.GET("/applications/batch-payout-summary", srpH.ListBatchPayoutSummary)
 			srpAdmin.GET("/applications/:id", srpH.GetApplication)
 			srpAdmin.PUT("/applications/:id/review", srpH.ReviewApplication)

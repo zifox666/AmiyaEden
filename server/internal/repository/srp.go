@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrNoPendingBatchPayoutApplications = errors.New("no pending batch payout applications")
-	ErrBatchPayoutSelectionChanged      = errors.New("batch payout selection changed")
+	ErrNoApprovedUnpaidBatchPayoutApplications = errors.New("no approved unpaid batch payout applications")
+	ErrBatchPayoutSelectionChanged             = errors.New("batch payout selection changed")
 )
 
 // SrpRepository SRP 数据访问层
@@ -84,12 +84,26 @@ func (r *SrpRepository) UpdateApplication(app *model.SrpApplication) error {
 	return global.DB.Save(app).Error
 }
 
-// ListPendingLinkedApplications 查询所有待审批且已关联舰队的申请
-func (r *SrpRepository) ListPendingLinkedApplications() ([]model.SrpApplication, error) {
+func buildSubmittedLinkedApplicationsQuery(db *gorm.DB) *gorm.DB {
+	return db.Model(&model.SrpApplication{}).
+		Where("review_status = ?", model.SrpReviewSubmitted).
+		Where("fleet_id IS NOT NULL AND fleet_id <> ''")
+}
+
+// ListSubmittedLinkedApplications 查询所有 submitted 且已关联舰队的申请
+func (r *SrpRepository) ListSubmittedLinkedApplications() ([]model.SrpApplication, error) {
 	var list []model.SrpApplication
-	err := global.DB.Model(&model.SrpApplication{}).
-		Where("review_status = ?", model.SrpReviewPending).
-		Where("fleet_id IS NOT NULL AND fleet_id <> ''").
+	err := buildSubmittedLinkedApplicationsQuery(global.DB).
+		Order("id ASC").
+		Find(&list).Error
+	return list, err
+}
+
+// ListSubmittedLinkedApplicationsByFleet 查询指定舰队下 submitted 且已关联舰队的申请
+func (r *SrpRepository) ListSubmittedLinkedApplicationsByFleet(fleetID string) ([]model.SrpApplication, error) {
+	var list []model.SrpApplication
+	err := buildSubmittedLinkedApplicationsQuery(global.DB).
+		Where("fleet_id = ?", fleetID).
 		Order("id ASC").
 		Find(&list).Error
 	return list, err
@@ -126,7 +140,7 @@ func buildSrpApplicationListQuery(db *gorm.DB, filter SrpApplicationFilter) *gor
 	switch filter.Tab {
 	case SrpTabPending:
 		query = query.Where("review_status IN (?, ?) AND payout_status = ?",
-			model.SrpReviewPending, model.SrpReviewApproved, model.SrpPayoutPending)
+			model.SrpReviewSubmitted, model.SrpReviewApproved, model.SrpPayoutNotPaid)
 	case SrpTabHistory:
 		query = query.Where("payout_status = ? OR review_status = ?",
 			model.SrpPayoutPaid, model.SrpReviewRejected)
@@ -180,18 +194,18 @@ func (r *SrpRepository) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryRow, er
 			SUM(final_amount) AS total_amount,
 			COUNT(id) AS application_count
 		`).
-		Where("payout_status = ? AND review_status = ?", model.SrpPayoutPending, model.SrpReviewApproved).
+		Where("payout_status = ? AND review_status = ?", model.SrpPayoutNotPaid, model.SrpReviewApproved).
 		Group("user_id").
 		Order("total_amount DESC, user_id ASC").
 		Scan(&list).Error
 	return list, err
 }
 
-func buildPendingBatchPayoutApplicationsQuery(db *gorm.DB, userID uint) *gorm.DB {
+func buildApprovedUnpaidBatchPayoutApplicationsQuery(db *gorm.DB, userID uint) *gorm.DB {
 	return db.Model(&model.SrpApplication{}).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Select("id", "user_id", "final_amount").
-		Where("user_id = ? AND payout_status = ? AND review_status = ?", userID, model.SrpPayoutPending, model.SrpReviewApproved).
+		Where("user_id = ? AND payout_status = ? AND review_status = ?", userID, model.SrpPayoutNotPaid, model.SrpReviewApproved).
 		Order("id ASC")
 }
 
@@ -209,7 +223,7 @@ func summarizeBatchPayoutApplications(userID uint, apps []model.SrpApplication) 
 func buildBatchPayoutApplicationsUpdateQuery(db *gorm.DB, applicationIDs []uint, payerID uint, paidAt time.Time) *gorm.DB {
 	return db.Model(&model.SrpApplication{}).
 		Where("id IN ?", applicationIDs).
-		Where("payout_status = ? AND review_status = ?", model.SrpPayoutPending, model.SrpReviewApproved).
+		Where("payout_status = ? AND review_status = ?", model.SrpPayoutNotPaid, model.SrpReviewApproved).
 		Updates(map[string]interface{}{
 			"payout_status": model.SrpPayoutPaid,
 			"paid_by":       payerID,
@@ -223,11 +237,11 @@ func (r *SrpRepository) BatchPayoutApplicationsByUser(userID uint, payerID uint,
 
 	err := global.DB.Transaction(func(tx *gorm.DB) error {
 		var apps []model.SrpApplication
-		if err := buildPendingBatchPayoutApplicationsQuery(tx, userID).Find(&apps).Error; err != nil {
+		if err := buildApprovedUnpaidBatchPayoutApplicationsQuery(tx, userID).Find(&apps).Error; err != nil {
 			return err
 		}
 		if len(apps) == 0 {
-			return ErrNoPendingBatchPayoutApplications
+			return ErrNoApprovedUnpaidBatchPayoutApplications
 		}
 
 		selectedSummary, applicationIDs := summarizeBatchPayoutApplications(userID, apps)

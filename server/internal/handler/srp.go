@@ -173,10 +173,15 @@ func (h *SrpHandler) ListBatchPayoutSummary(c *gin.Context) {
 	response.OK(c, list)
 }
 
-// AutoApprovePendingApplications PUT /srp/applications/auto-approve
-func (h *SrpHandler) AutoApprovePendingApplications(c *gin.Context) {
+// RunFleetAutoApproval PUT /srp/applications/auto-approve
+func (h *SrpHandler) RunFleetAutoApproval(c *gin.Context) {
+	var req service.RunFleetAutoApprovalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
 	reviewerID := middleware.GetUserID(c)
-	result, err := h.svc.AutoApprovePendingApplications(reviewerID)
+	result, err := h.svc.RunFleetAutoApproval(reviewerID, req.FleetID)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

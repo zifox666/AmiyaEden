@@ -931,11 +931,11 @@ declare namespace Api {
       alliance_name: string
       recommended_amount: number
       final_amount: number
-      review_status: 'pending' | 'approved' | 'rejected'
+      review_status: 'submitted' | 'approved' | 'rejected'
       reviewed_by: number | null
       reviewed_at: string | null
       review_note: string
-      payout_status: 'pending' | 'paid'
+      payout_status: 'notpaid' | 'paid'
       paid_by: number | null
       paid_at: string | null
       created_at: string
@@ -955,7 +955,6 @@ declare namespace Api {
       killmail_id: number
       fleet_id?: string | null
       note?: string
-      final_amount?: number
     }
 
     /** 申请搜索参数（管理端） */
@@ -988,6 +987,11 @@ declare namespace Api {
       main_character_name: string
       total_amount: number
       application_count: number
+    }
+
+    /** 批量自动审批请求 */
+    interface AutoApproveParams {
+      fleet_id: string
     }
 
     /** 批量自动审批结果 */
@@ -1114,7 +1118,7 @@ declare namespace Api {
       welfare_id: number
       welfare_name: string
       character_name: string
-      status: 'pending_delivery' | 'delivered' | 'rejected'
+      status: 'requested' | 'delivered' | 'rejected'
       created_at: string
       reviewed_at: string | null
     }
@@ -1147,7 +1151,7 @@ declare namespace Api {
       character_name: string
       qq: string
       discord_id: string
-      status: 'pending_delivery' | 'delivered' | 'rejected'
+      status: 'requested' | 'delivered' | 'rejected'
       reviewed_by: number
       reviewer_name: string
       created_at: string

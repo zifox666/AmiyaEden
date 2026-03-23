@@ -92,7 +92,7 @@
 
   const reviewStatusLabel = (status: string): string => {
     const map: Record<string, string> = {
-      pending: t('srp.status.pending'),
+      submitted: t('srp.status.submitted'),
       approved: t('srp.status.approved'),
       rejected: t('srp.status.rejected')
     }
@@ -103,7 +103,7 @@
     status: string
   ): 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
     const map: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info'> = {
-      pending: 'warning',
+      submitted: 'warning',
       approved: 'success',
       rejected: 'danger'
     }
@@ -112,7 +112,7 @@
 
   const payoutStatusLabel = (status: string): string => {
     const map: Record<string, string> = {
-      pending: t('srp.status.unpaid'),
+      notpaid: t('srp.status.notpaid'),
       paid: t('srp.status.paid')
     }
     return map[status] ?? status
@@ -122,7 +122,7 @@
     status: string
   ): 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
     const map: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info'> = {
-      pending: 'info',
+      notpaid: 'info',
       paid: 'success'
     }
     return map[status] ?? 'info'

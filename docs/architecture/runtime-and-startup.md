@@ -14,6 +14,7 @@ source_of_truth:
 ## 依赖
 
 - Go `>= 1.24`
+- Air（Go 热重载工具）
 - Node.js `>= 20.19.0`
 - pnpm `>= 8.8.0`
 - PostgreSQL
@@ -65,10 +66,10 @@ docker compose -f docker-compose.example.yml up -d postgres redis
 
 ```bash
 cp server/config/config.example.yaml server/config/config.yaml
-cd server
-go mod download
-go run main.go
+make dev
 ```
+
+`make dev` 使用仓库根目录的 `.air.toml` 启动 Air 热重载，后端源码修改后会自动重新编译并重启。
 
 ### 前端
 

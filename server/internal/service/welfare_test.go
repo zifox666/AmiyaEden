@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-func TestInitialWelfareApplicationStatusIsPendingDelivery(t *testing.T) {
-	got := initialWelfareApplicationStatus()
+func TestInitialWelfareApplicationStatusIsRequested(t *testing.T) {
+	got := initialWelfareApplicationRequestedStatus()
 
-	if got != model.WelfareAppStatusPendingDelivery {
-		t.Fatalf("initialWelfareApplicationStatus() = %q, want %q", got, model.WelfareAppStatusPendingDelivery)
+	if got != model.WelfareAppStatusRequested {
+		t.Fatalf("initialWelfareApplicationRequestedStatus() = %q, want %q", got, model.WelfareAppStatusRequested)
 	}
 }
 
@@ -23,14 +23,14 @@ func TestValidateReviewTransition(t *testing.T) {
 		wantErr       bool
 	}{
 		{
-			name:          "deliver from pending_delivery succeeds",
-			currentStatus: model.WelfareAppStatusPendingDelivery,
+			name:          "deliver from requested succeeds",
+			currentStatus: model.WelfareAppStatusRequested,
 			action:        "deliver",
 			wantStatus:    model.WelfareAppStatusDelivered,
 		},
 		{
-			name:          "reject from pending_delivery succeeds",
-			currentStatus: model.WelfareAppStatusPendingDelivery,
+			name:          "reject from requested succeeds",
+			currentStatus: model.WelfareAppStatusRequested,
 			action:        "reject",
 			wantStatus:    model.WelfareAppStatusRejected,
 		},
@@ -60,13 +60,13 @@ func TestValidateReviewTransition(t *testing.T) {
 		},
 		{
 			name:          "invalid action is rejected",
-			currentStatus: model.WelfareAppStatusPendingDelivery,
+			currentStatus: model.WelfareAppStatusRequested,
 			action:        "approve",
 			wantErr:       true,
 		},
 		{
 			name:          "empty action is rejected",
-			currentStatus: model.WelfareAppStatusPendingDelivery,
+			currentStatus: model.WelfareAppStatusRequested,
 			action:        "",
 			wantErr:       true,
 		},

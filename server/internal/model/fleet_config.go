@@ -35,7 +35,7 @@ const (
 // 装备不符惩罚
 const (
 	FittingPenaltyHalf = "half" // 补损减半
-	FittingPenaltyNone = "none" // 不补损
+	FittingPenaltyNone = "none" // 不自动补损
 )
 
 // FleetConfigFittingItem 装配物品明细（与 EveCharacterFittingItem 对应）

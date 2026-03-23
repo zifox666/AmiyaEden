@@ -107,10 +107,10 @@ export function fetchBatchPayoutSummary() {
 }
 
 /** 批量自动审批符合规则的待审批 SRP */
-export function autoApprovePendingApplications() {
+export function runFleetAutoApproval(data: Api.Srp.AutoApproveParams) {
   return request.put<Api.Srp.AutoApproveSummary>({
     url: '/api/v1/srp/applications/auto-approve',
-    data: {}
+    data
   })
 }
 

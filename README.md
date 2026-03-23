@@ -58,10 +58,19 @@ AmiyaEden/
 ## 运行依赖
 
 - Go `>= 1.24`
+- Air（Go 热重载工具）
 - Node.js `>= 20.19.0`
 - pnpm `>= 8.8.0`
 - PostgreSQL
 - Redis
+
+如果本机还没有 `air`，可以直接使用 Go 安装：
+
+```bash
+go install github.com/air-verse/air@latest
+export PATH="$PATH:$(go env GOPATH)/bin"
+air -v
+```
 
 ## 本地启动
 
@@ -97,10 +106,14 @@ docker compose -f docker-compose.example.yml up -d postgres redis
 ### 3. 启动后端
 
 ```bash
-cd server
-go mod download
-go run main.go
+make dev
 ```
+
+`make dev` 会同时启动前端和后端。
+
+后端通过 Air 热重载工具运行，源码变更后会自动重新编译并启动服务；前端会在 `static/` 下运行 `pnpm dev`。
+
+按 `Ctrl-C` 会同时停止前端和后端。
 
 启动时会执行：
 

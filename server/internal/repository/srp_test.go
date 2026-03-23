@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestBuildPendingBatchPayoutApplicationsQueryUsesUserScopedLocking(t *testing.T) {
+func TestBuildApprovedUnpaidBatchPayoutApplicationsQueryUsesUserScopedLocking(t *testing.T) {
 	db := newDryRunPostgresDB(t)
 
-	tx := buildPendingBatchPayoutApplicationsQuery(db, 42).
+	tx := buildApprovedUnpaidBatchPayoutApplicationsQuery(db, 42).
 		Session(&gorm.Session{DryRun: true}).
 		Find(&[]model.SrpApplication{})
 	sql := tx.Statement.SQL.String()

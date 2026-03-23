@@ -4,14 +4,14 @@ import "time"
 
 // SRP 申请审批状态
 const (
-	SrpReviewPending  = "pending"  // 待审批
-	SrpReviewApproved = "approved" // 已批准
-	SrpReviewRejected = "rejected" // 已拒绝
+	SrpReviewSubmitted = "submitted" // 已提交（待审批）
+	SrpReviewApproved  = "approved"  // 已批准
+	SrpReviewRejected  = "rejected"  // 已拒绝
 )
 
 // SRP 发放状态
 const (
-	SrpPayoutPending = "pending" // 待发放
+	SrpPayoutNotPaid = "notpaid" // 未发放
 	SrpPayoutPaid    = "paid"    // 已发放
 )
 
@@ -52,12 +52,12 @@ type SrpApplication struct {
 	RecommendedAmount float64 `gorm:"not null;default:0"                     json:"recommended_amount"`
 	FinalAmount       float64 `gorm:"not null;default:0"                     json:"final_amount"`
 	// 审批
-	ReviewStatus string     `gorm:"size:32;not null;default:'pending';index" json:"review_status"`
+	ReviewStatus string     `gorm:"size:32;not null;default:'submitted';index" json:"review_status"`
 	ReviewedBy   *uint      `gorm:""                                         json:"reviewed_by,omitempty"`
 	ReviewedAt   *time.Time `gorm:""                                         json:"reviewed_at,omitempty"`
 	ReviewNote   string     `gorm:"size:512"                                 json:"review_note"`
 	// 发放
-	PayoutStatus string     `gorm:"size:32;not null;default:'pending';index" json:"payout_status"`
+	PayoutStatus string     `gorm:"size:32;not null;default:'notpaid';index" json:"payout_status"`
 	PaidBy       *uint      `gorm:""                                         json:"paid_by,omitempty"`
 	PaidAt       *time.Time `gorm:""                                         json:"paid_at,omitempty"`
 

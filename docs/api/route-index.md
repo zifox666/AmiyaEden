@@ -174,7 +174,7 @@ source_of_truth:
 | POST | `/srp/killmails/detail` | KM 详情 | Login |
 | POST | `/srp/open-info-window` | 打开游戏内信息窗口 | Login |
 | GET | `/srp/applications` | 审核列表 | `RequirePermission(srp:review)` |
-| PUT | `/srp/applications/auto-approve` | 自动审批符合规则的待审批申请 | `RequirePermission(srp:review)` |
+| PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequirePermission(srp:review)` |
 | GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequirePermission(srp:review)` |
 | GET | `/srp/applications/:id` | 审核详情 | `RequirePermission(srp:review)` |
 | PUT | `/srp/applications/:id/review` | 审核申请 | `RequirePermission(srp:review)` |

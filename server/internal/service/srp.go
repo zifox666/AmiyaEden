@@ -13,6 +13,11 @@ import (
 	"time"
 )
 
+// slotCategory 将 HiSlot0, HiSlot1 等 flagName 归类为 "HiSlot"
+func slotCategory(flagName string) string {
+	return strings.TrimRight(flagName, "0123456789")
+}
+
 // SrpService 补损业务逻辑层
 type SrpService struct {
 	repo      *repository.SrpRepository
@@ -20,6 +25,7 @@ type SrpService struct {
 	charRepo  *repository.EveCharacterRepository
 	userRepo  *repository.UserRepository
 	sdeRepo   *repository.SdeRepository
+	kmRepo    *repository.KillmailRepository
 	ssoSvc    *EveSSOService
 }
 
@@ -30,6 +36,7 @@ func NewSrpService() *SrpService {
 		charRepo:  repository.NewEveCharacterRepository(),
 		userRepo:  repository.NewUserRepository(),
 		sdeRepo:   repository.NewSdeRepository(),
+		kmRepo:    repository.NewKillmailRepository(),
 		ssoSvc:    NewEveSSOService(),
 	}
 }
@@ -39,18 +46,17 @@ func NewSrpService() *SrpService {
 // ─────────────────────────────────────────────
 
 // resolveCharacterKillmail 确认 killmailID 与 characterID 有关联，并返回 EveKillmailList
-func resolveCharacterKillmail(killmailID int64, characterID int64) (*model.EveKillmailList, error) {
+func (s *SrpService) resolveCharacterKillmail(killmailID int64, characterID int64) (*model.EveKillmailList, error) {
 	// 验证角色-KM 关联关系
-	var ckm model.EveCharacterKillmail
-	if err := global.DB.Where("character_id = ? AND killmail_id = ?", characterID, killmailID).First(&ckm).Error; err != nil {
+	if _, err := s.kmRepo.GetCharacterKillmailLink(characterID, killmailID); err != nil {
 		return nil, errors.New("该 KM 不属于指定角色，或尚未被 ESI 刷新任务录入")
 	}
 	// 加载 KM 详情
-	var km model.EveKillmailList
-	if err := global.DB.Where("kill_mail_id = ?", killmailID).First(&km).Error; err != nil {
+	km, err := s.kmRepo.GetKillmailByID(killmailID)
+	if err != nil {
 		return nil, errors.New("KM 详情不存在")
 	}
-	return &km, nil
+	return km, nil
 }
 
 // ─────────────────────────────────────────────
@@ -109,7 +115,6 @@ type SubmitApplicationRequest struct {
 	KillmailID  int64   `json:"killmail_id"   binding:"required"` // zkillboard killmail id
 	FleetID     *string `json:"fleet_id"`                         // 关联舰队（可选）
 	Note        string  `json:"note"`                             // 备注（无舰队时必填）
-	FinalAmount float64 `json:"final_amount"`                     // 用户可以修改推荐金额（后台也可修改）
 }
 
 // SubmitApplication 提交补损申请
@@ -131,7 +136,7 @@ func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationReques
 	}
 
 	// 4. 获取 KM 详情（验证角色与 KM 关联）
-	km, err := resolveCharacterKillmail(req.KillmailID, req.CharacterID)
+	km, err := s.resolveCharacterKillmail(req.KillmailID, req.CharacterID)
 	if err != nil {
 		return nil, err
 	}
@@ -165,16 +170,9 @@ func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationReques
 		}
 	}
 
-	// 7. 查找推荐金额
-	recommended := 0.0
-	if priceRecord, perr := s.repo.GetShipPriceByTypeID(km.ShipTypeID); perr == nil {
-		recommended = priceRecord.Amount
-	}
-
-	finalAmount := req.FinalAmount
-	if finalAmount <= 0 {
-		finalAmount = recommended
-	}
+	// 7. 计算 SRP 推荐金额（共用推荐金额计算逻辑）
+	autoSrpSvc := NewAutoSrpService()
+	recommended, _ := autoSrpSvc.RecommendSrpAmount(km.ShipTypeID, req.KillmailID, req.FleetID)
 
 	// 8. 构建申请
 	app := &model.SrpApplication{
@@ -192,9 +190,9 @@ func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationReques
 		CorporationID:     km.CorporationID,
 		AllianceID:        km.AllianceID,
 		RecommendedAmount: recommended,
-		FinalAmount:       finalAmount,
-		ReviewStatus:      model.SrpReviewPending,
-		PayoutStatus:      model.SrpPayoutPending,
+		FinalAmount:       recommended,
+		ReviewStatus:      model.SrpReviewSubmitted,
+		PayoutStatus:      model.SrpPayoutNotPaid,
 	}
 
 	if err := s.repo.CreateApplication(app); err != nil {
@@ -312,12 +310,8 @@ func (s *SrpService) GetApplication(id uint) (*SrpApplicationResponse, error) {
 	return resp, nil
 }
 
-// ListBatchPayoutSummary 查询管理端批量发放汇总
-func (s *SrpService) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryResponse, error) {
-	rows, err := s.repo.ListBatchPayoutSummary()
-	if err != nil {
-		return nil, err
-	}
+// enrichBatchPayoutSummaryRows 批量填充用户昵称和主角色名到汇总行
+func (s *SrpService) enrichBatchPayoutSummaryRows(rows []repository.SrpBatchPayoutSummaryRow) ([]SrpBatchPayoutSummaryResponse, error) {
 	if len(rows) == 0 {
 		return []SrpBatchPayoutSummaryResponse{}, nil
 	}
@@ -373,38 +367,13 @@ func (s *SrpService) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryResponse, 
 	return result, nil
 }
 
-func (s *SrpService) buildBatchPayoutSummaryResponse(row *repository.SrpBatchPayoutSummaryRow) (*SrpBatchPayoutSummaryResponse, error) {
-	resp := &SrpBatchPayoutSummaryResponse{
-		UserID:           row.UserID,
-		TotalAmount:      row.TotalAmount,
-		ApplicationCount: row.ApplicationCount,
-	}
-
-	users, err := s.userRepo.ListByIDs([]uint{row.UserID})
+// ListBatchPayoutSummary 查询管理端批量发放汇总
+func (s *SrpService) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryResponse, error) {
+	rows, err := s.repo.ListBatchPayoutSummary()
 	if err != nil {
 		return nil, err
 	}
-	chars, err := s.charRepo.ListByUserIDs([]uint{row.UserID})
-	if err != nil {
-		return nil, err
-	}
-
-	charNameByID := make(map[int64]string, len(chars))
-	for _, char := range chars {
-		charNameByID[char.CharacterID] = char.CharacterName
-	}
-
-	if len(users) > 0 {
-		resp.Nickname = users[0].Nickname
-		resp.MainCharacterID = users[0].PrimaryCharacterID
-		resp.MainCharacterName = charNameByID[users[0].PrimaryCharacterID]
-	}
-	if resp.MainCharacterName == "" && len(chars) > 0 {
-		resp.MainCharacterID = chars[0].CharacterID
-		resp.MainCharacterName = chars[0].CharacterName
-	}
-
-	return resp, nil
+	return s.enrichBatchPayoutSummaryRows(rows)
 }
 
 // ─────────────────────────────────────────────
@@ -418,20 +387,30 @@ type ReviewApplicationRequest struct {
 	FinalAmount float64 `json:"final_amount"`                                         // 批准时可以修改金额
 }
 
-type AutoApprovePendingApplicationsResponse struct {
+type RunFleetAutoApprovalResponse struct {
 	CheckedCount  int `json:"checked_count"`
 	ApprovedCount int `json:"approved_count"`
 	SkippedCount  int `json:"skipped_count"`
 }
 
-func canManualAutoApproveApplication(app *model.SrpApplication, fleet *model.Fleet) bool {
+type RunFleetAutoApprovalRequest struct {
+	FleetID string `json:"fleet_id" binding:"required"`
+}
+
+func canManualAutoApproveApplication(app *model.SrpApplication, fleet *model.Fleet, selectedFleetID string) bool {
 	if app == nil || fleet == nil {
 		return false
 	}
-	if app.ReviewStatus != model.SrpReviewPending {
+	if selectedFleetID == "" {
+		return false
+	}
+	if app.ReviewStatus != model.SrpReviewSubmitted {
 		return false
 	}
 	if app.FleetID == nil || *app.FleetID == "" {
+		return false
+	}
+	if *app.FleetID != selectedFleetID {
 		return false
 	}
 	if fleet.ID != *app.FleetID {
@@ -494,13 +473,17 @@ func (s *SrpService) ReviewApplication(reviewerID uint, appID uint, req *ReviewA
 	return app, nil
 }
 
-func (s *SrpService) AutoApprovePendingApplications(reviewerID uint) (*AutoApprovePendingApplicationsResponse, error) {
-	apps, err := s.repo.ListPendingLinkedApplications()
+func (s *SrpService) RunFleetAutoApproval(reviewerID uint, fleetID string) (*RunFleetAutoApprovalResponse, error) {
+	if fleetID == "" {
+		return nil, errors.New("fleet_id 不能为空")
+	}
+
+	apps, err := s.repo.ListSubmittedLinkedApplicationsByFleet(fleetID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := &AutoApprovePendingApplicationsResponse{CheckedCount: len(apps)}
+	result := &RunFleetAutoApprovalResponse{CheckedCount: len(apps)}
 	if len(apps) == 0 {
 		return result, nil
 	}
@@ -531,7 +514,7 @@ func (s *SrpService) AutoApprovePendingApplications(reviewerID uint) (*AutoAppro
 		if ctx != nil {
 			fleet = ctx.fleet
 		}
-		if !canManualAutoApproveApplication(app, fleet) {
+		if !canManualAutoApproveApplication(app, fleet, fleetID) {
 			result.SkippedCount++
 			continue
 		}
@@ -600,7 +583,7 @@ func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayo
 	summary, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
 	if err != nil {
 		switch {
-		case errors.Is(err, repository.ErrNoPendingBatchPayoutApplications):
+		case errors.Is(err, repository.ErrNoApprovedUnpaidBatchPayoutApplications):
 			return nil, errors.New("该用户没有可批量发放的 SRP 申请")
 		case errors.Is(err, repository.ErrBatchPayoutSelectionChanged):
 			return nil, errors.New("待发放申请已变更，请刷新后重试")
@@ -609,11 +592,11 @@ func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayo
 		}
 	}
 
-	resp, err := s.buildBatchPayoutSummaryResponse(summary)
+	enriched, err := s.enrichBatchPayoutSummaryRows([]repository.SrpBatchPayoutSummaryRow{*summary})
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return &enriched[0], nil
 }
 
 // ─────────────────────────────────────────────
@@ -707,8 +690,8 @@ func (s *SrpService) GetMyKillmails(userID uint, characterID int64) ([]FleetKill
 		}
 	}
 
-	var ckmList []model.EveCharacterKillmail
-	if err := global.DB.Where("character_id IN ?", charIDs).Find(&ckmList).Error; err != nil {
+	ckmList, err := s.kmRepo.ListCharacterKillmailsByCharacterIDs(charIDs)
+	if err != nil {
 		return nil, err
 	}
 	if len(ckmList) == 0 {
@@ -725,11 +708,8 @@ func (s *SrpService) GetMyKillmails(userID uint, characterID int64) ([]FleetKill
 	// 只查询最近 30 天的 KM
 	since := time.Now().AddDate(0, 0, -30)
 
-	var kms []model.EveKillmailList
-	if err := global.DB.Where("kill_mail_id IN ? AND kill_mail_time >= ?", kmIDs, since).
-		Order("kill_mail_time DESC").
-		Limit(200).
-		Find(&kms).Error; err != nil {
+	kms, err := s.kmRepo.ListKillmailsByIDsSince(kmIDs, since, 200)
+	if err != nil {
 		return nil, err
 	}
 
@@ -792,8 +772,8 @@ func (s *SrpService) GetFleetKillmails(userID uint, fleetID string) ([]FleetKill
 	}
 
 	// 4. 查询这些角色在舰队时间段内的 KM
-	var ckmList []model.EveCharacterKillmail
-	if err := global.DB.Where("character_id IN ?", validCharIDs).Find(&ckmList).Error; err != nil {
+	ckmList, err := s.kmRepo.ListCharacterKillmailsByCharacterIDs(validCharIDs)
+	if err != nil {
 		return nil, err
 	}
 	if len(ckmList) == 0 {
@@ -808,9 +788,8 @@ func (s *SrpService) GetFleetKillmails(userID uint, fleetID string) ([]FleetKill
 		kmIDs = append(kmIDs, kid)
 	}
 
-	var kms []model.EveKillmailList
-	if err := global.DB.Where("kill_mail_id IN ? AND kill_mail_time >= ? AND kill_mail_time <= ?",
-		kmIDs, fleet.StartAt, fleet.EndAt).Find(&kms).Error; err != nil {
+	kms, err := s.kmRepo.ListKillmailsByIDsInTimeRange(kmIDs, fleet.StartAt, fleet.EndAt)
+	if err != nil {
 		return nil, err
 	}
 
@@ -874,11 +853,6 @@ type KillmailDetailResponse struct {
 	Slots         []KillmailSlotGroup `json:"slots"`
 }
 
-// slotCategory 将 HiSlot0, HiSlot1 等 flagName 归类为 "HiSlot"
-func slotCategory(flagName string) string {
-	return strings.TrimRight(flagName, "0123456789")
-}
-
 // slotCategoryNames 槽位类别的中英文显示名
 var slotCategoryNames = map[string]map[string]string{
 	"HiSlot":              {"zh": "高槽", "en": "High Slots"},
@@ -904,14 +878,15 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 	}
 
 	// 1. 查询 KM 主记录
-	var km model.EveKillmailList
-	if err := global.DB.Where("kill_mail_id = ?", req.KillmailID).First(&km).Error; err != nil {
+	kmPtr, err := s.kmRepo.GetKillmailByID(req.KillmailID)
+	if err != nil {
 		return nil, errors.New("KM 不存在")
 	}
+	km := *kmPtr
 
 	// 2. 查询 KM 所有物品
-	var items []model.EveKillmailItem
-	if err := global.DB.Where("kill_mail_id = ?", req.KillmailID).Find(&items).Error; err != nil {
+	items, err := s.kmRepo.ListKillmailItemsByKillmailID(req.KillmailID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -955,8 +930,7 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 
 	// 6. 查角色名
 	charName := ""
-	var char model.EveCharacter
-	if err := global.DB.Where("character_id = ?", km.CharacterID).First(&char).Error; err == nil {
+	if char, cerr := s.charRepo.GetByCharacterID(km.CharacterID); cerr == nil {
 		charName = char.CharacterName
 	}
 

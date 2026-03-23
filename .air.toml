@@ -1,0 +1,10 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "cd server && go build -o ../tmp/server main.go"
+  bin = "tmp/server"
+  full_bin = "cd server && ../tmp/server"
+  include_ext = ["go", "yaml", "yml", "json"]
+  exclude_dir = ["tmp", "docs", "static", "node_modules", "bin", ".git"]
+  exclude_regex = ["_test.go"]

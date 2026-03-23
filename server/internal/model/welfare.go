@@ -50,9 +50,9 @@ func (Welfare) TableName() string { return "welfare" }
 // ─── 申请状态 ───
 
 const (
-	WelfareAppStatusPendingDelivery = "pending_delivery"
-	WelfareAppStatusDelivered       = "delivered"
-	WelfareAppStatusRejected        = "rejected"
+	WelfareAppStatusRequested = "requested"
+	WelfareAppStatusDelivered  = "delivered"
+	WelfareAppStatusRejected   = "rejected"
 )
 
 // WelfareApplication 福利申请记录
@@ -64,7 +64,7 @@ type WelfareApplication struct {
 	CharacterName string     `gorm:"size:128"                  json:"character_name"`
 	QQ            string     `gorm:"size:20"                   json:"qq"`
 	DiscordID     string     `gorm:"size:20"                   json:"discord_id"`
-	Status        string     `gorm:"size:20;default:'pending_delivery';index" json:"status"`
+	Status        string     `gorm:"size:20;default:'requested';index" json:"status"`
 	ReviewedBy    uint       `gorm:"default:0"                 json:"reviewed_by"`
 	ReviewedAt    *time.Time `gorm:""                          json:"reviewed_at"`
 }

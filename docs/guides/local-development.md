@@ -2,8 +2,10 @@
 status: active
 doc_type: guide
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-03-23
 source_of_truth:
+  - Makefile
+  - .air.toml
   - server/config/config.example.yaml
   - server/go.mod
   - static/package.json
@@ -15,30 +17,44 @@ source_of_truth:
 
 ## 目的
 
-本文件提供一个比根目录 `README.md` 更面向开发者日常工作的入口，覆盖：
+本指南只回答三件事：
 
-- 本地依赖
-- 最小启动步骤
-- 常用命令
-- 常见前后端联调方式
+- 首次本地开发要准备什么
+- 日常开发怎么一条命令启动
+- 出问题时先看哪里
 
-## 运行依赖
+## 快速开始
+
+```bash
+cp server/config/config.example.yaml server/config/config.yaml
+docker compose -f docker-compose.example.yml up -d postgres redis
+cd static && pnpm install && cd ..
+make dev
+```
+
+说明：
+
+- `make dev` 会同时启动后端（Air 热重载）和前端（Vite dev server）
+- `Ctrl-C` 会同时停止前后端
+
+## 依赖要求
 
 - Go `>= 1.24`
 - Node.js `>= 20.19.0`
 - pnpm `>= 8.8.0`
+- Air（Go 热重载工具）
 - PostgreSQL
 - Redis
 
-## 后端启动
+## 首次初始化
 
-### 1. 准备配置
+### 1. 准备后端配置
 
 ```bash
 cp server/config/config.example.yaml server/config/config.yaml
 ```
 
-至少检查：
+至少检查这些字段：
 
 - `server.port`
 - `database.*`
@@ -54,37 +70,66 @@ cp server/config/config.example.yaml server/config/config.yaml
 - `eve_sso.eve_images_base_url`
 - `sde.api_key`
 
-### 2. 准备依赖服务
+### 2. 启动依赖服务
 
 ```bash
 docker compose -f docker-compose.example.yml up -d postgres redis
 ```
 
-### 3. 启动后端
+### 3. 安装 Air（若未安装）
 
 ```bash
-cd server
-go run main.go
+go install github.com/air-verse/air@latest
+export PATH="$PATH:$(go env GOPATH)/bin"
+air -v
 ```
 
-## 前端启动
-
-### 1. 准备依赖
+### 4. 安装前端依赖（首次或依赖变更后）
 
 ```bash
 cd static
 pnpm install
+cd ..
 ```
 
-### 2. 准备 Vite 环境变量
+## 日常开发启动
 
-当前仓库没有提交前端 `.env.example`，但已经提交了可直接作为起点的默认文件：
+```bash
+make dev
+```
+
+实际行为：
+
+- 后端：使用仓库根目录 `.air.toml`，监听 `server/` 代码变更并自动重启
+- 前端：在 `static/` 下执行 `pnpm dev`
+- 后端进程会在 `server/` 目录执行，因此 `./config` 这类相对路径可正常解析
+
+## 可选：分开启动前后端
+
+只在你明确需要分开调试时使用。
+
+后端：
+
+```bash
+air -c .air.toml
+```
+
+前端：
+
+```bash
+cd static
+pnpm dev
+```
+
+## 前端环境变量说明
+
+仓库已提供默认开发环境文件：
 
 - `static/.env.development`
 - `static/.env.development.local`
 - `static/.env.production`
 
-本地开发通常不需要从空白开始创建环境变量；大多数情况下只要按机器环境覆盖其中少量值即可。常见需要关注的变量是：
+本地联调常见关注项：
 
 ```bash
 VITE_VERSION=dev
@@ -98,29 +143,16 @@ VITE_LOCK_ENCRYPT_KEY=change_me
 VITE_OPEN_ROUTE_INFO=false
 ```
 
-说明：
+## 常用校验命令
 
-- 当前仓库默认通过 `VITE_API_PROXY_URL=http://localhost:8080` 把 `/api` 代理到本地后端
-- `VITE_API_URL` 在开发环境下默认可保持为 `/`
-- 如果你只是在默认本地联调环境运行，通常不需要修改全部变量
-
-### 3. 启动前端
-
-```bash
-cd static
-pnpm dev
-```
-
-## 常用开发命令
-
-### Backend
+后端：
 
 ```bash
 cd server && go test ./...
 cd server && go build ./...
 ```
 
-### Frontend
+前端：
 
 ```bash
 cd static && pnpm lint .
@@ -129,39 +161,27 @@ cd static && pnpm test:unit
 cd static && pnpm build
 ```
 
-## 常见开发场景
+## 常见问题
 
-### 改后端接口
+`make dev` 提示找不到 `air`：
 
-通常至少做这些事：
+- 先执行安装命令
+- 确认 `$(go env GOPATH)/bin` 在 `PATH` 里
 
-1. 修改 `handler -> service -> repository`
-2. 更新 `static/src/api/`
-3. 更新 `static/src/types/api/api.d.ts`
-4. 跑 `go test ./...`、`go build ./...`
-5. 跑 `pnpm exec vue-tsc --noEmit`
+`make dev` 前端启动失败：
 
-### 改前端页面
+- 在 `static/` 执行 `pnpm install`
+- 确认 Node.js 与 pnpm 版本满足本指南要求
 
-通常至少做这些事：
+后端报配置文件读取失败：
 
-1. 修改 `view`
-2. 如有共享逻辑，抽到 `hooks` 或 `components`
-3. 补齐 i18n 文案
-4. 跑 `pnpm lint .`
-5. 跑 `pnpm exec vue-tsc --noEmit`
+- 检查 `server/config/config.yaml` 是否存在
+- 检查文件名是否是 `config.yaml`（不是 `config.yml`）
 
-### 改风险逻辑或修 bug
+## 配套文档
 
-除构建验证外，优先补回归测试，细则见：
-
-- `AGENTS.md`
-- `docs/standards/testing-and-verification.md`
-- `docs/guides/testing-guide.md`
-
-## 与文档配套阅读
-
-- 想知道目录职责：看 `docs/architecture/module-map.md`
-- 想知道架构规则：看 `docs/architecture/overview.md`
-- 想知道接口与路由面：看 `docs/api/route-index.md`
-- 想知道当前功能边界：看 `docs/features/README.md`
+- 目录职责：`docs/architecture/module-map.md`
+- 架构总览：`docs/architecture/overview.md`
+- 接口与路由：`docs/api/route-index.md`
+- 测试规范：`docs/standards/testing-and-verification.md`
+- 测试实践：`docs/guides/testing-guide.md`

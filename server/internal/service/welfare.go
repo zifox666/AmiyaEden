@@ -432,8 +432,8 @@ type ApplyForWelfareRequest struct {
 	CharacterID int64 `json:"character_id"`
 }
 
-func initialWelfareApplicationStatus() string {
-	return model.WelfareAppStatusPendingDelivery
+func initialWelfareApplicationRequestedStatus() string {
+	return model.WelfareAppStatusRequested
 }
 
 // ApplyForWelfare 申请福利
@@ -555,7 +555,7 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 		CharacterName: selectedChar.CharacterName,
 		QQ:            user.QQ,
 		DiscordID:     user.DiscordID,
-		Status:        initialWelfareApplicationStatus(),
+		Status:        initialWelfareApplicationRequestedStatus(),
 	}
 
 	if err := s.repo.CreateApplication(app); err != nil {
@@ -673,12 +673,12 @@ type AdminReviewApplicationRequest struct {
 func validateReviewTransition(currentStatus, action string) (string, error) {
 	switch action {
 	case "deliver":
-		if currentStatus != model.WelfareAppStatusPendingDelivery {
+		if currentStatus != model.WelfareAppStatusRequested {
 			return "", errors.New("只能对待发放的申请进行发放操作")
 		}
 		return model.WelfareAppStatusDelivered, nil
 	case "reject":
-		if currentStatus != model.WelfareAppStatusPendingDelivery {
+		if currentStatus != model.WelfareAppStatusRequested {
 			return "", errors.New("只能对待发放的申请进行拒绝操作")
 		}
 		return model.WelfareAppStatusRejected, nil

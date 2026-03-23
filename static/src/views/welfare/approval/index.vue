@@ -78,7 +78,7 @@
   const STATUS_CONFIG = computed(
     () =>
       ({
-        pending_delivery: { label: t('welfareApproval.statusPendingDelivery'), type: 'warning' },
+        requested: { label: t('welfareApproval.statusRequested'), type: 'warning' },
         delivered: { label: t('welfareApproval.statusDelivered'), type: 'success' },
         rejected: { label: t('welfareApproval.statusRejected'), type: 'danger' }
       }) as Record<string, { label: string; type: string }>
@@ -186,7 +186,7 @@
   } = useTable({
     core: {
       apiFn: adminListApplications,
-      apiParams: { current: 1, size: 50, status: 'pending_delivery' },
+      apiParams: { current: 1, size: 50, status: 'requested' },
       columnsFactory: () => [
         ...buildBaseColumns(),
         {

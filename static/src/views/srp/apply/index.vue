@@ -260,7 +260,7 @@
             h(
               'span',
               {},
-              row.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.unpaid')
+              row.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.notpaid')
             )
         },
         {
@@ -319,7 +319,6 @@
     fleet_id: '',
     killmail_id: 0,
     note: '',
-    final_amount: 0,
     recommended_amount: 0
   })
 
@@ -425,8 +424,7 @@
         character_id: form.character_id,
         killmail_id: form.killmail_id,
         fleet_id: fleetId,
-        note: form.note,
-        final_amount: form.final_amount
+        note: form.note
       })
       ElMessage.success(t('srp.apply.submitSuccess'))
       formRef.value?.resetFields()
@@ -479,10 +477,10 @@
     ] ?? 'info'
   const reviewStatusLabel = (s: string) =>
     ({
-      pending: t('srp.status.pending'),
+      submitted: t('srp.status.submitted'),
       approved: t('srp.status.approved'),
       rejected: t('srp.status.rejected')
-    })[s as 'pending' | 'approved' | 'rejected'] ?? s
+    })[s as 'submitted' | 'approved' | 'rejected'] ?? s
 
   /* ── 初始化 ── */
   onMounted(async () => {

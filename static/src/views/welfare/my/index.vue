@@ -174,7 +174,7 @@
   const STATUS_CONFIG = computed(
     () =>
       ({
-        pending_delivery: { label: t('welfareMy.statusPendingDelivery'), type: 'warning' },
+        requested: { label: t('welfareMy.statusRequested'), type: 'warning' },
         delivered: { label: t('welfareMy.statusDelivered'), type: 'success' },
         rejected: { label: t('welfareMy.statusRejected'), type: 'danger' }
       }) as Record<string, { label: string; type: string }>

@@ -18,6 +18,7 @@ type AutoSrpService struct {
 	srpRepo         *repository.SrpRepository
 	charRepo        *repository.EveCharacterRepository
 	sdeRepo         *repository.SdeRepository
+	kmRepo          *repository.KillmailRepository
 }
 
 type autoSRPFleetContext struct {
@@ -35,6 +36,7 @@ func NewAutoSrpService() *AutoSrpService {
 		srpRepo:         repository.NewSrpRepository(),
 		charRepo:        repository.NewEveCharacterRepository(),
 		sdeRepo:         repository.NewSdeRepository(),
+		kmRepo:          repository.NewKillmailRepository(),
 	}
 }
 
@@ -49,48 +51,11 @@ func (s *AutoSrpService) ProcessAutoSRP(fleetID string) {
 	if fleet.AutoSrpMode == model.FleetAutoSrpDisabled {
 		return
 	}
-	if fleet.FleetConfigID == nil || *fleet.FleetConfigID == 0 {
-		global.Logger.Warn("[AutoSRP] 舰队未关联配置，跳过", zap.String("fleet_id", fleetID))
-		return
-	}
 
-	// 获取舰队配置的装配列表
-	fittings, err := s.fleetConfigRepo.ListFittingsByConfigID(*fleet.FleetConfigID)
-	if err != nil || len(fittings) == 0 {
-		global.Logger.Warn("[AutoSRP] 获取配置装配失败或为空", zap.String("fleet_id", fleetID), zap.Error(err))
-		return
-	}
-
-	// 按 ship_type_id → fitting 映射
-	fittingByShip := make(map[int64]*model.FleetConfigFitting)
-	fittingIDs := make([]uint, len(fittings))
-	for i := range fittings {
-		fittingByShip[fittings[i].ShipTypeID] = &fittings[i]
-		fittingIDs[i] = fittings[i].ID
-	}
-
-	// 预加载所有配置物品
-	configItems, err := s.fleetConfigRepo.ListItemsByFittingIDs(fittingIDs)
+	ctx, err := s.buildFleetContext(fleetID)
 	if err != nil {
-		global.Logger.Warn("[AutoSRP] 获取配置物品失败", zap.String("fleet_id", fleetID), zap.Error(err))
+		global.Logger.Warn("[AutoSRP] 构建舰队上下文失败", zap.String("fleet_id", fleetID), zap.Error(err))
 		return
-	}
-	itemsByFitting := make(map[uint][]model.FleetConfigFittingItem)
-	allItemIDs := make([]uint, 0, len(configItems))
-	for _, item := range configItems {
-		itemsByFitting[item.FleetConfigFittingID] = append(itemsByFitting[item.FleetConfigFittingID], item)
-		allItemIDs = append(allItemIDs, item.ID)
-	}
-
-	// 预加载所有替代品
-	allReplacements, err := s.fleetConfigRepo.ListReplacementsByItemIDs(allItemIDs)
-	if err != nil {
-		global.Logger.Warn("[AutoSRP] 获取替代品失败", zap.String("fleet_id", fleetID), zap.Error(err))
-		return
-	}
-	repByItem := make(map[uint][]model.FleetConfigFittingItemReplacement)
-	for _, r := range allReplacements {
-		repByItem[r.FleetConfigFittingItemID] = append(repByItem[r.FleetConfigFittingItemID], r)
 	}
 
 	// 获取舰队成员
@@ -101,7 +66,7 @@ func (s *AutoSrpService) ProcessAutoSRP(fleetID string) {
 	}
 
 	for _, member := range members {
-		s.processOneMember(fleet, member, fittingByShip, itemsByFitting, repByItem)
+		s.processOneMember(fleet, member, ctx.fittingByShip, ctx.itemsByFitting, ctx.repByItem)
 	}
 
 	global.Logger.Info("[AutoSRP] 处理完毕",
@@ -169,6 +134,33 @@ func autoApproveReviewNote() string {
 	return "补损根据舰队的自动补损设置，已由系统自动批准。"
 }
 
+// RecommendSrpAmount 计算 SRP 推荐金额（手动 SRP 与自动 SRP 共用）。
+// 若舰队满足装配验证前置条件（mode != disabled、有配置、有匹配装配），
+// 则使用配置金额+装配验证；否则回退到全局舰船价格表。
+func (s *AutoSrpService) RecommendSrpAmount(shipTypeID int64, killmailID int64, fleetID *string) (float64, string) {
+	if fleetID != nil && *fleetID != "" {
+		ctx, err := s.buildFleetContext(*fleetID)
+		if err == nil && ctx.fleet.AutoSrpMode != model.FleetAutoSrpDisabled {
+			if fitting, ok := ctx.fittingByShip[shipTypeID]; ok {
+				baseAmount := s.getBaseAmount(fitting, shipTypeID)
+				finalAmount, note, _ := s.validateFitting(
+					killmailID,
+					ctx.itemsByFitting[fitting.ID],
+					ctx.repByItem,
+					baseAmount,
+				)
+				return finalAmount, note
+			}
+		}
+	}
+
+	// 回退：全局舰船价格表
+	if price, err := s.srpRepo.GetShipPriceByTypeID(shipTypeID); err == nil {
+		return price.Amount, ""
+	}
+	return 0, ""
+}
+
 func (s *AutoSrpService) evaluateApplicationWithContext(
 	ctx *autoSRPFleetContext,
 	app *model.SrpApplication,
@@ -179,13 +171,13 @@ func (s *AutoSrpService) evaluateApplicationWithContext(
 	}
 
 	baseAmount := s.getBaseAmount(fitting, app.ShipTypeID)
-	finalAmount, validationNote := s.validateFitting(
+	finalAmount, validationNote, skip := s.validateFitting(
 		app.KillmailID,
 		ctx.itemsByFitting[fitting.ID],
 		ctx.repByItem,
 		baseAmount,
 	)
-	return baseAmount, finalAmount, validationNote, true
+	return baseAmount, finalAmount, validationNote, !skip && finalAmount > 0
 }
 
 // processOneMember 处理单个成员的自动 SRP
@@ -197,13 +189,8 @@ func (s *AutoSrpService) processOneMember(
 	repByItem map[uint][]model.FleetConfigFittingItemReplacement,
 ) {
 	// 查找该成员的受害 KM
-	var killmails []model.EveCharacterKillmail
-	if err := global.DB.Where(
-		"character_id = ? AND victim = ?", member.CharacterID, true,
-	).Find(&killmails).Error; err != nil {
-		return
-	}
-	if len(killmails) == 0 {
+	killmails, err := s.kmRepo.ListVictimKillmailsByCharacterID(member.CharacterID)
+	if err != nil || len(killmails) == 0 {
 		return
 	}
 
@@ -212,11 +199,8 @@ func (s *AutoSrpService) processOneMember(
 	for i, ckm := range killmails {
 		killmailIDs[i] = ckm.KillmailID
 	}
-	var kmList []model.EveKillmailList
-	if err := global.DB.Where(
-		"kill_mail_id IN ? AND kill_mail_time BETWEEN ? AND ?",
-		killmailIDs, fleet.StartAt, fleet.EndAt,
-	).Find(&kmList).Error; err != nil {
+	kmList, err := s.kmRepo.ListKillmailsByIDsInTimeRange(killmailIDs, fleet.StartAt, fleet.EndAt)
+	if err != nil {
 		return
 	}
 	kmByID := make(map[int64]model.EveKillmailList, len(kmList))
@@ -236,8 +220,15 @@ func (s *AutoSrpService) processOneMember(
 			continue
 		}
 
-		// 确定 SRP 金额
+		// 确定 SRP 推荐金额（两种模式都执行装配验证）
 		baseAmount := s.getBaseAmount(fitting, km.ShipTypeID)
+		configItemsForFitting := itemsByFitting[fitting.ID]
+		recommendedAmount, _, _ := s.validateFitting(km.KillmailID, configItemsForFitting, repByItem, baseAmount)
+
+		// 推荐金额为 0 时跳过，不产生申请
+		if recommendedAmount == 0 {
+			continue
+		}
 
 		// 提交 SRP 申请
 		fleetID := fleet.ID
@@ -253,16 +244,13 @@ func (s *AutoSrpService) processOneMember(
 			KillmailTime:      km.KillmailTime,
 			CorporationID:     km.CorporationID,
 			AllianceID:        km.AllianceID,
-			RecommendedAmount: baseAmount,
-			FinalAmount:       baseAmount,
-			ReviewStatus:      model.SrpReviewPending,
-			PayoutStatus:      model.SrpPayoutPending,
+			RecommendedAmount: recommendedAmount,
+			FinalAmount:       recommendedAmount,
+			ReviewStatus:      model.SrpReviewSubmitted,
+			PayoutStatus:      model.SrpPayoutNotPaid,
 		}
 
 		if fleet.AutoSrpMode == model.FleetAutoSrpAutoApprove {
-			configItemsForFitting := itemsByFitting[fitting.ID]
-			finalAmount, _ := s.validateFitting(km.KillmailID, configItemsForFitting, repByItem, baseAmount)
-			app.FinalAmount = finalAmount
 			app.ReviewStatus = model.SrpReviewApproved
 			now := time.Now()
 			app.ReviewedAt = &now
@@ -299,21 +287,23 @@ func (s *AutoSrpService) getBaseAmount(fitting *model.FleetConfigFitting, shipTy
 	return 0
 }
 
-// validateFitting 验证 KM 装配是否符合配置要求，返回最终金额和不符说明
+// validateFitting 验证 KM 装配是否符合配置要求。
+// 返回 (最终金额, 不符说明, 是否应跳过该 KM)。
+// skip=true 表示存在 penalty=none 的不符项，调用方不应创建/批准该申请。
 func (s *AutoSrpService) validateFitting(
 	killmailID int64,
 	configItems []model.FleetConfigFittingItem,
 	repByItem map[uint][]model.FleetConfigFittingItemReplacement,
 	baseAmount float64,
-) (float64, string) {
+) (float64, string, bool) {
 	if len(configItems) == 0 {
-		return baseAmount, ""
+		return baseAmount, "", false
 	}
 
 	// 获取 KM 物品
-	var kmItems []model.EveKillmailItem
-	if err := global.DB.Where("kill_mail_id = ?", killmailID).Find(&kmItems).Error; err != nil {
-		return baseAmount, ""
+	kmItems, err := s.kmRepo.ListKillmailItemsByKillmailID(killmailID)
+	if err != nil {
+		return baseAmount, "", false
 	}
 
 	// 获取 KM 物品的 flag 名称
@@ -327,7 +317,7 @@ func (s *AutoSrpService) validateFitting(
 	}
 	flagInfos, err := s.sdeRepo.GetFlags(flagIDs)
 	if err != nil {
-		return baseAmount, ""
+		return baseAmount, "", false
 	}
 	flagNameMap := make(map[int]string, len(flagInfos))
 	for _, fi := range flagInfos {
@@ -427,16 +417,16 @@ func (s *AutoSrpService) validateFitting(
 	}
 
 	if len(mismatches) == 0 {
-		return baseAmount, ""
+		return baseAmount, "", false
 	}
 
 	note := "装配不符: " + strings.Join(mismatches, "; ")
 
 	if hasNone {
-		return 0, note
+		return 0, note, true
 	}
 	if hasHalf {
-		return baseAmount * 0.5, note
+		return baseAmount * 0.5, note, false
 	}
-	return baseAmount, note
+	return baseAmount, note, false
 }
