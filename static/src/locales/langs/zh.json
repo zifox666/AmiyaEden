@@ -510,7 +510,12 @@
     "maxCharAgeMonths": "角色最大年龄",
     "maxCharAgePlaceholder": "月数（0 = 不限制）",
     "maxCharAgeHint": "设置后，拥有任何超龄角色的用户将无法申请",
-    "distModeLockedHint": "设置角色年龄限制时锁定为按自然人"
+    "distModeLockedHint": "设置角色年龄限制时锁定为按自然人",
+    "importBtn": "导入",
+    "importTitle": "导入历史记录",
+    "importHint": "请粘贴 CSV 内容，每行一条记录，格式为角色名和QQ号（逗号或制表符分隔）",
+    "importPlaceholder": "角色名, QQ号\n角色名2, QQ号2",
+    "importSuccess": "成功导入 {count} 条记录"
   },
   "welfareMy": {
     "applyTab": "申请福利",
@@ -538,6 +543,7 @@
     "historyTab": "历史记录",
     "applicantNickname": "申请人",
     "characterName": "角色名称",
+    "contact": "联系方式",
     "welfareName": "福利名称",
     "welfareDescription": "描述",
     "reviewerName": "福利官",
@@ -1119,6 +1125,8 @@
     },
     "manage": {
       "title": "补损申请列表",
+      "pendingTab": "待处理",
+      "historyTab": "发放记录",
       "refresh": "刷新",
       "selectFleet": "按舰队筛选",
       "searchBtn": "查询",

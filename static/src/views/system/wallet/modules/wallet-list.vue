@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
-  import { ElButton } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { adminListWallets } from '@/api/sys-wallet'
 
@@ -85,33 +85,21 @@
           fixed: 'right',
           formatter: (row: Wallet) =>
             h('div', { class: 'flex gap-1' }, [
-              h(
-                ElButton,
-                {
-                  size: 'small',
-                  type: 'success',
-                  onClick: () => emit('adjust', row.user_id, 'add')
-                },
-                () => t('walletAdmin.actions.add')
-              ),
-              h(
-                ElButton,
-                {
-                  size: 'small',
-                  type: 'warning',
-                  onClick: () => emit('adjust', row.user_id, 'deduct')
-                },
-                () => t('walletAdmin.actions.deduct')
-              ),
-              h(
-                ElButton,
-                {
-                  size: 'small',
-                  type: 'primary',
-                  onClick: () => emit('viewTransactions', row.user_id)
-                },
-                () => t('walletAdmin.actions.transactions')
-              )
+              h(ArtButtonTable, {
+                label: t('walletAdmin.actions.add'),
+                elType: 'success',
+                onClick: () => emit('adjust', row.user_id, 'add')
+              }),
+              h(ArtButtonTable, {
+                label: t('walletAdmin.actions.deduct'),
+                elType: 'warning',
+                onClick: () => emit('adjust', row.user_id, 'deduct')
+              }),
+              h(ArtButtonTable, {
+                label: t('walletAdmin.actions.transactions'),
+                elType: 'primary',
+                onClick: () => emit('viewTransactions', row.user_id)
+              })
             ])
         }
       ]

@@ -509,7 +509,12 @@
     "maxCharAgeMonths": "Max Character Age",
     "maxCharAgePlaceholder": "Months (0 = no limit)",
     "maxCharAgeHint": "If set, users with any character older than this will be ineligible",
-    "distModeLockedHint": "Locked to Per User when character age limit is set"
+    "distModeLockedHint": "Locked to Per User when character age limit is set",
+    "importBtn": "Import",
+    "importTitle": "Import History Records",
+    "importHint": "Paste CSV with character name and QQ number per line (comma or tab separated)",
+    "importPlaceholder": "CharacterName, QQNumber\nCharacterName2, QQNumber2",
+    "importSuccess": "Successfully imported {count} records"
   },
   "welfareMy": {
     "applyTab": "Apply for Welfare",
@@ -537,6 +542,7 @@
     "historyTab": "History",
     "applicantNickname": "Applicant",
     "characterName": "Character Name",
+    "contact": "Contact",
     "welfareName": "Welfare Name",
     "welfareDescription": "Description",
     "reviewerName": "Welfare Manager",
@@ -1118,6 +1124,8 @@
     },
     "manage": {
       "title": "SRP Applications",
+      "pendingTab": "Pending",
+      "historyTab": "Delivery Records",
       "refresh": "Refresh",
       "selectFleet": "Filter by fleet",
       "searchBtn": "Search",

@@ -95,8 +95,17 @@ func (r *SrpRepository) ListPendingLinkedApplications() ([]model.SrpApplication,
 	return list, err
 }
 
+// SrpTabType 申请列表 Tab 分类
+type SrpTabType string
+
+const (
+	SrpTabPending SrpTabType = "pending" // 待处理：pending/approved + unpaid
+	SrpTabHistory SrpTabType = "history" // 发放记录：paid OR rejected
+)
+
 // SrpApplicationFilter 申请列表筛选条件
 type SrpApplicationFilter struct {
+	Tab          SrpTabType
 	UserID       *uint
 	CharacterID  *int64
 	FleetID      *string
@@ -111,27 +120,42 @@ type SrpBatchPayoutSummaryRow struct {
 	ApplicationCount int64   `json:"application_count"`
 }
 
+func buildSrpApplicationListQuery(db *gorm.DB, filter SrpApplicationFilter) *gorm.DB {
+	query := db.Model(&model.SrpApplication{})
+
+	switch filter.Tab {
+	case SrpTabPending:
+		query = query.Where("review_status IN (?, ?) AND payout_status = ?",
+			model.SrpReviewPending, model.SrpReviewApproved, model.SrpPayoutPending)
+	case SrpTabHistory:
+		query = query.Where("payout_status = ? OR review_status = ?",
+			model.SrpPayoutPaid, model.SrpReviewRejected)
+	}
+	if filter.UserID != nil {
+		query = query.Where("user_id = ?", *filter.UserID)
+	}
+	if filter.CharacterID != nil {
+		query = query.Where("character_id = ?", *filter.CharacterID)
+	}
+	if filter.FleetID != nil {
+		query = query.Where("fleet_id = ?", *filter.FleetID)
+	}
+	if filter.ReviewStatus != "" {
+		query = query.Where("review_status = ?", filter.ReviewStatus)
+	}
+	if filter.PayoutStatus != "" {
+		query = query.Where("payout_status = ?", filter.PayoutStatus)
+	}
+
+	return query
+}
+
 // ListApplications 分页查询申请列表
 func (r *SrpRepository) ListApplications(page, pageSize int, filter SrpApplicationFilter) ([]model.SrpApplication, int64, error) {
 	var list []model.SrpApplication
 	var total int64
 
-	db := global.DB.Model(&model.SrpApplication{})
-	if filter.UserID != nil {
-		db = db.Where("user_id = ?", *filter.UserID)
-	}
-	if filter.CharacterID != nil {
-		db = db.Where("character_id = ?", *filter.CharacterID)
-	}
-	if filter.FleetID != nil {
-		db = db.Where("fleet_id = ?", *filter.FleetID)
-	}
-	if filter.ReviewStatus != "" {
-		db = db.Where("review_status = ?", filter.ReviewStatus)
-	}
-	if filter.PayoutStatus != "" {
-		db = db.Where("payout_status = ?", filter.PayoutStatus)
-	}
+	db := buildSrpApplicationListQuery(global.DB, filter)
 
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err

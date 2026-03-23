@@ -72,3 +72,38 @@ func TestSummarizeBatchPayoutApplicationsUsesExactSelectedRows(t *testing.T) {
 		t.Fatalf("expected selected IDs [7 9], got %v", ids)
 	}
 }
+
+func TestBuildSrpApplicationListQueryAppliesPendingTabScope(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return buildSrpApplicationListQuery(tx, SrpApplicationFilter{Tab: SrpTabPending}).
+			Find(&[]model.SrpApplication{})
+	})
+
+	if !strings.Contains(sql, `FROM "srp_application"`) {
+		t.Fatalf("expected srp_application select, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `review_status IN (`) {
+		t.Fatalf("expected pending tab review scope, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `payout_status =`) {
+		t.Fatalf("expected pending tab payout scope, got SQL: %s", sql)
+	}
+}
+
+func TestBuildSrpApplicationListQueryAppliesHistoryTabScope(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return buildSrpApplicationListQuery(tx, SrpApplicationFilter{Tab: SrpTabHistory}).
+			Find(&[]model.SrpApplication{})
+	})
+
+	if !strings.Contains(sql, `FROM "srp_application"`) {
+		t.Fatalf("expected srp_application select, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `payout_status =`) || !strings.Contains(sql, `OR review_status =`) {
+		t.Fatalf("expected history tab to include paid or rejected scope, got SQL: %s", sql)
+	}
+}

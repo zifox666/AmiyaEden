@@ -41,6 +41,28 @@
       />
     </ElCard>
 
+    <!-- 导入历史记录对话框 -->
+    <ElDialog
+      v-model="importDialogVisible"
+      :title="t('welfareSettings.importTitle')"
+      width="560px"
+      destroy-on-close
+    >
+      <p class="mb-2 text-sm text-gray-500">{{ t('welfareSettings.importHint') }}</p>
+      <ElInput
+        v-model="importCSV"
+        type="textarea"
+        :rows="10"
+        :placeholder="t('welfareSettings.importPlaceholder')"
+      />
+      <template #footer>
+        <ElButton @click="importDialogVisible = false">{{ t('common.cancel') }}</ElButton>
+        <ElButton type="primary" :loading="importLoading" @click="handleImport">{{
+          t('common.confirm')
+        }}</ElButton>
+      </template>
+    </ElDialog>
+
     <!-- 福利编辑对话框 -->
     <ElDialog
       v-model="dialogVisible"
@@ -148,7 +170,8 @@
     adminListWelfares,
     adminCreateWelfare,
     adminUpdateWelfare,
-    adminDeleteWelfare
+    adminDeleteWelfare,
+    adminImportWelfareRecords
   } from '@/api/welfare'
   import { fetchSkillPlanList } from '@/api/skill-plan'
   import { useTable } from '@/hooks/core/useTable'
@@ -266,12 +289,18 @@
         {
           prop: 'actions',
           label: t('common.operation'),
-          width: 120,
+          width: 180,
           fixed: 'right',
           formatter: (row: WelfareItem) =>
             h('div', { class: 'flex gap-1' }, [
               h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
-              h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) })
+              h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) }),
+              h(ArtButtonTable, {
+                icon: 'ri:upload-2-line',
+                elType: 'warning',
+                label: t('welfareSettings.importBtn'),
+                onClick: () => openImportDialog(row)
+              })
             ])
         }
       ]
@@ -412,6 +441,35 @@
       ElMessage.error(e?.message ?? t('welfareSettings.operationFailed'))
     } finally {
       submitLoading.value = false
+    }
+  }
+
+  // ─── 导入历史记录 ───
+  const importDialogVisible = ref(false)
+  const importLoading = ref(false)
+  const importCSV = ref('')
+  const importWelfareID = ref<number>(0)
+
+  function openImportDialog(row: WelfareItem) {
+    importWelfareID.value = row.id
+    importCSV.value = ''
+    importDialogVisible.value = true
+  }
+
+  async function handleImport() {
+    if (!importCSV.value.trim()) return
+    importLoading.value = true
+    try {
+      const res = await adminImportWelfareRecords({
+        welfare_id: importWelfareID.value,
+        csv: importCSV.value
+      })
+      ElMessage.success(t('welfareSettings.importSuccess', { count: res.count }))
+      importDialogVisible.value = false
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('welfareSettings.operationFailed'))
+    } finally {
+      importLoading.value = false
     }
   }
 

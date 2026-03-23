@@ -550,7 +550,7 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 	// 创建申请
 	app := &model.WelfareApplication{
 		WelfareID:     welfare.ID,
-		UserID:        userID,
+		UserID:        &userID,
 		CharacterID:   selectedChar.CharacterID,
 		CharacterName: selectedChar.CharacterName,
 		QQ:            user.QQ,
@@ -574,9 +574,11 @@ type AdminApplicationResp struct {
 	WelfareID         uint       `json:"welfare_id"`
 	WelfareName       string     `json:"welfare_name"`
 	WelfareDesc       string     `json:"welfare_description"`
-	UserID            uint       `json:"user_id"`
+	UserID            *uint      `json:"user_id"`
 	ApplicantNickname string     `json:"applicant_nickname"`
 	CharacterName     string     `json:"character_name"`
+	QQ                string     `json:"qq"`
+	DiscordID         string     `json:"discord_id"`
 	Status            string     `json:"status"`
 	ReviewedBy        uint       `json:"reviewed_by"`
 	ReviewerName      string     `json:"reviewer_name"`
@@ -606,7 +608,9 @@ func (s *WelfareService) AdminListApplications(page, pageSize int, filter reposi
 	userIDSet := make(map[uint]struct{})
 	for _, app := range apps {
 		welfareIDSet[app.WelfareID] = struct{}{}
-		userIDSet[app.UserID] = struct{}{}
+		if app.UserID != nil {
+			userIDSet[*app.UserID] = struct{}{}
+		}
 		if app.ReviewedBy > 0 {
 			userIDSet[app.ReviewedBy] = struct{}{}
 		}
@@ -637,6 +641,8 @@ func (s *WelfareService) AdminListApplications(page, pageSize int, filter reposi
 			WelfareID:     app.WelfareID,
 			UserID:        app.UserID,
 			CharacterName: app.CharacterName,
+			QQ:            app.QQ,
+			DiscordID:     app.DiscordID,
 			Status:        app.Status,
 			ReviewedBy:    app.ReviewedBy,
 			CreatedAt:     app.CreatedAt,
@@ -646,7 +652,9 @@ func (s *WelfareService) AdminListApplications(page, pageSize int, filter reposi
 			resp.WelfareName = w.Name
 			resp.WelfareDesc = w.Description
 		}
-		resp.ApplicantNickname = nicknameMap[app.UserID]
+		if app.UserID != nil {
+			resp.ApplicantNickname = nicknameMap[*app.UserID]
+		}
 		if app.ReviewedBy > 0 {
 			resp.ReviewerName = nicknameMap[app.ReviewedBy]
 		}
@@ -753,6 +761,85 @@ func (s *WelfareService) ListMyApplications(userID uint, status string) ([]MyApp
 	}
 
 	return result, nil
+}
+
+// ─────────────────────────────────────────────
+//  管理端 - 导入历史记录
+// ─────────────────────────────────────────────
+
+// ImportWelfareRecordsRequest 导入历史记录请求
+type ImportWelfareRecordsRequest struct {
+	WelfareID uint   `json:"welfare_id"`
+	CSV       string `json:"csv"`
+}
+
+func parseImportedWelfareApplications(welfareID uint, csvText string) ([]model.WelfareApplication, error) {
+	normalizedCSV := strings.ReplaceAll(csvText, "\r\n", "\n")
+	normalizedCSV = strings.ReplaceAll(normalizedCSV, "\r", "\n")
+
+	lines := strings.Split(normalizedCSV, "\n")
+	apps := make([]model.WelfareApplication, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		var parts []string
+		if strings.Contains(line, "\t") {
+			parts = strings.SplitN(line, "\t", 2)
+		} else {
+			parts = strings.SplitN(line, ",", 2)
+		}
+
+		characterName := strings.TrimSpace(parts[0])
+		if characterName == "" {
+			continue
+		}
+
+		qq := ""
+		if len(parts) > 1 {
+			qq = strings.TrimSpace(parts[1])
+		}
+
+		apps = append(apps, model.WelfareApplication{
+			WelfareID:     welfareID,
+			CharacterName: characterName,
+			QQ:            qq,
+			Status:        model.WelfareAppStatusDelivered,
+		})
+	}
+
+	if len(apps) == 0 {
+		return nil, errors.New("未解析到有效记录")
+	}
+
+	return apps, nil
+}
+
+// ImportWelfareRecords 解析 CSV 文本并批量创建福利申请记录（历史导入）
+func (s *WelfareService) ImportWelfareRecords(req *ImportWelfareRecordsRequest) (int, error) {
+	if req.WelfareID == 0 {
+		return 0, errors.New("福利 ID 不能为空")
+	}
+	if strings.TrimSpace(req.CSV) == "" {
+		return 0, errors.New("CSV 内容不能为空")
+	}
+
+	// 验证福利存在
+	if _, err := s.repo.GetWelfareByID(req.WelfareID); err != nil {
+		return 0, errors.New("福利不存在")
+	}
+
+	apps, err := parseImportedWelfareApplications(req.WelfareID, req.CSV)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := s.repo.BulkCreateApplications(apps); err != nil {
+		return 0, fmt.Errorf("导入失败: %w", err)
+	}
+	return len(apps), nil
 }
 
 // ─────────────────────────────────────────────

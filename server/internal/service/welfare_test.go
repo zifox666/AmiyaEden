@@ -200,3 +200,39 @@ func TestAnyCharacterTooOld(t *testing.T) {
 		})
 	}
 }
+
+func TestParseImportedWelfareApplicationsSupportsCommaAndTabSeparatedRows(t *testing.T) {
+	apps, err := parseImportedWelfareApplications(7, "Alice, 12345\n\nBob\t67890\nCharlie")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(apps) != 3 {
+		t.Fatalf("expected 3 parsed applications, got %d", len(apps))
+	}
+
+	if apps[0].WelfareID != 7 || apps[0].CharacterName != "Alice" || apps[0].QQ != "12345" {
+		t.Fatalf("unexpected first application: %+v", apps[0])
+	}
+	if apps[0].Status != model.WelfareAppStatusDelivered {
+		t.Fatalf("expected imported status %q, got %q", model.WelfareAppStatusDelivered, apps[0].Status)
+	}
+	if apps[0].UserID != nil {
+		t.Fatalf("expected imported user ID to be nil, got %v", apps[0].UserID)
+	}
+
+	if apps[1].CharacterName != "Bob" || apps[1].QQ != "67890" {
+		t.Fatalf("unexpected second application: %+v", apps[1])
+	}
+
+	if apps[2].CharacterName != "Charlie" || apps[2].QQ != "" {
+		t.Fatalf("unexpected third application: %+v", apps[2])
+	}
+}
+
+func TestParseImportedWelfareApplicationsRejectsEmptyResult(t *testing.T) {
+	_, err := parseImportedWelfareApplications(7, "\n , \n\t")
+	if err == nil {
+		t.Fatal("expected error for empty parsed import result")
+	}
+}

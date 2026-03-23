@@ -266,23 +266,18 @@
         {
           prop: 'actions',
           label: t('common.operation'),
-          width: 300,
+          width: 240,
           fixed: 'right',
           formatter: (row: FleetItem) =>
             h('div', { class: 'flex items-center gap-2' }, [
               ...(canManageFleet.value
                 ? [
-                    h(
-                      ElButton,
-                      {
-                        type: 'success',
-                        size: 'small',
-                        class: '!h-8 !px-3',
-                        loading: papActionFleetId.value === row.id,
-                        onClick: () => handleIssuePapFromList(row)
-                      },
-                      () => t('fleet.pap.issue')
-                    )
+                    h(ArtButtonTable, {
+                      label: t('fleet.pap.issue'),
+                      elType: 'success',
+                      loading: papActionFleetId.value === row.id,
+                      onClick: () => handleIssuePapFromList(row)
+                    })
                   ]
                 : []),
               h(ArtButtonTable, { type: 'view', onClick: () => goDetail(row) }),

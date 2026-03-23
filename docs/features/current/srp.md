@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-03-23
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/srp.go
@@ -20,6 +20,7 @@ source_of_truth:
 - 我的 KM、按舰队筛选 KM、KM 详情
 - 管理端手动自动审批符合规则的待审批申请
 - 审核列表、审核详情、审核通过 / 拒绝
+- 管理端审核列表按「待处理 / 发放记录」tab 分组，并将 tab 条件传给 `/srp/applications`
 - 单条发放补损
 - 管理端批量发放补损汇总、按用户批量发放补损
 

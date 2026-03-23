@@ -2,13 +2,15 @@
 <template>
   <div
     :class="[
-      'inline-flex items-center justify-center min-w-8 h-8 px-2.5 mr-2.5 text-sm c-p rounded-md align-middle',
+      'inline-flex items-center justify-center min-w-8 h-8 px-2.5 text-sm c-p rounded-md align-middle',
       buttonClass
     ]"
-    :style="{ backgroundColor: buttonBgColor, color: iconColor }"
+    :style="buttonStyle"
     @click="handleClick"
   >
-    <ArtSvgIcon :icon="iconContent" />
+    <ArtSvgIcon v-if="loading" icon="ri:loader-4-line" class="animate-spin" />
+    <ArtSvgIcon v-else-if="iconContent" :icon="iconContent" />
+    <span v-if="label">{{ label }}</span>
   </div>
 </template>
 
@@ -26,6 +28,12 @@
     iconColor?: string
     /** 按钮背景色 */
     buttonBgColor?: string
+    /** Element Plus 按钮类型（使用 --el-color-* 配色） */
+    elType?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+    /** 文本内容 */
+    label?: string
+    /** 加载状态 */
+    loading?: boolean
   }
 
   const props = withDefaults(defineProps<Props>(), {})
@@ -50,10 +58,26 @@
 
   // 获取按钮样式类
   const buttonClass = computed(() => {
+    if (props.elType) return ''
     return props.iconClass || (props.type ? defaultButtons[props.type]?.class : '') || ''
   })
 
+  // 获取按钮内联样式
+  const buttonStyle = computed(() => {
+    if (props.elType) {
+      return {
+        backgroundColor: `var(--el-color-${props.elType})`,
+        color: '#fff'
+      }
+    }
+    return {
+      backgroundColor: props.buttonBgColor,
+      color: props.iconColor
+    }
+  })
+
   const handleClick = () => {
+    if (props.loading) return
     emit('click')
   }
 </script>

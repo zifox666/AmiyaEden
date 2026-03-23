@@ -964,6 +964,7 @@ declare namespace Api {
       character_id: number
       review_status: string
       payout_status: string
+      tab: string
     }> &
       Partial<Api.Common.CommonSearchParams>
 
@@ -1124,15 +1125,28 @@ declare namespace Api {
       character_id?: number
     }
 
+    /** 导入历史记录参数 */
+    interface ImportRecordsParams {
+      welfare_id: number
+      csv: string
+    }
+
+    /** 导入历史记录响应 */
+    interface ImportRecordsResult {
+      count: number
+    }
+
     /** 管理端福利申请记录 */
     interface AdminApplication {
       id: number
       welfare_id: number
       welfare_name: string
       welfare_description: string
-      user_id: number
+      user_id: number | null
       applicant_nickname: string
       character_name: string
+      qq: string
+      discord_id: string
       status: 'pending_delivery' | 'delivered' | 'rejected'
       reviewed_by: number
       reviewer_name: string

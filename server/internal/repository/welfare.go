@@ -154,6 +154,14 @@ func (r *WelfareRepository) CreateApplication(app *model.WelfareApplication) err
 	return global.DB.Create(app).Error
 }
 
+// BulkCreateApplications 批量创建福利申请记录
+func (r *WelfareRepository) BulkCreateApplications(apps []model.WelfareApplication) error {
+	if len(apps) == 0 {
+		return nil
+	}
+	return global.DB.Create(&apps).Error
+}
+
 // ListApplicationsByUserID 查询用户的所有福利申请
 func (r *WelfareRepository) ListApplicationsByUserID(userID uint, status string) ([]model.WelfareApplication, error) {
 	var list []model.WelfareApplication

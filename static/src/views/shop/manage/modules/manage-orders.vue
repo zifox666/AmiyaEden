@@ -86,6 +86,7 @@
 <script setup lang="ts">
   import { ElTag, ElButton, ElInput, ElSelect, ElOption, ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { adminListOrders, adminApproveOrder, adminRejectOrder } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
 
@@ -202,16 +203,16 @@
               return h('span', { class: 'text-gray-400 text-sm' }, '-')
             }
             return h('div', { class: 'flex gap-1' }, [
-              h(
-                ElButton,
-                { size: 'small', type: 'success', onClick: () => openApproveDialog(row) },
-                () => t('shopAdmin.orders.approveButton')
-              ),
-              h(
-                ElButton,
-                { size: 'small', type: 'danger', onClick: () => openRejectDialog(row) },
-                () => t('shopAdmin.orders.rejectButton')
-              )
+              h(ArtButtonTable, {
+                label: t('shopAdmin.orders.approveButton'),
+                elType: 'success',
+                onClick: () => openApproveDialog(row)
+              }),
+              h(ArtButtonTable, {
+                label: t('shopAdmin.orders.rejectButton'),
+                elType: 'danger',
+                onClick: () => openRejectDialog(row)
+              })
             ])
           }
         }

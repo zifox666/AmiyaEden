@@ -292,7 +292,7 @@
           width: 160,
           fixed: 'right',
           formatter: (row) =>
-            h('div', [
+            h('div', { class: 'flex gap-2' }, [
               isSuperAdmin.value &&
                 h(ArtButtonTable, {
                   icon: 'ri:user-follow-line',

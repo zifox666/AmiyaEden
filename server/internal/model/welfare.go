@@ -59,7 +59,7 @@ const (
 type WelfareApplication struct {
 	BaseModel
 	WelfareID     uint       `gorm:"not null;index"            json:"welfare_id"`
-	UserID        uint       `gorm:"not null;index"            json:"user_id"`
+	UserID        *uint      `gorm:"index"                     json:"user_id"`
 	CharacterID   int64      `gorm:"not null"                  json:"character_id"`
 	CharacterName string     `gorm:"size:128"                  json:"character_name"`
 	QQ            string     `gorm:"size:20"                   json:"qq"`

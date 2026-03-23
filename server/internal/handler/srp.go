@@ -142,6 +142,7 @@ func (h *SrpHandler) ListApplications(c *gin.Context) {
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
 
 	filter := repository.SrpApplicationFilter{
+		Tab:          repository.SrpTabType(c.Query("tab")),
 		ReviewStatus: c.Query("review_status"),
 		PayoutStatus: c.Query("payout_status"),
 	}

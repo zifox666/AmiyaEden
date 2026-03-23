@@ -63,6 +63,7 @@
   import { ElTag, ElButton, ElMessage, ElMessageBox, ElEmpty } from 'element-plus'
   import { CopyDocument } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
+  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { adminListApplications, adminReviewApplication } from '@/api/welfare'
 
@@ -127,6 +128,17 @@
         ])
     },
     {
+      prop: 'contact',
+      label: t('welfareApproval.contact'),
+      width: 140,
+      showOverflowTooltip: true,
+      formatter: (row: AppRow) => {
+        if (row.qq) return `${t('characters.profile.qq')}: ${row.qq}`
+        if (row.discord_id) return `${t('characters.profile.discordId')}: ${row.discord_id}`
+        return '-'
+      }
+    },
+    {
       prop: 'welfare_name',
       label: t('welfareApproval.welfareName'),
       width: 160,
@@ -184,24 +196,16 @@
           fixed: 'right' as const,
           formatter: (row: AppRow) =>
             h('div', { class: 'flex items-center gap-1' }, [
-              h(
-                ElButton,
-                {
-                  size: 'small',
-                  type: 'success',
-                  onClick: () => handleDeliver(row)
-                },
-                () => t('welfareApproval.deliverBtn')
-              ),
-              h(
-                ElButton,
-                {
-                  size: 'small',
-                  type: 'danger',
-                  onClick: () => handleReject(row)
-                },
-                () => t('welfareApproval.rejectBtn')
-              )
+              h(ArtButtonTable, {
+                label: t('welfareApproval.deliverBtn'),
+                elType: 'success',
+                onClick: () => handleDeliver(row)
+              }),
+              h(ArtButtonTable, {
+                label: t('welfareApproval.rejectBtn'),
+                elType: 'danger',
+                onClick: () => handleReject(row)
+              })
             ])
         }
       ]

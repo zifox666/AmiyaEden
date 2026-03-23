@@ -1,8 +1,13 @@
 <!-- SRP 补损审批管理页面 -->
 <template>
   <div class="srp-manage-page art-full-height">
-    <ElCard class="art-search-card" shadow="never">
-      <div class="flex items-center gap-3 flex-wrap">
+    <ElCard class="art-table-card" shadow="never">
+      <ElTabs v-model="activeTab" @tab-change="handleTabChange">
+        <ElTabPane :label="$t('srp.manage.pendingTab')" name="pending" />
+        <ElTabPane :label="$t('srp.manage.historyTab')" name="history" />
+      </ElTabs>
+
+      <div class="flex items-center gap-3 flex-wrap mb-3">
         <ElSelect
           v-model="filter.review_status"
           :placeholder="$t('srp.apply.columns.reviewStatus')"
@@ -10,19 +15,14 @@
           style="width: 130px"
           @change="handleSearch"
         >
-          <ElOption :label="$t('srp.status.pending')" value="pending" />
-          <ElOption :label="$t('srp.status.approved')" value="approved" />
-          <ElOption :label="$t('srp.status.rejected')" value="rejected" />
-        </ElSelect>
-        <ElSelect
-          v-model="filter.payout_status"
-          :placeholder="$t('srp.apply.columns.payoutStatus')"
-          clearable
-          style="width: 130px"
-          @change="handleSearch"
-        >
-          <ElOption :label="$t('srp.status.unpaid')" value="pending" />
-          <ElOption :label="$t('srp.status.paid')" value="paid" />
+          <template v-if="activeTab === 'pending'">
+            <ElOption :label="$t('srp.status.pending')" value="pending" />
+            <ElOption :label="$t('srp.status.approved')" value="approved" />
+          </template>
+          <template v-else>
+            <ElOption :label="$t('srp.status.approved')" value="approved" />
+            <ElOption :label="$t('srp.status.rejected')" value="rejected" />
+          </template>
         </ElSelect>
         <ElSelect
           v-model="filter.fleet_id"
@@ -37,13 +37,20 @@
         <ElButton type="primary" @click="handleSearch">{{ $t('srp.manage.searchBtn') }}</ElButton>
         <ElButton @click="resetFilter">{{ $t('srp.manage.resetBtn') }}</ElButton>
       </div>
-    </ElCard>
 
-    <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <div class="flex items-center gap-2">
+            <template v-if="activeTab === 'pending'">
+              <ElButton type="primary" :loading="autoApproveLoading" @click="handleAutoApprove">
+                {{ $t('srp.manage.autoApproveBtn') }}
+              </ElButton>
+              <ElButton type="warning" @click="openBatchPayoutDialog">
+                {{ $t('srp.manage.batchPayoutBtn') }}
+              </ElButton>
+            </template>
             <ArtExcelExport
+              v-if="activeTab === 'history'"
               :data="exportManageData"
               :headers="manageExportHeaders"
               :filename="`srp-manage_${new Date().toLocaleDateString()}`"
@@ -51,12 +58,6 @@
               :button-text="$t('srp.manage.exportBtn')"
               type="success"
             />
-            <ElButton type="primary" :loading="autoApproveLoading" @click="handleAutoApprove">
-              {{ $t('srp.manage.autoApproveBtn') }}
-            </ElButton>
-            <ElButton type="warning" @click="openBatchPayoutDialog">
-              {{ $t('srp.manage.batchPayoutBtn') }}
-            </ElButton>
           </div>
         </template>
       </ArtTableHeader>
@@ -293,6 +294,8 @@
     ElMessage,
     ElTable,
     ElTableColumn,
+    ElTabs,
+    ElTabPane,
     ElTooltip
   } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
@@ -331,7 +334,8 @@
     }
   }
 
-  const filter = reactive({ review_status: '', payout_status: 'pending', fleet_id: '' })
+  const activeTab = ref('pending')
+  const filter = reactive({ review_status: '', fleet_id: '' })
 
   type SrpApp = Api.Srp.Application
   type BatchPayoutSummary = Api.Srp.BatchPayoutSummary
@@ -363,7 +367,7 @@
   } = useTable({
     core: {
       apiFn: fetchApplicationList,
-      apiParams: { current: 1, size: 200, payout_status: 'pending' },
+      apiParams: { current: 1, size: 200, tab: 'pending' },
       columnsFactory: () => [
         { type: 'index', width: 40, label: '#' },
         {
@@ -517,7 +521,7 @@
         {
           prop: 'actions',
           label: t('srp.manage.columns.action'),
-          width: 250,
+          width: 220,
           fixed: 'right',
           formatter: (row: SrpApp) => {
             const btns: ReturnType<typeof h>[] = [
@@ -526,74 +530,44 @@
             if (row.review_status === 'pending') {
               // 待审批：批准 + 拒绝
               btns.push(
-                h(
-                  ElButton,
-                  {
-                    size: 'small',
-                    type: 'success',
-                    class: 'srp-manage-action-button !h-8 !px-3',
-                    onClick: () => openReviewDialog(row, 'approve')
-                  },
-                  () => t('srp.manage.approveBtn')
-                ),
-                h(
-                  ElButton,
-                  {
-                    size: 'small',
-                    type: 'danger',
-                    class: 'srp-manage-action-button !h-8 !px-3',
-                    onClick: () => openReviewDialog(row, 'reject')
-                  },
-                  () => t('srp.manage.rejectBtn')
-                )
+                h(ArtButtonTable, {
+                  label: t('srp.manage.approveBtn'),
+                  elType: 'success',
+                  onClick: () => openReviewDialog(row, 'approve')
+                }),
+                h(ArtButtonTable, {
+                  label: t('srp.manage.rejectBtn'),
+                  elType: 'danger',
+                  onClick: () => openReviewDialog(row, 'reject')
+                })
               )
             } else if (row.review_status === 'approved' && row.payout_status === 'pending') {
               // 已批准 + 未发放：发放 + 编辑 + 重新拒绝
               btns.push(
-                h(
-                  ElButton,
-                  {
-                    size: 'small',
-                    type: 'primary',
-                    class: 'srp-manage-action-button !h-8 !px-3',
-                    onClick: () => openPayoutDialog(row)
-                  },
-                  () => t('srp.manage.payoutBtn')
-                ),
-                h(
-                  ElButton,
-                  {
-                    size: 'small',
-                    type: 'warning',
-                    class: 'srp-manage-action-button !h-8 !px-3',
-                    onClick: () => openReviewDialog(row, 'approve')
-                  },
-                  () => t('srp.manage.editBtn')
-                ),
-                h(
-                  ElButton,
-                  {
-                    size: 'small',
-                    type: 'danger',
-                    class: 'srp-manage-action-button !h-8 !px-3',
-                    onClick: () => openReviewDialog(row, 'reject')
-                  },
-                  () => t('srp.manage.reRejectBtn')
-                )
+                h(ArtButtonTable, {
+                  label: t('srp.manage.payoutBtn'),
+                  elType: 'primary',
+                  onClick: () => openPayoutDialog(row)
+                }),
+                h(ArtButtonTable, {
+                  label: t('srp.manage.editBtn'),
+                  elType: 'warning',
+                  onClick: () => openReviewDialog(row, 'approve')
+                }),
+                h(ArtButtonTable, {
+                  label: t('srp.manage.reRejectBtn'),
+                  elType: 'danger',
+                  onClick: () => openReviewDialog(row, 'reject')
+                })
               )
             } else if (row.review_status === 'rejected') {
               // 已拒绝：可重新批准
               btns.push(
-                h(
-                  ElButton,
-                  {
-                    size: 'small',
-                    type: 'success',
-                    class: 'srp-manage-action-button !h-8 !px-3',
-                    onClick: () => openReviewDialog(row, 'approve')
-                  },
-                  () => t('srp.manage.reApproveBtn')
-                )
+                h(ArtButtonTable, {
+                  label: t('srp.manage.reApproveBtn'),
+                  elType: 'success',
+                  onClick: () => openReviewDialog(row, 'approve')
+                })
               )
             }
             return h('div', { class: 'flex items-center gap-1' }, btns)
@@ -629,19 +603,28 @@
 
   const handleSearch = () => {
     Object.assign(searchParams, {
+      tab: activeTab.value,
       review_status: filter.review_status || undefined,
-      payout_status: filter.payout_status || undefined,
       fleet_id: filter.fleet_id || undefined
     })
     getData()
   }
   const resetFilter = () => {
     filter.review_status = ''
-    filter.payout_status = 'pending'
     filter.fleet_id = ''
     Object.assign(searchParams, {
+      tab: activeTab.value,
       review_status: undefined,
-      payout_status: 'pending',
+      fleet_id: undefined
+    })
+    getData()
+  }
+  const handleTabChange = () => {
+    filter.review_status = ''
+    filter.fleet_id = ''
+    Object.assign(searchParams, {
+      tab: activeTab.value,
+      review_status: undefined,
       fleet_id: undefined
     })
     getData()
@@ -976,11 +959,6 @@
     font-size: 13px;
     color: var(--el-text-color-secondary);
     white-space: nowrap;
-  }
-
-  .srp-manage-action-button {
-    height: 32px;
-    padding-inline: 12px;
   }
 
   .payout-info-list {

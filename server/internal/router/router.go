@@ -356,6 +356,7 @@ func RegisterRoutes(r *gin.Engine) {
 		adminWelfare.POST("/delete", welfareH.AdminDeleteWelfare)
 		adminWelfare.POST("/applications", welfareH.AdminListApplications)
 		adminWelfare.POST("/review", welfareH.AdminReviewApplication)
+		adminWelfare.POST("/import", welfareH.AdminImportRecords)
 	}
 
 	// ─── 用户端福利 ───

@@ -34,6 +34,14 @@ export function adminDeleteWelfare(id: number) {
   })
 }
 
+/** 管理员导入福利历史记录 */
+export function adminImportWelfareRecords(data: Api.Welfare.ImportRecordsParams) {
+  return request.post<Api.Welfare.ImportRecordsResult>({
+    url: '/api/v1/system/welfare/import',
+    data
+  })
+}
+
 // ─── 管理端福利审批 ───
 
 /** 管理端查询福利申请列表 */

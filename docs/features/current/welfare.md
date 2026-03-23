@@ -21,6 +21,7 @@ source_of_truth:
 - 用户自助申请福利，系统自动判断资格
 - 申请状态流转：pending_delivery → delivered / rejected
 - 福利审批页面：福利官/管理员浏览待发放申请，执行发放或拒绝操作
+- 管理员可导入历史已发放记录，按行粘贴角色名和 QQ 号生成 delivered 记录
 - 福利存在申请记录时禁止删除
 
 ### 申请资格判断
@@ -37,6 +38,7 @@ source_of_truth:
 - `welfare_id`、`user_id`、`character_id`、`character_name`、`qq`、`discord_id`
 - `status`：pending_delivery / delivered / rejected
 - `reviewed_by`、`reviewed_at`：审批人和审批时间
+- 历史导入记录允许 `user_id` 为空；当前导入格式保存 `character_name` 与 `qq`
 
 ## 入口
 
@@ -57,6 +59,7 @@ source_of_truth:
 - `POST /api/v1/system/welfare/add`
 - `POST /api/v1/system/welfare/edit`
 - `POST /api/v1/system/welfare/delete`
+- `POST /api/v1/system/welfare/import` — 导入历史福利记录
 - `POST /api/v1/system/welfare/applications` — 福利申请列表（审批端，支持按状态筛选）
 - `POST /api/v1/system/welfare/review` — 审批福利申请（发放/拒绝）
 

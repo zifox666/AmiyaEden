@@ -133,6 +133,35 @@ func (h *WelfareHandler) AdminListWelfares(c *gin.Context) {
 }
 
 // ─────────────────────────────────────────────
+//  管理端 - 导入历史记录
+// ─────────────────────────────────────────────
+
+// adminImportRecordsRequest 导入历史记录请求
+type adminImportRecordsRequest struct {
+	WelfareID uint   `json:"welfare_id" binding:"required"`
+	CSV       string `json:"csv" binding:"required"`
+}
+
+// AdminImportRecords POST /system/welfare/import
+func (h *WelfareHandler) AdminImportRecords(c *gin.Context) {
+	var req adminImportRecordsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+
+	count, err := h.svc.ImportWelfareRecords(&service.ImportWelfareRecordsRequest{
+		WelfareID: req.WelfareID,
+		CSV:       req.CSV,
+	})
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, gin.H{"count": count})
+}
+
+// ─────────────────────────────────────────────
 //  管理端 - 福利审批
 // ─────────────────────────────────────────────
 

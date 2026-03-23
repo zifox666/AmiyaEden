@@ -263,6 +263,7 @@ source_of_truth:
 | POST | `/system/welfare/add` | 创建福利 | `RequireRole(admin)` |
 | POST | `/system/welfare/edit` | 编辑福利 | `RequireRole(admin)` |
 | POST | `/system/welfare/delete` | 删除福利 | `RequireRole(admin)` |
+| POST | `/system/welfare/import` | 导入历史福利记录 | `RequireRole(admin)` |
 | POST | `/system/welfare/applications` | 福利申请列表（审批端） | `RequireRole(admin)` |
 | POST | `/system/welfare/review` | 审批福利申请（发放/拒绝） | `RequireRole(admin)` |
 
