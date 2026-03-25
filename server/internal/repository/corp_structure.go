@@ -11,8 +11,8 @@ func NewCorpStructureRepository() *CorpStructureRepository {
 	return &CorpStructureRepository{}
 }
 
-// ListByCorpID 分页查询军团建筑列表，支持按状态和燃料到期过滤
-func (r *CorpStructureRepository) ListByCorpID(corpID int64, page, pageSize int, state string, fuelExpiresSoon bool) ([]model.CorpStructureInfo, int64, error) {
+// ListByCorpID 分页查询军团建筑列表，支持按状态、燃料到期、关键词过滤
+func (r *CorpStructureRepository) ListByCorpID(corpID int64, page, pageSize int, state string, fuelExpiresSoon bool, keyword string) ([]model.CorpStructureInfo, int64, error) {
 	var list []model.CorpStructureInfo
 	var total int64
 
@@ -22,6 +22,9 @@ func (r *CorpStructureRepository) ListByCorpID(corpID int64, page, pageSize int,
 	}
 	if fuelExpiresSoon {
 		db = db.Where("fuel_expires != '' AND fuel_expires::timestamptz < NOW() + INTERVAL '7 days'")
+	}
+	if keyword != "" {
+		db = db.Where("name ILIKE ?", "%"+keyword+"%")
 	}
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err

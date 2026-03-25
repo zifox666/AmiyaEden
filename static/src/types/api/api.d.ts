@@ -1663,6 +1663,7 @@ declare namespace Api {
       corp_id?: number
       state?: string
       fuel_expires_soon?: boolean
+      keyword?: string
     }
   }
 

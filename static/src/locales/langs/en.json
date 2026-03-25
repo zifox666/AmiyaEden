@@ -1658,6 +1658,7 @@
     "corpPrefix": "Corp {id}",
     "stateFilter": "Filter State",
     "fuelExpiresFilter": "Low Fuel Only (7 days)",
+    "searchPlaceholder": "Search structure name",
     "stateLabels": {
       "shield_vulnerable": "Shield Vulnerable",
       "armor_reinforce": "Armor Reinforcing",
@@ -1676,8 +1677,8 @@
     "fields": {
       "name": "Structure Name",
       "state": "State",
-      "systemId": "System ID",
-      "typeId": "Type ID",
+      "systemId": "Solar System",
+      "typeId": "Structure Type",
       "fuelExpires": "Fuel Expires",
       "reinforceHour": "Reinforce Hour",
       "services": "Services",

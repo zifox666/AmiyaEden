@@ -1659,8 +1659,9 @@
     "corpPrefix": "军团 {id}",
     "stateFilter": "筛选状态",
     "fuelExpiresFilter": "仅低油量（7天内）",
+    "searchPlaceholder": "搜索建筑名称",
     "stateLabels": {
-      "shield_vulnerable": "护盾可被攻击(正常)",
+      "shield_vulnerable": "正常",
       "armor_reinforce": "装甲增强",
       "armor_vulnerable": "装甲可被攻击",
       "hull_reinforce": "结构增强",
@@ -1677,12 +1678,12 @@
     "fields": {
       "name": "建筑名称",
       "state": "状态",
-      "systemId": "星系 ID",
-      "typeId": "类型 ID",
+      "systemId": "星系",
+      "typeId": "建筑类型",
       "fuelExpires": "燃料到期",
-      "reinforceHour": "强化时间",
+      "reinforceHour": "预设增强时间",
       "services": "服务",
-      "stateTimerEnd": "状态计时器结束",
+      "stateTimerEnd": "出增强时间",
       "unanchorsAt": "解锚时间"
     }
   }
