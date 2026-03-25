@@ -45,9 +45,6 @@ sde:
   proxy: ""                         # 可选代理；留空禁用。若配置了代理但连接失败，下载器会自动回退为直连
   download_url: "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"  # SDE 数据下载 URL，默认为 GitHub API 获取最新 release 信息
 
-app:
-  allow_corporations: [] # 允许访问的公司 ID 列表；留空时默认回退到伏羲军团 Fuxi Legion（98185110）
-
 alliance_pap:
   base_url: "http://jp.newdoublex.space:25220"  # 联盟 PAP API 地址
   api_key: ""                                    # 联盟 PAP API Key

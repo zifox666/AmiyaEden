@@ -5,6 +5,7 @@ import (
 	"amiya-eden/internal/model"
 	"amiya-eden/pkg/cache"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -120,4 +121,30 @@ func (r *SysConfigRepository) Invalidate(keys ...string) {
 		cacheKeys[i] = cacheKey(k)
 	}
 	_ = cache.Del(context.Background(), cacheKeys...)
+}
+
+// GetInt64Slice 获取 int64 数组配置；解析失败或不存在时返回 defaultVal
+func (r *SysConfigRepository) GetInt64Slice(key string, defaultVal []int64) ([]int64, error) {
+	raw, err := r.Get(key, "")
+	if err != nil {
+		return defaultVal, nil
+	}
+	if raw == "" {
+		return defaultVal, nil
+	}
+
+	var result []int64
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		return defaultVal, nil
+	}
+	return result, nil
+}
+
+// SetInt64Slice 设置 int64 数组配置并使缓存失效
+func (r *SysConfigRepository) SetInt64Slice(key string, value []int64, desc string) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return r.Set(key, string(data), desc)
 }

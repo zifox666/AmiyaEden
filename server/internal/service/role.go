@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/internal/utils"
 	"context"
 	"encoding/json"
 	"errors"
@@ -587,7 +588,7 @@ func (s *RoleService) seedAdminMenus(nameToID map[string]uint) error {
 //   - 主角色的 CorporationID 在允许列表内 → 确保拥有 user 角色（从 guest 升级）
 //   - 没有符合条件的角色 → 降级为 guest（清除所有非高级角色）
 func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID uint) error {
-	allowCorps := global.Config.App.AllowCorporations
+	allowCorps := utils.GetAllowCorporations()
 	allowSet := make(map[int64]struct{}, len(allowCorps))
 	for _, id := range allowCorps {
 		allowSet[id] = struct{}{}

@@ -1877,6 +1877,14 @@ declare namespace Api {
       site_title?: string
     }
 
+    interface AllowCorporationsConfig {
+      allow_corporations: number[]
+    }
+
+    interface UpdateAllowCorporationsParams {
+      allow_corporations: number[]
+    }
+
     interface SDEConfig {
       api_key: string
       proxy: string

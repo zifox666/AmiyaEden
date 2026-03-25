@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/internal/utils"
 	"amiya-eden/pkg/cache"
 	"amiya-eden/pkg/eve"
 	"amiya-eden/pkg/eve/esi"
@@ -212,7 +213,7 @@ func (s *EveSSOService) resolveInitialSSOState(ctx context.Context, characterID 
 			zap.Error(err))
 		return model.RoleGuest, nil
 	}
-	return resolveInitialSSORole(affiliation.CorporationID, global.Config.App.AllowCorporations), affiliation
+	return resolveInitialSSORole(affiliation.CorporationID, utils.GetAllowCorporations()), affiliation
 }
 
 func (s *EveSSOService) createDefaultSSOUser(ctx context.Context, portraitURL string, primaryCharacterID int64, clientIP string, now time.Time, initialRole string) (*model.User, error) {
@@ -521,7 +522,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		oldUserID := char.UserID
 		orphanInitialRole := initialRole
 		if affiliation == nil {
-			orphanInitialRole = resolveInitialSSORole(char.CorporationID, global.Config.App.AllowCorporations)
+			orphanInitialRole = resolveInitialSSORole(char.CorporationID, utils.GetAllowCorporations())
 		}
 		user, err = s.createDefaultSSOUser(ctx, portraitURL, characterID, clientIP, now, orphanInitialRole)
 		if err != nil {

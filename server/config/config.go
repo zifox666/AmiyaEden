@@ -2,8 +2,6 @@ package config
 
 import "strings"
 
-const DefaultAllowCorporationID int64 = 98185110
-
 const (
 	DefaultESIBaseURL       = "https://esi.evetech.net"
 	DefaultESIAPIPrefix     = "/latest"
@@ -88,7 +86,6 @@ type SDEConfig struct {
 
 // AppConfig 全局应用配置实例
 type AppConfig struct {
-	AllowCorporations []int64 `mapstructure:"allow_corporations"` // 允许访问的公司 ID 列表；空时默认回退到伏羲军团（98185110）
 }
 
 func ApplyDefaults(cfg *Config) {
@@ -100,9 +97,6 @@ func ApplyDefaults(cfg *Config) {
 	cfg.EveSSO.SSOAuthorizeURL = normalizeBaseURL(cfg.EveSSO.SSOAuthorizeURL, DefaultSSOAuthorizeURL)
 	cfg.EveSSO.SSOTokenURL = normalizeBaseURL(cfg.EveSSO.SSOTokenURL, DefaultSSOTokenURL)
 	cfg.EveSSO.EVEImagesBaseURL = normalizeBaseURL(cfg.EveSSO.EVEImagesBaseURL, DefaultEVEImagesBaseURL)
-	if len(cfg.App.AllowCorporations) == 0 {
-		cfg.App.AllowCorporations = []int64{DefaultAllowCorporationID}
-	}
 }
 
 func normalizeBaseURL(raw, fallback string) string {

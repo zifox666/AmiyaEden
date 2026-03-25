@@ -13,6 +13,21 @@ export function updateBasicConfig(data: Api.SysConfig.UpdateBasicConfigParams) {
   })
 }
 
+/** 获取允许军团列表 */
+export function fetchAllowCorporations() {
+  return request.get<Api.SysConfig.AllowCorporationsConfig>({
+    url: '/api/v1/system/basic-config/allow-corporations'
+  })
+}
+
+/** 更新允许军团列表 */
+export function updateAllowCorporations(data: Api.SysConfig.UpdateAllowCorporationsParams) {
+  return request.put({
+    url: '/api/v1/system/basic-config/allow-corporations',
+    data
+  })
+}
+
 /** 获取 SDE 配置 */
 export function fetchSDEConfig() {
   return request.get<Api.SysConfig.SDEConfig>({

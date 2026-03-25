@@ -3,9 +3,11 @@ package handler
 import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/internal/utils"
 	"amiya-eden/pkg/response"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type SysConfigHandler struct {
@@ -120,6 +122,38 @@ func (h *SysConfigHandler) UpdateSDEConfig(c *gin.Context) {
 			return
 		}
 	}
+
+	response.OK(c, nil)
+}
+
+type AllowCorporationsResponse struct {
+	AllowCorporations []int64 `json:"allow_corporations"`
+}
+
+type UpdateAllowCorporationsRequest struct {
+	AllowCorporations []int64 `json:"allow_corporations"`
+}
+
+func (h *SysConfigHandler) GetAllowCorporations(c *gin.Context) {
+	allowCorps, _ := h.repo.GetInt64Slice(model.SysConfigAllowCorporations, []int64{})
+	response.OK(c, AllowCorporationsResponse{
+		AllowCorporations: allowCorps,
+	})
+}
+
+func (h *SysConfigHandler) UpdateAllowCorporations(c *gin.Context) {
+	var req UpdateAllowCorporationsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+
+	if err := h.repo.SetInt64Slice(model.SysConfigAllowCorporations, req.AllowCorporations, "允许访问的公司 ID 列表"); err != nil {
+		response.Fail(c, response.CodeBizError, "更新允许的军团列表失败")
+		return
+	}
+
+	utils.InvalidateAllowCorporationsCache()
 
 	response.OK(c, nil)
 }

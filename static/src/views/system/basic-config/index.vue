@@ -41,6 +41,39 @@
 
     <ElCard shadow="never" style="margin-top: 16px">
       <template #header>
+        <h2 class="section-title">{{ $t('system.basicConfig.allowCorporations') }}</h2>
+      </template>
+
+      <ElForm
+        :model="allowCorpsForm"
+        label-width="120px"
+        style="max-width: 680px"
+        v-loading="loadingAllowCorpsConfig"
+      >
+        <ElFormItem
+          :label="$t('system.basicConfig.allowCorporationsLabel')"
+          prop="allow_corporations"
+        >
+          <ElInput
+            v-model="allowCorpsInput"
+            type="textarea"
+            :rows="6"
+            clearable
+            :placeholder="$t('system.basicConfig.allowCorporationsPlaceholder')"
+          />
+          <div class="form-hint">{{ $t('system.basicConfig.allowCorporationsHint') }}</div>
+        </ElFormItem>
+
+        <ElFormItem>
+          <ElButton type="primary" :loading="savingAllowCorps" @click="handleSaveAllowCorps">
+            {{ $t('system.basicConfig.save') }}
+          </ElButton>
+        </ElFormItem>
+      </ElForm>
+    </ElCard>
+
+    <ElCard shadow="never" style="margin-top: 16px">
+      <template #header>
         <h2 class="section-title">{{ $t('system.basicConfig.sdeConfig') }}</h2>
       </template>
 
@@ -100,7 +133,12 @@
     ElMessage
   } from 'element-plus'
   import { useSysConfigStore } from '@/store/modules/sys-config'
-  import { fetchSDEConfig, updateSDEConfig } from '@/api/sys-config'
+  import {
+    fetchSDEConfig,
+    updateSDEConfig,
+    fetchAllowCorporations,
+    updateAllowCorporations
+  } from '@/api/sys-config'
 
   defineOptions({ name: 'BasicConfig' })
 
@@ -111,6 +149,8 @@
   const saving = ref(false)
   const loadingSDEConfig = ref(false)
   const savingSDE = ref(false)
+  const loadingAllowCorpsConfig = ref(false)
+  const savingAllowCorps = ref(false)
 
   const form = reactive<Api.SysConfig.BasicConfig>({
     corp_id: sysConfigStore.config.corp_id,
@@ -122,6 +162,12 @@
     proxy: '',
     download_url: ''
   })
+
+  const allowCorpsForm = reactive<Api.SysConfig.AllowCorporationsConfig>({
+    allow_corporations: []
+  })
+
+  const allowCorpsInput = ref('')
 
   const loadConfig = async () => {
     loadingConfig.value = true
@@ -181,8 +227,47 @@
     }
   }
 
+  const loadAllowCorpsConfig = async () => {
+    loadingAllowCorpsConfig.value = true
+    try {
+      const res = await fetchAllowCorporations()
+      allowCorpsForm.allow_corporations = res.allow_corporations
+      allowCorpsInput.value = res.allow_corporations.join('\n')
+    } catch {
+      /* empty */
+    } finally {
+      loadingAllowCorpsConfig.value = false
+    }
+  }
+
+  const handleSaveAllowCorps = async () => {
+    const lines = allowCorpsInput.value
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '')
+    const corps = lines.map((line) => {
+      const num = Number.parseInt(line, 10)
+      if (Number.isNaN(num)) {
+        throw new Error(t('system.basicConfig.invalidCorpId'))
+      }
+      return num
+    })
+
+    savingAllowCorps.value = true
+    try {
+      await updateAllowCorporations({ allow_corporations: corps })
+      allowCorpsForm.allow_corporations = corps
+      ElMessage.success(t('system.basicConfig.saveSuccess'))
+    } catch {
+      /* empty */
+    } finally {
+      savingAllowCorps.value = false
+    }
+  }
+
   onMounted(() => {
     loadConfig()
+    loadAllowCorpsConfig()
     loadSDEConfig()
   })
 </script>
@@ -192,5 +277,11 @@
     font-size: 15px;
     font-weight: 600;
     margin: 0;
+  }
+
+  .form-hint {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    margin-top: 4px;
   }
 </style>

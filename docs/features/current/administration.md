@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-03-25
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/role.go
@@ -11,6 +11,9 @@ source_of_truth:
   - server/internal/service/auto_role.go
   - server/internal/service/alliance_pap.go
   - server/internal/service/sys_webhook.go
+  - server/internal/handler/sys_config.go
+  - server/internal/utils/allow_corporations.go
+  - static/src/api/sys-config.ts
   - static/src/api/system-manage.ts
   - static/src/api/webhook.ts
   - static/src/views/system
@@ -45,6 +48,7 @@ source_of_truth:
 ### 后端路由
 
 - `/api/v1/system/basic-config`
+- `/api/v1/system/basic-config/allow-corporations`
 - `/api/v1/system/menu/*`
 - `/api/v1/system/role/*`
 - `/api/v1/system/user/*`
@@ -68,7 +72,8 @@ source_of_truth:
 - 当账号当前仅为 `guest`（或尚无有效角色）且任一绑定角色在 `allow_corporations` 中时，自动权限同步会补 `user`
 - 任一 `allow_corporations` 角色拥有 ESI corp role `Director` 时会自动补 `admin`
 - 非 `allow_corporations` 军团角色的 ESI corp role 信号不会参与权限判定或相关刷新任务
-- 当 `allow_corporations` 为空时，当前默认回退到伏羲军团 Fuxi Legion（`98185110`）
+- `allow_corporations` 配置存储在数据库 `system_config` 表（键名 `app.allow_corporations`），通过基础配置页面管理
+- 当 `allow_corporations` 未配置或为空时，不信任任何军团信号（无默认回退）
 - corp title 仍可通过 title mapping 表显式映射，但不会因为标题名恰好叫 `Director` 而触发内置快捷规则
 - 联盟 PAP 的管理接口与用户查看接口分属不同模块
 - Webhook 是系统配置能力，不应散落到页面里直接拼接

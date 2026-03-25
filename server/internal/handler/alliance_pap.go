@@ -6,6 +6,7 @@ import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
+	"amiya-eden/internal/utils"
 	"amiya-eden/pkg/response"
 	"strconv"
 	"time"
@@ -35,7 +36,7 @@ func getAllowCorpFilter(c *gin.Context) []int64 {
 	if model.IsSuperAdmin(roles) {
 		return nil
 	}
-	return global.Config.App.AllowCorporations
+	return utils.GetAllowCorporations()
 }
 
 // GetMyAlliancePAP  GET /operation/pap/alliance
@@ -108,8 +109,8 @@ func (h *AlliancePAPHandler) GetAllAlliancePAP(c *gin.Context) {
 // TriggerFetch  POST /system/pap/fetch
 // 手动触发拉取（管理员，可指定 year/month）
 type triggerFetchRequest struct {
-	Year          int  `json:"year"  binding:"required"`
-	Month         int  `json:"month" binding:"required,min=1,max=12"`
+	Year  int `json:"year"  binding:"required"`
+	Month int `json:"month" binding:"required,min=1,max=12"`
 }
 
 func (h *AlliancePAPHandler) TriggerFetch(c *gin.Context) {
@@ -134,8 +135,8 @@ func (h *AlliancePAPHandler) TriggerFetch(c *gin.Context) {
 // ImportAlliancePAP  POST /system/pap/import
 // 导入联盟 PAP 数据（管理员，可指定 year/month）
 type importAlliancePAPRequest struct {
-	Year          int  `json:"year"  binding:"required"`
-	Month         int  `json:"month" binding:"required,min=1,max=12"`
+	Year          int                   `json:"year"  binding:"required"`
+	Month         int                   `json:"month" binding:"required,min=1,max=12"`
 	PAPImportInfo service.PAPImportInfo `json:"data" binding:"required"`
 }
 
@@ -143,7 +144,7 @@ func (h *AlliancePAPHandler) ImportAlliancePAP(c *gin.Context) {
 	var req importAlliancePAPRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.PAPImportInfo.CalculatedAt == "" {
 		if err != nil {
-			response.Fail(c, response.CodeParamError, "请求参数错误: " + err.Error())
+			response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
 			return
 		}
 		response.Fail(c, response.CodeParamError, "请求参数错误: 缺少数据时间")

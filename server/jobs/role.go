@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
+	"amiya-eden/internal/utils"
 	"context"
 
 	"github.com/robfig/cron/v3"
@@ -22,7 +23,8 @@ func RegisterRoleJobs(c *cron.Cron) {
 // roleCheckTask 遍历所有用户，根据军团准入列表调整用户权限
 func roleCheckTask() {
 	// 未配置允许军团列表时跳过
-	if len(global.Config.App.AllowCorporations) == 0 {
+	allowCorps := utils.GetAllowCorporations()
+	if len(allowCorps) == 0 {
 		return
 	}
 

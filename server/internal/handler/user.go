@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"amiya-eden/global"
 	"amiya-eden/internal/middleware"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
+	"amiya-eden/internal/utils"
 	"amiya-eden/pkg/response"
 	"math"
 	"strconv"
@@ -36,7 +36,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	// admin 只能看到 allow_corporations 下有角色的用户，super_admin 看全部
 	roles := middleware.GetUserRoles(c)
 	if !model.IsSuperAdmin(roles) {
-		filter.AllowCorporations = global.Config.App.AllowCorporations
+		filter.AllowCorporations = utils.GetAllowCorporations()
 	}
 
 	users, total, err := h.svc.ListUsers(page, size, filter)

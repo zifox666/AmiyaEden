@@ -34,6 +34,8 @@ const (
 	SysConfigSDEProxy       = "sde.proxy"         // SDE 下载代理
 	SysConfigSDEDownloadURL = "sde.download_url"  // SDE 下载地址
 
+	SysConfigAllowCorporations = "app.allow_corporations" // 允许访问的公司 ID 列表 (JSON 数组)
+
 	SysConfigDefaultCorpID    int64  = 1
 	SysConfigDefaultSiteTitle string = "Amiya eden"
 

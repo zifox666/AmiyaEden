@@ -3,7 +3,8 @@ package esi
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
-	"amiya-eden/pkg/utils"
+	"amiya-eden/internal/utils"
+	app_utils "amiya-eden/pkg/utils"
 	"context"
 	"fmt"
 	"time"
@@ -83,7 +84,7 @@ func (t *StructureTask) Execute(ctx *TaskContext) error {
 	if err != nil {
 		return fmt.Errorf("query corp roles: %w", err)
 	}
-	if !utils.ContainsAny(corpRoles, []string{"Director", "Station_Manager"}) {
+	if !app_utils.ContainsAny(corpRoles, []string{"Director", "Station_Manager"}) {
 		global.Logger.Debug("[ESI] 角色没有足够的军团权限，跳过建筑信息刷新",
 			zap.Int64("character_id", ctx.CharacterID),
 			zap.Strings("corp_roles", corpRoles))
@@ -97,7 +98,7 @@ func (t *StructureTask) Execute(ctx *TaskContext) error {
 	if err != nil {
 		return fmt.Errorf("query corporation id: %w", err)
 	}
-	if !isCorporationAllowed(corpID, global.Config.App.AllowCorporations) {
+	if !isCorporationAllowed(corpID, utils.GetAllowCorporations()) {
 		global.Logger.Debug("[ESI] 角色所在军团不在 allow_corporations，跳过建筑信息刷新",
 			zap.Int64("character_id", ctx.CharacterID),
 			zap.Int64("corporation_id", corpID))

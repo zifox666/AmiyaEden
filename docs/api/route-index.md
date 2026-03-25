@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-03-25
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -201,6 +201,8 @@ source_of_truth:
 | --- | --- | --- | --- |
 | GET | `/system/basic-config` | 获取基础配置 | `RequireRole(admin)` |
 | PUT | `/system/basic-config` | 更新基础配置 | `RequireRole(admin)` |
+| GET | `/system/basic-config/allow-corporations` | 获取允许军团列表 | `RequireRole(admin)` |
+| PUT | `/system/basic-config/allow-corporations` | 更新允许军团列表 | `RequireRole(admin)` |
 
 ### SDE Config
 

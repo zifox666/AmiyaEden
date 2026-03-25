@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/internal/utils"
 	"context"
 	"fmt"
 	"time"
@@ -95,7 +96,7 @@ func (t *CorpRolesTask) Execute(ctx *TaskContext) error {
 
 	// 入库：同步角色的军团角色
 	autoRoleRepo := repository.NewAutoRoleRepository()
-	if !isCorporationAllowed(corpID, global.Config.App.AllowCorporations) {
+	if !isCorporationAllowed(corpID, utils.GetAllowCorporations()) {
 		if err := autoRoleRepo.SyncCharacterCorpRoles(ctx.CharacterID, nil); err != nil {
 			return fmt.Errorf("clear corp roles for disallowed corporation: %w", err)
 		}

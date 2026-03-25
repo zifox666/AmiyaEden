@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/internal/utils"
 	"amiya-eden/pkg/eve/esi"
 	"context"
 	"errors"
@@ -224,7 +225,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 	}
 
 	// 构建允许军团白名单（为空表示不信任任何军团信号）
-	allowCorps := global.Config.App.AllowCorporations
+	allowCorps := utils.GetAllowCorporations()
 	allowCorpSet := make(map[int64]struct{}, len(allowCorps))
 	for _, id := range allowCorps {
 		allowCorpSet[id] = struct{}{}

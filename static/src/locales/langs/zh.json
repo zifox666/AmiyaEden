@@ -1,4 +1,4 @@
-﻿{
+{
   "httpMsg": {
     "unauthorized": "未授权访问，请重新登录",
     "forbidden": "禁止访问该资源",
@@ -1347,7 +1347,7 @@
   "autoRolePage": {
     "title": "ESI 自动权限",
     "description": "根据角色的 EVE 军团职位和头衔，自动分配系统权限。",
-    "directorHint": "只有 allow_corporations 中具备 ESI corporation role `Director` 的角色才会自动映射为 admin 角色。",
+    "directorHint": "只有允许军团列表中具备 ESI corporation role `Director` 的角色才会自动映射为 admin 角色。",
     "triggerSync": "手动触发同步",
     "syncTriggered": "同步任务已触发，将在后台执行",
     "syncFailed": "触发失败",
@@ -1692,6 +1692,11 @@
       "corpIdPlaceholder": "请输入军团ID",
       "siteTitlePlaceholder": "请输入网站标题",
       "saveSuccess": "配置已保存",
+      "allowCorporations": "允许军团列表",
+      "allowCorporationsLabel": "军团 ID 列表",
+      "allowCorporationsPlaceholder": "每行输入一个军团 ID",
+      "allowCorporationsHint": "留空表示不信任任何军团信号。仅军团权限信号会受此配置影响。",
+      "invalidCorpId": "军团 ID 格式不正确",
       "sdeConfig": "SDE 配置",
       "sdeApiKey": "API Key",
       "sdeApiKeyPlaceholder": "用于保护 SDE 数据查询接口的密钥",
