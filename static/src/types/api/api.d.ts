@@ -1625,6 +1625,47 @@ declare namespace Api {
     }
   }
 
+  /** 军团建筑管理 */
+  namespace CorpStructure {
+    /** 建筑服务 */
+    interface StructureService {
+      name: string
+      state: 'online' | 'offline' | 'cleanup'
+    }
+
+    /** 建筑信息 */
+    interface StructureItem {
+      corporation_id: number
+      structure_id: number
+      fuel_expires: string
+      name: string
+      next_reinforce_apply: string
+      next_reinforce_hour: number
+      profile_id: number
+      reinforce_hour: number
+      state: string
+      state_timer_end: string
+      state_timer_start: string
+      system_id: number
+      type_id: number
+      unanchors_at: string
+      services: StructureService[]
+      update_at: number
+    }
+
+    /** 建筑列表（分页） */
+    type StructureList = Api.Common.PaginatedResponse<StructureItem>
+
+    /** 建筑列表请求 */
+    interface ListRequest {
+      current: number
+      size: number
+      corp_id?: number
+      state?: string
+      fuel_expires_soon?: boolean
+    }
+  }
+
   /** 技能规划 */
   namespace SkillPlan {
     /** 技能规划条目 */

@@ -341,7 +341,8 @@
       "title": "军团管理",
       "skillPlanManage": "技能规划管理",
       "skillPlanCheck": "技能规划检查",
-      "skillPlan": "技能规划"
+      "skillPlan": "技能规划",
+      "structures": "建筑管理"
     }
   },
   "info": {
@@ -1651,5 +1652,38 @@
     "copyMissing": "复制缺少技能",
     "copySuccess": "已复制到剪贴板",
     "copyEmpty": "没有缺少的技能"
+  },
+  "corpStructure": {
+    "title": "建筑管理",
+    "selectCorp": "选择军团",
+    "corpPrefix": "军团 {id}",
+    "stateFilter": "筛选状态",
+    "fuelExpiresFilter": "仅低油量（7天内）",
+    "stateLabels": {
+      "shield_vulnerable": "护盾可被攻击(正常)",
+      "armor_reinforce": "装甲增强",
+      "armor_vulnerable": "装甲可被攻击",
+      "hull_reinforce": "结构增强",
+      "hull_vulnerable": "船体可被攻击",
+      "anchoring": "锚定中",
+      "unanchored": "已解锚",
+      "fitting_invulnerable": "装配（无敌）",
+      "onlining_vulnerable": "上线中",
+      "online_deprecated": "已过期上线",
+      "anchor_vulnerable": "锚点（脆弱）",
+      "deploy_vulnerable": "部署（脆弱）",
+      "unknown": "未知"
+    },
+    "fields": {
+      "name": "建筑名称",
+      "state": "状态",
+      "systemId": "星系 ID",
+      "typeId": "类型 ID",
+      "fuelExpires": "燃料到期",
+      "reinforceHour": "强化时间",
+      "services": "服务",
+      "stateTimerEnd": "状态计时器结束",
+      "unanchorsAt": "解锚时间"
+    }
   }
 }

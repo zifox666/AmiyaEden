@@ -297,7 +297,8 @@
     "corpManage": {
       "title": "Corp Management",
       "skillPlanManage": "Skill Plan Admin",
-      "skillPlanCheck": "Skill Check"
+      "skillPlanCheck": "Skill Check",
+      "structures": "Structure Management"
     },
     "shop": {
       "title": "Shop",
@@ -1650,5 +1651,38 @@
     "copyMissing": "Copy Missing Skills",
     "copySuccess": "Copied to clipboard",
     "copyEmpty": "No missing skills"
+  },
+  "corpStructure": {
+    "title": "Structure Management",
+    "selectCorp": "Select Corporation",
+    "corpPrefix": "Corp {id}",
+    "stateFilter": "Filter State",
+    "fuelExpiresFilter": "Low Fuel Only (7 days)",
+    "stateLabels": {
+      "shield_vulnerable": "Shield Vulnerable",
+      "armor_reinforce": "Armor Reinforcing",
+      "armor_vulnerable": "Armor Vulnerable",
+      "hull_reinforce": "Hull Reinforcing",
+      "hull_vulnerable": "Hull Vulnerable",
+      "anchoring": "Anchoring",
+      "unanchored": "Unanchored",
+      "fitting_invulnerable": "Fitting Invulnerable",
+      "onlining_vulnerable": "Onlining Vulnerable",
+      "online_deprecated": "Online Deprecated",
+      "anchor_vulnerable": "Anchor Vulnerable",
+      "deploy_vulnerable": "Deploy Vulnerable",
+      "unknown": "Unknown"
+    },
+    "fields": {
+      "name": "Structure Name",
+      "state": "State",
+      "systemId": "System ID",
+      "typeId": "Type ID",
+      "fuelExpires": "Fuel Expires",
+      "reinforceHour": "Reinforce Hour",
+      "services": "Services",
+      "stateTimerEnd": "State Timer End",
+      "unanchorsAt": "Unanchors At"
+    }
   }
 }

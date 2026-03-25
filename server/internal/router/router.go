@@ -127,6 +127,14 @@ func RegisterRoutes(r *gin.Engine) {
 	// ─── 技能规划 ───
 	skillPlanH := handler.NewSkillPlanHandler()
 	skillPlan := operation.Group("/skill-plans")
+
+	// ─── 军团建筑管理 ───
+	corpStructureH := handler.NewCorpStructureHandler()
+	corpStructure := operation.Group("/corp-structures")
+	{
+		corpStructure.POST("/list", corpStructureH.ListStructures)
+		corpStructure.GET("/corps", corpStructureH.GetCorpIDs)
+	}
 	{
 		skillPlan.GET("/all", skillPlanH.ListAllSkillPlans)
 		skillPlan.GET("/:id", skillPlanH.GetSkillPlan)

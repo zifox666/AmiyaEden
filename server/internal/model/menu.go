@@ -148,6 +148,7 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "CorpManage", Path: "/corp-manage", Component: "/index/index", Title: "menus.corpManage.title", Icon: "ri:shield-star-line", Sort: 75, Status: 1}},
 		{ParentName: "CorpManage", Menu: Menu{Type: MenuTypeMenu, Name: "SkillPlanManage", Path: "skill-plan", Component: "/corp-manage/skill-plan", Title: "menus.corpManage.skillPlanManage", Sort: 100, KeepAlive: true, Status: 1}},
 		{ParentName: "CorpManage", Menu: Menu{Type: MenuTypeMenu, Name: "SkillPlanCheck", Path: "skill-plan-check", Component: "/corp-manage/skill-plan/check", Title: "menus.corpManage.skillPlanCheck", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "CorpManage", Menu: Menu{Type: MenuTypeMenu, Name: "Structures", Path: "structures", Component: "/corp-manage/structures/index", Title: "menus.corpManage.structures", Sort: 80, KeepAlive: true, Status: 1}},
 
 		// ── System ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", Sort: 70, Status: 1}},

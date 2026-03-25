@@ -1,5 +1,5 @@
 <template>
-  <div class="corp-npc-kills-page art-full-height">
+  <div class="corp-npc-kills-page">
     <!-- 日期范围筛选 -->
     <ElCard class="art-card" shadow="never">
       <div class="flex items-center gap-4 flex-wrap">

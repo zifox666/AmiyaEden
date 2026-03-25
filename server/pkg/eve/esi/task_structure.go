@@ -118,6 +118,13 @@ func (t *StructureTask) Execute(ctx *TaskContext) error {
 	// 2. 批量 Upsert CorpStructureInfo
 	corpRecords := make([]model.CorpStructureInfo, 0, len(esiStructures))
 	for _, s := range esiStructures {
+		services := make(model.CorpStructureServices, 0, len(s.Services))
+		for _, svc := range s.Services {
+			services = append(services, model.CorpStructureService{
+				Name:  svc.Name,
+				State: svc.State,
+			})
+		}
 		corpRecords = append(corpRecords, model.CorpStructureInfo{
 			CorporationID:      corpID,
 			StructureID:        s.StructureID,
@@ -133,6 +140,7 @@ func (t *StructureTask) Execute(ctx *TaskContext) error {
 			SystemID:           s.SystemID,
 			TypeID:             s.TypeID,
 			UnanchorsAt:        s.UnanchorsAt,
+			Services:           services,
 			UpdateAt:           now,
 		})
 	}
