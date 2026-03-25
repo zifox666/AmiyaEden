@@ -23,6 +23,7 @@ type CorpStructureListRequest struct {
 	CorpID          int64  `json:"corp_id"`
 	State           string `json:"state"`
 	FuelExpiresSoon bool   `json:"fuel_expires_soon"`
+	Keyword         string `json:"keyword"`
 }
 
 // ListCorpStructures 获取用户可见的军团建筑列表
@@ -46,7 +47,7 @@ func (s *CorpStructureService) ListCorpStructures(userID uint, req *CorpStructur
 		corpID = corpIDs[0]
 	}
 
-	list, total, err := s.repo.ListByCorpID(corpID, req.Current, req.Size, req.State, req.FuelExpiresSoon)
+	list, total, err := s.repo.ListByCorpID(corpID, req.Current, req.Size, req.State, req.FuelExpiresSoon, req.Keyword)
 	if err != nil {
 		return nil, err
 	}

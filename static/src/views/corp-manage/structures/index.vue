@@ -1,10 +1,21 @@
-<!-- 军团建筑管理页面 -->
+﻿<!-- 军团建筑管理页面 -->
 <template>
   <div class="corp-structures art-full-height">
     <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="getData">
         <template #left>
-          <!-- 军团选择器（多军团时显示） -->
+          <!-- 搜索框 -->
+          <ElInput
+            v-model="keyword"
+            :placeholder="$t('corpStructure.searchPlaceholder')"
+            clearable
+            style="width: 220px; margin-right: 12px"
+            :prefix-icon="Search"
+            @input="handleKeywordInput"
+            @clear="handleKeywordInput"
+          />
+
+          <!-- 军团选择器（多军团时显示）-->
           <ElSelect
             v-if="corpIDs.length > 1"
             v-model="selectedCorpID"
@@ -31,7 +42,7 @@
             />
           </ElSelect>
 
-          <!-- 低油量开关 -->
+          <!-- 低燃料开关 -->
           <span style="display: inline-flex; align-items: center; gap: 6px">
             <ElSwitch v-model="fuelExpiresSoon" @change="handleFilterChange" />
             <span style="font-size: 13px; color: var(--el-text-color-regular)">
@@ -58,18 +69,25 @@
   import { useTable } from '@/hooks/core/useTable'
   import { fetchCorpStructureList, fetchCorpIDs } from '@/api/corp-structure'
   import { fetchNames } from '@/api/sde'
-  import { ElTag, ElSelect, ElOption, ElSwitch } from 'element-plus'
+  import { ElTag, ElSelect, ElOption, ElSwitch, ElInput } from 'element-plus'
+  import { Search } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'CorpStructures' })
 
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
 
   const corpIDs = ref<number[]>([])
   const selectedCorpID = ref<number | undefined>(undefined)
   const corpNames = ref<Map<number, string>>(new Map())
+  const solarSystemNames = ref<Map<number, string>>(new Map())
+  const typeNames = ref<Map<number, string>>(new Map())
   const stateFilter = ref<string>('')
   const fuelExpiresSoon = ref<boolean>(false)
+  const keyword = ref<string>('')
+
+  // 防抖 timer
+  let keywordTimer: ReturnType<typeof setTimeout> | null = null
 
   function getCorpLabel(id: number): string {
     return corpNames.value.get(id) ?? t('corpStructure.corpPrefix', { id })
@@ -111,6 +129,41 @@
     cleanup: 'warning'
   }
 
+  function formatReinforceHour(hour: number): string {
+    return String(hour).padStart(2, '0') + ':00'
+  }
+
+  // 每次数据加载后解析 system_id 和 type_id 的名称
+  async function resolveNames(rows: Api.CorpStructure.StructureItem[]) {
+    const systemIds = [...new Set(rows.map((r) => r.system_id).filter(Boolean))]
+    const typeIds = [...new Set(rows.map((r) => r.type_id).filter(Boolean))]
+    if (systemIds.length === 0 && typeIds.length === 0) return
+
+    try {
+      const lang = locale.value.startsWith('zh') ? 'zh' : 'en'
+      const ids: Record<string, number[]> = {}
+      if (systemIds.length > 0) ids['solar_system'] = systemIds
+      if (typeIds.length > 0) ids['type'] = typeIds
+
+      const nameMap = await fetchNames({ language: lang, ids })
+      const raw = nameMap as Record<string, string>
+
+      const sysMap = new Map<number, string>(solarSystemNames.value)
+      systemIds.forEach((id) => {
+        if (raw[String(id)]) sysMap.set(id, raw[String(id)])
+      })
+      solarSystemNames.value = sysMap
+
+      const typeMap = new Map<number, string>(typeNames.value)
+      typeIds.forEach((id) => {
+        if (raw[String(id)]) typeMap.set(id, raw[String(id)])
+      })
+      typeNames.value = typeMap
+    } catch {
+      // 降级：保留已有缓存，ID 直接显示
+    }
+  }
+
   const {
     columns,
     columnChecks,
@@ -142,11 +195,7 @@
             const label = t(`corpStructure.stateLabels.${row.state}`, row.state)
             return h(
               ElTag,
-              {
-                type: (STATE_MAP[row.state] ?? 'info') as any,
-                effect: 'dark',
-                size: 'small'
-              },
+              { type: (STATE_MAP[row.state] ?? 'info') as any, effect: 'dark', size: 'small' },
               () => label
             )
           }
@@ -154,12 +203,25 @@
         {
           prop: 'system_id',
           label: t('corpStructure.fields.systemId'),
-          width: 120
+          width: 160,
+          formatter: (row: Api.CorpStructure.StructureItem) =>
+            solarSystemNames.value.get(row.system_id) ?? String(row.system_id)
         },
         {
           prop: 'type_id',
           label: t('corpStructure.fields.typeId'),
-          width: 120
+          width: 220,
+          formatter: (row: Api.CorpStructure.StructureItem) => {
+            const name = typeNames.value.get(row.type_id) ?? String(row.type_id)
+            return h('span', { style: 'display:inline-flex;align-items:center;gap:6px' }, [
+              h('img', {
+                src: `https://images.newdoublex.space/types/${row.type_id}/icon`,
+                style: 'width:24px;height:24px;border-radius:2px;flex-shrink:0',
+                loading: 'lazy'
+              }),
+              h('span', {}, name)
+            ])
+          }
         },
         {
           prop: 'fuel_expires',
@@ -173,7 +235,9 @@
         {
           prop: 'reinforce_hour',
           label: t('corpStructure.fields.reinforceHour'),
-          width: 100
+          width: 110,
+          formatter: (row: Api.CorpStructure.StructureItem) =>
+            formatReinforceHour(row.reinforce_hour)
         },
         {
           prop: 'services',
@@ -187,10 +251,7 @@
               row.services.map((svc) =>
                 h(
                   ElTag,
-                  {
-                    type: (SERVICE_STATE_MAP[svc.state] ?? 'info') as any,
-                    size: 'small'
-                  },
+                  { type: (SERVICE_STATE_MAP[svc.state] ?? 'info') as any, size: 'small' },
                   () => svc.name
                 )
               )
@@ -216,6 +277,11 @@
           }
         }
       ]
+    },
+    hooks: {
+      onSuccess: (rows) => {
+        resolveNames(rows as Api.CorpStructure.StructureItem[])
+      }
     }
   })
 
@@ -230,6 +296,14 @@
       fuel_expires_soon: fuelExpiresSoon.value || undefined
     })
     getData()
+  }
+
+  function handleKeywordInput() {
+    if (keywordTimer) clearTimeout(keywordTimer)
+    keywordTimer = setTimeout(() => {
+      Object.assign(searchParams, { keyword: keyword.value || undefined })
+      getData()
+    }, 400)
   }
 
   async function loadCorpIDs() {

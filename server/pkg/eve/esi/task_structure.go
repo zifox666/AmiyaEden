@@ -24,7 +24,7 @@ func (t *StructureTask) Priority() Priority  { return PriorityLow }
 
 func (t *StructureTask) Interval() RefreshInterval {
 	return RefreshInterval{
-		Active:   3 * 24 * time.Hour,
+		Active:   6 * time.Hour,
 		Inactive: 7 * 24 * time.Hour,
 	}
 }
