@@ -397,6 +397,27 @@ func isZipMagic(magic []byte) bool {
 		magic[2] == 0x03 && magic[3] == 0x04
 }
 
+// safeJoin 构造位于 destDir 下的安全路径，防止路径遍历
+func safeJoin(destDir, name string) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("invalid empty file name in archive")
+	}
+	// 只保留最终文件名，丢弃任何目录部分
+	base := filepath.Base(name)
+	if base == "." || base == string(filepath.Separator) {
+		return "", fmt.Errorf("invalid file name in archive: %q", name)
+	}
+	// 基于安全的 base 名构造输出路径
+	outPath := filepath.Join(destDir, base)
+	// 规范化并确保仍然位于目标目录下
+	cleanDest := filepath.Clean(destDir)
+	cleanOut := filepath.Clean(outPath)
+	if !strings.HasPrefix(cleanOut+string(filepath.Separator), cleanDest+string(filepath.Separator)) {
+		return "", fmt.Errorf("archive entry resolves outside destination directory: %q", name)
+	}
+	return outPath, nil
+}
+
 // extractGzip 解压 gzip 文件，输出文件名去掉 .gz 后缀
 func extractGzip(srcPath, destDir string) (string, error) {
 	f, err := os.Open(srcPath)
@@ -424,7 +445,10 @@ func extractGzip(srcPath, destDir string) (string, error) {
 	if outName == "" {
 		outName = strings.TrimSuffix(filepath.Base(srcPath), ".gz")
 	}
-	outPath := filepath.Join(destDir, filepath.Base(outName))
+	outPath, err := safeJoin(destDir, outName)
+	if err != nil {
+		return "", err
+	}
 	out, err := os.Create(outPath)
 	if err != nil {
 		return "", err
@@ -494,7 +518,11 @@ func extractZip(srcPath, destDir string) (string, error) {
 		if !strings.Contains(name, ".sql") {
 			continue
 		}
-		outPath := filepath.Join(destDir, filepath.Base(f.Name))
+		outPath, err := safeJoin(destDir, f.Name)
+		if err != nil {
+			// 非法路径，跳过该条目继续寻找其他 SQL 文件
+			continue
+		}
 		rc, err := f.Open()
 		if err != nil {
 			return "", err
