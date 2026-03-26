@@ -257,12 +257,9 @@ func RegisterRoutes(r *gin.Engine) {
 	admin.GET("/sde-config", sysConfigH.GetSDEConfig)
 	admin.PUT("/sde-config", sysConfigH.UpdateSDEConfig)
 
-	// 允许访问的军团列表（super_admin）
-	superAdmin := admin.Group("", middleware.RequireRole(model.RoleSuperAdmin))
-	{
-		superAdmin.GET("/allow-corporations", sysConfigH.GetAllowCorporations)
-		superAdmin.PUT("/allow-corporations", sysConfigH.UpdateAllowCorporations)
-	}
+	// 允许访问的军团列表
+	admin.GET("/basic-config/allow-corporations", sysConfigH.GetAllowCorporations)
+	admin.PUT("/basic-config/allow-corporations", sysConfigH.UpdateAllowCorporations)
 
 	// NPC 刷怪报表（管理员 — 公司级）
 	admin.POST("/npc-kills", npcKillH.GetCorpNpcKills)
