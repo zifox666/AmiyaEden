@@ -2,12 +2,13 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-03-26
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/fleet.go
   - server/internal/service/fleet_config.go
   - server/internal/service/auto_srp.go
+  - server/internal/service/pap_exchange.go
   - static/src/api/fleet.ts
   - static/src/api/fleet-config.ts
   - static/src/views/operation
@@ -66,6 +67,8 @@ source_of_truth:
 - 保存到游戏是把现有舰队配置装配导出到当前用户自己的 ESI 角色，不是系统配置写操作
 - 联盟 PAP 的用户侧展示在 Operation，管理员配置与导入在 System
 - 军团 PAP 页面属于多块统计 + 表格混排的分析页，当前明确允许不走 `useTable` / `ArtTable` 默认模板
+- 发放 PAP 时的钱包换算不再是固定 1:1，而是按舰队 `importance`（`cta` / `strat_op` / `other`）查询 `pap_type_rate` 表中对应汇率；汇率配置入口在「系统管理 → PAP兑换」，详见 `docs/features/current/pap-exchange.md`
+- 联盟 PAP 月度归档为纯归档操作，当前不进行钱包兑换（该能力预留为未来特性）
 
 ## 主要代码文件
 

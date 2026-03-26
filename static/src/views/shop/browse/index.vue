@@ -43,9 +43,6 @@
             :placeholder="$t('shop.remarkPlaceholder')"
           />
         </ElFormItem>
-        <div v-if="buyProduct.need_approval" class="text-xs text-orange-500 mb-2">
-          <el-icon><Warning /></el-icon> {{ $t('shop.approvalNotice') }}
-        </div>
       </ElForm>
       <template #footer>
         <ElButton @click="buyDialogVisible = false">{{ $t('common.cancel') }}</ElButton>
@@ -58,7 +55,6 @@
 </template>
 
 <script setup lang="ts">
-  import { Warning } from '@element-plus/icons-vue'
   import {
     ElTabs,
     ElTabPane,

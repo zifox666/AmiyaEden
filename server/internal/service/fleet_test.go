@@ -6,6 +6,40 @@ import (
 	"time"
 )
 
+func TestPapImportanceToWalletRate(t *testing.T) {
+	rateMap := map[string]float64{
+		model.PAPTypeSkirmish: 10,
+		model.PAPTypeStratOp:  30,
+		model.PAPTypeCTA:      50,
+	}
+
+	tests := []struct {
+		name       string
+		importance string
+		want       float64
+	}{
+		{name: "CTA maps to cta rate", importance: model.FleetImportanceCTA, want: 50},
+		{name: "strat_op maps to strat_op rate", importance: model.FleetImportanceStratOp, want: 30},
+		{name: "other maps to skirmish rate", importance: model.FleetImportanceOther, want: 10},
+		{name: "unknown importance maps to skirmish rate", importance: "unknown", want: 10},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := papImportanceToWalletRate(tt.importance, rateMap); got != tt.want {
+				t.Fatalf("papImportanceToWalletRate(%q) = %v, want %v", tt.importance, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPapImportanceToWalletRateMissingKey(t *testing.T) {
+	// When a pap_type is absent from the map (e.g. DB read failure), fall back to 1.
+	if got := papImportanceToWalletRate(model.FleetImportanceCTA, map[string]float64{}); got != 1 {
+		t.Fatalf("expected fallback rate 1, got %v", got)
+	}
+}
+
 func TestNormalizeAutoSrpMode(t *testing.T) {
 	tests := []struct {
 		name string

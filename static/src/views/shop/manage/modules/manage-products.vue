@@ -91,7 +91,7 @@
             v-else
             class="image-uploader"
             :show-file-list="false"
-            accept="image/jpeg,image/png,image/gif,image/webp"
+            accept="image/jpeg,image/png,image/webp"
             :before-upload="handleImageBeforeUpload"
             :http-request="handleImageUpload"
           >
@@ -109,9 +109,9 @@
       <ElFormItem :label="t('shop.manage.price')" prop="price">
         <ElInputNumber
           v-model="formData.price"
-          :min="0.01"
-          :precision="2"
-          :step="10"
+          :min="1"
+          :precision="0"
+          :step="1"
           style="width: 200px"
         />
       </ElFormItem>
@@ -136,9 +136,6 @@
           <ElOption :label="t('shop.manage.periodMonthly')" value="monthly" />
         </ElSelect>
         <span class="ml-2 text-xs text-gray-400">{{ t('shop.manage.limitPeriodHint') }}</span>
-      </ElFormItem>
-      <ElFormItem :label="t('shop.manage.needApproval')">
-        <ElSwitch v-model="formData.need_approval" />
       </ElFormItem>
       <ElFormItem :label="t('shop.manage.status')">
         <ElSelect v-model="formData.status" style="width: 200px">
@@ -167,7 +164,6 @@
     ElInput,
     ElSelect,
     ElOption,
-    ElSwitch,
     ElMessage,
     ElMessageBox,
     ElUpload
@@ -180,9 +176,9 @@
     adminListProducts,
     adminCreateProduct,
     adminUpdateProduct,
-    adminDeleteProduct,
-    uploadShopImage
+    adminDeleteProduct
   } from '@/api/shop'
+  import { uploadImageAsDataUrl } from '@/api/upload'
   import { useTable } from '@/hooks/core/useTable'
   import { useI18n } from 'vue-i18n'
 
@@ -207,8 +203,7 @@
       }) as unknown as Record<number, { label: string; type: string }>
   )
 
-  const formatISK = (v: number) =>
-    v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const formatISK = (v: number) => Math.round(v).toLocaleString('en-US')
 
   // ─── 搜索过滤状态 ───
   const nameFilter = ref('')
@@ -287,17 +282,6 @@
           }
         },
         {
-          prop: 'need_approval',
-          label: t('shop.manage.colApproval'),
-          width: 90,
-          formatter: (row: Product) =>
-            h(
-              ElTag,
-              { type: row.need_approval ? 'warning' : 'info', size: 'small', effect: 'plain' },
-              () => (row.need_approval ? t('shop.manage.yes') : t('shop.manage.no'))
-            )
-        },
-        {
           prop: 'status',
           label: t('shop.manage.status'),
           width: 90,
@@ -360,12 +344,11 @@
     name: '',
     description: '',
     image: '',
-    price: 0,
+    price: 1,
     type: 'normal' as 'normal' | 'redeem',
     stock: -1,
     max_per_user: 0,
     limit_period: 'forever' as 'forever' | 'daily' | 'weekly' | 'monthly',
-    need_approval: false,
     status: 1 as number,
     sort_order: 0
   })
@@ -381,12 +364,11 @@
       name: '',
       description: '',
       image: '',
-      price: 0,
+      price: 1,
       type: 'normal',
       stock: -1,
       max_per_user: 0,
       limit_period: 'forever',
-      need_approval: false,
       status: 1,
       sort_order: 0
     })
@@ -409,7 +391,6 @@
       stock: row.stock,
       max_per_user: row.max_per_user,
       limit_period: row.limit_period || 'forever',
-      need_approval: row.need_approval,
       status: row.status,
       sort_order: row.sort_order
     })
@@ -460,7 +441,7 @@
   const imageUploading = ref(false)
 
   function handleImageBeforeUpload(file: File) {
-    const maxSize = 5 * 1024 * 1024
+    const maxSize = 2 * 1024 * 1024
     if (file.size > maxSize) {
       ElMessage.error(t('shop.manage.imageTooLarge'))
       return false
@@ -471,7 +452,7 @@
   async function handleImageUpload(options: UploadRequestOptions) {
     imageUploading.value = true
     try {
-      const res = (await uploadShopImage(options.file as File)) as any
+      const res = (await uploadImageAsDataUrl(options.file as File)) as any
       formData.image = res?.url ?? ''
       ElMessage.success(t('shop.manage.uploadSuccess'))
     } catch (e: any) {

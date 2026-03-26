@@ -174,6 +174,8 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "SystemWallet", Path: "wallet", Component: "/system/wallet", Title: "menus.system.wallet", Sort: 65, KeepAlive: true, Status: 1}},
 		{ParentName: "SystemWallet", Menu: Menu{Type: MenuTypeButton, Name: "WalletAdjust", Permission: "system:wallet:adjust", Title: "调整余额", Sort: 100, Status: 1}},
 		{ParentName: "SystemWallet", Menu: Menu{Type: MenuTypeButton, Name: "WalletViewLog", Permission: "system:wallet:log", Title: "查看日志", Sort: 90, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "PAPExchange", Path: "pap-exchange", Component: "/system/pap-exchange", Title: "menus.system.papExchange", Sort: 64, KeepAlive: true, Status: 1}},
+		{ParentName: "PAPExchange", Menu: Menu{Type: MenuTypeButton, Name: "PAPExchangeEdit", Permission: "system:pap:exchange", Title: "编辑兑换率", Sort: 100, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "AlliancePAP", Path: "pap", Component: "/system/pap", Title: "menus.system.alliancePap", Sort: 63, KeepAlive: true, Status: 1}},
 		{ParentName: "AlliancePAP", Menu: Menu{Type: MenuTypeButton, Name: "AlliancePAPFetch", Permission: "system:pap:fetch", Title: "手动拉取", Sort: 100, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "CorpNpcKillReport", Path: "npc-kills", Component: "/system/npc-kills", Title: "menus.system.npcKills", Sort: 62, KeepAlive: true, Status: 1}},

@@ -158,7 +158,7 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/upload/image` | 上传图片 | Login |
+| POST | `/upload/image` | 上传图片，返回 base64 data URL（不落盘，最大 2MB，仅支持 jpeg/png/webp） | Login |
 
 ## SRP
 
@@ -219,9 +219,14 @@ source_of_truth:
 | GET | `/system/pap` | 联盟 PAP 列表 | `RequireRole(admin)` |
 | POST | `/system/pap/fetch` | 手动抓取联盟 PAP | `RequireRole(admin)` |
 | POST | `/system/pap/import` | 导入联盟 PAP | `RequireRole(admin)` |
-| GET | `/system/pap/config` | 获取兑换配置 | `RequireRole(admin)` |
-| PUT | `/system/pap/config` | 设置兑换配置 | `RequireRole(admin)` |
-| POST | `/system/pap/settle` | 月度结算 | `RequireRole(admin)` |
+| POST | `/system/pap/settle` | 月度归档 | `RequireRole(admin)` |
+
+### PAP 兑换汇率
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/system/pap-exchange/rates` | 获取 PAP 类型兑换汇率列表 | `RequireRole(admin)` |
+| PUT | `/system/pap-exchange/rates` | 更新 PAP 类型兑换汇率 | `RequireRole(admin)` |
 
 ### Menu / Role / User
 

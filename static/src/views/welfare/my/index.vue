@@ -26,12 +26,63 @@
         </ElTabPane>
       </ElTabs>
     </ElCard>
+
+    <!-- 证明图片上传对话框 -->
+    <ElDialog
+      v-model="evidenceDialogVisible"
+      :title="t('welfareMy.evidenceDialogTitle')"
+      width="480px"
+      destroy-on-close
+    >
+      <div class="flex flex-col gap-3">
+        <p class="text-sm text-gray-500">{{ t('welfareMy.evidenceDialogHint') }}</p>
+        <div v-if="pendingApplyRow?.exampleEvidence" class="flex flex-col gap-1">
+          <span class="text-xs text-gray-400">{{ t('welfareMy.exampleEvidenceLabel') }}</span>
+          <img
+            :src="pendingApplyRow.exampleEvidence"
+            class="rounded border"
+            style="max-height: 160px; max-width: 100%; object-fit: contain"
+          />
+        </div>
+        <ElUpload
+          :show-file-list="false"
+          accept="image/*"
+          :before-upload="handleEvidenceFileUpload"
+        >
+          <ElButton size="small" :loading="evidenceUploading">
+            {{ t('welfareMy.uploadEvidenceBtn') }}
+          </ElButton>
+        </ElUpload>
+        <img
+          v-if="evidenceImageUrl"
+          :src="evidenceImageUrl"
+          class="rounded border"
+          style="max-height: 160px; max-width: 100%; object-fit: contain"
+        />
+      </div>
+      <template #footer>
+        <ElButton @click="evidenceDialogVisible = false">{{ t('common.cancel') }}</ElButton>
+        <ElButton
+          type="primary"
+          :disabled="!evidenceImageUrl"
+          :loading="applyLoading"
+          @click="handleEvidenceConfirm"
+        >
+          {{ t('common.confirm') }}
+        </ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElMessage, ElEmpty } from 'element-plus'
-  import { getEligibleWelfares, applyForWelfare, getMyApplications } from '@/api/welfare'
+  import { ElTag, ElButton, ElUpload, ElMessage, ElEmpty } from 'element-plus'
+  import {
+    getEligibleWelfares,
+    applyForWelfare,
+    getMyApplications,
+    uploadWelfareEvidence
+  } from '@/api/welfare'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'WelfareMy' })
@@ -152,14 +203,56 @@
     }
   }
 
-  async function handleApply(row: EligibleRow) {
+  // ─── 证明图片对话框 ───
+  const evidenceDialogVisible = ref(false)
+  const pendingApplyRow = ref<(EligibleRow & { exampleEvidence: string }) | null>(null)
+  const evidenceImageUrl = ref('')
+  const evidenceUploading = ref(false)
+  const applyLoading = ref(false)
+
+  function handleApply(row: EligibleRow) {
+    const welfare = eligibleWelfares.value.find((w) => w.id === row.welfareId)
+    if (welfare?.require_evidence) {
+      pendingApplyRow.value = { ...row, exampleEvidence: welfare.example_evidence ?? '' }
+      evidenceImageUrl.value = ''
+      evidenceDialogVisible.value = true
+    } else {
+      submitApply(row, '')
+    }
+  }
+
+  async function handleEvidenceFileUpload(file: File) {
+    evidenceUploading.value = true
+    try {
+      const res = await uploadWelfareEvidence(file)
+      evidenceImageUrl.value = res.url
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('welfareMy.applyFailed'))
+    } finally {
+      evidenceUploading.value = false
+    }
+    return false
+  }
+
+  async function handleEvidenceConfirm() {
+    if (!pendingApplyRow.value || !evidenceImageUrl.value) return
+    applyLoading.value = true
+    try {
+      await submitApply(pendingApplyRow.value, evidenceImageUrl.value)
+      evidenceDialogVisible.value = false
+    } finally {
+      applyLoading.value = false
+    }
+  }
+
+  async function submitApply(row: EligibleRow, evidenceImage: string) {
     try {
       await applyForWelfare({
         welfare_id: row.welfareId,
-        character_id: row.characterId
+        character_id: row.characterId,
+        evidence_image: evidenceImage || undefined
       })
       ElMessage.success(t('welfareMy.applySuccess'))
-      // 刷新两个 tab 的数据
       loadEligibleWelfares()
       loadApplications()
     } catch (e: any) {

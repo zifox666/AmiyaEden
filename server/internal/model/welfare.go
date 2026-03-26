@@ -29,7 +29,9 @@ type Welfare struct {
 	Description      string `gorm:"type:text"                   json:"description"`
 	DistMode         string `gorm:"size:20;not null;default:'per_user'" json:"dist_mode"`
 	RequireSkillPlan bool   `gorm:"default:false"               json:"require_skill_plan"`
-	MaxCharAgeMonths *int    `gorm:""                            json:"max_char_age_months"`
+	MaxCharAgeMonths *int   `gorm:""                            json:"max_char_age_months"`
+	RequireEvidence  bool   `gorm:"default:false"               json:"require_evidence"`
+	ExampleEvidence  string `gorm:"type:text"                   json:"example_evidence"`
 	Status           int8   `gorm:"default:1"                   json:"status"`
 	CreatedBy        uint   `gorm:"not null"                    json:"created_by"`
 
@@ -64,6 +66,7 @@ type WelfareApplication struct {
 	CharacterName string     `gorm:"size:128"                  json:"character_name"`
 	QQ            string     `gorm:"size:20"                   json:"qq"`
 	DiscordID     string     `gorm:"size:20"                   json:"discord_id"`
+	EvidenceImage string     `gorm:"type:text"                 json:"evidence_image"`
 	Status        string     `gorm:"size:20;default:'requested';index" json:"status"`
 	ReviewedBy    uint       `gorm:"default:0"                 json:"reviewed_by"`
 	ReviewedAt    *time.Time `gorm:""                          json:"reviewed_at"`

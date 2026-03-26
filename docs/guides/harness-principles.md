@@ -2,7 +2,7 @@
 status: active
 doc_type: guide
 owner: engineering
-last_reviewed: 2026-03-24
+last_reviewed: 2026-03-26
 source_of_truth:
   - docs/ai/repo-rules.md
   - docs/README.md
@@ -17,6 +17,8 @@ This guide explains how the repository is structured to support reliable AI-assi
 It is not the rule source. Repository-wide rules live in `docs/ai/repo-rules.md` and the standards under `docs/standards/`.
 
 Use this document to understand why the harness exists, how its parts fit together, and how to evolve it without weakening repository discipline.
+
+This is primarily a maintainer reference, not an active-work doc for coding agents.
 
 ## What Harness Engineering Means
 

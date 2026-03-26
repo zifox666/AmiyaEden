@@ -39,10 +39,11 @@ make dev
 
 ## 依赖要求
 
-- Go `>= 1.24`
-- Node.js `>= 20.19.0`
-- pnpm `>= 8.8.0`
+- Go `>= 1.24.5`
+- Node.js `24`（与 CI 保持一致，见根目录 `.nvmrc`）
+- pnpm `10.32.1`（与 CI 保持一致）
 - Air（Go 热重载工具）
+- golangci-lint `v2.11.4`（与 CI 保持一致）
 - PostgreSQL
 - Redis
 
@@ -76,12 +77,14 @@ cp server/config/config.example.yaml server/config/config.yaml
 docker compose -f docker-compose.example.yml up -d postgres redis
 ```
 
-### 3. 安装 Air（若未安装）
+### 3. 安装 Air 与 golangci-lint（若未安装）
 
 ```bash
 go install github.com/air-verse/air@latest
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.11.4
 export PATH="$PATH:$(go env GOPATH)/bin"
 air -v
+golangci-lint --version
 ```
 
 ### 4. 安装前端依赖（首次或依赖变更后）
@@ -145,21 +148,8 @@ VITE_OPEN_ROUTE_INFO=false
 
 ## 常用校验命令
 
-后端：
+参见 `docs/standards/testing-and-verification.md`（`Default Commands` 节）。
 
-```bash
-cd server && go test ./...
-cd server && go build ./...
-```
-
-前端：
-
-```bash
-cd static && pnpm lint .
-cd static && pnpm exec vue-tsc --noEmit
-cd static && pnpm test:unit
-cd static && pnpm build
-```
 
 ## 常见问题
 

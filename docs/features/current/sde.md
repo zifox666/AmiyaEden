@@ -62,10 +62,9 @@ source_of_truth:
 
 ## 验证
 
-- 后端基础校验：`cd server && go test ./...`
-- 后端构建校验：`cd server && go build ./...`
-- 前端类型校验：`cd static && pnpm exec vue-tsc --noEmit`
-- 前端 SDE 名称解析回归测试：`cd static && pnpm test:unit`
+标准校验命令参见 `docs/standards/testing-and-verification.md`（`Default Commands` 节）。
+
+功能专项回归：`cd static && pnpm test:unit`（SDE 名称解析回归测试）
 
 ## 关键不变量
 

@@ -4,6 +4,9 @@ on:
   push:
     branches: [ preview ]
 
+permissions:
+  contents: read
+  
 jobs:
   changes:
     name: Detect Changed Paths

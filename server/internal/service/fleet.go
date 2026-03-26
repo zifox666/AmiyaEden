@@ -32,6 +32,7 @@ type FleetService struct {
 	ssoSvc     *EveSSOService
 	walletSvc  *SysWalletService
 	webhookSvc *WebhookService
+	rateRepo   *repository.PAPTypeRateRepository
 	esiClient  *esi.Client
 }
 
@@ -44,6 +45,7 @@ func NewFleetService() *FleetService {
 		ssoSvc:     NewEveSSOService(),
 		walletSvc:  NewSysWalletService(),
 		webhookSvc: NewWebhookService(),
+		rateRepo:   repository.NewPAPTypeRateRepository(),
 		esiClient:  esi.NewClientWithConfig(global.Config.EveSSO.ESIBaseURL, global.Config.EveSSO.ESIAPIPrefix),
 	}
 }
@@ -555,16 +557,21 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string)
 	for uid := range newPapPerUser {
 		allUsers[uid] = struct{}{}
 	}
+	// 按舰队重要性获取 PAP 兑换汇率（1 PAP → N 系统钱包）
+	rateMap := s.rateRepo.GetRateMap()
+	walletRate := papImportanceToWalletRate(fleet.Importance, rateMap)
+
 	reason := fmt.Sprintf("舰队 PAP 奖励: %s", fleetID)
 	for uid := range allUsers {
 		delta := newPapPerUser[uid] - oldPapPerUser[uid]
 		if delta == 0 {
 			continue
 		}
-		if err := s.walletSvc.ApplyWalletDeltaTx(tx, uid, delta, reason, model.WalletRefPapReward, fleetID); err != nil {
+		walletDelta := delta * walletRate
+		if err := s.walletSvc.ApplyWalletDeltaTx(tx, uid, walletDelta, reason, model.WalletRefPapReward, fleetID); err != nil {
 			global.Logger.Warn("[Fleet] 钱包差量更新失败",
 				zap.Uint("user_id", uid),
-				zap.Float64("delta", delta),
+				zap.Float64("delta", walletDelta),
 				zap.Error(err),
 			)
 			// 钱包失败不阻断整个操作，继续
@@ -584,6 +591,23 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string)
 	go s.triggerNewMembersKMRefresh(fleetID)
 
 	return nil
+}
+
+// papImportanceToWalletRate 将舰队重要性映射到对应的 PAP 兑换汇率（系统钱包 / 1 PAP）
+func papImportanceToWalletRate(importance string, rateMap map[string]float64) float64 {
+	var papType string
+	switch importance {
+	case model.FleetImportanceCTA:
+		papType = model.PAPTypeCTA
+	case model.FleetImportanceStratOp:
+		papType = model.PAPTypeStratOp
+	default:
+		papType = model.PAPTypeSkirmish
+	}
+	if rate, ok := rateMap[papType]; ok {
+		return rate
+	}
+	return 1
 }
 
 // triggerNewMembersKMRefresh 对本舰队中需要 KM 刷新的成员执行触发：

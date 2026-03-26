@@ -65,11 +65,20 @@
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": ["垂直", "水平", "混合", "双列"]
+      "list": [
+        "垂直",
+        "水平",
+        "混合",
+        "双列"
+      ]
     },
     "theme": {
       "title": "主题风格",
-      "list": ["浅色", "深色", "系统"]
+      "list": [
+        "浅色",
+        "深色",
+        "系统"
+      ]
     },
     "menu": {
       "title": "菜单风格"
@@ -79,11 +88,17 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": ["边框", "阴影"]
+      "list": [
+        "边框",
+        "阴影"
+      ]
     },
     "container": {
       "title": "容器宽度",
-      "list": ["铺满", "定宽"]
+      "list": [
+        "铺满",
+        "定宽"
+      ]
     },
     "basics": {
       "title": "基础配置",
@@ -129,8 +144,14 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": ["通知", "消息", "代办"],
-    "text": ["暂无"],
+    "bar": [
+      "通知",
+      "消息",
+      "代办"
+    ],
+    "text": [
+      "暂无"
+    ],
     "viewAll": "查看全部"
   },
   "console": {
@@ -317,6 +338,7 @@
       "esiRefresh": "定时任务",
       "wallet": "钱包管理",
       "alliancePap": "联盟 PAP",
+      "papExchange": "PAP兑换",
       "npcKills": "刷怪报表",
       "autoRole": "自动权限",
       "webhook": "Webhook 通知",
@@ -515,7 +537,11 @@
     "importTitle": "导入历史记录",
     "importHint": "请粘贴 CSV 内容，每行一条记录，格式为角色名和QQ号（逗号或制表符分隔）",
     "importPlaceholder": "角色名, QQ号\n角色名2, QQ号2",
-    "importSuccess": "成功导入 {count} 条记录"
+    "importSuccess": "成功导入 {count} 条记录",
+    "requireEvidence": "需要证明图片",
+    "exampleEvidence": "示例证明图片",
+    "uploadExampleEvidence": "上传示例图片",
+    "uploadFailed": "上传失败"
   },
   "welfareMy": {
     "applyTab": "申请福利",
@@ -536,7 +562,11 @@
     "noEligibleWelfares": "暂无可申请的福利",
     "noApplications": "暂无申请记录",
     "distModePerUser": "按自然人",
-    "distModePerCharacter": "按人物"
+    "distModePerCharacter": "按人物",
+    "evidenceDialogTitle": "上传证明图片",
+    "evidenceDialogHint": "该福利需要您上传一张证明图片才能申请。",
+    "exampleEvidenceLabel": "示例图片（管理员提供）：",
+    "uploadEvidenceBtn": "选择图片"
   },
   "welfareApproval": {
     "pendingTab": "待发放",
@@ -564,7 +594,8 @@
     "noPending": "暂无待发放请求",
     "noHistory": "暂无处理记录",
     "searchBtn": "搜索",
-    "resetBtn": "重置"
+    "resetBtn": "重置",
+    "evidenceImage": "证明图片"
   },
   "shop": {
     "products": "商品列表",
@@ -620,7 +651,7 @@
       "productImage": "商品图片",
       "uploading": "上传中...",
       "uploadImage": "点击上传图片",
-      "uploadHint": "JPG/PNG/GIF/WebP，最大 5MB",
+      "uploadHint": "JPG/PNG/WebP，最大 2MB",
       "price": "价格",
       "type": "类型",
       "typeNormal": "普通商品",
@@ -658,7 +689,7 @@
       "deleteBtn": "删除",
       "deleteSuccess": "删除成功",
       "deleteFailed": "删除失败",
-      "imageTooLarge": "图片大小不能超过 5MB",
+      "imageTooLarge": "图片大小不能超过 2MB",
       "uploadSuccess": "上传成功",
       "uploadFailed": "上传失败",
       "validName": "请输入商品名称",
@@ -1040,11 +1071,11 @@
       "completed": "已完成",
       "incomplete": "未完成",
       "completedHint": "个人资料已完成，可以正常访问其他页面。",
-      "requiredHint": "需要填写昵称，并至少填写 QQ 号码或 Discord ID 后才能继续使用系统。",
+      "requiredHint": "需要填写昵称，并至少填写 QQ 或 Discord ID 后才能继续使用系统。",
       "nickname": "昵称",
       "nicknamePlaceholder": "请输入昵称",
-      "qq": "QQ 号码",
-      "qqPlaceholder": "请输入 QQ 号码",
+      "qq": "QQ",
+      "qqPlaceholder": "请输入 QQ",
       "discordId": "Discord ID",
       "discordPlaceholder": "请输入 Discord ID",
       "save": "保存资料",
@@ -1052,9 +1083,9 @@
       "validation": {
         "nicknameRequired": "请输入昵称",
         "nicknameLength": "昵称最多 20 个字符",
-        "contactRequired": "请至少填写 QQ 号码或 Discord ID",
-        "qqLength": "QQ 号码最多 20 个字符",
-        "qqDigits": "QQ 号码只能包含数字",
+        "contactRequired": "请至少填写 QQ 或 Discord ID",
+        "qqLength": "QQ 最多 20 个字符",
+        "qqDigits": "QQ 只能包含数字",
         "discordLength": "Discord ID 最多 20 个字符"
       }
     }
@@ -1301,26 +1332,26 @@
     "calculatedAtLabel": "最后计算",
     "noRecords": "暂无联盟 PAP 记录",
     "settle": {
-      "openBtn": "PAP 兑换设置",
-      "title": "PAP 兑换配置 & 月度结算",
-      "enabled": "开启兑换",
-      "walletPerPap": "兑换比例",
-      "walletPerPapUnit": "系统钱包 / 1 PAP",
-      "walletPerPapRequired": "兑换比例必须大于 0",
-      "settleMonth": "结算月份",
-      "settleMonthRequired": "请选择结算月份",
-      "walletConvert": "同时兑换钱包",
-      "walletConvertTip": "开启后将按比例自动向所有用户发放系统钱包",
-      "saveConfig": "保存配置",
-      "doSettle": "执行归档结算",
-      "configSaved": "配置已保存",
-      "configFailed": "保存配置失败",
-      "settleSuccess": "结算完成",
-      "settleFailed": "结算失败",
-      "resultTitle": "结算结果",
-      "resultUsers": "实际展开结算 {count} 人",
-      "resultSkipped": "跳过 {count} 人（无对应用户/已兑换）",
-      "resultWallet": "共发放系统钱包 {amount}"
+      "openBtn": "月度归档",
+      "title": "月度归档",
+      "settleMonth": "归档月份",
+      "settleMonthRequired": "请选择归档月份",
+      "doSettle": "执行归档",
+      "settleSuccess": "归档完成",
+      "settleFailed": "归档失败"
+    }
+  },
+  "papExchange": {
+    "title": "军团 PAP 兑换汇率配置",
+    "tip": "配置各类型军团舰队行动 PAP 兑换系统钱包的比率。FC 发放 PAP 时，将按此汇率自动换算为系统钱包金额。",
+    "loadFailed": "加载汇率配置失败",
+    "saveSuccess": "汇率配置已保存",
+    "saveFailed": "保存汇率配置失败",
+    "columns": {
+      "type": "PAP 类型",
+      "rate": "兑换比率",
+      "rateUnit": "系统钱包 / 1 PAP",
+      "updatedAt": "更新时间"
     }
   },
   "roleUi": {
@@ -1398,6 +1429,7 @@
     "tabs": {
       "products": "商品管理",
       "orders": "订单管理",
+      "orderHistory": "订单历史",
       "redeem": "兑换码管理"
     },
     "products": {
@@ -1459,42 +1491,38 @@
       }
     },
     "orders": {
-      "userIdPlaceholder": "用户 ID",
-      "statusPlaceholder": "订单状态",
-      "dialogApprove": "审批通过",
+      "keywordPlaceholder": "商品名 / 主角色 / 昵称",
+      "dialogDeliver": "发放订单",
       "dialogReject": "拒绝订单",
-      "approveButton": "通过",
+      "deliverButton": "发放",
       "rejectButton": "拒绝",
-      "approveConfirm": "确认通过",
+      "deliverConfirm": "确认发放",
       "rejectConfirm": "确认拒绝",
       "fields": {
         "orderNo": "订单号",
-        "reviewRemark": "审批备注"
+        "deliverRemark": "发放备注"
       },
       "placeholders": {
-        "reviewRemark": "审批备注（可选）"
+        "deliverRemark": "发放备注（可选）"
       },
       "status": {
-        "submitted": "待审批",
-        "paid": "已付款",
-        "approved": "已审批",
-        "rejected": "已拒绝",
-        "completed": "已完成",
-        "cancelled": "已取消",
-        "insufficient_funds": "余额不足"
+        "requested": "待发放",
+        "delivered": "已发放",
+        "rejected": "已拒绝"
       },
       "table": {
         "orderNo": "订单号",
-        "userId": "用户ID",
+        "mainCharacter": "主角色",
+        "nickname": "昵称",
+        "contact": "联系方式",
         "product": "商品",
         "quantity": "数量",
         "totalPrice": "总价",
         "userRemark": "用户备注",
-        "reviewRemark": "审批备注",
         "createdAt": "下单时间"
       },
       "messages": {
-        "approveSuccess": "审批通过",
+        "deliverSuccess": "已发放",
         "rejectSuccess": "已拒绝",
         "actionFailed": "操作失败"
       }

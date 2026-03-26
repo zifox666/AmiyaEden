@@ -170,6 +170,21 @@
       label: t('welfareApproval.processedAt'),
       width: 170,
       formatter: (row: AppRow) => (row.reviewed_at ? formatTime(row.reviewed_at) : '-')
+    },
+    {
+      prop: 'evidence_image',
+      label: t('welfareApproval.evidenceImage'),
+      width: 100,
+      formatter: (row: AppRow) => {
+        if (!row.evidence_image) return h('span', { class: 'text-gray-400' }, '-')
+        return h('a', { href: row.evidence_image, target: '_blank', rel: 'noopener noreferrer' }, [
+          h('img', {
+            src: row.evidence_image,
+            style: 'height:40px;max-width:80px;object-fit:contain;cursor:pointer',
+            class: 'rounded border'
+          })
+        ])
+      }
     }
   ]
 
@@ -188,7 +203,7 @@
       apiFn: adminListApplications,
       apiParams: { current: 1, size: 50, status: 'requested' },
       columnsFactory: () => [
-        ...buildBaseColumns(),
+        ...buildBaseColumns().filter((c) => c.prop !== 'reviewer_name'),
         {
           prop: 'actions',
           label: '',

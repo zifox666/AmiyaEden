@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-23
+last_reviewed: 2026-03-26
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/welfare.go
@@ -18,9 +18,11 @@ source_of_truth:
 - 两种发放模式：按自然人（per_user）、按人物（per_character）
 - 可选技能计划检查：可关联多个军团技能计划，技能合格才允许申请
 - 可选角色最大年龄限制（max_char_age_months）：设置后发放模式锁定为 per_user，拥有任何超龄角色的用户不可申请
+- 可选证明图片要求（require_evidence）：管理员可要求申请人上传图片作为证明，并可上传示例图片供参考
 - 用户自助申请福利，系统自动判断资格
+- 若福利要求证明图片，申请时弹窗提示上传；弹窗内同步展示管理员上传的示例图片
 - 申请状态流转：requested → delivered / rejected
-- 福利审批页面：福利官/管理员浏览待发放申请，执行发放或拒绝操作
+- 福利审批页面：福利官/管理员浏览待发放申请，执行发放或拒绝操作；审批列表展示申请人上传的证明图片缩略图
 - 管理员可导入历史已发放记录，按行粘贴角色名和 QQ 号生成 delivered 记录
 - 福利存在申请记录时禁止删除
 
@@ -36,6 +38,7 @@ source_of_truth:
 ### 申请记录模型（WelfareApplication）
 
 - `welfare_id`、`user_id`、`character_id`、`character_name`、`qq`、`discord_id`
+- `evidence_image`：申请人上传的证明图片 URL（可选，当福利 require_evidence=true 时必填）
 - `status`：requested / delivered / rejected
 - `reviewed_by`、`reviewed_at`：审批人和审批时间
 - 历史导入记录允许 `user_id` 为空；当前导入格式保存 `character_name` 与 `qq`
@@ -67,6 +70,7 @@ source_of_truth:
 - `POST /api/v1/welfare/eligible` — 获取可申请的福利列表
 - `POST /api/v1/welfare/apply` — 提交福利申请
 - `POST /api/v1/welfare/my-applications` — 查询我的申请记录
+- `POST /api/v1/welfare/upload-evidence` — 上传证明图片（multipart），返回 base64 data URL；最大 2MB，仅支持 jpeg/png/webp；不写入文件系统，直接存库
 
 ## 权限边界
 

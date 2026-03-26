@@ -57,9 +57,6 @@
             <ElTag v-if="item.type === 'redeem'" size="small" type="warning" effect="plain">
               {{ $t('shop.typeRedeem') }}
             </ElTag>
-            <ElTag v-if="item.need_approval" size="small" type="info" effect="plain">
-              {{ $t('shop.needApproval') }}
-            </ElTag>
           </div>
           <ElButton
             class="mt-3"

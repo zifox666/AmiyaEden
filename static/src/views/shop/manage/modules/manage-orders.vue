@@ -1,31 +1,16 @@
-<!-- 订单管理面板 -->
+<!-- 订单管理面板（仅展示待发放订单） -->
 <template>
   <ElCard class="art-table-card" shadow="never">
     <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
       <template #left>
         <div class="flex items-center gap-4">
           <ElInput
-            v-model="userIdFilter"
-            :placeholder="$t('shopAdmin.orders.userIdPlaceholder')"
+            v-model="keywordFilter"
+            :placeholder="$t('shopAdmin.orders.keywordPlaceholder')"
             clearable
-            style="width: 140px"
+            style="width: 200px"
             @keyup.enter="handleSearch"
           />
-          <ElSelect
-            v-model="statusFilter"
-            :placeholder="$t('shopAdmin.orders.statusPlaceholder')"
-            clearable
-            style="width: 140px"
-            @change="handleSearch"
-          >
-            <ElOption :label="$t('shopAdmin.orders.status.pending')" value="pending" />
-            <ElOption :label="$t('shopAdmin.orders.status.completed')" value="completed" />
-            <ElOption :label="$t('shopAdmin.orders.status.rejected')" value="rejected" />
-            <ElOption
-              :label="$t('shopAdmin.orders.status.insufficient_funds')"
-              value="insufficient_funds"
-            />
-          </ElSelect>
           <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
           <ElButton @click="handleReset">{{ $t('common.reset') }}</ElButton>
         </div>
@@ -42,12 +27,12 @@
     />
   </ElCard>
 
-  <!-- 审批备注对话框 -->
+  <!-- 发放备注对话框 -->
   <ElDialog
     v-model="reviewDialogVisible"
     :title="
-      reviewAction === 'approve'
-        ? $t('shopAdmin.orders.dialogApprove')
+      reviewAction === 'deliver'
+        ? $t('shopAdmin.orders.dialogDeliver')
         : $t('shopAdmin.orders.dialogReject')
     "
     width="400px"
@@ -57,25 +42,25 @@
       <ElFormItem :label="$t('shopAdmin.orders.fields.orderNo')">
         <span class="font-medium">{{ reviewOrderNo }}</span>
       </ElFormItem>
-      <ElFormItem :label="$t('shopAdmin.orders.fields.reviewRemark')">
+      <ElFormItem :label="$t('shopAdmin.orders.fields.deliverRemark')">
         <ElInput
           v-model="reviewRemark"
           type="textarea"
           :rows="3"
-          :placeholder="$t('shopAdmin.orders.placeholders.reviewRemark')"
+          :placeholder="$t('shopAdmin.orders.placeholders.deliverRemark')"
         />
       </ElFormItem>
     </ElForm>
     <template #footer>
       <ElButton @click="reviewDialogVisible = false">{{ $t('common.cancel') }}</ElButton>
       <ElButton
-        :type="reviewAction === 'approve' ? 'success' : 'danger'"
+        :type="reviewAction === 'deliver' ? 'success' : 'danger'"
         :loading="reviewSubmitting"
         @click="submitReview"
       >
         {{
-          reviewAction === 'approve'
-            ? $t('shopAdmin.orders.approveConfirm')
+          reviewAction === 'deliver'
+            ? $t('shopAdmin.orders.deliverConfirm')
             : $t('shopAdmin.orders.rejectConfirm')
         }}
       </ElButton>
@@ -84,10 +69,10 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElInput, ElSelect, ElOption, ElMessage } from 'element-plus'
+  import { ElButton, ElInput, ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
-  import { adminListOrders, adminApproveOrder, adminRejectOrder } from '@/api/shop'
+  import { adminListOrders, adminDeliverOrder, adminRejectOrder } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
 
   defineOptions({ name: 'ManageOrders' })
@@ -95,25 +80,17 @@
 
   type Order = Api.Shop.Order
 
-  // ─── 订单状态映射 ───
-  const ORDER_STATUS_CONFIG: Record<string, { label: string; type: string }> = {
-    pending: { label: t('shopAdmin.orders.status.pending'), type: 'warning' },
-    paid: { label: t('shopAdmin.orders.status.paid'), type: 'success' },
-    approved: { label: t('shopAdmin.orders.status.approved'), type: 'success' },
-    rejected: { label: t('shopAdmin.orders.status.rejected'), type: 'danger' },
-    completed: { label: t('shopAdmin.orders.status.completed'), type: 'success' },
-    cancelled: { label: t('shopAdmin.orders.status.cancelled'), type: 'info' },
-    insufficient_funds: { label: t('shopAdmin.orders.status.insufficient_funds'), type: 'danger' }
+  const formatISK = (v: number) => Math.round(v).toLocaleString('en-US')
+  const formatTime = (s: string) => new Date(s).toLocaleString()
+
+  const formatContact = (row: Order) => {
+    if (row.qq) return `QQ: ${row.qq}`
+    if (row.discord_id) return `Discord: ${row.discord_id}`
+    return '-'
   }
 
-  const formatISK = (v: number) =>
-    v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-
-  const formatTime = (t: string) => new Date(t).toLocaleString()
-
   // ─── 搜索过滤状态 ───
-  const userIdFilter = ref('')
-  const statusFilter = ref('')
+  const keywordFilter = ref('')
 
   const {
     columns,
@@ -130,19 +107,34 @@
   } = useTable({
     core: {
       apiFn: adminListOrders,
-      apiParams: { current: 1, size: 20 },
+      apiParams: { current: 1, size: 20, statuses: ['requested'] },
       immediate: false,
       columnsFactory: () => [
         {
           prop: 'order_no',
           label: t('shopAdmin.orders.table.orderNo'),
-          width: 200,
+          width: 120,
           showOverflowTooltip: true
         },
         {
-          prop: 'user_id',
-          label: t('shopAdmin.orders.table.userId'),
-          width: 90
+          prop: 'main_character_name',
+          label: t('shopAdmin.orders.table.mainCharacter'),
+          width: 140,
+          showOverflowTooltip: true
+        },
+        {
+          prop: 'nickname',
+          label: t('shopAdmin.orders.table.nickname'),
+          width: 120,
+          showOverflowTooltip: true,
+          formatter: (row: Order) => h('span', {}, row.nickname || '-')
+        },
+        {
+          prop: 'contact',
+          label: t('shopAdmin.orders.table.contact'),
+          width: 160,
+          showOverflowTooltip: true,
+          formatter: (row: Order) => h('span', {}, formatContact(row))
         },
         {
           prop: 'product_name',
@@ -158,22 +150,9 @@
         {
           prop: 'total_price',
           label: t('shopAdmin.orders.table.totalPrice'),
-          width: 130,
+          width: 120,
           formatter: (row: Order) =>
             h('span', { class: 'font-medium text-orange-600' }, formatISK(row.total_price))
-        },
-        {
-          prop: 'status',
-          label: t('common.status'),
-          width: 120,
-          formatter: (row: Order) => {
-            const cfg = ORDER_STATUS_CONFIG[row.status] ?? { label: row.status, type: 'info' }
-            return h(
-              ElTag,
-              { type: cfg.type as any, size: 'small', effect: 'plain' },
-              () => cfg.label
-            )
-          }
         },
         {
           prop: 'remark',
@@ -182,31 +161,22 @@
           showOverflowTooltip: true
         },
         {
-          prop: 'review_remark',
-          label: t('shopAdmin.orders.table.reviewRemark'),
-          width: 140,
-          showOverflowTooltip: true
-        },
-        {
           prop: 'created_at',
           label: t('shopAdmin.orders.table.createdAt'),
-          width: 180,
+          width: 170,
           formatter: (row: Order) => h('span', {}, formatTime(row.created_at))
         },
         {
           prop: 'actions',
           label: t('common.operation'),
-          width: 160,
+          width: 140,
           fixed: 'right',
-          formatter: (row: Order) => {
-            if (row.status !== 'pending') {
-              return h('span', { class: 'text-gray-400 text-sm' }, '-')
-            }
-            return h('div', { class: 'flex gap-1' }, [
+          formatter: (row: Order) =>
+            h('div', { class: 'flex gap-1' }, [
               h(ArtButtonTable, {
-                label: t('shopAdmin.orders.approveButton'),
+                label: t('shopAdmin.orders.deliverButton'),
                 elType: 'success',
-                onClick: () => openApproveDialog(row)
+                onClick: () => openDeliverDialog(row)
               }),
               h(ArtButtonTable, {
                 label: t('shopAdmin.orders.rejectButton'),
@@ -214,7 +184,6 @@
                 onClick: () => openRejectDialog(row)
               })
             ])
-          }
         }
       ]
     }
@@ -222,29 +191,29 @@
 
   function handleSearch() {
     Object.assign(searchParams, {
-      status: statusFilter.value || undefined,
-      user_id: userIdFilter.value ? Number(userIdFilter.value) : undefined,
+      keyword: keywordFilter.value || undefined,
+      statuses: ['requested'],
       current: 1
     })
     getData()
   }
 
   function handleReset() {
-    userIdFilter.value = ''
-    statusFilter.value = ''
+    keywordFilter.value = ''
     resetSearchParams()
+    Object.assign(searchParams, { statuses: ['requested'] })
   }
 
-  // ─── 审批对话框状态 ───
+  // ─── 发放/拒绝对话框状态 ───
   const reviewDialogVisible = ref(false)
-  const reviewAction = ref<'approve' | 'reject'>('approve')
+  const reviewAction = ref<'deliver' | 'reject'>('deliver')
   const reviewOrderId = ref(0)
   const reviewOrderNo = ref('')
   const reviewRemark = ref('')
   const reviewSubmitting = ref(false)
 
-  function openApproveDialog(order: Order) {
-    reviewAction.value = 'approve'
+  function openDeliverDialog(order: Order) {
+    reviewAction.value = 'deliver'
     reviewOrderId.value = order.id
     reviewOrderNo.value = order.order_no
     reviewRemark.value = ''
@@ -266,9 +235,9 @@
         order_id: reviewOrderId.value,
         remark: reviewRemark.value
       }
-      if (reviewAction.value === 'approve') {
-        await adminApproveOrder(params)
-        ElMessage.success(t('shopAdmin.orders.messages.approveSuccess'))
+      if (reviewAction.value === 'deliver') {
+        await adminDeliverOrder(params)
+        ElMessage.success(t('shopAdmin.orders.messages.deliverSuccess'))
       } else {
         await adminRejectOrder(params)
         ElMessage.success(t('shopAdmin.orders.messages.rejectSuccess'))

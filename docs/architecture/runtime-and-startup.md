@@ -2,82 +2,15 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-20
+last_reviewed: 2026-03-26
 source_of_truth:
   - server/main.go
   - server/bootstrap
-  - server/config/config.example.yaml
 ---
 
 # 运行与启动
 
-## 依赖
-
-- Go `>= 1.24`
-- Air（Go 热重载工具）
-- Node.js `>= 20.19.0`
-- pnpm `>= 8.8.0`
-- PostgreSQL
-- Redis
-
-## 配置入口
-
-### 后端
-
-- 模板：`server/config/config.example.yaml`
-- 本地文件：`server/config/config.yaml`
-
-通常至少需要确认：
-
-- `server.port`
-- `database.*`
-- `redis.*`
-- `jwt.secret`
-- `eve_sso.client_id`
-- `eve_sso.client_secret`
-- `eve_sso.callback_url`
-- `eve_sso.esi_base_url`
-- `eve_sso.esi_api_prefix`
-- `eve_sso.sso_authorize_url`
-- `eve_sso.sso_token_url`
-- `eve_sso.eve_images_base_url`
-- `sde.api_key`
-- `sde.proxy`（可选；留空表示不使用代理）
-
-### 前端
-
-仓库当前没有提交前端 `.env.example`。本地开发通常需要至少提供：
-
-- `VITE_PORT`
-- `VITE_API_URL`
-- `VITE_API_PROXY_URL`
-- `VITE_ACCESS_MODE`
-- `VITE_BASE_URL`
-
-## 本地启动
-
-### 基础设施
-
-```bash
-docker compose -f docker-compose.example.yml up -d postgres redis
-```
-
-### 后端
-
-```bash
-cp server/config/config.example.yaml server/config/config.yaml
-make dev
-```
-
-`make dev` 使用仓库根目录的 `.air.toml` 启动 Air 热重载，后端源码修改后会自动重新编译并重启。
-
-### 前端
-
-```bash
-cd static
-pnpm install
-pnpm dev
-```
+本文档描述后端启动顺序与运行时行为。依赖要求与本地启动流程见 `docs/guides/local-development.md`。
 
 ## 后端启动顺序
 

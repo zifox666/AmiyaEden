@@ -227,7 +227,7 @@
           label: t('srp.apply.columns.estimatedValue'),
           width: 140,
           formatter: (row: Api.Srp.Application) =>
-            h('span', {}, `${formatISK(row.recommended_amount)} ISK`)
+            h('span', {}, `${formatISK(row.recommended_amount)} M ISK`)
         },
         {
           prop: 'review_status',
@@ -249,7 +249,7 @@
           width: 130,
           formatter: (row: Api.Srp.Application) =>
             row.final_amount > 0
-              ? h('span', {}, `${formatISK(row.final_amount)} ISK`)
+              ? h('span', {}, `${formatISK(row.final_amount)} M ISK`)
               : h('span', {}, '-')
         },
         {
@@ -468,7 +468,7 @@
     new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(v ?? 0)
+    }).format((v ?? 0) / 1_000_000)
 
   type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
   const reviewStatusType = (s: string): TagType =>

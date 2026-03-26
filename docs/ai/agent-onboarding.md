@@ -2,88 +2,84 @@
 status: active
 doc_type: guide
 owner: engineering
-last_reviewed: 2026-03-24
+last_reviewed: 2026-03-26
 source_of_truth:
   - docs/ai/repo-rules.md
   - docs/README.md
-  - docs/ai/harness-principles.md
 ---
 
 # AI Agent Onboarding
 
 ## Purpose
 
-This guide helps AI agents reach the correct repository context quickly and make conservative, maintainable decisions when code and documentation do not fully align.
+Fast routing for agents. Repository rules live in `docs/ai/repo-rules.md`.
 
-It is an onboarding and routing guide, not the primary rule source.
+## Startup
 
-## Start Here
-
-Before doing any work:
-
-1. Read your agent entry point (`AGENTS.md` or `CLAUDE.md`) — both delegate to `docs/ai/repo-rules.md`.
+1. Read your agent entry point (`AGENTS.md` or `CLAUDE.md`).
 2. Read `docs/README.md`.
 3. Identify the change type.
-4. Read the relevant architecture, API, feature, and standard documents before editing code.
+4. Read only the docs needed for that change before editing code.
 
-For the harness model behind these rules, see `docs/ai/harness-principles.md`.
+## Change Routing
 
-## Trust Hierarchy
+### Backend or API
 
-See "Authority Order" in `docs/ai/repo-rules.md` for the canonical trust hierarchy.
+Read:
 
-Additional routing rules for agents:
+1. `docs/architecture/overview.md`
+2. `docs/architecture/module-map.md`
+3. `docs/architecture/auth-and-permissions.md`
+4. `docs/api/conventions.md`
+5. `docs/api/route-index.md`
+6. the relevant feature doc
 
-- `docs/templates/` are not current-state authority
-- subdirectory `README.md` files are local implementation notes, not repository-wide rule sources
-- legacy compatibility files are not authoritative unless the current task explicitly targets them
+### Frontend Page, Route, or Permission
 
-## Context Boundaries
+Read:
 
-See "Context Boundaries" in `docs/ai/repo-rules.md` for the canonical definition.
+1. `docs/architecture/module-map.md`
+2. `docs/architecture/routing-and-menus.md`
+3. `docs/standards/frontend-table-pages.md` when relevant
+4. the relevant feature doc
 
-In short: reason only from committed repository artifacts and information explicitly provided by the user in the current session.
+### ESI, SSO, or CCP Sync
 
-## Minimum Reading Order by Change Type
+Read:
 
-### Backend or API Change
+1. `docs/architecture/overview.md`
+2. `docs/architecture/module-map.md`
+3. `docs/architecture/runtime-and-startup.md`
+4. `docs/features/current/auth-and-characters.md`
+5. `docs/features/current/esi-refresh.md`
+6. `docs/guides/adding-esi-feature.md`
 
-Read in this order:
+Read local `README.md` files under `server/pkg/eve/esi/` only when the task is clearly in that area.
 
-1. `docs/ai/repo-rules.md` (loaded automatically via your agent entry point)
-2. `docs/README.md`
-3. `docs/architecture/overview.md`
-4. `docs/architecture/module-map.md`
-5. `docs/architecture/auth-and-permissions.md`
-6. `docs/api/conventions.md`
-7. `docs/api/route-index.md`
-8. the relevant feature document
+## Agent Rules
 
-### Frontend Page, Route, or Permission Change
+Do:
 
-Read in this order:
+- treat `docs/ai/repo-rules.md` as the primary authority
+- reason from committed repository artifacts and user-provided session context
+- read surrounding module code, not only the file being edited
+- update relevant docs when behavior, routes, runtime behavior, or standards change
+- stop and reassess when blocked or looping
 
-1. `docs/ai/repo-rules.md` (loaded automatically via your agent entry point)
-2. `docs/README.md`
-3. `docs/architecture/module-map.md`
-4. `docs/architecture/routing-and-menus.md`
-5. `docs/standards/frontend-table-pages.md` when the page is a standard table page
-6. the relevant feature document
+Do not:
 
-### ESI, SSO, or CCP Data Sync Change
+- treat `docs/templates/` or local directory `README.md` files as repository-wide authority
+- write future or planned behavior into current-state docs
+- revert working behavior only to satisfy stale docs
+- create a shadow documentation tree
+- keep editing without progress
 
-Read in this order:
+## Conflict Handling
 
-1. `docs/ai/repo-rules.md` (loaded automatically via your agent entry point)
-2. `docs/README.md`
-3. `docs/architecture/overview.md`
-4. `docs/architecture/module-map.md`
-5. `docs/architecture/runtime-and-startup.md`
-6. `docs/features/current/auth-and-characters.md`
-7. `docs/features/current/esi-refresh.md`
-8. `docs/guides/adding-esi-feature.md`
+- Use the authority order and code-vs-docs rule in `docs/ai/repo-rules.md`.
+- If code and docs disagree, determine whether code drifted or docs became stale before changing either.
 
-Read a local directory `README.md` under `server/pkg/eve/esi/` only after the task is clearly in that area.
+## Finish
 
 ## Conflict Resolution
 

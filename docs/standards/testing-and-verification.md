@@ -14,19 +14,26 @@ source_of_truth:
 
 ## Scope
 
-Applies to all backend, frontend, contract, repository, hook, handler, and service changes in this repository.
+Applies to backend, frontend, contract, repository, hook, handler, and service changes.
 
-## Core Rules
+## Required Tool Versions
 
-- Verification has two layers: build-level verification and behavior-level verification.
-- `build`, `lint`, and `typecheck` do not replace regression testing.
-- Any change that fixes a bug, changes a contract, or modifies non-trivial logic must be evaluated for regression coverage.
-- Tests must exercise the real logic that changed. Do not duplicate a second implementation inside the test.
+| Tool | Version | How to install |
+|------|---------|----------------|
+| golangci-lint | v2.11.4 | `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.11.4` |
+| pnpm | 10.32.1 | `npm install -g pnpm@10.32.1` |
+| Node.js | 24 | see `.nvmrc` at repo root |
+
+- CI pins `golangci-lint` in `.github/workflows/verify-ci.yaml`.
+- Frontend packages are locked by `static/pnpm-lock.yaml`; use `pnpm install --frozen-lockfile`.
 
 ## Default Commands
 
+Single canonical source for verification commands.
+
 ### Backend
 
+- `cd server && golangci-lint run ./...`
 - `cd server && go test ./...`
 - `cd server && go build ./...`
 
@@ -35,77 +42,58 @@ Applies to all backend, frontend, contract, repository, hook, handler, and servi
 - `cd static && pnpm lint .`
 - `cd static && pnpm exec vue-tsc --noEmit`
 - `cd static && pnpm test:unit`
+- `cd static && pnpm build`
 
-## Required Rules
+## Rules
 
-- Bug fixes must add or update a regression test when the behavior can reasonably be tested.
-- Backend logic changes should add `_test.go` coverage in the corresponding Go package.
-- Repository changes involving query composition, mapping merges, filtering rules, branch selection, or fallback selection must add Go tests that cover the critical branches.
+- `build`, `lint`, and `typecheck` do not replace behavior-level coverage.
+- Tests must exercise the real changed logic; do not reimplement production logic in the test.
+- New features must add or update relevant automated coverage when reasonably testable.
+- Existing feature changes must review and update nearby tests when covered behavior or contracts change.
+- Bug fixes must add or update regression coverage when reasonably testable.
+- Backend logic changes should add `_test.go` coverage in the same Go package.
+- Repository branch, filter, merge, query, and fallback logic must add Go tests for critical branches.
 - Pure frontend helper or hook logic should add `pnpm test:unit` coverage.
-- API contract changes must add behavior-level coverage on at least one affected side and must validate both backend and frontend.
-- Any test command added to documentation must be runnable as written.
+- API contract changes must validate both backend and frontend and add behavior-level coverage on at least one affected side.
+- Any documented test command must be runnable as written.
 
-## Test Selection Guidance
+## Test Choice
 
-### Prefer backend Go tests for:
-
-- pure functions
-- permission checks
-- normalization logic
-- repository branch logic
-- fallback selection
-- query composition helpers
-- SQL fragment generation helpers
-
-### Prefer frontend unit tests for:
-
-- pure helpers
-- pure hooks
-- deterministic state transitions
-- deduplication logic
-- merge logic
-- fallback logic
-- namespace or mapping helpers
-
-### Do not introduce heavy test infrastructure for:
-
-- one-off minor regressions
-- behavior that can be covered by extracting and testing a pure helper instead
-
-If a frontend behavior truly requires full component mounting, browser APIs, or heavy mocking, first evaluate whether that test style should be introduced as a reusable repository pattern.
+- Prefer backend Go tests for service rules, normalization, permission checks, query helpers, repository branching, and fallback logic.
+- Prefer frontend unit tests for pure helpers, pure hooks, deterministic state transitions, merge logic, fallback logic, and request mapping.
+- Avoid heavy test infrastructure for small logic changes when a lightweight unit can cover the behavior instead.
 
 ## Allowed Exceptions
 
-New tests may be omitted only when the reason is stated explicitly in the change summary or review notes and one of the following applies:
-
+Tests may be omitted only if the reason is stated explicitly and one of these applies:
 - documentation-only changes
 - formatting-only changes
 - clearly behavior-preserving renames
 - missing infrastructure makes temporary setup cost disproportionate to the change
 - external dependencies or runtime conditions make reliable repository-local testing impractical
 
-## Minimum Verification by Change Type
+## Minimum Verification
 
 - backend-only change -> run backend test and build commands
 - frontend-only change -> run frontend lint and typecheck, plus unit tests when relevant
 - contract change -> validate both backend and frontend
+- new feature -> add or update relevant automated coverage for the new behavior unless an allowed exception is stated explicitly
 - bug fix -> add or update regression coverage unless explicitly justified
+- existing feature behavior change -> review and update existing tests where needed, and add coverage for new or changed behavior unless an allowed exception is stated explicitly
 - documentation-only change -> no code-level verification is required unless commands or executable examples changed
 
 ## Repository Notes
 
-- Frontend unit testing in this repository is intentionally lightweight and best suited to pure logic.
-- `static/src/types/import/auto-imports.d.ts` and `static/src/types/import/components.d.ts` are retained repository artifacts so clean checkouts can pass lint and typecheck.
-- `static/.auto-import.json` is a local development helper and must not be required for CI linting.
-- See `docs/guides/testing-guide.md` for naming, placement, and implementation guidance.
-- See `docs/guides/regression-test-plan.md` for the repository-wide incremental regression strategy.
+- Frontend unit testing is intentionally lightweight and best suited to pure logic.
+- `static/src/types/import/auto-imports.d.ts` and `static/src/types/import/components.d.ts` are retained so clean checkouts pass lint and typecheck.
+- `static/.auto-import.json` must not be required for CI linting.
+- See `docs/guides/testing-guide.md` for placement and implementation guidance.
+- See `docs/guides/regression-test-plan.md` for incremental regression planning.
 
-## Pre-Completion Checklist
+## Completion Check
 
-Before considering a change complete, verify:
-
-- Did the change fix a bug, change a contract, alter fallback behavior, or modify non-trivial branching?
-- If yes, was regression coverage added or updated?
-- Were the minimum required verification commands run?
+- New feature or changed feature behavior: was relevant coverage added or updated?
+- Bug fix, contract change, fallback change, or non-trivial branching change: was regression coverage added or updated?
+- Were the minimum required commands run?
 - If tests were skipped, is the reason stated clearly?
-- If a new documented test command was added, was it actually run locally?
+- If a new documented test command was added, was it run locally?

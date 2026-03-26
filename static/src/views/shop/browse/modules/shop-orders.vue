@@ -10,10 +10,9 @@
           style="width: 160px"
           @change="handleStatusChange"
         >
-          <ElOption :label="$t('shopAdmin.orders.status.pending')" value="pending" />
-          <ElOption :label="$t('shopAdmin.orders.status.completed')" value="completed" />
+          <ElOption :label="$t('shopAdmin.orders.status.requested')" value="requested" />
+          <ElOption :label="$t('shopAdmin.orders.status.delivered')" value="delivered" />
           <ElOption :label="$t('shopAdmin.orders.status.rejected')" value="rejected" />
-          <ElOption :label="$t('shopAdmin.orders.status.cancelled')" value="cancelled" />
         </ElSelect>
       </template>
     </ArtTableHeader>
@@ -44,17 +43,12 @@
 
   // ─── 订单状态映射 ───
   const ORDER_STATUS_MAP: Record<string, { label: string; type: string }> = {
-    pending: { label: t('shopAdmin.orders.status.pending'), type: 'warning' },
-    paid: { label: t('shopAdmin.orders.status.paid'), type: 'success' },
-    approved: { label: t('shopAdmin.orders.status.approved'), type: 'success' },
-    rejected: { label: t('shopAdmin.orders.status.rejected'), type: 'danger' },
-    completed: { label: t('shopAdmin.orders.status.completed'), type: 'success' },
-    cancelled: { label: t('shopAdmin.orders.status.cancelled'), type: 'info' },
-    insufficient_funds: { label: t('shopAdmin.orders.status.insufficient_funds'), type: 'danger' }
+    requested: { label: t('shopAdmin.orders.status.requested'), type: 'warning' },
+    delivered: { label: t('shopAdmin.orders.status.delivered'), type: 'success' },
+    rejected: { label: t('shopAdmin.orders.status.rejected'), type: 'danger' }
   }
 
-  const formatISK = (v: number) =>
-    v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const formatISK = (v: number) => Math.round(v).toLocaleString('en-US')
 
   const formatTime = (t: string) => new Date(t).toLocaleString()
 

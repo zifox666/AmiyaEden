@@ -2,7 +2,7 @@
 status: active
 doc_type: agent-rules
 owner: engineering
-last_reviewed: 2026-03-24
+last_reviewed: 2026-03-26
 source_of_truth:
   - AGENTS.md
   - CLAUDE.md
@@ -97,8 +97,8 @@ The supported authentication flow is EVE SSO. Legacy auth-related pages may stil
 7. **Changes are scoped**
    - Do not mix unrelated refactors into feature work or bug fixes
 
-8. **Bug fixes require regression protection**
-   - Add a regression test unless impractical, and justify any omission
+8. **Testing policy is centralized**
+   - Follow `docs/standards/testing-and-verification.md` for required regression coverage, allowed exceptions, and verification rules
 
 9. **Docs change with behavior**
    - Update relevant docs in the same change when behavior, contracts, routes, or workflows change
@@ -114,8 +114,6 @@ Start here when working in unfamiliar areas:
 - `docs/architecture/module-map.md`
 - `docs/standards/dependency-layering.md`
 - `docs/api/conventions.md`
-- `docs/standards/testing-and-verification.md`
-- `docs/standards/pre-completion-checklist.md`
 
 ### Feature Specs
 
@@ -184,30 +182,12 @@ Do not allow contract drift across backend, API wrappers, shared types, and UI u
 
 Use the existing i18n patterns and update both `zh.json` and `en.json` in the same change.
 
-## Verification and Completion
+## Completion Routing
 
-Use:
+Before finishing work:
 
-- `docs/standards/testing-and-verification.md`
-- `docs/standards/pre-completion-checklist.md`
+- use `docs/standards/pre-completion-checklist.md` as the completion gate
 
-Minimum expectations:
-
-- backend changes -> `cd server && go test ./...` and `go build ./...`
-- frontend changes -> `cd static && pnpm lint .` and `pnpm exec vue-tsc --noEmit`
-- contract changes -> validate both backend and frontend
-- bug fixes -> add a regression test or state why not
-- behavior changes -> update relevant docs
-
-Before completion:
-
-1. re-check scope against the request
-2. confirm no unrelated refactors were introduced
-3. run relevant verification
-4. confirm contract synchronization where applicable
-5. confirm localization coverage for user-facing text
-6. update affected docs
-7. note any remaining risk or unverified area
 
 ## Guardrails
 
@@ -229,8 +209,6 @@ When several files follow an established pattern and one diverges, assume the di
 ## Quick Start
 
 See `docs/guides/local-development.md` for full setup instructions.
-
-For verification commands, see `docs/standards/testing-and-verification.md`.
 
 ## Maintenance
 

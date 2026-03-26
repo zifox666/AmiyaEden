@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-25
+last_reviewed: 2026-03-26
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/role.go
@@ -30,7 +30,8 @@ source_of_truth:
 - 管理员可维护用户昵称、QQ、Discord ID 与状态
 - 超级管理员模拟登录
 - 自动权限映射（ESI corp roles / corp titles -> system roles）
-- 联盟 PAP 列表、抓取、导入、兑换配置、月度结算
+- 联盟 PAP 列表、抓取、导入、月度归档（钱包兑换暂不启用）
+- 军团 PAP 兑换汇率配置（Skirmish / Strategic / CTA 三种类型，影响舰队 PAP 发放时的钱包换算）
 - Webhook 配置与测试
 
 ## 入口
@@ -43,6 +44,7 @@ source_of_truth:
 - `static/src/views/system/user`
 - `static/src/views/system/auto-role`
 - `static/src/views/system/pap`
+- `static/src/views/system/pap-exchange`
 - `static/src/views/system/webhook`
 
 ### 后端路由
@@ -54,6 +56,7 @@ source_of_truth:
 - `/api/v1/system/user/*`
 - `/api/v1/system/auto-role/*`
 - `/api/v1/system/pap/*`
+- `/api/v1/system/pap-exchange/*`
 - `/api/v1/system/webhook/*`
 
 ## 权限边界
@@ -105,7 +108,9 @@ source_of_truth:
 - `server/internal/service/user.go`
 - `server/internal/service/auto_role.go`
 - `server/internal/service/alliance_pap.go`
+- `server/internal/service/pap_exchange.go`
 - `server/internal/service/sys_webhook.go`
 - `static/src/api/system-manage.ts`
+- `static/src/api/pap-exchange.ts`
 - `static/src/api/webhook.ts`
 - `static/src/views/system`

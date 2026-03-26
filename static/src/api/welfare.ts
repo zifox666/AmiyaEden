@@ -1,4 +1,10 @@
 import request from '@/utils/http'
+import { uploadImageAsDataUrl } from '@/api/upload'
+
+/** 上传福利证明图片（含示例），返回 base64 data URL（不写入文件系统，最大 2 MB） */
+export function uploadWelfareEvidence(file: File) {
+  return uploadImageAsDataUrl(file, '/api/v1/welfare/upload-evidence')
+}
 
 // ─── 管理员福利设置 ───
 

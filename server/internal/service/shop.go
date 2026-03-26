@@ -13,14 +13,18 @@ import (
 
 // ShopService 商店业务逻辑层
 type ShopService struct {
-	repo      *repository.ShopRepository
-	walletSvc *SysWalletService
+	repo        *repository.ShopRepository
+	walletSvc   *SysWalletService
+	userRepo    *repository.UserRepository
+	charRepo    *repository.EveCharacterRepository
 }
 
 func NewShopService() *ShopService {
 	return &ShopService{
 		repo:      repository.NewShopRepository(),
 		walletSvc: NewSysWalletService(),
+		userRepo:  repository.NewUserRepository(),
+		charRepo:  repository.NewEveCharacterRepository(),
 	}
 }
 
@@ -60,7 +64,7 @@ type BuyRequest struct {
 	Remark    string `json:"remark"`
 }
 
-// BuyProduct 购买商品
+// BuyProduct 购买商品：立即扣款，状态设为 requested
 func (s *ShopService) BuyProduct(userID uint, req *BuyRequest) (*model.ShopOrder, error) {
 	// 1. 获取商品
 	product, err := s.repo.GetProductByID(req.ProductID)
@@ -97,7 +101,7 @@ func (s *ShopService) BuyProduct(userID uint, req *BuyRequest) (*model.ShopOrder
 
 	totalPrice := product.Price * float64(req.Quantity)
 
-	// 4. 检查余额（即使需要审批也先检查余额，给用户即时反馈）
+	// 4. 检查余额
 	wallet, err := s.walletSvc.GetMyWallet(userID)
 	if err != nil {
 		return nil, fmt.Errorf("获取钱包失败: %w", err)
@@ -106,10 +110,13 @@ func (s *ShopService) BuyProduct(userID uint, req *BuyRequest) (*model.ShopOrder
 		return nil, errors.New("余额不足")
 	}
 
-	// 5. 生成订单号
+	// 5. 获取用户信息快照
+	mainCharName, nickname, qq, discordID := s.getUserSnapshot(userID)
+
+	// 6. 生成订单号
 	orderNo := generateOrderNo()
 
-	// 6. 开启事务（库存扣减 + 创建订单）
+	// 7. 开启事务（库存扣减 + 创建订单）
 	tx := global.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -117,7 +124,7 @@ func (s *ShopService) BuyProduct(userID uint, req *BuyRequest) (*model.ShopOrder
 		}
 	}()
 
-	// 7. 扣减库存（有限库存才扣）
+	// 8. 扣减库存（有限库存才扣）
 	if product.Stock >= 0 {
 		if err := s.repo.DecrStockTx(tx, product.ID, req.Quantity); err != nil {
 			tx.Rollback()
@@ -125,25 +132,22 @@ func (s *ShopService) BuyProduct(userID uint, req *BuyRequest) (*model.ShopOrder
 		}
 	}
 
-	// 8. 创建订单
+	// 9. 创建订单（状态 requested）
 	order := &model.ShopOrder{
-		OrderNo:     orderNo,
-		UserID:      userID,
-		ProductID:   product.ID,
-		ProductName: product.Name,
-		ProductType: product.Type,
-		Quantity:    req.Quantity,
-		UnitPrice:   product.Price,
-		TotalPrice:  totalPrice,
-		Remark:      req.Remark,
-	}
-
-	if product.NeedApproval {
-		// 需要审批：订单状态为 pending，不扣款
-		order.Status = model.OrderStatusPending
-	} else {
-		// 即时购买：先标记为 paid
-		order.Status = model.OrderStatusPaid
+		OrderNo:           orderNo,
+		UserID:            userID,
+		MainCharacterName: mainCharName,
+		Nickname:          nickname,
+		QQ:                qq,
+		DiscordID:         discordID,
+		ProductID:         product.ID,
+		ProductName:       product.Name,
+		ProductType:       product.Type,
+		Quantity:          req.Quantity,
+		UnitPrice:         product.Price,
+		TotalPrice:        totalPrice,
+		Remark:            req.Remark,
+		Status:            model.OrderStatusRequested,
 	}
 
 	if err := s.repo.CreateOrderTx(tx, order); err != nil {
@@ -151,55 +155,48 @@ func (s *ShopService) BuyProduct(userID uint, req *BuyRequest) (*model.ShopOrder
 		return nil, fmt.Errorf("创建订单失败: %w", err)
 	}
 
-	// 提交事务（库存 + 订单已落库）
 	if err := tx.Commit().Error; err != nil {
 		return nil, fmt.Errorf("提交事务失败: %w", err)
 	}
 
-	// 9. 即时购买 — 扣款并完成（在事务外执行，避免死锁）
-	if !product.NeedApproval {
-		if err := s.debitAndComplete(order, userID, product); err != nil {
-			// 扣款失败，将订单标记为余额不足
-			order.Status = model.OrderStatusInsufficientFund
-			_ = s.repo.UpdateOrder(order)
-			return nil, err
-		}
+	// 10. 立即扣款
+	reason := fmt.Sprintf("购买商品: %s x%d", product.Name, req.Quantity)
+	refID := fmt.Sprintf("order:%s", order.OrderNo)
+	if err := s.walletSvc.DebitUser(userID, totalPrice, reason, model.WalletRefShopBuy, refID); err != nil {
+		// 扣款失败，拒绝订单并恢复库存
+		s.rollbackOrder(order, product)
+		return nil, fmt.Errorf("扣款失败: %w", err)
 	}
 
 	return order, nil
 }
 
-// debitAndComplete 扣款 + 生成兑换码（如需）+ 标记完成
-func (s *ShopService) debitAndComplete(order *model.ShopOrder, userID uint, product *model.ShopProduct) error {
-	// 使用 walletSvc.DebitUser 扣款
-	reason := fmt.Sprintf("购买商品: %s x%d", product.Name, order.Quantity)
-	refID := fmt.Sprintf("order:%s", order.OrderNo)
-	if err := s.walletSvc.DebitUser(userID, order.TotalPrice, reason, model.WalletRefShopBuy, refID); err != nil {
-		return fmt.Errorf("扣款失败: %w", err)
+// rollbackOrder 扣款失败时恢复库存并拒绝订单（不退款，因为扣款本就未成功）
+func (s *ShopService) rollbackOrder(order *model.ShopOrder, product *model.ShopProduct) {
+	if product != nil && product.Stock >= 0 {
+		product.Stock += order.Quantity
+		_ = s.repo.UpdateProduct(product)
 	}
+	order.Status = model.OrderStatusRejected
+	_ = s.repo.UpdateOrder(order)
+}
 
-	// 兑换码类商品 — 生成兑换码
-	if product.Type == model.ProductTypeRedeem {
-		for i := 0; i < order.Quantity; i++ {
-			code := &model.ShopRedeemCode{
-				OrderID:   order.ID,
-				ProductID: product.ID,
-				UserID:    userID,
-				Code:      generateRedeemCode(),
-				Status:    model.RedeemStatusUnused,
-			}
-			if err := s.repo.CreateRedeemCode(code); err != nil {
-				return fmt.Errorf("生成兑换码失败: %w", err)
-			}
+// getUserSnapshot 获取用户信息快照（主角色名、昵称、QQ、Discord）
+func (s *ShopService) getUserSnapshot(userID uint) (mainCharName, nickname, qq, discordID string) {
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return
+	}
+	nickname = user.Nickname
+	qq = user.QQ
+	discordID = user.DiscordID
+	if user.PrimaryCharacterID != 0 {
+		char, err := s.charRepo.GetByCharacterID(user.PrimaryCharacterID)
+		if err == nil {
+			mainCharName = char.CharacterName
 		}
 	}
-
-	order.Status = model.OrderStatusCompleted
-	if err := s.repo.UpdateOrder(order); err != nil {
-		return fmt.Errorf("更新订单状态失败: %w", err)
-	}
-
-	return nil
+	return
 }
 
 // GetMyOrders 获取我的订单
@@ -265,9 +262,6 @@ func (s *ShopService) AdminUpdateProduct(id uint, req *AdminProductUpdateRequest
 	if req.Type != "" {
 		product.Type = req.Type
 	}
-	if req.NeedApproval != nil {
-		product.NeedApproval = *req.NeedApproval
-	}
 	if req.Status != nil {
 		product.Status = *req.Status
 	}
@@ -283,17 +277,16 @@ func (s *ShopService) AdminUpdateProduct(id uint, req *AdminProductUpdateRequest
 
 // AdminProductUpdateRequest 商品更新请求
 type AdminProductUpdateRequest struct {
-	Name         string   `json:"name"`
-	Description  *string  `json:"description"`
-	Image        *string  `json:"image"`
-	Price        *float64 `json:"price"`
-	Stock        *int     `json:"stock"`
-	MaxPerUser   *int     `json:"max_per_user"`
-	LimitPeriod  *string  `json:"limit_period"`
-	Type         string   `json:"type"`
-	NeedApproval *bool    `json:"need_approval"`
-	Status       *int8    `json:"status"`
-	SortOrder    *int     `json:"sort_order"`
+	Name        string   `json:"name"`
+	Description *string  `json:"description"`
+	Image       *string  `json:"image"`
+	Price       *float64 `json:"price"`
+	Stock       *int     `json:"stock"`
+	MaxPerUser  *int     `json:"max_per_user"`
+	LimitPeriod *string  `json:"limit_period"`
+	Type        string   `json:"type"`
+	Status      *int8    `json:"status"`
+	SortOrder   *int     `json:"sort_order"`
 }
 
 // AdminDeleteProduct 删除商品
@@ -323,46 +316,25 @@ func (s *ShopService) AdminListOrders(page, pageSize int, filter repository.Orde
 	return s.repo.ListOrders(page, pageSize, filter)
 }
 
-// AdminApproveOrder 审批通过订单
-func (s *ShopService) AdminApproveOrder(orderID uint, operatorID uint, remark string) (*model.ShopOrder, error) {
+// AdminDeliverOrder 发放订单
+func (s *ShopService) AdminDeliverOrder(orderID uint, operatorID uint, remark string) (*model.ShopOrder, error) {
 	order, err := s.repo.GetOrderByID(orderID)
 	if err != nil {
 		return nil, errors.New("订单不存在")
 	}
-	if order.Status != model.OrderStatusPending {
-		return nil, fmt.Errorf("订单状态为 %s，无法审批", order.Status)
+	if order.Status != model.OrderStatusRequested {
+		return nil, fmt.Errorf("订单状态为 %s，无法发放", order.Status)
 	}
 
-	// 获取商品信息
-	product, err := s.repo.GetProductByID(order.ProductID)
-	if err != nil {
-		return nil, errors.New("关联商品不存在")
-	}
-
-	// 检查用户余额
-	wallet, err := s.walletSvc.GetMyWallet(order.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("获取用户钱包失败: %w", err)
-	}
-	if wallet.Balance < order.TotalPrice {
-		order.Status = model.OrderStatusInsufficientFund
-		now := time.Now()
-		order.ReviewedBy = &operatorID
-		order.ReviewedAt = &now
-		order.ReviewRemark = "审批时用户余额不足"
-		_ = s.repo.UpdateOrder(order)
-		return nil, errors.New("用户余额不足")
-	}
-
-	// 扣款
-	reason := fmt.Sprintf("购买商品: %s x%d（审批通过）", order.ProductName, order.Quantity)
-	refID := fmt.Sprintf("order:%s", order.OrderNo)
-	if err := s.walletSvc.DebitUser(order.UserID, order.TotalPrice, reason, model.WalletRefShopBuy, refID); err != nil {
-		return nil, fmt.Errorf("扣款失败: %w", err)
-	}
+	now := time.Now()
+	order.Status = model.OrderStatusDelivered
+	order.ReviewedBy = &operatorID
+	order.ReviewedAt = &now
+	order.ReviewRemark = remark
 
 	// 兑换码类商品 — 生成兑换码
-	if product.Type == model.ProductTypeRedeem {
+	product, err := s.repo.GetProductByID(order.ProductID)
+	if err == nil && product.Type == model.ProductTypeRedeem {
 		for i := 0; i < order.Quantity; i++ {
 			code := &model.ShopRedeemCode{
 				OrderID:   order.ID,
@@ -377,11 +349,6 @@ func (s *ShopService) AdminApproveOrder(orderID uint, operatorID uint, remark st
 		}
 	}
 
-	now := time.Now()
-	order.Status = model.OrderStatusCompleted
-	order.ReviewedBy = &operatorID
-	order.ReviewedAt = &now
-	order.ReviewRemark = remark
 	if err := s.repo.UpdateOrder(order); err != nil {
 		return nil, fmt.Errorf("更新订单失败: %w", err)
 	}
@@ -389,13 +356,13 @@ func (s *ShopService) AdminApproveOrder(orderID uint, operatorID uint, remark st
 	return order, nil
 }
 
-// AdminRejectOrder 拒绝订单
+// AdminRejectOrder 拒绝订单（退款）
 func (s *ShopService) AdminRejectOrder(orderID uint, operatorID uint, remark string) (*model.ShopOrder, error) {
 	order, err := s.repo.GetOrderByID(orderID)
 	if err != nil {
 		return nil, errors.New("订单不存在")
 	}
-	if order.Status != model.OrderStatusPending {
+	if order.Status != model.OrderStatusRequested {
 		return nil, fmt.Errorf("订单状态为 %s，无法拒绝", order.Status)
 	}
 
@@ -404,6 +371,13 @@ func (s *ShopService) AdminRejectOrder(orderID uint, operatorID uint, remark str
 	if err == nil && product.Stock >= 0 {
 		product.Stock += order.Quantity
 		_ = s.repo.UpdateProduct(product)
+	}
+
+	// 退款
+	reason := fmt.Sprintf("商品订单退款: %s x%d", order.ProductName, order.Quantity)
+	refID := fmt.Sprintf("order:%s", order.OrderNo)
+	if err := s.walletSvc.CreditUser(order.UserID, order.TotalPrice, reason, model.WalletRefShopRefund, refID); err != nil {
+		return nil, fmt.Errorf("退款失败: %w", err)
 	}
 
 	now := time.Now()
@@ -433,11 +407,15 @@ func (s *ShopService) AdminListRedeemCodes(page, pageSize int, productID *uint, 
 //  工具函数
 // ─────────────────────────────────────────────
 
-// generateOrderNo 生成订单号: SH + 时间戳 + 4位随机数
+// generateOrderNo 生成短订单号: 8位随机大写字母+数字
 func generateOrderNo() string {
-	ts := time.Now().Format("20060102150405")
-	n, _ := rand.Int(rand.Reader, big.NewInt(10000))
-	return fmt.Sprintf("SH%s%04d", ts, n.Int64())
+	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	code := make([]byte, 8)
+	for i := range code {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		code[i] = charset[n.Int64()]
+	}
+	return string(code)
 }
 
 // generateRedeemCode 生成兑换码: 16位大写字母+数字

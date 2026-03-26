@@ -32,13 +32,9 @@ const (
 // ─── 订单状态 ───
 
 const (
-	OrderStatusPending          = "pending"            // 待审批
-	OrderStatusPaid             = "paid"               // 已付款（即时购买）
-	OrderStatusApproved         = "approved"           // 已审批（审批流程）
-	OrderStatusRejected         = "rejected"           // 已拒绝
-	OrderStatusCompleted        = "completed"          // 已完成
-	OrderStatusCancelled        = "cancelled"          // 已取消
-	OrderStatusInsufficientFund = "insufficient_funds" // 余额不足（审批时）
+	OrderStatusRequested = "requested" // 已下单（钱包已扣，等待发放）
+	OrderStatusDelivered = "delivered" // 已发放
+	OrderStatusRejected  = "rejected"  // 已拒绝（钱包已退款）
 )
 
 // ─── 兑换码状态 ───
@@ -54,17 +50,16 @@ const (
 // ShopProduct 商品
 type ShopProduct struct {
 	BaseModel
-	Name         string  `gorm:"size:200;not null"              json:"name"`
-	Description  string  `gorm:"type:text"                      json:"description"`
-	Image        string  `gorm:"size:500"                       json:"image"`
-	Price        float64 `gorm:"not null"                       json:"price"`
-	Stock        int     `gorm:"default:-1"                     json:"stock"`         // -1 = 无限库存
-	MaxPerUser   int     `gorm:"default:0"                      json:"max_per_user"`  // 0 = 不限购
-	LimitPeriod  string  `gorm:"size:20;default:'forever'"       json:"limit_period"` // forever / daily / weekly / monthly
-	Type         string  `gorm:"size:20;default:'normal';index" json:"type"`          // normal / redeem
-	NeedApproval bool    `gorm:"default:false"                  json:"need_approval"` // 是否需要管理员审批
-	Status       int8    `gorm:"default:1;index"                json:"status"`        // 1=上架 0=下架
-	SortOrder    int     `gorm:"default:0"                      json:"sort_order"`    // 排序（越大越靠前）
+	Name        string  `gorm:"size:200;not null"              json:"name"`
+	Description string  `gorm:"type:text"                      json:"description"`
+	Image       string  `gorm:"type:text"                      json:"image"`
+	Price       float64 `gorm:"not null"                       json:"price"`
+	Stock       int     `gorm:"default:-1"                     json:"stock"`         // -1 = 无限库存
+	MaxPerUser  int     `gorm:"default:0"                      json:"max_per_user"`  // 0 = 不限购
+	LimitPeriod string  `gorm:"size:20;default:'forever'"       json:"limit_period"` // forever / daily / weekly / monthly
+	Type        string  `gorm:"size:20;default:'normal';index" json:"type"`          // normal / redeem
+	Status      int8    `gorm:"default:1;index"                json:"status"`        // 1=上架 0=下架
+	SortOrder   int     `gorm:"default:0"                      json:"sort_order"`    // 排序（越大越靠前）
 }
 
 func (ShopProduct) TableName() string { return "shop_product" }
@@ -72,20 +67,24 @@ func (ShopProduct) TableName() string { return "shop_product" }
 // ShopOrder 订单
 type ShopOrder struct {
 	BaseModel
-	OrderNo       string     `gorm:"size:50;uniqueIndex"          json:"order_no"`
-	UserID        uint       `gorm:"index;not null"               json:"user_id"`
-	ProductID     uint       `gorm:"index;not null"               json:"product_id"`
-	ProductName   string     `gorm:"size:200"                     json:"product_name"` // 商品名快照
-	ProductType   string     `gorm:"size:20"                      json:"product_type"` // 商品类型快照
-	Quantity      int        `gorm:"default:1"                    json:"quantity"`
-	UnitPrice     float64    `gorm:"not null"                     json:"unit_price"` // 单价快照
-	TotalPrice    float64    `gorm:"not null"                     json:"total_price"`
-	Status        string     `gorm:"size:30;index;default:'pending'" json:"status"`
-	TransactionID *uint      `gorm:"index"                        json:"transaction_id"` // 关联钱包流水 ID
-	Remark        string     `gorm:"size:500"                     json:"remark"`         // 用户备注
-	ReviewedBy    *uint      `gorm:"index"                        json:"reviewed_by"`    // 审批人
-	ReviewedAt    *time.Time `json:"reviewed_at"`
-	ReviewRemark  string     `gorm:"size:500"                     json:"review_remark"` // 审批备注
+	OrderNo           string     `gorm:"size:50;uniqueIndex"             json:"order_no"`
+	UserID            uint       `gorm:"index;not null"                  json:"user_id"`
+	MainCharacterName string     `gorm:"size:128"                        json:"main_character_name"` // 主角色名快照
+	Nickname          string     `gorm:"size:128"                        json:"nickname"`            // 昵称快照
+	QQ                string     `gorm:"size:20"                         json:"qq"`
+	DiscordID         string     `gorm:"size:20"                         json:"discord_id"`
+	ProductID         uint       `gorm:"index;not null"                  json:"product_id"`
+	ProductName       string     `gorm:"size:200"                        json:"product_name"` // 商品名快照
+	ProductType       string     `gorm:"size:20"                         json:"product_type"` // 商品类型快照
+	Quantity          int        `gorm:"default:1"                       json:"quantity"`
+	UnitPrice         float64    `gorm:"not null"                        json:"unit_price"` // 单价快照
+	TotalPrice        float64    `gorm:"not null"                        json:"total_price"`
+	Status            string     `gorm:"size:30;index;default:'requested'" json:"status"`
+	TransactionID     *uint      `gorm:"index"                           json:"transaction_id"` // 关联钱包流水 ID
+	Remark            string     `gorm:"size:500"                        json:"remark"`         // 用户备注
+	ReviewedBy        *uint      `gorm:"index"                           json:"reviewed_by"`    // 操作人
+	ReviewedAt        *time.Time `json:"reviewed_at"`
+	ReviewRemark      string     `gorm:"size:500"                        json:"review_remark"` // 发放备注
 }
 
 func (ShopOrder) TableName() string { return "shop_order" }

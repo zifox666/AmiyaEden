@@ -150,11 +150,22 @@ Do not create a new document when:
 - When a document moves from `draft` to active canonical status, move it to the correct directory instead of only renaming the title.
 - When deleting or merging documents, remove stale references so no shadow entry points remain.
 
+## Canonical Sources
+
+Certain facts have a designated single source. Do not redefine or duplicate these in other documents; reference them instead.
+
+| fact | canonical source |
+| --- | --- |
+| verification commands (lint, test, build) | `docs/standards/testing-and-verification.md § Default Commands` |
+
+When adding a new category of facts that appears in multiple documents, designate one canonical source here and convert all other occurrences to references.
+
 ## Anti-Patterns
 
 Avoid the following:
 
 - duplicating the same role list or rules across README files, guides, and feature docs
+- redefining verification commands outside `docs/standards/testing-and-verification.md § Default Commands`
 - turning the root `README.md` into a competing engineering standard beside `docs/ai/repo-rules.md` and `docs/`
 - mixing future plans into current-state documents
 - maintaining a second parallel documentation tree that conflicts with canonical docs

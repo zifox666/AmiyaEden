@@ -50,13 +50,17 @@
           />
         </ElFormItem>
         <ElFormItem :label="$t('srp.prices.fields.amount')" prop="amount">
-          <ElInputNumber
-            v-model="form.amount"
-            :min="0"
-            :precision="2"
-            :step="10000000"
-            style="width: 100%"
-          />
+          <div class="million-isk-input" style="width: 100%">
+            <ElInputNumber
+              :model-value="toMillionISKInput(form.amount)"
+              :min="0"
+              :precision="2"
+              :step="1"
+              class="million-isk-input__control"
+              @update:model-value="(v) => (form.amount = fromMillionISKInput(v))"
+            />
+            <span class="million-isk-input__suffix">{{ $t('common.millionIsk') }}</span>
+          </div>
         </ElFormItem>
       </ElForm>
       <template #footer>
@@ -91,6 +95,7 @@
   import ArtExcelImport from '@/components/core/forms/art-excel-import/index.vue'
   import { fetchShipPrices, upsertShipPrice, deleteShipPrice } from '@/api/srp'
   import SdeSearchSelect from '@/components/business/SdeSearchSelect.vue'
+  import { fromMillionISKInput, toMillionISKInput } from '@/utils/iskUnits'
 
   defineOptions({ name: 'SrpPrices' })
 
@@ -102,7 +107,7 @@
   const formatTime = (v: string) => (v ? new Date(v).toLocaleString() : '-')
   const formatISK = (v: number) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-      v ?? 0
+      (v ?? 0) / 1_000_000
     )
 
   // ─── 列配置 ───
@@ -124,7 +129,7 @@
       label: t('srp.prices.columns.amount'),
       width: 200,
       formatter: (row: ShipPrice) =>
-        h('span', { class: 'font-medium text-blue-600' }, `${formatISK(row.amount)} ISK`)
+        h('span', { class: 'font-medium text-blue-600' }, `${formatISK(row.amount)} M ISK`)
     },
     {
       prop: 'updated_at',
@@ -301,3 +306,22 @@
 
   onMounted(loadPrices)
 </script>
+
+<style scoped>
+  .million-isk-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .million-isk-input__control {
+    width: 100%;
+  }
+
+  .million-isk-input__suffix {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    white-space: nowrap;
+  }
+</style>

@@ -76,18 +76,26 @@ export function adminDeleteProduct(id: number) {
   })
 }
 
-/** 管理员查询订单列表 */
+/** 管理员查询待发放订单（requested 状态） */
 export function adminListOrders(data?: Api.Shop.OrderSearchParams) {
   return request.post<Api.Common.PaginatedResponse<Api.Shop.Order>>({
     url: '/api/v1/system/shop/order/list',
-    data: data ?? { current: 1, size: 20 }
+    data: data ?? { current: 1, size: 20, statuses: ['requested'] }
   })
 }
 
-/** 管理员审批通过订单 */
-export function adminApproveOrder(data: Api.Shop.OrderReviewParams) {
+/** 管理员查询历史订单（delivered + rejected 状态） */
+export function adminListOrderHistory(data?: Api.Shop.OrderSearchParams) {
+  return request.post<Api.Common.PaginatedResponse<Api.Shop.Order>>({
+    url: '/api/v1/system/shop/order/list',
+    data: { ...data, statuses: ['delivered', 'rejected'] }
+  })
+}
+
+/** 管理员发放订单 */
+export function adminDeliverOrder(data: Api.Shop.OrderReviewParams) {
   return request.post<Api.Shop.Order>({
-    url: '/api/v1/system/shop/order/approve',
+    url: '/api/v1/system/shop/order/deliver',
     data
   })
 }
@@ -105,18 +113,5 @@ export function adminListRedeemCodes(data?: Api.Shop.RedeemSearchParams) {
   return request.post<Api.Common.PaginatedResponse<Api.Shop.RedeemCode>>({
     url: '/api/v1/system/shop/redeem/list',
     data: data ?? { current: 1, size: 20 }
-  })
-}
-
-// ─── 图片上传 ───
-
-/** 上传商店图片，返回访问 URL */
-export function uploadShopImage(file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  return request.post<{ url: string }>({
-    url: '/api/v1/upload/image',
-    data: formData,
-    headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

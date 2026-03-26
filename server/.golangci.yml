@@ -1,0 +1,14 @@
+version: "2"
+
+linters:
+  default: standard
+  # 'standard' enables the same set golangci-lint v2 uses by default:
+  #   errcheck, govet, ineffassign, staticcheck, unused
+  # List any additions or exclusions explicitly here rather than relying on
+  # per-version defaults, so CI and local always run the same rules.
+  disable:
+    []
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
