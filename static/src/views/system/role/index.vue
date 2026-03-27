@@ -50,13 +50,6 @@
       </template>
     </ElDialog>
 
-    <!-- 菜单权限分配 -->
-    <RolePermissionDialog
-      v-model:visible="permVisible"
-      :role-id="permRoleId"
-      :role-name="permRoleName"
-      @saved="refreshData"
-    />
   </div>
 </template>
 
@@ -69,9 +62,8 @@
     fetchUpdateRole,
     fetchDeleteRole
   } from '@/api/system-manage'
-  import RolePermissionDialog from './modules/role-permission-dialog.vue'
   import { ElTag, ElButton, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-  import { Plus, Setting } from '@element-plus/icons-vue'
+  import { Plus } from '@element-plus/icons-vue'
 
   defineOptions({ name: 'Role' })
 
@@ -133,20 +125,10 @@
         {
           prop: 'actions',
           label: '操作',
-          width: 200,
+          width: 120,
           fixed: 'right',
           formatter: (row: RoleItem) =>
             h('div', { class: 'flex gap-1' }, [
-              h(
-                ElButton,
-                {
-                  size: 'small',
-                  type: 'warning',
-                  icon: Setting,
-                  onClick: () => openPermDialog(row)
-                },
-                () => '权限'
-              ),
               h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
               h(ArtButtonTable, {
                 type: 'delete',
@@ -251,16 +233,5 @@
     } catch (e: any) {
       ElMessage.error(e?.message ?? '删除失败')
     }
-  }
-
-  // ─── 权限分配 ───
-  const permVisible = ref(false)
-  const permRoleId = ref<number>()
-  const permRoleName = ref('')
-
-  function openPermDialog(row: RoleItem) {
-    permRoleId.value = row.id
-    permRoleName.value = row.name
-    permVisible.value = true
   }
 </script>

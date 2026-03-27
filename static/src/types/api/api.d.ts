@@ -189,7 +189,6 @@ declare namespace Api {
       is_system: boolean
       sort: number
       status: number
-      menu_ids?: number[]
       created_at: string
       updated_at: string
     }
@@ -211,62 +210,6 @@ declare namespace Api {
 
     /** 角色搜索参数 */
     type RoleSearchParams = Partial<Api.Common.CommonSearchParams>
-
-    /** 菜单项（后端 model.Menu） */
-    interface MenuItem {
-      id: number
-      parent_id: number
-      type: 'dir' | 'menu' | 'button'
-      name: string
-      path: string
-      component: string
-      permission: string
-      title: string
-      icon: string
-      sort: number
-      is_hide: boolean
-      keep_alive: boolean
-      is_hide_tab: boolean
-      fixed_tab: boolean
-      status: number
-      children?: MenuItem[]
-      created_at: string
-      updated_at: string
-    }
-
-    /** 创建菜单请求 */
-    interface CreateMenuParams {
-      parent_id?: number
-      type: 'dir' | 'menu' | 'button'
-      name: string
-      path?: string
-      component?: string
-      permission?: string
-      title: string
-      icon?: string
-      sort?: number
-      is_hide?: boolean
-      keep_alive?: boolean
-      is_hide_tab?: boolean
-      fixed_tab?: boolean
-    }
-
-    /** 更新菜单请求 */
-    interface UpdateMenuParams {
-      parent_id?: number
-      type?: 'dir' | 'menu' | 'button'
-      name?: string
-      path?: string
-      component?: string
-      permission?: string
-      title?: string
-      icon?: string
-      sort?: number
-      is_hide?: boolean
-      keep_alive?: boolean
-      is_hide_tab?: boolean
-      fixed_tab?: boolean
-    }
 
     /** 用户角色关联 */
     interface UserRoleInfo {
