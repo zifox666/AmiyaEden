@@ -2,12 +2,11 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-03-27
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/middleware/auth.go
   - server/internal/model/role.go
-  - server/internal/model/menu.go
   - static/src/store/modules/user.ts
 ---
 
@@ -94,8 +93,8 @@ source_of_truth:
 
 - 判断请求方是否至少拥有一个非 `guest` 角色
 - 用于实现 API 文档中的 `Login` 边界
-- 适合“任意产品用户可访问”的能力，不再用 `RequireRole(..., user)` 代替
-- 不适用于 SSO 首次登录后的 guest onboarding 页面，例如 `/me`、`/sso/eve/characters`、`/menu/list` 以及 guest 可访问的自助信息页
+- 适合"任意产品用户可访问"的能力，不再用 `RequireRole(..., user)` 代替
+- 不适用于 SSO 首次登录后的 guest onboarding 页面，例如 `/me`、`/sso/eve/characters` 以及 guest 可访问的自助信息页
 
 ### JWT-only 自助能力
 
@@ -108,11 +107,9 @@ source_of_truth:
 - `/api/v1/sso/eve/bind`
 - `/api/v1/sso/eve/primary/:character_id`
 - `/api/v1/sso/eve/characters/:character_id`
-- `/api/v1/menu/list`
 
 这类接口主要用于：
 
-- 建立前端权限上下文
 - 完成角色绑定与主角色调整
 - 让 guest 在准入完成前仍能查看自己的基础信息或自助完成资料
 
@@ -124,29 +121,9 @@ source_of_truth:
 - `super_admin` 自动通过
 - 支持父权限前缀命中，例如持有 `srp` 时可满足 `srp:review`
 
-## 菜单与按钮权限
+## 前端路由模式
 
-权限模型基于：
-
-- `role`
-- `menu`
-- `role_menu`
-- `user_role`
-
-`menu.type` 支持：
-
-- `dir`
-- `menu`
-- `button`
-
-按钮权限通过 `menu.permission` 进入前端 `meta.authList`，供 `v-auth` 与程序化检查使用。
-
-## 前端模式
-
-前端通过 `VITE_ACCESS_MODE` 支持：
-
-- `frontend`: 静态路由 + `meta.login` / `meta.roles`
-- `backend`: 后端菜单接口 `/api/v1/menu/list`
+前端使用静态路由 + `meta.login` / `meta.roles` 模式。
 
 静态路由模式下的约定：
 
@@ -154,10 +131,9 @@ source_of_truth:
 - `meta.roles` 只用于真实的显式角色白名单
 - 不要用 `meta.roles: ['admin', 'fc', 'user']` 之类写法冒充 `Login`
 
-修改权限或菜单时，必须同时考虑：
+修改权限时，必须同时考虑：
 
 - 后端路由保护
-- 角色 / 菜单种子
 - 前端路由元数据
 - 按钮权限使用点
 

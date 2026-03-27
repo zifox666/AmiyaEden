@@ -56,8 +56,8 @@ source_of_truth:
 - `fleet-configs` 的只读查询要求 `Login`
 - `fleet-configs` 的导出到 ESI（保存到自己的游戏装配）要求 `Login`
 - `fleet-configs` 的创建、修改、删除、导入装配和物品设置要求 `super_admin`、`admin` 或 `fc`
-- `corporation-pap`、`pap`、`join` 在前端静态路由模式下按 `Login` 处理
-- 舰队相关角色边界同时由 router、菜单返回与前端路由元数据保持一致
+- `corporation-pap`、`pap`、`join` 按 `Login` 处理
+- 舰队相关角色边界由前端路由元数据决定
 
 ## 关键不变量
 

@@ -81,16 +81,13 @@ source_of_truth:
 这些业务模块通常同时存在于：
 
 - 后端路由注册点
-- 菜单种子
-- 前端路由模块或后端菜单模式
+- 前端路由模块
 
 ## 关键不变量
 
 - 当前产品认证主路径是 EVE SSO，不是用户名密码
 - `guest` 是已认证用户，但不是 `Login` 意义上的产品用户
 - 角色编码以 `server/internal/model/role.go` 为准
-- 菜单 / 按钮权限以 `server/internal/model/menu.go` 与 `/api/v1/menu/list` 为准
-- 前端支持 `frontend` 与 `backend` 两种菜单模式，修改时不能只改一边
 - `docs/ai/repo-rules.md` 与 `docs/` 是唯一维护中的文档源
 - 所有 EVE SSO / ESI API 端点必须通过 `server/config/config.go` 中的 `EveSSOConfig` 配置，禁止硬编码 URL
 - ESI 刷新队列通过接口注入方式避免循环依赖（`pkg/eve/esi/queue.go`）

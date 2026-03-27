@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-25
+last_reviewed: 2026-03-27
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -51,7 +51,6 @@ source_of_truth:
 | POST | `/notification/unread-count` | 未读数 | JWT |
 | POST | `/notification/read` | 标记已读 | Login |
 | POST | `/notification/read-all` | 全部已读 | Login |
-| GET | `/menu/list` | 当前用户菜单树 | JWT |
 
 ## Operation
 
@@ -228,22 +227,16 @@ source_of_truth:
 | GET | `/system/pap-exchange/rates` | 获取 PAP 类型兑换汇率列表 | `RequireRole(admin)` |
 | PUT | `/system/pap-exchange/rates` | 更新 PAP 类型兑换汇率 | `RequireRole(admin)` |
 
-### Menu / Role / User
+### Role / User
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/system/menu/tree` | 菜单树 | `RequireRole(admin)` |
-| POST | `/system/menu` | 创建菜单 | `RequireRole(admin)` |
-| PUT | `/system/menu/:id` | 更新菜单 | `RequireRole(admin)` |
-| DELETE | `/system/menu/:id` | 删除菜单 | `RequireRole(admin)` |
 | GET | `/system/role` | 角色列表 | `RequireRole(admin)` |
 | GET | `/system/role/all` | 全量角色列表 | `RequireRole(admin)` |
 | GET | `/system/role/:id` | 角色详情 | `RequireRole(admin)` |
 | POST | `/system/role` | 创建角色 | `RequireRole(admin)` |
 | PUT | `/system/role/:id` | 更新角色 | `RequireRole(admin)` |
 | DELETE | `/system/role/:id` | 删除角色 | `RequireRole(admin)` |
-| GET | `/system/role/:id/menus` | 获取角色菜单 | `RequireRole(admin)` |
-| PUT | `/system/role/:id/menus` | 设置角色菜单 | `RequireRole(admin)` |
 | GET | `/system/user` | 用户列表；角色字段仅返回有序 `roles[]`，不再返回历史单值 `role` | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
 | PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态；`admin` 不可编辑 `super_admin` 或其他 `admin` | `RequireRole(admin)` |

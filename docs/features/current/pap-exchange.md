@@ -56,11 +56,6 @@ PAP 兑换汇率功能允许管理员为每种舰队行动类型（Skirmish / St
 - `GET /api/v1/system/pap-exchange/rates`
 - `PUT /api/v1/system/pap-exchange/rates`
 
-### 菜单权限
-
-- 菜单名：`PAPExchange`（sort 64，位于联盟 PAP 与系统钱包之间）
-- 按钮权限：`system:pap:exchange`
-
 ## 主要代码文件
 
 - `server/internal/model/pap_type_rate.go` — 模型、类型常量、`NormalizePAPLevel`

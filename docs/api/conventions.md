@@ -90,11 +90,11 @@ source_of_truth:
 
 说明：
 
-- 当真实边界是“只要 JWT 有效即可访问”时，统一写成 `JWT`
-- 不要用 `RequireRole(..., user)` 作为“任意登录用户”的文档缩写
-- 当真实含义是“所有非 guest 登录用户都能访问”时，统一写成 `Login`
+- 当真实边界是"只要 JWT 有效即可访问"时，统一写成 `JWT`
+- 不要用 `RequireRole(..., user)` 作为"任意登录用户"的文档缩写
+- 当真实含义是"所有非 guest 登录用户都能访问"时，统一写成 `Login`
 - 当真实边界是具体角色白名单时，继续写 `RequireRole(...)`
-- guest onboarding / self-service 路由如 `/me`、`/sso/eve/characters`、`/menu/list` 应明确标注为 `JWT`
+- guest onboarding / self-service 路由如 `/me`、`/sso/eve/characters` 应明确标注为 `JWT`
 
 ## 禁止事项
 

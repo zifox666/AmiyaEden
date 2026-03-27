@@ -2,11 +2,10 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-26
+last_reviewed: 2026-03-27
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/role.go
-  - server/internal/service/menu.go
   - server/internal/service/user.go
   - server/internal/service/auto_role.go
   - server/internal/service/alliance_pap.go
@@ -24,8 +23,7 @@ source_of_truth:
 ## 当前能力
 
 - 基础配置读取与更新
-- 菜单管理
-- 角色管理与角色菜单分配
+- 角色管理
 - 用户管理、用户角色分配
 - 管理员可维护用户昵称、QQ、Discord ID 与状态
 - 超级管理员模拟登录
@@ -39,7 +37,6 @@ source_of_truth:
 ### 前端页面
 
 - `static/src/views/system/basic-config`
-- `static/src/views/system/menu`
 - `static/src/views/system/role`
 - `static/src/views/system/user`
 - `static/src/views/system/auto-role`
@@ -51,7 +48,6 @@ source_of_truth:
 
 - `/api/v1/system/basic-config`
 - `/api/v1/system/basic-config/allow-corporations`
-- `/api/v1/system/menu/*`
 - `/api/v1/system/role/*`
 - `/api/v1/system/user/*`
 - `/api/v1/system/auto-role/*`
@@ -66,7 +62,7 @@ source_of_truth:
 
 ## 关键不变量
 
-- 角色与菜单定义的 canonical 源在代码常量和菜单种子，不在旧文档
+- 角色定义的 canonical 源在代码常量，不在旧文档
 - 管理员侧用户资料维护走 `/api/v1/system/user/:id`，当前支持昵称、QQ、Discord ID、状态
 - 管理员侧用户列表 `/api/v1/system/user` 的角色列只以有序 `roles[]` 为准，不再暴露历史单值 `role`
 - `/api/v1/system/user/:id` 更新与删除都受后端保护：`admin` 不可编辑或删除 `super_admin` 或其他 `admin`
@@ -104,7 +100,6 @@ source_of_truth:
 ## 主要代码文件
 
 - `server/internal/service/role.go`
-- `server/internal/service/menu.go`
 - `server/internal/service/user.go`
 - `server/internal/service/auto_role.go`
 - `server/internal/service/alliance_pap.go`
