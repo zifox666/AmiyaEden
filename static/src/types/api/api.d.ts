@@ -120,7 +120,6 @@ declare namespace Api {
 
     /** 用户信息（路由守卫和权限指令使用） */
     interface UserInfo {
-      buttons: string[]
       roles: string[]
       userId: number
       userName: string
