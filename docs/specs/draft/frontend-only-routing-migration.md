@@ -67,11 +67,17 @@
   - 将 `srpRoutes` 从最后移到 `systemRoutes` 之前
   - 正确顺序：dashboard → operation → skill-planning → info → welfare → shop → srp → system → exception
 
+#### [exception.ts](../../static/src/router/modules/exception.ts)
+- ✅ 修复异常页面路由显示在菜单中的问题
+  - 为 `exceptionRoutes` 添加 `isHide: true` 属性
+  - 异常页面（403、404、500）不应出现在前端菜单中
+
 **总计**：
 - 新增路由：4 个
 - 新增按钮权限：20 个
 - 修正路由顺序：1 处
-- 涉及文件：6 个
+- 修复路由显示问题：1 处
+- 涉及文件：7 个
 
 ---
 
