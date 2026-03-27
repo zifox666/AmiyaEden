@@ -17,6 +17,7 @@ type WelfareService struct {
 	repo      *repository.WelfareRepository
 	userRepo  *repository.UserRepository
 	charRepo  *repository.EveCharacterRepository
+	fleetRepo *repository.FleetRepository
 	skillRepo *repository.EveSkillRepository
 	planRepo  *repository.SkillPlanRepository
 }
@@ -26,6 +27,7 @@ func NewWelfareService() *WelfareService {
 		repo:      repository.NewWelfareRepository(),
 		userRepo:  repository.NewUserRepository(),
 		charRepo:  repository.NewEveCharacterRepository(),
+		fleetRepo: repository.NewFleetRepository(),
 		skillRepo: repository.NewEveSkillRepository(),
 		planRepo:  repository.NewSkillPlanRepository(),
 	}
@@ -72,6 +74,7 @@ type AdminUpdateWelfareRequest struct {
 	RequireSkillPlan bool   `json:"require_skill_plan"`
 	SkillPlanIDs     []uint `json:"skill_plan_ids"`
 	MaxCharAgeMonths *int   `json:"max_char_age_months"`
+	MinimumPap       *int   `json:"minimum_pap"`
 	RequireEvidence  bool   `json:"require_evidence"`
 	ExampleEvidence  string `json:"example_evidence"`
 	Status           int8   `json:"status"`
@@ -99,6 +102,7 @@ func (s *WelfareService) AdminUpdateWelfare(id uint, req *AdminUpdateWelfareRequ
 	w.DistMode = req.DistMode
 	w.RequireSkillPlan = req.RequireSkillPlan
 	w.MaxCharAgeMonths = req.MaxCharAgeMonths
+	w.MinimumPap = req.MinimumPap
 	w.RequireEvidence = req.RequireEvidence
 	w.ExampleEvidence = req.ExampleEvidence
 	w.Status = req.Status
@@ -239,6 +243,23 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 		s.ensureBirthdays(characters)
 	}
 
+	// 5c. 预加载军团 PAP 总数（仅当有最低 PAP 限制的福利时）
+	needsMinimumPapCheck := false
+	for _, w := range welfares {
+		if w.MinimumPap != nil && *w.MinimumPap > 0 {
+			needsMinimumPapCheck = true
+			break
+		}
+	}
+	var totalPap float64
+	if needsMinimumPapCheck {
+		total, err := s.fleetRepo.SumPapByUserTotal(user.ID)
+		if err != nil {
+			return nil, errors.New("获取 PAP 统计失败")
+		}
+		totalPap = total
+	}
+
 	now := time.Now()
 
 	// 6. 计算每个福利的资格
@@ -248,10 +269,11 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 		if welfareAgeRestrictionFailed(characters, w.MaxCharAgeMonths, now) {
 			continue
 		}
+		minimumPapBlocked := welfareMinimumPapRestrictionFailed(w.MinimumPap, totalPap)
 		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 && !skillCheckReady {
 			continue
 		}
-		resp, ok := s.buildEligibleWelfareResp(user, characters, apps, w, skillCheckCache)
+		resp, ok := s.buildEligibleWelfareResp(user, characters, apps, w, skillCheckCache, minimumPapBlocked)
 		if !ok {
 			continue
 		}
@@ -267,6 +289,14 @@ func welfareAgeRestrictionFailed(characters []model.EveCharacter, maxMonths *int
 		return false
 	}
 	return anyCharacterTooOld(characters, *maxMonths, now)
+}
+
+// welfareMinimumPapRestrictionFailed checks the minimum PAP restriction.
+func welfareMinimumPapRestrictionFailed(minimumPap *int, totalPap float64) bool {
+	if minimumPap == nil || *minimumPap <= 0 {
+		return false
+	}
+	return totalPap <= float64(*minimumPap)
 }
 
 // isUserIneligible 检查 per_user 福利中用户是否已申请过（通过 QQ 或 DiscordID 匹配）
@@ -292,6 +322,7 @@ func (s *WelfareService) buildEligibleWelfareResp(
 	apps []model.WelfareApplication,
 	w model.Welfare,
 	skillCheckCache map[int64]map[uint]bool,
+	minimumPapBlocked bool,
 ) (EligibleWelfareResp, bool) {
 	resp := EligibleWelfareResp{
 		ID:              w.ID,
@@ -309,14 +340,14 @@ func (s *WelfareService) buildEligibleWelfareResp(
 		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 && len(characters) == 0 {
 			return EligibleWelfareResp{}, false
 		}
-		resp.CanApplyNow = true
+		resp.CanApplyNow = !minimumPapBlocked
 		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 {
-			resp.CanApplyNow = s.anyCharacterSatisfiesSkillPlan(characters, w.SkillPlanIDs, skillCheckCache)
+			resp.CanApplyNow = !minimumPapBlocked && s.anyCharacterSatisfiesSkillPlan(characters, w.SkillPlanIDs, skillCheckCache)
 		}
 		return resp, true
 	}
 
-	eligible := s.filterEligibleCharacters(characters, apps, w, skillCheckCache)
+	eligible := s.filterEligibleCharacters(characters, apps, w, skillCheckCache, minimumPapBlocked)
 	if len(eligible) == 0 {
 		return EligibleWelfareResp{}, false
 	}
@@ -330,6 +361,7 @@ func (s *WelfareService) filterEligibleCharacters(
 	apps []model.WelfareApplication,
 	w model.Welfare,
 	skillCheckCache map[int64]map[uint]bool,
+	minimumPapBlocked bool,
 ) []EligibleCharacterResp {
 	// 构建已申请的角色集合
 	appliedCharIDs := make(map[int64]bool)
@@ -348,8 +380,11 @@ func (s *WelfareService) filterEligibleCharacters(
 			continue
 		}
 		canApplyNow := true
+		if minimumPapBlocked {
+			canApplyNow = false
+		}
 		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 {
-			canApplyNow = s.characterSatisfiesAnySkillPlan(char.CharacterID, w.SkillPlanIDs, skillCheckCache)
+			canApplyNow = canApplyNow && s.characterSatisfiesAnySkillPlan(char.CharacterID, w.SkillPlanIDs, skillCheckCache)
 		}
 		eligible = append(eligible, EligibleCharacterResp{
 			CharacterID:   char.CharacterID,
@@ -542,6 +577,17 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 	// 角色年龄检查：任一角色超龄则该福利不可申请
 	if welfareAgeRestrictionFailed(characters, welfare.MaxCharAgeMonths, time.Now()) {
 		return nil, errors.New("您的角色年龄超过该福利限制")
+	}
+
+	// PAP 检查：军团 PAP 总数必须严格大于最低要求
+	if welfareMinimumPapRestrictionFailed(welfare.MinimumPap, 0) {
+		totalPap, err := s.fleetRepo.SumPapByUserTotal(userID)
+		if err != nil {
+			return nil, errors.New("获取 PAP 统计失败")
+		}
+		if welfareMinimumPapRestrictionFailed(welfare.MinimumPap, totalPap) {
+			return nil, errors.New("您的军团 PAP 未达到该福利限制")
+		}
 	}
 
 	// 证明图片检查

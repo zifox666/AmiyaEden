@@ -92,14 +92,19 @@
           prop: 'unit_price',
           label: t('shop.unitPrice'),
           width: 140,
-          formatter: (row: Order) => h('span', {}, formatISK(row.unit_price))
+          formatter: (row: Order) =>
+            h('span', {}, `${formatISK(row.unit_price)} ${t('shop.currency')}`)
         },
         {
           prop: 'total_price',
           label: t('shop.totalPrice'),
           width: 140,
           formatter: (row: Order) =>
-            h('span', { class: 'font-medium text-red-500' }, formatISK(row.total_price))
+            h(
+              'span',
+              { class: 'font-medium text-red-500' },
+              `${formatISK(row.total_price)} ${t('shop.currency')}`
+            )
         },
         {
           prop: 'status',

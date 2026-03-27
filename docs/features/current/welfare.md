@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-26
+last_reviewed: 2026-03-28
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/welfare.go
@@ -18,6 +18,7 @@ source_of_truth:
 - 两种发放模式：按自然人（per_user）、按人物（per_character）
 - 可选技能计划检查：可关联多个军团技能计划，技能合格才允许申请
 - 可选角色最大年龄限制（max_char_age_months）：可与 per_user / per_character 一起使用。系统会先按用户检查任一角色年龄，若任一角色超龄则该福利对该用户不可申请；若通过，再继续按发放模式筛选角色
+- 可选军团舰队 PAP 门槛（minimum_pap）：若设置为大于 0 的值，申请人需拥有军团舰队 PAP 总数大于该值才可申请
 - 可选证明图片要求（require_evidence）：管理员可要求申请人上传图片作为证明，并可上传示例图片供参考
 - 用户自助申请福利，系统自动判断资格
 - 我的福利页会把当前可申请的福利和“未达到条件”的技能门槛福利一起展示；未达到条件项会灰显，只有当角色年龄符合限制时才会出现
@@ -38,6 +39,7 @@ source_of_truth:
   - 角色年龄不符合限制的福利不显示
   - 仅因技能不足暂不可申请的福利会保留在“申请福利”页，并以灰显状态展示
 - **角色年龄限制**（可选，适用于 per_user / per_character）：先按用户检查任一角色年龄（基于 ESI 生日），若任一角色超过限制月数则该福利对该用户不可申请；若通过，再继续按发放模式筛选角色。角色生日在首次检查时从 ESI 获取并持久化到 eve_character 表
+- **军团舰队 PAP 门槛**（可选，适用于 per_user / per_character）：若设置为大于 0 的数值，则申请人需拥有军团舰队 PAP 总数大于该值；未达到时该福利仍保留在“申请福利”页，但会灰显并禁用申请按钮
 
 ### 申请记录模型（WelfareApplication）
 

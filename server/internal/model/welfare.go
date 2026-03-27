@@ -10,7 +10,7 @@ import "time"
 
 const (
 	WelfareDistModePerUser      = "per_user"      // 按自然人（User Account）发放
-	WelfareDistModePerCharacter = "per_character"  // 按人物（EVE Character）发放
+	WelfareDistModePerCharacter = "per_character" // 按人物（EVE Character）发放
 )
 
 // ─── 状态 ───
@@ -30,6 +30,7 @@ type Welfare struct {
 	DistMode         string `gorm:"size:20;not null;default:'per_user'" json:"dist_mode"`
 	RequireSkillPlan bool   `gorm:"default:false"               json:"require_skill_plan"`
 	MaxCharAgeMonths *int   `gorm:""                            json:"max_char_age_months"`
+	MinimumPap       *int   `gorm:""                            json:"minimum_pap"`
 	RequireEvidence  bool   `gorm:"default:false"               json:"require_evidence"`
 	ExampleEvidence  string `gorm:"type:text"                   json:"example_evidence"`
 	Status           int8   `gorm:"default:1"                   json:"status"`
@@ -53,8 +54,8 @@ func (Welfare) TableName() string { return "welfare" }
 
 const (
 	WelfareAppStatusRequested = "requested"
-	WelfareAppStatusDelivered  = "delivered"
-	WelfareAppStatusRejected   = "rejected"
+	WelfareAppStatusDelivered = "delivered"
+	WelfareAppStatusRejected  = "rejected"
 )
 
 // WelfareApplication 福利申请记录

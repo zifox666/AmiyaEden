@@ -251,6 +251,108 @@ func TestWelfareAgeRestrictionFailed(t *testing.T) {
 	}
 }
 
+func TestWelfareMinimumPapRestrictionFailed(t *testing.T) {
+	tests := []struct {
+		name      string
+		minimum   *int
+		totalPap  float64
+		wantBlock bool
+	}{
+		{
+			name:      "nil minimum never blocks",
+			minimum:   nil,
+			totalPap:  0,
+			wantBlock: false,
+		},
+		{
+			name:      "zero minimum never blocks",
+			minimum:   func() *int { v := 0; return &v }(),
+			totalPap:  0,
+			wantBlock: false,
+		},
+		{
+			name:      "total equal to minimum blocks (strictly greater required)",
+			minimum:   func() *int { v := 10; return &v }(),
+			totalPap:  10,
+			wantBlock: true,
+		},
+		{
+			name:      "total below minimum blocks",
+			minimum:   func() *int { v := 10; return &v }(),
+			totalPap:  9.9,
+			wantBlock: true,
+		},
+		{
+			name:      "total above minimum passes",
+			minimum:   func() *int { v := 10; return &v }(),
+			totalPap:  10.1,
+			wantBlock: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := welfareMinimumPapRestrictionFailed(tt.minimum, tt.totalPap)
+			if got != tt.wantBlock {
+				t.Fatalf("welfareMinimumPapRestrictionFailed() = %v, want %v", got, tt.wantBlock)
+			}
+		})
+	}
+}
+
+func TestBuildEligibleWelfareRespKeepsMinimumPapRestrictedWelfareVisible(t *testing.T) {
+	svc := &WelfareService{}
+
+	user := &model.User{QQ: "12345", DiscordID: "discord-1"}
+	characters := []model.EveCharacter{
+		{CharacterID: 1001, CharacterName: "Alpha"},
+		{CharacterID: 1002, CharacterName: "Beta"},
+	}
+
+	t.Run("per user welfare stays visible but disabled", func(t *testing.T) {
+		minimumPap := func() *int { v := 10; return &v }()
+		welfare := model.Welfare{
+			BaseModel:        model.BaseModel{ID: 12},
+			Name:             "Per User Minimum PAP",
+			DistMode:         model.WelfareDistModePerUser,
+			MinimumPap:       minimumPap,
+			RequireSkillPlan: false,
+		}
+
+		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, nil, true)
+		if !ok {
+			t.Fatal("expected minimum PAP restricted welfare to stay visible")
+		}
+		if got.CanApplyNow {
+			t.Fatal("expected per-user welfare to be disabled when minimum PAP is not met")
+		}
+	})
+
+	t.Run("per character welfare keeps rows visible but disabled", func(t *testing.T) {
+		minimumPap := func() *int { v := 10; return &v }()
+		welfare := model.Welfare{
+			BaseModel:        model.BaseModel{ID: 13},
+			Name:             "Per Character Minimum PAP",
+			DistMode:         model.WelfareDistModePerCharacter,
+			MinimumPap:       minimumPap,
+			RequireSkillPlan: false,
+		}
+
+		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, nil, true)
+		if !ok {
+			t.Fatal("expected minimum PAP restricted welfare to stay visible")
+		}
+		if len(got.EligibleCharacters) != 2 {
+			t.Fatalf("expected 2 character rows, got %d", len(got.EligibleCharacters))
+		}
+		for _, row := range got.EligibleCharacters {
+			if row.CanApplyNow {
+				t.Fatal("expected per-character welfare rows to be disabled when minimum PAP is not met")
+			}
+		}
+	})
+}
+
 func TestBuildEligibleWelfareRespIncludesFutureSkillOptions(t *testing.T) {
 	svc := &WelfareService{}
 
@@ -276,7 +378,7 @@ func TestBuildEligibleWelfareRespIncludesFutureSkillOptions(t *testing.T) {
 			1002: map[uint]bool{7: false},
 		}
 
-		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, skillCache)
+		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, skillCache, false)
 		if !ok {
 			t.Fatal("expected future-eligible welfare to stay visible")
 		}
@@ -301,7 +403,7 @@ func TestBuildEligibleWelfareRespIncludesFutureSkillOptions(t *testing.T) {
 			1002: map[uint]bool{7: false},
 		}
 
-		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, skillCache)
+		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, skillCache, false)
 		if !ok {
 			t.Fatal("expected per-character welfare to stay visible")
 		}

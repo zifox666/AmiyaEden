@@ -105,6 +105,20 @@
             {{ t('welfareSettings.maxCharAgeHint') }}
           </div>
         </ElFormItem>
+        <ElFormItem :label="t('welfareSettings.minimumPap')">
+          <ElInputNumber
+            v-model="formData.minimum_pap"
+            :min="0"
+            :step="1"
+            :precision="0"
+            :placeholder="t('welfareSettings.minimumPapPlaceholder')"
+            controls-position="right"
+            style="width: 200px"
+          />
+          <div class="text-xs text-gray-400 mt-1">
+            {{ t('welfareSettings.minimumPapHint') }}
+          </div>
+        </ElFormItem>
         <ElFormItem :label="t('welfareSettings.requireSkillPlan')">
           <ElSwitch v-model="formData.require_skill_plan" />
         </ElFormItem>
@@ -379,6 +393,7 @@
     require_skill_plan: false,
     skill_plan_ids: [] as number[],
     max_char_age_months: undefined as number | undefined,
+    minimum_pap: undefined as number | undefined,
     require_evidence: false,
     example_evidence: '',
     status: 1 as number
@@ -428,6 +443,7 @@
       require_skill_plan: false,
       skill_plan_ids: [],
       max_char_age_months: undefined,
+      minimum_pap: undefined,
       require_evidence: false,
       example_evidence: '',
       status: 1
@@ -450,6 +466,7 @@
       require_skill_plan: row.require_skill_plan,
       skill_plan_ids: row.skill_plan_ids ?? [],
       max_char_age_months: row.max_char_age_months ?? undefined,
+      minimum_pap: row.minimum_pap ?? undefined,
       require_evidence: row.require_evidence ?? false,
       example_evidence: row.example_evidence ?? '',
       status: row.status
@@ -467,6 +484,7 @@
         ...formData,
         skill_plan_ids: formData.require_skill_plan ? formData.skill_plan_ids : [],
         max_char_age_months: formData.max_char_age_months || null,
+        minimum_pap: formData.minimum_pap || null,
         example_evidence: formData.require_evidence ? formData.example_evidence : ''
       }
       if (editingItem.value) {

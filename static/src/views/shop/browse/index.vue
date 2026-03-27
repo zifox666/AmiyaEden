@@ -25,14 +25,16 @@
           <span class="font-medium">{{ buyProduct.name }}</span>
         </ElFormItem>
         <ElFormItem :label="$t('shop.unitPrice')">
-          <span class="text-orange-600 font-medium">{{ formatISK(buyProduct.price) }}</span>
+          <span class="text-orange-600 font-medium">
+            {{ formatISK(buyProduct.price) }} {{ $t('shop.currency') }}
+          </span>
         </ElFormItem>
         <ElFormItem :label="$t('shop.quantity')">
           <ElInputNumber v-model="buyQuantity" :min="1" :max="buyMaxQty" style="width: 160px" />
         </ElFormItem>
         <ElFormItem :label="$t('shop.totalPrice')">
           <span class="text-red-500 font-bold text-lg">{{
-            formatISK(buyProduct.price * buyQuantity)
+            `${formatISK(buyProduct.price * buyQuantity)} ${$t('shop.currency')}`
           }}</span>
         </ElFormItem>
         <ElFormItem :label="$t('shop.remark')">

@@ -548,6 +548,9 @@
     "maxCharAgeMonths": "角色最大年龄",
     "maxCharAgePlaceholder": "月数（0 = 不限制）",
     "maxCharAgeHint": "设置后会先按用户检查任一角色年龄，超龄则该福利对该用户不可申请",
+    "minimumPap": "最低 PAP",
+    "minimumPapPlaceholder": "数量（0 = 不限制）",
+    "minimumPapHint": "设置后会检查军团舰队 PAP，总数需大于该值才可申请",
     "distModeLockedHint": "设置角色年龄限制后仍可选择按自然人或按人物",
     "importBtn": "导入",
     "importTitle": "导入历史记录",
@@ -618,6 +621,7 @@
     "evidenceImage": "证明图片"
   },
   "shop": {
+    "currency": "伏羲币",
     "products": "商品列表",
     "allTypes": "全部类型",
     "typeNormal": "普通商品",
@@ -640,8 +644,8 @@
     "orderNo": "订单号",
     "productName": "商品名称",
     "quantity": "数量",
-    "unitPrice": "单价",
-    "totalPrice": "总价",
+    "unitPrice": "单价（伏羲币）",
+    "totalPrice": "总价（伏羲币）",
     "status": "状态",
     "orderTime": "下单时间",
     "noOrders": "暂无订单",
@@ -1582,7 +1586,7 @@
         "name": "商品名称",
         "description": "描述",
         "image": "图片 URL",
-        "price": "价格",
+        "price": "价格（伏羲币）",
         "type": "类型",
         "stock": "库存",
         "maxPerUser": "限购/人",
@@ -1602,7 +1606,7 @@
       },
       "table": {
         "name": "商品名称",
-        "price": "价格",
+        "price": "价格（伏羲币）",
         "stock": "库存",
         "maxPerUser": "限购",
         "needApproval": "需审批"
@@ -1715,6 +1719,7 @@
       "redeem": "兑换消费",
       "srp_payout": "SRP 补损",
       "shop_purchase": "商城购买",
+      "shop_refund": "商城退款",
       "newbro_captain_reward": "队长帮扶奖励"
     },
     "validation": {

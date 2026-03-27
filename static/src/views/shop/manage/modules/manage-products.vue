@@ -265,7 +265,11 @@
           label: t('shop.manage.price'),
           width: 130,
           formatter: (row: Product) =>
-            h('span', { class: 'font-medium text-orange-600' }, formatISK(row.price))
+            h(
+              'span',
+              { class: 'font-medium text-orange-600' },
+              `${formatISK(row.price)} ${t('shop.currency')}`
+            )
         },
         {
           prop: 'stock',

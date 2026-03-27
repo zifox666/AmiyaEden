@@ -5,9 +5,9 @@
     <ElCard shadow="never" class="art-card">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm text-gray-500">{{ $t('fleet.wallet.balance') }}</p>
+          <p class="text-sm text-gray-500">{{ $t('shop.myBalance') }}</p>
           <p class="text-3xl font-bold mt-1" :class="balanceColor">
-            {{ wallet ? formatISK(wallet.balance) : '-' }}
+            {{ wallet ? `${formatISK(wallet.balance)} ${$t('shop.currency')}` : '-' }}
           </p>
           <p v-if="wallet" class="text-xs text-gray-400 mt-1">
             {{ $t('common.updatedAt') }}: {{ formatTime(wallet.updated_at) }}
@@ -106,14 +106,15 @@
             h(
               'span',
               { class: `font-medium ${row.amount >= 0 ? 'text-green-600' : 'text-red-500'}` },
-              `${row.amount >= 0 ? '+' : ''}${formatISK(row.amount)}`
+              `${row.amount >= 0 ? '+' : ''}${formatISK(row.amount)} ${t('shop.currency')}`
             )
         },
         {
           prop: 'balance_after',
           label: t('fleet.wallet.balanceAfter'),
           width: 140,
-          formatter: (row: WalletTransaction) => h('span', {}, formatISK(row.balance_after))
+          formatter: (row: WalletTransaction) =>
+            h('span', {}, `${formatISK(row.balance_after)} ${t('shop.currency')}`)
         },
         {
           prop: 'reason',

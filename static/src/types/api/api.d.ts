@@ -1004,6 +1004,7 @@ declare namespace Api {
       require_skill_plan: boolean
       skill_plan_ids: number[]
       max_char_age_months: number | null
+      minimum_pap: number | null
       require_evidence: boolean
       example_evidence: string
       status: number
@@ -1020,6 +1021,7 @@ declare namespace Api {
       require_skill_plan?: boolean
       skill_plan_ids?: number[]
       max_char_age_months?: number | null
+      minimum_pap?: number | null
       require_evidence?: boolean
       example_evidence?: string
       status?: number
@@ -1034,6 +1036,7 @@ declare namespace Api {
       require_skill_plan?: boolean
       skill_plan_ids?: number[]
       max_char_age_months?: number | null
+      minimum_pap?: number | null
       require_evidence?: boolean
       example_evidence?: string
       status?: number

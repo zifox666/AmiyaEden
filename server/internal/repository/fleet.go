@@ -193,6 +193,16 @@ func (r *FleetRepository) ListPapLogsByUser(userID uint) ([]model.FleetPapLog, e
 	return logs, err
 }
 
+// SumPapByUserTotal 汇总用户的军团 PAP 总数
+func (r *FleetRepository) SumPapByUserTotal(userID uint) (float64, error) {
+	var total float64
+	err := global.DB.Model(&model.FleetPapLog{}).
+		Select("COALESCE(SUM(pap_count), 0)").
+		Where("user_id = ?", userID).
+		Scan(&total).Error
+	return total, err
+}
+
 // PapLogDetail PAP 记录（含角色名、FC 名称、舰队信息）
 type PapLogDetail struct {
 	model.FleetPapLog

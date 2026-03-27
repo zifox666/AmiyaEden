@@ -48,6 +48,7 @@ type adminWelfareCreateRequest struct {
 	RequireSkillPlan bool   `json:"require_skill_plan"`
 	SkillPlanIDs     []uint `json:"skill_plan_ids"`
 	MaxCharAgeMonths *int   `json:"max_char_age_months"`
+	MinimumPap       *int   `json:"minimum_pap"`
 	RequireEvidence  bool   `json:"require_evidence"`
 	ExampleEvidence  string `json:"example_evidence"`
 	Status           int8   `json:"status"`
@@ -68,6 +69,7 @@ func (h *WelfareHandler) AdminCreateWelfare(c *gin.Context) {
 		RequireSkillPlan: req.RequireSkillPlan,
 		SkillPlanIDs:     req.SkillPlanIDs,
 		MaxCharAgeMonths: req.MaxCharAgeMonths,
+		MinimumPap:       req.MinimumPap,
 		RequireEvidence:  req.RequireEvidence,
 		ExampleEvidence:  req.ExampleEvidence,
 		Status:           req.Status,

@@ -547,6 +547,9 @@
     "maxCharAgeMonths": "Max Character Age",
     "maxCharAgePlaceholder": "Months (0 = no limit)",
     "maxCharAgeHint": "If set, the user's characters are checked first; if any are older than this limit, the welfare is unavailable to that user",
+    "minimumPap": "Minimum PAP",
+    "minimumPapPlaceholder": "Count (0 = no limit)",
+    "minimumPapHint": "If set, the user's corporation fleet PAP total must be greater than this value",
     "distModeLockedHint": "Character age limits can be used with either distribution mode",
     "importBtn": "Import",
     "importTitle": "Import History Records",
@@ -617,6 +620,7 @@
     "evidenceImage": "Evidence"
   },
   "shop": {
+    "currency": "Fuxi Coin",
     "products": "Products",
     "allTypes": "All Types",
     "typeNormal": "Normal",
@@ -1714,6 +1718,7 @@
       "redeem": "Redeem Spend",
       "srp_payout": "SRP Payout",
       "shop_purchase": "Shop Purchase",
+      "shop_refund": "Shop Refund",
       "newbro_captain_reward": "Captain Support Reward"
     },
     "validation": {
