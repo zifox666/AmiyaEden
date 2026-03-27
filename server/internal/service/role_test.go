@@ -19,6 +19,8 @@ func TestEnsureUserHasDefaultRoleUsesGuest(t *testing.T) {
 func TestValidateSetUserRolesPermission(t *testing.T) {
 	t.Run("admin cannot edit admin target", func(t *testing.T) {
 		err := validateSetUserRolesPermission(
+			1,
+			2,
 			[]string{model.RoleAdmin},
 			[]string{model.RoleAdmin},
 			[]string{model.RoleUser},
@@ -30,6 +32,8 @@ func TestValidateSetUserRolesPermission(t *testing.T) {
 
 	t.Run("admin cannot assign admin role", func(t *testing.T) {
 		err := validateSetUserRolesPermission(
+			1,
+			2,
 			[]string{model.RoleAdmin},
 			[]string{model.RoleUser},
 			[]string{model.RoleAdmin},
@@ -41,12 +45,40 @@ func TestValidateSetUserRolesPermission(t *testing.T) {
 
 	t.Run("admin can assign normal roles to normal user", func(t *testing.T) {
 		err := validateSetUserRolesPermission(
+			1,
+			2,
 			[]string{model.RoleAdmin},
 			[]string{model.RoleUser},
 			[]string{model.RoleUser, model.RoleFC},
 		)
 		if err != nil {
 			t.Fatalf("expected normal role assignment to pass, got %v", err)
+		}
+	})
+
+	t.Run("admin can edit own roles", func(t *testing.T) {
+		err := validateSetUserRolesPermission(
+			7,
+			7,
+			[]string{model.RoleAdmin},
+			[]string{model.RoleAdmin},
+			[]string{model.RoleUser, model.RoleFC},
+		)
+		if err != nil {
+			t.Fatalf("expected self role edit to pass, got %v", err)
+		}
+	})
+
+	t.Run("admin cannot add super admin to self", func(t *testing.T) {
+		err := validateSetUserRolesPermission(
+			7,
+			7,
+			[]string{model.RoleAdmin},
+			[]string{model.RoleAdmin},
+			[]string{model.RoleAdmin, model.RoleSuperAdmin},
+		)
+		if err == nil {
+			t.Fatal("expected self super admin assignment to be blocked")
 		}
 	})
 }

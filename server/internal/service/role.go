@@ -92,7 +92,7 @@ func (s *RoleService) GetUserRoles(userID uint) ([]model.RoleDefinition, error) 
 	return defs, nil
 }
 
-func (s *RoleService) SetUserRoles(ctx context.Context, operatorRoles []string, userID uint, roleCodes []string) error {
+func (s *RoleService) SetUserRoles(ctx context.Context, operatorID uint, operatorRoles []string, userID uint, roleCodes []string) error {
 	currentCodes, err := s.repo.GetUserRoleCodes(userID)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (s *RoleService) SetUserRoles(ctx context.Context, operatorRoles []string, 
 	}
 
 	requestedCodes := normalizeAssignedRoleCodes(roleCodes)
-	if err := validateSetUserRolesPermission(operatorRoles, currentCodes, requestedCodes); err != nil {
+	if err := validateSetUserRolesPermission(operatorID, userID, operatorRoles, currentCodes, requestedCodes); err != nil {
 		return err
 	}
 
@@ -123,14 +123,23 @@ func (s *RoleService) SetUserRoles(ctx context.Context, operatorRoles []string, 
 	return nil
 }
 
-func validateSetUserRolesPermission(operatorRoles, currentCodes, requestedCodes []string) error {
-	if err := validateManageUserPermission(operatorRoles, currentCodes); err != nil {
-		return err
+func validateSetUserRolesPermission(operatorID, targetUserID uint, operatorRoles, currentCodes, requestedCodes []string) error {
+	isSelfAdminEdit := operatorID == targetUserID && model.ContainsRole(operatorRoles, model.RoleAdmin)
+
+	if !isSelfAdminEdit {
+		if err := validateManageUserPermission(operatorRoles, currentCodes); err != nil {
+			return err
+		}
 	}
+
 	if model.IsSuperAdmin(operatorRoles) {
 		return nil
 	}
-	if model.ContainsAnyRole(requestedCodes, model.RoleAdmin, model.RoleSuperAdmin) {
+
+	if model.ContainsAnyRole(requestedCodes, model.RoleSuperAdmin) {
+		return errors.New("只有超级管理员可以分配该角色")
+	}
+	if model.ContainsAnyRole(requestedCodes, model.RoleAdmin) && !isSelfAdminEdit {
 		return errors.New("只有超级管理员可以分配管理员角色")
 	}
 	return nil

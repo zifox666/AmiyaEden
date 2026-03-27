@@ -54,8 +54,9 @@ func (h *RoleHandler) SetUserRoles(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
+	operatorID := middleware.GetUserID(c)
 	operatorRoles := middleware.GetUserRoles(c)
-	if err := h.svc.SetUserRoles(c.Request.Context(), operatorRoles, uint(userID), req.RoleCodes); err != nil {
+	if err := h.svc.SetUserRoles(c.Request.Context(), operatorID, operatorRoles, uint(userID), req.RoleCodes); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
