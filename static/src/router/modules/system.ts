@@ -25,22 +25,6 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
-      path: 'role',
-      name: 'RoleManage',
-      component: '/system/role',
-      meta: {
-        title: 'menus.system.role',
-        keepAlive: true,
-        roles: ['super_admin'],
-        authList: [
-          { title: '新增角色', authMark: 'add_role' },
-          { title: '编辑角色', authMark: 'edit_role' },
-          { title: '删除角色', authMark: 'delete_role' },
-          { title: '权限设置', authMark: 'set_permission' }
-        ]
-      }
-    },
-    {
       path: 'esi-refresh',
       name: 'ESIRefresh',
       component: '/system/esi-refresh',
@@ -74,6 +58,16 @@ export const systemRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['super_admin', 'admin'],
         authList: [{ title: '编辑兑换率', authMark: 'edit_exchange_rate' }]
+      }
+    },
+    {
+      path: 'newbro-settings',
+      name: 'NewbroSettings',
+      component: '/system/newbro-settings',
+      meta: {
+        title: 'menus.system.newbroSettings',
+        keepAlive: true,
+        roles: ['super_admin', 'admin']
       }
     },
     {
@@ -138,15 +132,5 @@ export const systemRoutes: AppRouteRecord = {
         roles: ['super_admin', 'admin']
       }
     },
-    {
-      path: 'newbro-settings',
-      name: 'NewbroSettings',
-      component: '/system/newbro-settings',
-      meta: {
-        title: 'menus.system.newbroSettings',
-        keepAlive: true,
-        roles: ['super_admin', 'admin']
-      }
-    }
   ]
 }

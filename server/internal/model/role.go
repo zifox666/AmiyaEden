@@ -16,26 +16,58 @@ const (
 
 // --- 数据模型 ---
 
-// Role 角色
-type Role struct {
-	BaseModel
-	Code        string `gorm:"size:50;uniqueIndex"  json:"code"`
-	Name        string `gorm:"size:100"             json:"name"`
-	Description string `gorm:"size:500"             json:"description"`
-	IsSystem    bool   `gorm:"default:false"        json:"is_system"`
-	Sort        int    `gorm:"default:0"            json:"sort"`
-	Status      int8   `gorm:"default:1"            json:"status"`
-}
-
-func (Role) TableName() string { return "role" }
-
-// UserRole 用户-角色关联
+// UserRole 用户-角色关联（直接存储角色编码，不再依赖 role 表）
 type UserRole struct {
-	UserID uint `gorm:"primaryKey;autoIncrement:false" json:"user_id"`
-	RoleID uint `gorm:"primaryKey;autoIncrement:false" json:"role_id"`
+	UserID   uint   `gorm:"primaryKey;autoIncrement:false" json:"user_id"`
+	RoleCode string `gorm:"primaryKey;size:50"             json:"role_code"`
 }
 
 func (UserRole) TableName() string { return "user_role" }
+
+// --- 角色定义（纯内存，不入库）---
+
+// RoleDefinition 系统角色定义，供前端展示和管理接口使用
+type RoleDefinition struct {
+	Code        string `json:"code"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Sort        int    `json:"sort"`
+}
+
+// SystemRoleDefinitions 系统角色定义列表（按 Sort 降序排列）
+var SystemRoleDefinitions = []RoleDefinition{
+	{Code: RoleSuperAdmin, Name: "超级管理员", Description: "拥有系统全部权限", Sort: 100},
+	{Code: RoleAdmin, Name: "管理员", Description: "系统管理权限", Sort: 90},
+	{Code: RoleSeniorFC, Name: "资深FC", Description: "资深舰队指挥，管理舰队配置与技能计划", Sort: 85},
+	{Code: RoleFC, Name: "FC", Description: "舰队指挥，管理舰队与活动", Sort: 70},
+	{Code: RoleSRP, Name: "补损官", Description: "补损审批与舰船价格管理", Sort: 60},
+	{Code: RoleWelfare, Name: "福利官", Description: "军团福利审批与管理", Sort: 50},
+	{Code: RoleCaptain, Name: "队长", Description: "新人帮扶队长视图权限", Sort: 30},
+	{Code: RoleUser, Name: "用户", Description: "已认证用户，基本访问权限", Sort: 10},
+	{Code: RoleGuest, Name: "访客", Description: "访客，只读公开信息", Sort: 0},
+}
+
+// roleDefinitionMap 角色编码到定义的映射（内部使用）
+var roleDefinitionMap map[string]RoleDefinition
+
+func init() {
+	roleDefinitionMap = make(map[string]RoleDefinition, len(SystemRoleDefinitions))
+	for _, def := range SystemRoleDefinitions {
+		roleDefinitionMap[def.Code] = def
+	}
+}
+
+// GetRoleDefinition 根据角色编码获取角色定义
+func GetRoleDefinition(code string) (RoleDefinition, bool) {
+	def, ok := roleDefinitionMap[code]
+	return def, ok
+}
+
+// IsValidRoleCode 检查角色编码是否为已知的系统角色
+func IsValidRoleCode(code string) bool {
+	_, ok := roleDefinitionMap[code]
+	return ok
+}
 
 // --- 角色检查辅助函数 ---
 
@@ -110,18 +142,4 @@ func HasRole(userRole, requiredRole string) bool {
 		return true
 	}
 	return userRole == requiredRole
-}
-
-// --- 系统角色种子数据 ---
-
-var SystemRoleSeeds = []Role{
-	{Code: RoleSuperAdmin, Name: "超级管理员", Description: "拥有系统全部权限", IsSystem: true, Sort: 100, Status: 1},
-	{Code: RoleAdmin, Name: "管理员", Description: "系统管理权限", IsSystem: true, Sort: 90, Status: 1},
-	{Code: RoleSRP, Name: "补损官", Description: "补损审批与舰船价格管理", IsSystem: true, Sort: 80, Status: 1},
-	{Code: RoleFC, Name: "FC", Description: "舰队指挥，管理舰队与活动", IsSystem: true, Sort: 70, Status: 1},
-	{Code: RoleSeniorFC, Name: "资深FC", Description: "资深舰队指挥，管理舰队配置与技能计划", IsSystem: true, Sort: 75, Status: 1},
-	{Code: RoleCaptain, Name: "队长", Description: "新人帮扶队长视图权限", IsSystem: true, Sort: 30, Status: 1},
-	{Code: RoleWelfare, Name: "福利官", Description: "军团福利审批与管理", IsSystem: true, Sort: 50, Status: 1},
-	{Code: RoleUser, Name: "用户", Description: "已认证用户，基本访问权限", IsSystem: true, Sort: 10, Status: 1},
-	{Code: RoleGuest, Name: "访客", Description: "访客，只读公开信息", IsSystem: true, Sort: 0, Status: 1},
 }

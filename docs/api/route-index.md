@@ -107,8 +107,8 @@ source_of_truth:
 | POST | `/skill-planning/skill-plans/check/run` | 执行技能规划完成度检查 | Login |
 | GET | `/skill-planning/skill-plans/check/plan-selection` | 获取当前用户保存的完成度检查规划选择 | Login |
 | PUT | `/skill-planning/skill-plans/check/plan-selection` | 保存当前用户的完成度检查规划选择 | Login |
-| GET | `/skill-planning/skill-plans` | 技能计划列表 | `RequireRole(admin, senior_fc)` |
-| GET | `/skill-planning/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, senior_fc)` |
+| GET | `/skill-planning/skill-plans` | 技能计划列表 | `RequireRole(admin, senior_fc, fc)` |
+| GET | `/skill-planning/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, senior_fc, fc)` |
 | POST | `/skill-planning/skill-plans` | 创建技能计划 | `RequireRole(admin, senior_fc)` |
 | PUT | `/skill-planning/skill-plans/:id` | 更新技能计划 | `RequireRole(admin, senior_fc)` |
 | DELETE | `/skill-planning/skill-plans/:id` | 删除技能计划 | `RequireRole(admin, senior_fc)` |
@@ -117,17 +117,17 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/info/wallet` | 钱包流水 | JWT |
-| POST | `/info/skills` | 技能列表 | JWT |
-| POST | `/info/ships` | 舰船列表 | JWT |
-| POST | `/info/implants` | 植入体 | JWT |
-| POST | `/info/assets` | 资产 | JWT |
-| POST | `/info/contracts` | 合同列表 | JWT |
-| POST | `/info/contracts/detail` | 合同详情 | JWT |
-| POST | `/info/fittings` | 装配列表 | JWT |
-| POST | `/info/fittings/save` | 保存装配 | JWT |
-| POST | `/info/npc-kills` | 个人 NPC 刷怪报表 | JWT |
-| POST | `/info/npc-kills/all` | 全部 NPC 刷怪报表 | JWT |
+| POST | `/info/wallet` | 钱包流水 | Login |
+| POST | `/info/skills` | 技能列表 | Login |
+| POST | `/info/ships` | 舰船列表 | Login |
+| POST | `/info/implants` | 植入体 | Login |
+| POST | `/info/assets` | 资产 | Login |
+| POST | `/info/contracts` | 合同列表 | Login |
+| POST | `/info/contracts/detail` | 合同详情 | Login |
+| POST | `/info/fittings` | 装配列表 | Login |
+| POST | `/info/fittings/save` | 保存装配 | Login |
+| POST | `/info/npc-kills` | 个人 NPC 刷怪报表 | Login |
+| POST | `/info/npc-kills/all` | 全部 NPC 刷怪报表 | Login |
 
 ## Shop
 
@@ -151,6 +151,7 @@ source_of_truth:
 | --- | --- | --- | --- |
 | GET | `/newbro/captains` | 当前新人可选择的队长列表 | `Login` + 当前新人资格 |
 | GET | `/newbro/affiliation/me` | 当前用户的新人资格快照与队长关联历史 | Login |
+| GET | `/newbro/affiliations/history` | 当前用户的帮扶关系变更历史 | Login |
 | POST | `/newbro/affiliation/select` | 选择或切换队长 | `Login` + 当前新人资格 |
 | POST | `/newbro/affiliation/end` | 结束当前与队长的帮扶关系 | `Login` + 当前新人资格 |
 
@@ -162,6 +163,8 @@ source_of_truth:
 | GET | `/newbro/captain/players` | 当前队长名下新人列表 | `RequireRole(captain)` |
 | GET | `/newbro/captain/attributions` | 当前队长赏金归因明细 | `RequireRole(captain)` |
 | GET | `/newbro/captain/rewards` | 当前队长奖励发放历史 | `RequireRole(captain)` |
+| GET | `/newbro/captain/eligible-players` | 可加入帮扶的新人列表 | `RequireRole(captain)` |
+| POST | `/newbro/captain/enroll` | 手动加入新人到帮扶 | `RequireRole(captain)` |
 | POST | `/newbro/captain/affiliation/end` | 解除指定新人与当前队长的关系 | `RequireRole(captain)` |
 
 ## Welfare
@@ -173,6 +176,7 @@ source_of_truth:
 | POST | `/welfare/eligible` | 可申请福利列表 | Login |
 | POST | `/welfare/apply` | 申请福利 | Login |
 | POST | `/welfare/my-applications` | 我的福利申请 | Login |
+| POST | `/welfare/upload-evidence` | 上传福利申请凭证 | Login |
 
 ## Upload
 
@@ -185,21 +189,21 @@ source_of_truth:
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
 | GET | `/srp/prices` | 价格表 | Login |
-| POST | `/srp/prices` | 新增或更新价格 | `RequirePermission(srp:price:add)` |
-| DELETE | `/srp/prices/:id` | 删除价格 | `RequirePermission(srp:price:delete)` |
+| POST | `/srp/prices` | 新增或更新价格 | `RequireRole(srp)` |
+| DELETE | `/srp/prices/:id` | 删除价格 | `RequireRole(srp)` |
 | POST | `/srp/applications` | 提交补损申请 | Login |
 | GET | `/srp/applications/me` | 我的补损申请 | Login |
 | GET | `/srp/killmails/me` | 我的 KM | Login |
 | GET | `/srp/killmails/fleet/:fleet_id` | 指定舰队 KM | Login |
 | POST | `/srp/killmails/detail` | KM 详情 | Login |
 | POST | `/srp/open-info-window` | 打开游戏内信息窗口 | Login |
-| GET | `/srp/applications` | 审核列表 | `RequirePermission(srp:review)` |
-| PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequirePermission(srp:review)` |
-| GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequirePermission(srp:review)` |
-| GET | `/srp/applications/:id` | 审核详情 | `RequirePermission(srp:review)` |
-| PUT | `/srp/applications/:id/review` | 审核申请 | `RequirePermission(srp:review)` |
-| PUT | `/srp/applications/:id/payout` | 发放补损 | `RequirePermission(srp:review)` |
-| PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequirePermission(srp:review)` |
+| GET | `/srp/applications` | 审核列表 | `RequireRole(srp, fc)` |
+| GET | `/srp/applications/:id` | 审核详情 | `RequireRole(srp, fc)` |
+| PUT | `/srp/applications/:id/review` | 审核申请 | `RequireRole(srp, fc)` |
+| PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequireRole(srp)` |
+| GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequireRole(srp)` |
+| PUT | `/srp/applications/:id/payout` | 发放补损 | `RequireRole(srp)` |
+| PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequireRole(srp)` |
 
 ## ESI Refresh
 
@@ -252,12 +256,7 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/system/role` | 角色列表 | `RequireRole(admin)` |
-| GET | `/system/role/all` | 全量角色列表 | `RequireRole(admin)` |
-| GET | `/system/role/:id` | 角色详情 | `RequireRole(admin)` |
-| POST | `/system/role` | 创建角色 | `RequireRole(admin)` |
-| PUT | `/system/role/:id` | 更新角色 | `RequireRole(admin)` |
-| DELETE | `/system/role/:id` | 删除角色 | `RequireRole(admin)` |
+| GET | `/system/role/definitions` | 系统角色定义列表（只读） | `RequireRole(admin)` |
 | GET | `/system/user` | 用户列表；角色字段仅返回有序 `roles[]`，不再返回历史单值 `role` | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
 | PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态；`admin` 不可编辑 `super_admin` 或其他 `admin` | `RequireRole(admin)` |

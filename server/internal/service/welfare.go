@@ -580,7 +580,7 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 	}
 
 	// PAP 检查：军团 PAP 总数必须严格大于最低要求
-	if welfareMinimumPapRestrictionFailed(welfare.MinimumPap, 0) {
+	if welfare.MinimumPap != nil && *welfare.MinimumPap > 0 {
 		totalPap, err := s.fleetRepo.SumPapByUserTotal(userID)
 		if err != nil {
 			return nil, errors.New("获取 PAP 统计失败")

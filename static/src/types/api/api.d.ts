@@ -178,60 +178,21 @@ declare namespace Api {
     }> &
       Partial<Api.Common.CommonSearchParams>
 
-    /** 角色列表（分页） */
-    type RoleList = Api.Common.PaginatedResponse<RoleItem>
-
-    /** 角色（匹配后端 model.Role） */
-    interface RoleItem {
-      id: number
+    /** 系统角色定义（纯内存，匹配后端 model.RoleDefinition） */
+    interface RoleDefinition {
       code: string
       name: string
       description: string
-      is_system: boolean
       sort: number
-      status: number
-      created_at: string
-      updated_at: string
-    }
-
-    /** 创建角色请求 */
-    interface CreateRoleParams {
-      code: string
-      name: string
-      description?: string
-      sort?: number
-    }
-
-    /** 更新角色请求 */
-    interface UpdateRoleParams {
-      name?: string
-      description?: string
-      sort?: number
-    }
-
-    /** 角色搜索参数 */
-    type RoleSearchParams = Partial<Api.Common.CommonSearchParams>
-
-    /** 用户角色关联 */
-    interface UserRoleInfo {
-      role_ids: number[]
-      roles: RoleItem[]
     }
 
     /** ESI 军团角色 → 系统角色映射 */
     interface EsiRoleMapping {
       id: number
       esi_role: string
-      role_id: number
       role_code: string
       role_name: string
       created_at: string
-    }
-
-    /** 创建 ESI 角色映射请求 */
-    interface CreateEsiRoleMappingParams {
-      esi_role: string
-      role_id: number
     }
 
     /** ESI 头衔 → 系统角色映射 */
@@ -240,7 +201,6 @@ declare namespace Api {
       corporation_id: number
       title_id: number
       title_name: string
-      role_id: number
       role_code: string
       role_name: string
       created_at: string
@@ -252,14 +212,6 @@ declare namespace Api {
       corporation_name: string
       title_id: number
       title_name: string
-    }
-
-    /** 创建 ESI 头衔映射请求 */
-    interface CreateEsiTitleMappingParams {
-      corporation_id: number
-      title_id: number
-      title_name?: string
-      role_id: number
     }
   }
 

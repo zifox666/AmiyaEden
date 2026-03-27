@@ -283,11 +283,7 @@ func (s *NewbroAffiliationService) ListCaptainCandidates(userID uint) ([]NewbroC
 		return nil, errors.New("当前用户不符合新人资格")
 	}
 
-	captainRole, err := s.roleRepo.GetByCode(model.RoleCaptain)
-	if err != nil {
-		return nil, errors.New("未找到队长角色")
-	}
-	captainUserIDs, err := s.roleRepo.GetRoleUserIDs(captainRole.ID)
+	captainUserIDs, err := s.roleRepo.GetRoleUserIDs(model.RoleCaptain)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +442,7 @@ func (s *NewbroAffiliationService) changeCaptainAffiliation(actorUserID, playerU
 	if err != nil {
 		return nil, err
 	}
-	if !containsRoleCode(targetRoles, model.RoleCaptain) {
+	if !model.ContainsRole(targetRoles, model.RoleCaptain) {
 		return nil, errors.New("目标用户不是队长")
 	}
 
@@ -522,7 +518,7 @@ func (s *NewbroAffiliationService) EndAffiliation(actorUserID, playerUserID uint
 		if err != nil {
 			return err
 		}
-		if !containsRoleCode(targetRoles, model.RoleCaptain) {
+		if !model.ContainsRole(targetRoles, model.RoleCaptain) {
 			return errors.New("只有队长可以结束他人帮扶关系")
 		}
 		if current.CaptainUserID != actorUserID {

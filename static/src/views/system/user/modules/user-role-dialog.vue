@@ -14,17 +14,14 @@
         </div>
       </ElFormItem>
       <ElFormItem :label="$t('common.role')">
-        <ElCheckboxGroup v-model="selectedRoleIds">
+        <ElCheckboxGroup v-model="selectedRoleCodes">
           <ElCheckbox
             v-for="role in allRoles"
-            :key="role.id"
-            :label="role.id"
+            :key="role.code"
+            :label="role.code"
             :disabled="['super_admin', 'admin'].includes(role.code) && !isSuperAdmin"
           >
             {{ role.name }}
-            <span v-if="role.is_system" class="text-xs text-gray-400 ml-1">
-              {{ $t('roleUi.userRoleDialog.systemTag') }}
-            </span>
           </ElCheckbox>
         </ElCheckboxGroup>
       </ElFormItem>
@@ -42,7 +39,7 @@
 
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
-  import { fetchGetAllRoles, fetchGetUserRoles, fetchSetUserRoles } from '@/api/system-manage'
+  import { fetchGetRoleDefinitions, fetchGetUserRoles, fetchSetUserRoles } from '@/api/system-manage'
   import { useUserStore } from '@/store/modules/user'
 
   interface Props {
@@ -67,25 +64,24 @@
     set: (value) => emit('update:visible', value)
   })
 
-  const allRoles = ref<Api.SystemManage.RoleItem[]>([])
-  const selectedRoleIds = ref<number[]>([])
+  const allRoles = ref<Api.SystemManage.RoleDefinition[]>([])
+  const selectedRoleCodes = ref<string[]>([])
   const submitting = ref(false)
-  const guestRoleId = computed(() => allRoles.value.find((role) => role.code === 'guest')?.id)
 
-  watch(selectedRoleIds, (roleIds) => {
-    const guestId = guestRoleId.value
-    if (!guestId || roleIds.length <= 1 || !roleIds.includes(guestId)) return
+  watch(selectedRoleCodes, (codes) => {
+    if (codes.length <= 1 || !codes.includes('guest')) return
 
-    const nonGuestRoleIds = roleIds.filter((roleId) => roleId !== guestId)
-    selectedRoleIds.value = nonGuestRoleIds.length > 0 ? nonGuestRoleIds : [guestId]
+    const nonGuestCodes = codes.filter((code) => code !== 'guest')
+    selectedRoleCodes.value = nonGuestCodes.length > 0 ? nonGuestCodes : ['guest']
   })
 
   const onOpen = async () => {
     try {
-      allRoles.value = await fetchGetAllRoles()
+      selectedRoleCodes.value = []
+      allRoles.value = await fetchGetRoleDefinitions()
       if (props.userData?.id) {
         const userRoles = await fetchGetUserRoles(props.userData.id)
-        selectedRoleIds.value = userRoles.map((r) => r.id)
+        selectedRoleCodes.value = userRoles.map((r) => r.code)
       }
     } catch (err) {
       console.error(t('roleUi.userRoleDialog.loadFailed'), err)
@@ -96,7 +92,7 @@
     if (!props.userData?.id) return
     submitting.value = true
     try {
-      await fetchSetUserRoles(props.userData.id, selectedRoleIds.value)
+      await fetchSetUserRoles(props.userData.id, selectedRoleCodes.value)
       ElMessage.success(t('roleUi.userRoleDialog.saveSuccess'))
       dialogVisible.value = false
       emit('saved')

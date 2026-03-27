@@ -1,10 +1,65 @@
 <!-- 系统管理 - PAP 兑换汇率配置 -->
 <template>
-  <div class="pap-exchange-page art-full-height">
+  <div class="pap-exchange-page">
+    <ElCard shadow="never" class="mb-4">
+      <template #header>
+        <h2 class="section-title">{{ t('papExchange.fcSection') }}</h2>
+      </template>
+
+      <ElForm label-width="150px" style="max-width: 680px" v-loading="loading">
+        <ElFormItem :label="t('papExchange.fcSalary')">
+          <div class="field-block">
+            <div class="field-row">
+              <ElInputNumber
+                v-model="form.fc_salary"
+                :min="0"
+                :precision="2"
+                :step="10"
+                :controls="false"
+                style="width: 180px"
+              />
+              <span class="text-sm text-secondary">{{ t('papExchange.fcSalaryUnit') }}</span>
+            </div>
+            <div class="form-hint">{{ t('papExchange.fcSalaryHint') }}</div>
+          </div>
+        </ElFormItem>
+
+        <ElFormItem :label="t('papExchange.fcSalaryMonthlyLimit')">
+          <div class="field-block">
+            <div class="field-row">
+              <ElInputNumber
+                v-model="form.fc_salary_monthly_limit"
+                :min="0"
+                :precision="0"
+                :step="1"
+                :controls="false"
+                style="width: 180px"
+              />
+              <span class="text-sm text-secondary">
+                {{ t('papExchange.fcSalaryMonthlyLimitUnit') }}
+              </span>
+            </div>
+            <div class="form-hint">{{ t('papExchange.fcSalaryMonthlyLimitHint') }}</div>
+          </div>
+        </ElFormItem>
+
+        <ElFormItem>
+          <ElButton
+            v-auth="'system:pap:exchange'"
+            type="primary"
+            :loading="saving"
+            @click="handleSave"
+          >
+            {{ t('common.save') }}
+          </ElButton>
+        </ElFormItem>
+      </ElForm>
+    </ElCard>
+
     <ElCard shadow="never">
       <template #header>
         <div class="flex items-center justify-between">
-          <span class="font-medium">{{ t('papExchange.title') }}</span>
+          <h2 class="section-title">{{ t('papExchange.ratesSection') }}</h2>
           <ElButton
             v-auth="'system:pap:exchange'"
             type="primary"
@@ -16,41 +71,11 @@
         </div>
       </template>
 
-      <ElAlert class="mb-4" :title="t('papExchange.tip')" type="info" :closable="false" />
+      <ElAlert class="mb-4" :title="t('papExchange.tip')" type="info" :closable="false" show-icon />
 
-      <ElForm label-width="120px" class="mb-4">
-        <ElFormItem :label="t('papExchange.fcSalary')">
-          <ElInputNumber
-            v-model="form.fc_salary"
-            :min="0"
-            :precision="2"
-            :step="10"
-            :controls="false"
-            style="width: 180px"
-          />
-          <span class="ml-2 text-gray-400 text-sm">{{ t('papExchange.fcSalaryUnit') }}</span>
-          <div class="form-hint">{{ t('papExchange.fcSalaryHint') }}</div>
-        </ElFormItem>
-
-        <ElFormItem :label="t('papExchange.fcSalaryMonthlyLimit')">
-          <ElInputNumber
-            v-model="form.fc_salary_monthly_limit"
-            :min="0"
-            :precision="0"
-            :step="1"
-            :controls="false"
-            style="width: 180px"
-          />
-          <span class="ml-2 text-gray-400 text-sm">
-            {{ t('papExchange.fcSalaryMonthlyLimitUnit') }}
-          </span>
-          <div class="form-hint">{{ t('papExchange.fcSalaryMonthlyLimitHint') }}</div>
-        </ElFormItem>
-      </ElForm>
-
-      <ElTable :data="form.rates" :loading="loading" border style="width: 100%">
+      <ElTable :data="form.rates" v-loading="loading" border style="width: 100%">
         <ElTableColumn prop="display_name" :label="t('papExchange.columns.type')" width="200" />
-        <ElTableColumn :label="t('papExchange.columns.rate')" min-width="260">
+        <ElTableColumn :label="t('papExchange.columns.rate')" min-width="280">
           <template #default="{ row }">
             <ElInputNumber
               v-model="row.rate"
@@ -60,7 +85,9 @@
               :controls="false"
               style="width: 160px"
             />
-            <span class="ml-2 text-gray-400 text-sm">{{ t('papExchange.columns.rateUnit') }}</span>
+            <span class="ml-2 text-sm text-secondary">
+              {{ t('papExchange.columns.rateUnit') }}
+            </span>
           </template>
         </ElTableColumn>
         <ElTableColumn prop="updated_at" :label="t('papExchange.columns.updatedAt')" width="180">
@@ -146,9 +173,30 @@
 </script>
 
 <style scoped>
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .field-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .form-hint {
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    margin-top: 4px;
+  }
+
+  .text-secondary {
+    color: var(--el-text-color-secondary);
   }
 </style>

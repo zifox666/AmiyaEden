@@ -6,8 +6,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type CaptainAttributionListRequest struct {
@@ -274,14 +272,7 @@ func (s *NewbroReportService) ListAllCaptainOverviews(page, pageSize int, keywor
 		pageSize = 20
 	}
 
-	captainRole, err := s.roleRepo.GetByCode(model.RoleCaptain)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return []CaptainOverview{}, 0, nil
-		}
-		return nil, 0, err
-	}
-	userIDs, err := s.roleRepo.GetRoleUserIDs(captainRole.ID)
+	userIDs, err := s.roleRepo.GetRoleUserIDs(model.RoleCaptain)
 	if err != nil {
 		return nil, 0, err
 	}

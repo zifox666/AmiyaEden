@@ -23,7 +23,7 @@ source_of_truth:
 ## 当前能力
 
 - 基础配置读取与更新
-- 角色管理
+- 系统角色定义只读查询
 - 用户管理、用户角色分配
 - 管理员可维护用户昵称、QQ、Discord ID 与状态
 - 超级管理员模拟登录
@@ -37,7 +37,6 @@ source_of_truth:
 ### 前端页面
 
 - `static/src/views/system/basic-config`
-- `static/src/views/system/role`
 - `static/src/views/system/user`
 - `static/src/views/system/auto-role`
 - `static/src/views/system/pap`
@@ -48,7 +47,7 @@ source_of_truth:
 
 - `/api/v1/system/basic-config`
 - `/api/v1/system/basic-config/allow-corporations`
-- `/api/v1/system/role/*`
+- `/api/v1/system/role/definitions`
 - `/api/v1/system/user/*`
 - `/api/v1/system/auto-role/*`
 - `/api/v1/system/pap/*`
@@ -59,6 +58,7 @@ source_of_truth:
 
 - `/system/*` 默认要求 `admin`
 - `/system/user/:id/impersonate` 额外要求 `super_admin`
+- `GET /system/role/definitions` 仅用于前端加载系统角色定义，属于只读数据源
 
 ## 关键不变量
 

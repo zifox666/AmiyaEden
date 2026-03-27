@@ -18,7 +18,7 @@ func NewAutoRoleRepository() *AutoRoleRepository {
 // ListEsiRoleMappings 获取所有 ESI 角色映射
 func (r *AutoRoleRepository) ListEsiRoleMappings() ([]model.EsiRoleMapping, error) {
 	var mappings []model.EsiRoleMapping
-	err := global.DB.Order("esi_role ASC, role_id ASC").Find(&mappings).Error
+	err := global.DB.Order("esi_role ASC, role_code ASC").Find(&mappings).Error
 	return mappings, err
 }
 
@@ -59,7 +59,7 @@ func (r *AutoRoleRepository) DeleteEsiRoleMappingsByEsiRole(esiRole string) erro
 // ListEsiTitleMappings 获取所有 ESI 头衔映射
 func (r *AutoRoleRepository) ListEsiTitleMappings() ([]model.EsiTitleMapping, error) {
 	var mappings []model.EsiTitleMapping
-	err := global.DB.Order("corporation_id ASC, title_id ASC, role_id ASC").Find(&mappings).Error
+	err := global.DB.Order("corporation_id ASC, title_id ASC, role_code ASC").Find(&mappings).Error
 	return mappings, err
 }
 

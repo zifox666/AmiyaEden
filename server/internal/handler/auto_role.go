@@ -36,8 +36,8 @@ func (h *AutoRoleHandler) GetAllEsiRoles(c *gin.Context) {
 }
 
 type createEsiRoleMappingRequest struct {
-	EsiRole string `json:"esi_role" binding:"required"`
-	RoleID  uint   `json:"role_id"  binding:"required"`
+	EsiRole  string `json:"esi_role"   binding:"required"`
+	RoleCode string `json:"role_code"  binding:"required"`
 }
 
 // CreateEsiRoleMapping 创建 ESI 角色映射
@@ -47,7 +47,7 @@ func (h *AutoRoleHandler) CreateEsiRoleMapping(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
-	mapping, err := h.svc.CreateEsiRoleMapping(req.EsiRole, req.RoleID)
+	mapping, err := h.svc.CreateEsiRoleMapping(req.EsiRole, req.RoleCode)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -95,17 +95,17 @@ type createEsiTitleMappingRequest struct {
 	CorporationID int64  `json:"corporation_id" binding:"required"`
 	TitleID       int    `json:"title_id"       binding:"required"`
 	TitleName     string `json:"title_name"`
-	RoleID        uint   `json:"role_id"        binding:"required"`
+	RoleCode      string `json:"role_code"      binding:"required"`
 }
 
-// CreateEsiTitleMapping 创建 ESI 头衔映射
+// CreateEsiTitleMapping 创建 ESI 头衔映���
 func (h *AutoRoleHandler) CreateEsiTitleMapping(c *gin.Context) {
 	var req createEsiTitleMappingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
-	mapping, err := h.svc.CreateEsiTitleMapping(req.CorporationID, req.TitleID, req.TitleName, req.RoleID)
+	mapping, err := h.svc.CreateEsiTitleMapping(req.CorporationID, req.TitleID, req.TitleName, req.RoleCode)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

@@ -299,17 +299,9 @@ func RegisterRoutes(r *gin.Engine) {
 	admin.GET("/pap-exchange/rates", papExchangeH.GetRates)
 	admin.PUT("/pap-exchange/rates", papExchangeH.SetRates)
 
-	// 角色管理
+	// 角色定义（只读）
 	roleH := handler.NewRoleHandler()
-	adminRole := admin.Group("/role")
-	{
-		adminRole.GET("", roleH.ListRoles)
-		adminRole.GET("/all", roleH.ListAllRoles)
-		adminRole.GET("/:id", roleH.GetRole)
-		adminRole.POST("", roleH.CreateRole)
-		adminRole.PUT("/:id", roleH.UpdateRole)
-		adminRole.DELETE("/:id", roleH.DeleteRole)
-	}
+	admin.GET("/role/definitions", roleH.ListRoleDefinitions)
 
 	// 用户管理
 	userH := handler.NewUserHandler()

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 const newbroRecentAffiliationLimit = 10
@@ -63,9 +65,11 @@ func isActiveAffiliationConflictError(err error) bool {
 	if err == nil {
 		return false
 	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
 	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, strings.ToLower(newbroActiveAffiliationUniqueIndex)) ||
-		(strings.Contains(msg, "unique") && strings.Contains(msg, "newbro_captain_affiliation"))
+	return strings.Contains(msg, "duplicate") && strings.Contains(msg, "newbro_captain_affiliation")
 }
 
 func resolveCaptainAffiliationCreateError(

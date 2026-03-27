@@ -5,18 +5,6 @@ import (
 	"testing"
 )
 
-func TestContainsRoleCode(t *testing.T) {
-	roles := []string{"guest", "admin", "super_admin"}
-
-	if !containsRoleCode(roles, "admin") {
-		t.Fatal("expected admin to be found")
-	}
-
-	if containsRoleCode(roles, "fc") {
-		t.Fatal("did not expect fc to be found")
-	}
-}
-
 func TestEnsureUserHasDefaultRoleUsesGuest(t *testing.T) {
 	svc := NewRoleService()
 	if svc == nil {
@@ -63,32 +51,28 @@ func TestValidateSetUserRolesPermission(t *testing.T) {
 	})
 }
 
-func TestNormalizeAssignedRoles(t *testing.T) {
+func TestNormalizeAssignedRoleCodes(t *testing.T) {
 	t.Run("keeps guest when it is the only role", func(t *testing.T) {
-		roleIDs, roleCodes := normalizeAssignedRoles([]requestedRoleAssignment{
-			{id: 1, code: model.RoleGuest},
-		})
-
-		if len(roleIDs) != 1 || roleIDs[0] != 1 {
-			t.Fatalf("expected guest role id to remain, got %v", roleIDs)
-		}
-		if len(roleCodes) != 1 || roleCodes[0] != model.RoleGuest {
-			t.Fatalf("expected guest role code to remain, got %v", roleCodes)
+		codes := normalizeAssignedRoleCodes([]string{model.RoleGuest})
+		if len(codes) != 1 || codes[0] != model.RoleGuest {
+			t.Fatalf("expected guest role code to remain, got %v", codes)
 		}
 	})
 
 	t.Run("drops guest when a real role is present", func(t *testing.T) {
-		roleIDs, roleCodes := normalizeAssignedRoles([]requestedRoleAssignment{
-			{id: 1, code: model.RoleGuest},
-			{id: 2, code: model.RoleUser},
-			{id: 3, code: model.RoleFC},
-		})
-
-		if len(roleIDs) != 2 || roleIDs[0] != 2 || roleIDs[1] != 3 {
-			t.Fatalf("expected non-guest role ids only, got %v", roleIDs)
+		codes := normalizeAssignedRoleCodes([]string{model.RoleGuest, model.RoleUser, model.RoleFC})
+		if len(codes) != 2 {
+			t.Fatalf("expected 2 non-guest codes, got %v", codes)
 		}
-		if len(roleCodes) != 2 || roleCodes[0] != model.RoleUser || roleCodes[1] != model.RoleFC {
-			t.Fatalf("expected non-guest role codes only, got %v", roleCodes)
+		if model.ContainsRole(codes, model.RoleGuest) {
+			t.Fatalf("expected guest to be dropped, got %v", codes)
+		}
+	})
+
+	t.Run("deduplicates codes", func(t *testing.T) {
+		codes := normalizeAssignedRoleCodes([]string{model.RoleUser, model.RoleUser, model.RoleFC})
+		if len(codes) != 2 {
+			t.Fatalf("expected deduplicated codes, got %v", codes)
 		}
 	})
 }

@@ -134,7 +134,6 @@ func autoMigrate(db *gorm.DB) {
 		// 系统配置表
 		&model.SystemConfig{},
 		// RBAC 权限相关表
-		&model.Role{},
 		&model.UserRole{},
 		// ESI 自动权限映射表
 		&model.EsiRoleMapping{},
@@ -148,9 +147,21 @@ func autoMigrate(db *gorm.DB) {
 	dropObsoleteSchema(db)
 	ensureCustomIndexes(db)
 
-	// 种子数据：系统角色 → 默认角色权限 → 迁移已有用户
+	// 数据迁移：user_role / esi 映射表从 role_id 迁移到 role_code，然后删除 role 表
 	roleSvc := service.NewRoleService()
-	roleSvc.SeedSystemRoles()
+	roleSvc.MigrateUserRoleTableToCode()
+	roleSvc.MigrateEsiMappingsToCode()
+
+	// 删除旧的 role 表（迁移完成后不再需要）
+	if db.Migrator().HasTable("role") {
+		if err := db.Migrator().DropTable("role"); err != nil {
+			global.Logger.Warn("删除旧 role 表失败", zap.Error(err))
+		} else {
+			global.Logger.Info("已删除旧 role 表")
+		}
+	}
+
+	// 迁移旧 User.Role 字段到 user_role 表
 	roleSvc.MigrateExistingUsers()
 }
 

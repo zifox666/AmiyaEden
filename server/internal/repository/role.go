@@ -11,91 +11,22 @@ func NewRoleRepository() *RoleRepository {
 	return &RoleRepository{}
 }
 
-// ─── Role CRUD ───
+// ─── UserRole (code-based) ───
 
-func (r *RoleRepository) Create(role *model.Role) error {
-	return global.DB.Create(role).Error
-}
-
-func (r *RoleRepository) GetByID(id uint) (*model.Role, error) {
-	var role model.Role
-	err := global.DB.First(&role, id).Error
-	return &role, err
-}
-
-func (r *RoleRepository) GetByCode(code string) (*model.Role, error) {
-	var role model.Role
-	err := global.DB.Where("code = ?", code).First(&role).Error
-	return &role, err
-}
-
-func (r *RoleRepository) Update(role *model.Role) error {
-	return global.DB.Save(role).Error
-}
-
-func (r *RoleRepository) Delete(id uint) error {
-	tx := global.DB.Begin()
-	if err := tx.Where("role_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Delete(&model.Role{}, id).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	return tx.Commit().Error
-}
-
-func (r *RoleRepository) List(page, pageSize int) ([]model.Role, int64, error) {
-	var roles []model.Role
-	var total int64
-	db := global.DB.Model(&model.Role{})
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-	offset := (page - 1) * pageSize
-	if err := db.Order("sort DESC, id ASC").Offset(offset).Limit(pageSize).Find(&roles).Error; err != nil {
-		return nil, 0, err
-	}
-	return roles, total, nil
-}
-
-func (r *RoleRepository) ListAll() ([]model.Role, error) {
-	var roles []model.Role
-	err := global.DB.Order("sort DESC, id ASC").Find(&roles).Error
-	return roles, err
-}
-
-func (r *RoleRepository) UpsertSystemRole(role *model.Role) error {
-	var existing model.Role
-	err := global.DB.Where("code = ?", role.Code).First(&existing).Error
-	if err != nil {
-		return global.DB.Create(role).Error
-	}
-	return global.DB.Model(&existing).Updates(map[string]interface{}{
-		"name": role.Name, "description": role.Description,
-		"is_system": role.IsSystem, "sort": role.Sort, "status": role.Status,
-	}).Error
-}
-
-// ─── UserRole ───
-
-func (r *RoleRepository) GetUserRoleIDs(userID uint) ([]uint, error) {
-	var ids []uint
-	err := global.DB.Model(&model.UserRole{}).Where("user_id = ?", userID).Pluck("role_id", &ids).Error
-	return ids, err
-}
-
+// GetUserRoleCodes 获取用户的角色编码列表（按优先级降序）
 func (r *RoleRepository) GetUserRoleCodes(userID uint) ([]string, error) {
 	var codes []string
 	err := global.DB.Model(&model.UserRole{}).
-		Joins("JOIN role ON role.id = user_role.role_id").
-		Order("role.sort DESC, role.id ASC").
-		Where("user_role.user_id = ? AND role.status = 1", userID).
-		Pluck("role.code", &codes).Error
-	return codes, err
+		Where("user_id = ?", userID).
+		Pluck("role_code", &codes).Error
+	if err != nil {
+		return nil, err
+	}
+	// Sort by role definition sort order (descending)
+	return sortRoleCodesByPriority(codes), nil
 }
 
+// GetUserRoleCodesByUserIDs 批量获取多个用户的角色编码
 func (r *RoleRepository) GetUserRoleCodesByUserIDs(userIDs []uint) (map[uint][]string, error) {
 	roleCodesByUserID := make(map[uint][]string, len(userIDs))
 	if len(userIDs) == 0 {
@@ -103,35 +34,38 @@ func (r *RoleRepository) GetUserRoleCodesByUserIDs(userIDs []uint) (map[uint][]s
 	}
 
 	type userRoleCodeRow struct {
-		UserID uint
-		Code   string
+		UserID   uint
+		RoleCode string
 	}
 
 	var rows []userRoleCodeRow
 	err := global.DB.Table("user_role").
-		Select("user_role.user_id AS user_id, role.code AS code").
-		Joins("JOIN role ON role.id = user_role.role_id").
-		Where("user_role.user_id IN ? AND role.status = 1", userIDs).
-		Order("user_role.user_id ASC, role.sort DESC, role.id ASC").
+		Select("user_id, role_code").
+		Where("user_id IN ?", userIDs).
 		Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
 
 	for _, row := range rows {
-		roleCodesByUserID[row.UserID] = append(roleCodesByUserID[row.UserID], row.Code)
+		roleCodesByUserID[row.UserID] = append(roleCodesByUserID[row.UserID], row.RoleCode)
+	}
+	// Sort each user's roles by priority
+	for uid, codes := range roleCodesByUserID {
+		roleCodesByUserID[uid] = sortRoleCodesByPriority(codes)
 	}
 	return roleCodesByUserID, nil
 }
 
-func (r *RoleRepository) SetUserRoles(userID uint, roleIDs []uint) error {
+// SetUserRoles 设置用户的角色（替换所有）
+func (r *RoleRepository) SetUserRoles(userID uint, roleCodes []string) error {
 	tx := global.DB.Begin()
 	if err := tx.Where("user_id = ?", userID).Delete(&model.UserRole{}).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
-	for _, rid := range roleIDs {
-		if err := tx.Create(&model.UserRole{UserID: userID, RoleID: rid}).Error; err != nil {
+	for _, code := range roleCodes {
+		if err := tx.Create(&model.UserRole{UserID: userID, RoleCode: code}).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
@@ -139,17 +73,40 @@ func (r *RoleRepository) SetUserRoles(userID uint, roleIDs []uint) error {
 	return tx.Commit().Error
 }
 
-func (r *RoleRepository) AddUserRole(userID, roleID uint) error {
-	return global.DB.Create(&model.UserRole{UserID: userID, RoleID: roleID}).Error
+// AddUserRole 为用户添加一个角色
+func (r *RoleRepository) AddUserRole(userID uint, roleCode string) error {
+	return global.DB.Create(&model.UserRole{UserID: userID, RoleCode: roleCode}).Error
 }
 
-func (r *RoleRepository) RemoveUserRole(userID, roleID uint) error {
-	return global.DB.Where("user_id = ? AND role_id = ?", userID, roleID).Delete(&model.UserRole{}).Error
+// RemoveUserRole 移除用户的一个角色
+func (r *RoleRepository) RemoveUserRole(userID uint, roleCode string) error {
+	return global.DB.Where("user_id = ? AND role_code = ?", userID, roleCode).Delete(&model.UserRole{}).Error
 }
 
-// GetRoleUsers 获取拥有某角色的所有用户ID
-func (r *RoleRepository) GetRoleUserIDs(roleID uint) ([]uint, error) {
+// GetRoleUserIDs 获取拥有某角色的所有用户ID
+func (r *RoleRepository) GetRoleUserIDs(roleCode string) ([]uint, error) {
 	var ids []uint
-	err := global.DB.Model(&model.UserRole{}).Where("role_id = ?", roleID).Pluck("user_id", &ids).Error
+	err := global.DB.Model(&model.UserRole{}).Where("role_code = ?", roleCode).Pluck("user_id", &ids).Error
 	return ids, err
+}
+
+// ─── 内部辅助 ───
+
+func sortRoleCodesByPriority(codes []string) []string {
+	if len(codes) <= 1 {
+		return codes
+	}
+	priorityOf := func(code string) int {
+		if def, ok := model.GetRoleDefinition(code); ok {
+			return def.Sort
+		}
+		return -1
+	}
+	// Simple insertion sort (small N)
+	for i := 1; i < len(codes); i++ {
+		for j := i; j > 0 && priorityOf(codes[j]) > priorityOf(codes[j-1]); j-- {
+			codes[j], codes[j-1] = codes[j-1], codes[j]
+		}
+	}
+	return codes
 }

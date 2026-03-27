@@ -338,7 +338,6 @@
     "system": {
       "title": "系统管理",
       "user": "用户管理",
-      "role": "角色管理",
       "characters": "EVE 角色管理",
       "userCenter": "个人中心",
       "menu": "菜单管理",
@@ -1482,6 +1481,8 @@
   },
   "papExchange": {
     "title": "军团 PAP 兑换汇率配置",
+    "fcSection": "FC 工资设置",
+    "ratesSection": "PAP 兑换比率",
     "tip": "配置各类型军团舰队行动 PAP 兑换伏羲币的比率，以及 FC 发放 PAP 时的固定工资和每月工资上限。",
     "loadFailed": "加载汇率配置失败",
     "saveSuccess": "汇率配置已保存",
@@ -1503,7 +1504,6 @@
     "userRoleDialog": {
       "title": "分配角色",
       "unnamed": "未命名",
-      "systemTag": "(系统)",
       "loadFailed": "加载角色数据失败",
       "saveSuccess": "角色分配成功",
       "saveFailed": "角色分配失败"

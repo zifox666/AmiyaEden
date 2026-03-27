@@ -275,7 +275,6 @@
     "system": {
       "title": "System Settings",
       "user": "User Manage",
-      "role": "Role Manage",
       "characters": "Characters",
       "userCenter": "User Center",
       "menu": "Menu Manage",
@@ -1481,6 +1480,8 @@
   },
   "papExchange": {
     "title": "PAP Exchange Rate Config",
+    "fcSection": "FC Salary Settings",
+    "ratesSection": "PAP Exchange Rates",
     "tip": "Configure the Fuxi Coin conversion rate for each fleet PAP type, plus the FC fixed salary and monthly wage cap.",
     "loadFailed": "Failed to load exchange rate config",
     "saveSuccess": "Exchange rate config saved",
@@ -1502,7 +1503,6 @@
     "userRoleDialog": {
       "title": "Assign Roles",
       "unnamed": "Unnamed",
-      "systemTag": "(System)",
       "loadFailed": "Failed to load roles",
       "saveSuccess": "Roles assigned",
       "saveFailed": "Failed to assign roles"

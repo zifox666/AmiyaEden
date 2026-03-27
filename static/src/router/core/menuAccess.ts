@@ -46,30 +46,16 @@ export function pruneEmptyMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
       return item
     })
     .filter((item) => {
+      // Directory menus: keep only if they still have children after pruning
       if ('children' in item) {
-        if (item.children !== undefined && item.children.length > 0) {
-          return true
-        }
-
-        if (item.meta?.isIframe === true || item.meta?.link) {
-          return true
-        }
-
-        if (item.component && item.component !== '' && item.component !== RoutesAlias.Layout) {
-          return true
-        }
-
-        return false
+        return item.children !== undefined && item.children.length > 0
       }
 
+      // Leaf nodes: keep iframes, external links, or real components
       if (item.meta?.isIframe === true || item.meta?.link) {
         return true
       }
 
-      if (item.component && item.component !== '' && item.component !== RoutesAlias.Layout) {
-        return true
-      }
-
-      return false
+      return !!item.component && item.component !== '' && item.component !== RoutesAlias.Layout
     })
 }

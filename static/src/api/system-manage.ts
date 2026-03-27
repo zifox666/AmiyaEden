@@ -40,56 +40,23 @@ export function fetchImpersonateUser(id: number) {
 // ─── 用户角色分配 ───
 
 export function fetchGetUserRoles(userId: number) {
-  return request.get<Api.SystemManage.RoleItem[]>({
+  return request.get<Api.SystemManage.RoleDefinition[]>({
     url: `/api/v1/system/user/${userId}/roles`
   })
 }
 
-export function fetchSetUserRoles(userId: number, roleIds: number[]) {
+export function fetchSetUserRoles(userId: number, roleCodes: string[]) {
   return request.put({
     url: `/api/v1/system/user/${userId}/roles`,
-    data: { role_ids: roleIds }
+    data: { role_codes: roleCodes }
   })
 }
 
-// ─── 角色管理 ───
+// ─── 角色定义 ───
 
-export function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
-  return request.get<Api.SystemManage.RoleList>({
-    url: '/api/v1/system/role',
-    params
-  })
-}
-
-export function fetchGetAllRoles() {
-  return request.get<Api.SystemManage.RoleItem[]>({
-    url: '/api/v1/system/role/all'
-  })
-}
-
-export function fetchGetRole(id: number) {
-  return request.get<Api.SystemManage.RoleItem>({
-    url: `/api/v1/system/role/${id}`
-  })
-}
-
-export function fetchCreateRole(data: Api.SystemManage.CreateRoleParams) {
-  return request.post<Api.SystemManage.RoleItem>({
-    url: '/api/v1/system/role',
-    data
-  })
-}
-
-export function fetchUpdateRole(id: number, data: Api.SystemManage.UpdateRoleParams) {
-  return request.put({
-    url: `/api/v1/system/role/${id}`,
-    data
-  })
-}
-
-export function fetchDeleteRole(id: number) {
-  return request.del({
-    url: `/api/v1/system/role/${id}`
+export function fetchGetRoleDefinitions() {
+  return request.get<Api.SystemManage.RoleDefinition[]>({
+    url: '/api/v1/system/role/definitions'
   })
 }
 
@@ -110,7 +77,7 @@ export function fetchGetEsiRoleMappings() {
 }
 
 /** 创建 ESI 军团角色映射 */
-export function fetchCreateEsiRoleMapping(data: Api.SystemManage.CreateEsiRoleMappingParams) {
+export function fetchCreateEsiRoleMapping(data: { esi_role: string; role_code: string }) {
   return request.post<Api.SystemManage.EsiRoleMapping>({
     url: '/api/v1/system/auto-role/esi-role-mappings',
     data
@@ -132,7 +99,12 @@ export function fetchGetEsiTitleMappings() {
 }
 
 /** 创建 ESI 头衔映射 */
-export function fetchCreateEsiTitleMapping(data: Api.SystemManage.CreateEsiTitleMappingParams) {
+export function fetchCreateEsiTitleMapping(data: {
+  corporation_id: number
+  title_id: number
+  title_name?: string
+  role_code: string
+}) {
   return request.post<Api.SystemManage.EsiTitleMapping>({
     url: '/api/v1/system/auto-role/esi-title-mappings',
     data
