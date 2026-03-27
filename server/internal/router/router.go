@@ -8,6 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	srpManageRoles = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
+	srpPayoutRoles = []string{model.RoleSRP, model.RoleAdmin}
+)
+
 // RegisterRoutes 注册所有业务路由
 func RegisterRoutes(r *gin.Engine) {
 	// ─── 上传文件静态目录 ───
@@ -241,9 +246,9 @@ func RegisterRoutes(r *gin.Engine) {
 		srp.POST("/killmails/detail", srpH.GetKillmailDetail)
 		srp.POST("/open-info-window", srpH.OpenInfoWindow)
 
-		// 审核（fc 可查看列表 / 详情 / 审批；发放和自动审批仅 srp 角色）
-		reviewSRP := middleware.RequireRole(model.RoleSRP, model.RoleFC)
-		payoutSRP := middleware.RequireRole(model.RoleSRP)
+		// 审核（srp / fc / admin 可查看列表 / 详情 / 审批；发放和自动审批允许 srp / admin）
+		reviewSRP := middleware.RequireRole(srpManageRoles...)
+		payoutSRP := middleware.RequireRole(srpPayoutRoles...)
 		srp.GET("/applications", reviewSRP, srpH.ListApplications)
 		srp.GET("/applications/:id", reviewSRP, srpH.GetApplication)
 		srp.PUT("/applications/:id/review", reviewSRP, srpH.ReviewApplication)

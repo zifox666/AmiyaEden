@@ -365,7 +365,7 @@
   const { getName, resolve: resolveNames } = useNameResolver()
   const userStore = useUserStore()
 
-  // fc can review but cannot payout or trigger auto-approve
+  // fc can review, while srp/admin can also payout or trigger auto-approve
   const canPayout = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
     return roles.some((r) => ['super_admin', 'admin', 'srp'].includes(r))

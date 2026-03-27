@@ -197,13 +197,13 @@ source_of_truth:
 | GET | `/srp/killmails/fleet/:fleet_id` | 指定舰队 KM | Login |
 | POST | `/srp/killmails/detail` | KM 详情 | Login |
 | POST | `/srp/open-info-window` | 打开游戏内信息窗口 | Login |
-| GET | `/srp/applications` | 审核列表 | `RequireRole(srp, fc)` |
-| GET | `/srp/applications/:id` | 审核详情 | `RequireRole(srp, fc)` |
-| PUT | `/srp/applications/:id/review` | 审核申请 | `RequireRole(srp, fc)` |
-| PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequireRole(srp)` |
-| GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequireRole(srp)` |
-| PUT | `/srp/applications/:id/payout` | 发放补损 | `RequireRole(srp)` |
-| PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequireRole(srp)` |
+| GET | `/srp/applications` | 审核列表 | `RequireRole(srp, fc, admin)` |
+| GET | `/srp/applications/:id` | 审核详情 | `RequireRole(srp, fc, admin)` |
+| PUT | `/srp/applications/:id/review` | 审核申请 | `RequireRole(srp, fc, admin)` |
+| PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequireRole(srp, admin)` |
+| GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequireRole(srp, admin)` |
+| PUT | `/srp/applications/:id/payout` | 发放补损 | `RequireRole(srp, admin)` |
+| PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequireRole(srp, admin)` |
 
 ## ESI Refresh
 
