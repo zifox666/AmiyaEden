@@ -251,6 +251,72 @@ func TestWelfareAgeRestrictionFailed(t *testing.T) {
 	}
 }
 
+func TestBuildEligibleWelfareRespIncludesFutureSkillOptions(t *testing.T) {
+	svc := &WelfareService{}
+
+	user := &model.User{
+		QQ:        "12345",
+		DiscordID: "discord-1",
+	}
+	characters := []model.EveCharacter{
+		{CharacterID: 1001, CharacterName: "Alpha"},
+		{CharacterID: 1002, CharacterName: "Beta"},
+	}
+
+	t.Run("per user welfare stays visible but disabled when only future skill growth could satisfy it", func(t *testing.T) {
+		welfare := model.Welfare{
+			BaseModel:        model.BaseModel{ID: 10},
+			Name:             "Per User Welfare",
+			DistMode:         model.WelfareDistModePerUser,
+			RequireSkillPlan: true,
+			SkillPlanIDs:     []uint{7},
+		}
+		skillCache := map[int64]map[uint]bool{
+			1001: map[uint]bool{7: false},
+			1002: map[uint]bool{7: false},
+		}
+
+		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, skillCache)
+		if !ok {
+			t.Fatal("expected future-eligible welfare to stay visible")
+		}
+		if got.CanApplyNow {
+			t.Fatal("expected per-user welfare to be disabled when no character satisfies the skill plan yet")
+		}
+		if len(got.EligibleCharacters) != 0 {
+			t.Fatalf("expected no character rows for per-user welfare, got %d", len(got.EligibleCharacters))
+		}
+	})
+
+	t.Run("per character welfare keeps both current and future rows", func(t *testing.T) {
+		welfare := model.Welfare{
+			BaseModel:        model.BaseModel{ID: 11},
+			Name:             "Per Character Welfare",
+			DistMode:         model.WelfareDistModePerCharacter,
+			RequireSkillPlan: true,
+			SkillPlanIDs:     []uint{7},
+		}
+		skillCache := map[int64]map[uint]bool{
+			1001: map[uint]bool{7: true},
+			1002: map[uint]bool{7: false},
+		}
+
+		got, ok := svc.buildEligibleWelfareResp(user, characters, nil, welfare, skillCache)
+		if !ok {
+			t.Fatal("expected per-character welfare to stay visible")
+		}
+		if len(got.EligibleCharacters) != 2 {
+			t.Fatalf("expected 2 character rows, got %d", len(got.EligibleCharacters))
+		}
+		if !got.EligibleCharacters[0].CanApplyNow {
+			t.Fatal("expected the first character to be currently eligible")
+		}
+		if got.EligibleCharacters[1].CanApplyNow {
+			t.Fatal("expected the second character to be future-only")
+		}
+	})
+}
+
 func TestParseImportedWelfareApplicationsSupportsCommaAndTabSeparatedRows(t *testing.T) {
 	apps, err := parseImportedWelfareApplications(7, "Alice, 12345\n\nBob\t67890\nCharlie")
 	if err != nil {

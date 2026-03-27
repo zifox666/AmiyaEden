@@ -29,15 +29,17 @@ func NewEveInfoService() *EveInfoService {
 
 // InfoWalletRequest 钱包流水请求
 type InfoWalletRequest struct {
-	CharacterID int64 `json:"character_id" binding:"required"`
-	Page        int   `json:"page" binding:"required,min=1"`
-	PageSize    int   `json:"page_size" binding:"required,min=1,max=1000"`
+	CharacterID int64    `json:"character_id" binding:"required"`
+	Page        int      `json:"page" binding:"required,min=1"`
+	PageSize    int      `json:"page_size" binding:"required,min=1,max=1000"`
+	RefTypes    []string `json:"ref_types"`
 }
 
 // InfoWalletResponse 钱包流水响应
 type InfoWalletResponse struct {
 	Balance  float64             `json:"balance"`
 	Journals []InfoWalletJournal `json:"journals"`
+	RefTypes []string            `json:"ref_types"`
 	Total    int64               `json:"total"`
 	Page     int                 `json:"page"`
 	PageSize int                 `json:"page_size"`
@@ -136,12 +138,29 @@ func (s *EveInfoService) GetWalletJournal(userID uint, req *InfoWalletRequest) (
 	}
 
 	// 获取流水
-	journals, total, err := s.walletRepo.GetWalletJournals(req.CharacterID, req.Page, req.PageSize)
+	journals, total, err := s.walletRepo.GetWalletJournals(req.CharacterID, req.Page, req.PageSize, req.RefTypes)
 	if err != nil {
 		return nil, err
 	}
 
+	refTypes, err := s.walletRepo.ListWalletJournalRefTypes(req.CharacterID)
+	if err != nil {
+		refTypes = make([]string, 0)
+		seen := make(map[string]struct{}, len(journals))
+		for _, journal := range journals {
+			if journal.RefType == "" {
+				continue
+			}
+			if _, ok := seen[journal.RefType]; ok {
+				continue
+			}
+			seen[journal.RefType] = struct{}{}
+			refTypes = append(refTypes, journal.RefType)
+		}
+	}
+
 	result.Total = total
+	result.RefTypes = refTypes
 	result.Journals = make([]InfoWalletJournal, 0, len(journals))
 	for _, j := range journals {
 		result.Journals = append(result.Journals, InfoWalletJournal{

@@ -5,7 +5,12 @@
       <ElTabs v-model="activeTab" @tab-change="handleTabChange">
         <!-- 申请福利 -->
         <ElTabPane :label="t('welfareMy.applyTab')" name="apply">
-          <ArtTable :loading="eligibleLoading" :data="eligibleRows" :columns="eligibleColumns" />
+          <ArtTable
+            :loading="eligibleLoading"
+            :data="eligibleRows"
+            :columns="eligibleColumns"
+            :row-class-name="getEligibleRowClassName"
+          />
           <ElEmpty
             v-if="!eligibleLoading && eligibleRows.length === 0"
             :description="t('welfareMy.noEligibleWelfares')"
@@ -87,6 +92,7 @@
     getMyApplications,
     uploadWelfareEvidence
   } from '@/api/welfare'
+  import { sortEligibleRows } from './eligibleRows'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'WelfareMy' })
@@ -107,6 +113,7 @@
     welfareName: string
     description: string
     distMode: string
+    canApplyNow: boolean
     characterId?: number
     characterName?: string
   }
@@ -119,7 +126,8 @@
           welfareId: w.id,
           welfareName: w.name,
           description: w.description,
-          distMode: w.dist_mode
+          distMode: w.dist_mode,
+          canApplyNow: w.can_apply_now
         })
       } else {
         for (const char of w.eligible_characters) {
@@ -128,13 +136,14 @@
             welfareName: w.name,
             description: w.description,
             distMode: w.dist_mode,
+            canApplyNow: char.can_apply_now,
             characterId: char.character_id,
             characterName: char.character_name
           })
         }
       }
     }
-    return rows
+    return sortEligibleRows(rows)
   })
 
   const DIST_MODE_CONFIG = computed(
@@ -172,6 +181,24 @@
       }
     },
     {
+      prop: 'eligibility',
+      label: t('welfareMy.eligibility'),
+      width: 140,
+      formatter: (row: EligibleRow) =>
+        h(
+          ElTag,
+          {
+            type: row.canApplyNow ? 'success' : 'info',
+            size: 'small',
+            effect: row.canApplyNow ? 'light' : 'plain'
+          },
+          () =>
+            row.canApplyNow
+              ? t('welfareMy.eligibilityNow')
+              : t('welfareMy.eligibilityFuture')
+        )
+    },
+    {
       prop: 'characterName',
       label: t('welfareMy.characterName'),
       width: 160,
@@ -186,14 +213,20 @@
         h(
           ElButton,
           {
-            type: 'primary',
+            type: row.canApplyNow ? 'primary' : 'info',
             size: 'small',
+            plain: !row.canApplyNow,
+            disabled: !row.canApplyNow,
             onClick: () => handleApply(row)
           },
-          () => t('welfareMy.applyBtn')
+          () => (row.canApplyNow ? t('welfareMy.applyBtn') : t('welfareMy.futureApplyBtn'))
         )
     }
   ])
+
+  function getEligibleRowClassName({ row }: { row: EligibleRow }) {
+    return row.canApplyNow ? '' : 'welfare-future-row'
+  }
 
   async function loadEligibleWelfares() {
     eligibleLoading.value = true
@@ -340,3 +373,9 @@
     loadApplications()
   })
 </script>
+
+<style scoped>
+  .welfare-my-page :deep(.welfare-future-row) {
+    opacity: 0.58;
+  }
+</style>

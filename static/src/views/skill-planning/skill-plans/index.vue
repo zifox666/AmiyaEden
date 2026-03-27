@@ -40,13 +40,6 @@
                 />
                 <span class="skill-plan-item__title">{{ plan.title }}</span>
               </div>
-              <span class="skill-plan-item__desc">{{
-                plan.description || $t('skillPlan.descriptionEmpty')
-              }}</span>
-              <span class="skill-plan-item__meta">
-                <span>{{ $t('skillPlan.skillCount') }}: {{ plan.skill_count }}</span>
-                <span>{{ formatTime(plan.updated_at) }}</span>
-              </span>
             </button>
           </template>
 
@@ -195,7 +188,7 @@
 
   const pagination = reactive({
     current: 1,
-    size: 50,
+    size: 10,
     total: 0
   })
 
@@ -367,25 +360,47 @@
 <style scoped lang="scss">
   .skill-plan-page {
     height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .skill-plan-layout {
-    height: 100%;
-    display: grid;
-    grid-template-columns: 320px minmax(0, 1fr);
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: flex-start;
     gap: 16px;
+    overflow: hidden;
   }
 
   .skill-plan-list-card,
   .skill-plan-detail-card {
     height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .skill-plan-list-card {
+    flex: 0 0 320px;
+    width: 320px;
+  }
+
+  .skill-plan-detail-card {
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .skill-plan-list-card :deep(.el-card__body),
   .skill-plan-detail-card :deep(.el-card__body) {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .skill-plan-list-toolbar {
@@ -457,27 +472,6 @@
     flex-shrink: 0;
   }
 
-  .skill-plan-item__desc {
-    display: block;
-    margin-top: 6px;
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-    line-height: 1.5;
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-
-  .skill-plan-item__meta {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 10px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
   .skill-plan-pagination {
     display: flex;
     justify-content: center;
@@ -485,9 +479,11 @@
   }
 
   .skill-plan-detail {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .skill-plan-detail__header {
@@ -592,8 +588,7 @@
   }
 
   .skill-plan-table {
-    flex: 1;
-    min-height: 0;
+    width: 100%;
   }
 
   .skill-cell {
@@ -608,8 +603,17 @@
 
   @media (max-width: 1100px) {
     .skill-plan-layout {
-      grid-template-columns: 1fr;
-      grid-template-rows: minmax(340px, 40%) minmax(0, 1fr);
+      flex-direction: column;
+    }
+
+    .skill-plan-list-card {
+      flex: 0 0 auto;
+      width: 100%;
+    }
+
+    .skill-plan-detail-card {
+      flex: 1 1 auto;
+      width: 100%;
     }
 
     .skill-plan-summary {

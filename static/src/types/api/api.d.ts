@@ -1051,6 +1051,7 @@ declare namespace Api {
     interface EligibleCharacter {
       character_id: number
       character_name: string
+      can_apply_now: boolean
     }
 
     /** 可申请福利 */
@@ -1061,6 +1062,7 @@ declare namespace Api {
       dist_mode: 'per_user' | 'per_character'
       require_evidence: boolean
       example_evidence: string
+      can_apply_now: boolean
       eligible_characters: EligibleCharacter[]
     }
 
@@ -1369,6 +1371,7 @@ declare namespace Api {
       character_id: number
       page: number
       page_size: number
+      ref_types?: string[]
     }
 
     /** 钱包流水条目 */
@@ -1388,6 +1391,7 @@ declare namespace Api {
     interface WalletResponse {
       balance: number
       journals: WalletJournal[]
+      ref_types: string[]
       total: number
       page: number
       page_size: number

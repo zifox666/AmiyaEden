@@ -3,6 +3,8 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+
+	"gorm.io/gorm"
 )
 
 type EveWalletRepository struct{}
@@ -20,12 +22,27 @@ func (r *EveWalletRepository) GetWallet(characterID int) (*model.EVECharacterWal
 	return &wallet, nil
 }
 
+func (r *EveWalletRepository) getWalletJournalsQuery(db *gorm.DB, characterID int64, refTypes []string) *gorm.DB {
+	query := db.Model(&model.EVECharacterWalletJournal{}).Where("character_id = ?", characterID)
+	if len(refTypes) > 0 {
+		query = query.Where("ref_type IN ?", refTypes)
+	}
+	return query
+}
+
+func (r *EveWalletRepository) getWalletJournalRefTypesQuery(db *gorm.DB, characterID int64) *gorm.DB {
+	return db.Model(&model.EVECharacterWalletJournal{}).
+		Where("character_id = ?", characterID).
+		Distinct().
+		Order("ref_type ASC")
+}
+
 // GetWalletJournals 分页获取角色钱包流水
-func (r *EveWalletRepository) GetWalletJournals(characterID int64, page, pageSize int) ([]model.EVECharacterWalletJournal, int64, error) {
+func (r *EveWalletRepository) GetWalletJournals(characterID int64, page, pageSize int, refTypes []string) ([]model.EVECharacterWalletJournal, int64, error) {
 	var journals []model.EVECharacterWalletJournal
 	var total int64
 
-	db := global.DB.Model(&model.EVECharacterWalletJournal{}).Where("character_id = ?", characterID)
+	db := r.getWalletJournalsQuery(global.DB, characterID, refTypes)
 
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -36,6 +53,16 @@ func (r *EveWalletRepository) GetWalletJournals(characterID int64, page, pageSiz
 		return nil, 0, err
 	}
 	return journals, total, nil
+}
+
+// ListWalletJournalRefTypes 获取角色钱包流水中出现过的所有交易类型
+func (r *EveWalletRepository) ListWalletJournalRefTypes(characterID int64) ([]string, error) {
+	var refTypes []string
+	err := r.getWalletJournalRefTypesQuery(global.DB, characterID).Pluck("ref_type", &refTypes).Error
+	if err != nil {
+		return nil, err
+	}
+	return refTypes, nil
 }
 
 // SumBalanceByCharacterIDs 汇总多个角色的钱包余额

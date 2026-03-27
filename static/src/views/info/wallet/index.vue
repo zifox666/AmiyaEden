@@ -3,13 +3,13 @@
     <!-- 角色切换器 + 余额展示（特殊上下文选择器，非标准搜索栏） -->
     <ElCard class="art-card" shadow="never">
       <div class="flex items-center justify-between flex-wrap gap-4">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 flex-wrap">
           <span class="text-sm text-gray-500">{{ $t('info.selectCharacter') }}</span>
           <ElSelect
             v-model="selectedCharacterId"
             :placeholder="$t('info.selectCharacterPlaceholder')"
             style="width: 240px"
-            @change="onCharacterChange"
+            @update:model-value="onCharacterChange"
           >
             <ElOption
               v-for="char in characters"
@@ -22,6 +22,25 @@
                 <span>{{ char.character_name }}</span>
               </div>
             </ElOption>
+          </ElSelect>
+          <span class="text-sm text-gray-500">{{ $t('info.journalTypeFilter') }}</span>
+          <ElSelect
+            v-model="selectedRefTypes"
+            multiple
+            filterable
+            clearable
+            collapse-tags
+            collapse-tags-tooltip
+            :placeholder="$t('info.journalTypeFilterPlaceholder')"
+            style="width: 320px"
+            @update:model-value="onJournalTypeChange"
+          >
+            <ElOption
+              v-for="type in journalTypeOptions"
+              :key="type.value"
+              :value="type.value"
+              :label="type.label"
+            />
           </ElSelect>
         </div>
         <div v-if="walletBalance !== null">
@@ -77,6 +96,7 @@
   // ─── API 适配器：标准化非标准响应并捕获余额 ───
   const fetchWalletJournalList = async (params: {
     character_id?: number
+    ref_types?: string[]
     current: number
     size: number
   }): Promise<Api.Common.PaginatedResponse<WalletJournal>> => {
@@ -85,10 +105,12 @@
     }
     const res = await fetchInfoWallet({
       character_id: params.character_id,
+      ref_types: params.ref_types?.length ? params.ref_types : undefined,
       page: params.current,
       page_size: params.size
     })
     walletBalance.value = res?.balance ?? null
+    walletJournalTypes.value = res?.ref_types ?? []
     return {
       list: res?.journals ?? [],
       total: res?.total ?? 0,
@@ -112,7 +134,12 @@
   } = useTable({
     core: {
       apiFn: fetchWalletJournalList,
-      apiParams: { character_id: undefined as number | undefined, current: 1, size: 200 },
+      apiParams: {
+        character_id: undefined as number | undefined,
+        ref_types: [] as string[],
+        current: 1,
+        size: 200
+      },
       immediate: false,
       columnsFactory: () => [
         {
@@ -164,10 +191,47 @@
   // ─── 角色列表 ───
   const characters = ref<Api.Auth.EveCharacter[]>([])
   const selectedCharacterId = ref<number>()
+  const selectedRefTypes = ref<string[]>([])
+  const walletJournalTypes = ref<string[]>([])
+
+  const formatJournalTypeLabel = (value: string) => {
+    const npcKey = `npcKill.refTypes.${value}`
+    const npcTranslated = t(npcKey)
+    if (npcTranslated !== npcKey) return npcTranslated
+
+    const key = `info.wallet.refTypes.${value}`
+    const translated = t(key)
+    if (translated !== key) return translated
+
+    return value
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
+  }
+
+  const journalTypeOptions = computed(() =>
+    walletJournalTypes.value
+      .slice()
+      .sort((a, b) => a.localeCompare(b))
+      .map((value) => ({
+        value,
+        label: formatJournalTypeLabel(value)
+      }))
+  )
+
+  const applyFilters = () => {
+    searchParams.character_id = selectedCharacterId.value
+    searchParams.ref_types = selectedRefTypes.value.length ? [...selectedRefTypes.value] : undefined
+    searchParams.current = 1
+    getData()
+  }
 
   const onCharacterChange = () => {
-    searchParams.character_id = selectedCharacterId.value
-    getData()
+    applyFilters()
+  }
+
+  const onJournalTypeChange = () => {
+    applyFilters()
   }
 
   const loadCharacters = async () => {
@@ -175,8 +239,7 @@
       characters.value = (await fetchMyCharacters()) ?? []
       if (characters.value.length > 0) {
         selectedCharacterId.value = characters.value[0].character_id
-        searchParams.character_id = selectedCharacterId.value
-        getData()
+        applyFilters()
       }
     } catch {
       characters.value = []

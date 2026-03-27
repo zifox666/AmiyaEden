@@ -159,6 +159,7 @@ func (s *WelfareService) AdminListWelfares(page, pageSize int, filter repository
 type EligibleCharacterResp struct {
 	CharacterID   int64  `json:"character_id"`
 	CharacterName string `json:"character_name"`
+	CanApplyNow   bool   `json:"can_apply_now"`
 }
 
 // EligibleWelfareResp 可申请福利
@@ -169,6 +170,7 @@ type EligibleWelfareResp struct {
 	DistMode           string                  `json:"dist_mode"`
 	RequireEvidence    bool                    `json:"require_evidence"`
 	ExampleEvidence    string                  `json:"example_evidence"`
+	CanApplyNow        bool                    `json:"can_apply_now"`
 	EligibleCharacters []EligibleCharacterResp `json:"eligible_characters"`
 }
 
@@ -213,6 +215,7 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 
 	// 5. 预加载技能检查数据（仅当有需要技能计划的福利时）
 	skillCheckCache := make(map[int64]map[uint]bool) // characterID -> planID -> satisfied
+	skillCheckReady := true
 	needsSkillCheck := false
 	for _, w := range welfares {
 		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 {
@@ -221,7 +224,7 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 		}
 	}
 	if needsSkillCheck && len(characters) > 0 {
-		skillCheckCache = s.buildSkillCheckCache(characters, welfares)
+		skillCheckCache, skillCheckReady = s.buildSkillCheckCache(characters, welfares)
 	}
 
 	// 5b. 预加载角色生日（仅当有角色年龄限制的福利时）
@@ -245,42 +248,14 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 		if welfareAgeRestrictionFailed(characters, w.MaxCharAgeMonths, now) {
 			continue
 		}
-
-		if w.DistMode == model.WelfareDistModePerUser {
-			if s.isUserIneligible(user, apps) {
-				continue
-			}
-			// 技能计划检查：至少一个角色满足
-			if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 {
-				if !s.anyCharacterSatisfiesSkillPlan(characters, w.SkillPlanIDs, skillCheckCache) {
-					continue
-				}
-			}
-			result = append(result, EligibleWelfareResp{
-				ID:                 w.ID,
-				Name:               w.Name,
-				Description:        w.Description,
-				DistMode:           w.DistMode,
-				RequireEvidence:    w.RequireEvidence,
-				ExampleEvidence:    w.ExampleEvidence,
-				EligibleCharacters: []EligibleCharacterResp{},
-			})
-		} else {
-			// per_character
-			eligible := s.filterEligibleCharacters(characters, apps, w, skillCheckCache)
-			if len(eligible) == 0 {
-				continue
-			}
-			result = append(result, EligibleWelfareResp{
-				ID:                 w.ID,
-				Name:               w.Name,
-				Description:        w.Description,
-				DistMode:           w.DistMode,
-				RequireEvidence:    w.RequireEvidence,
-				ExampleEvidence:    w.ExampleEvidence,
-				EligibleCharacters: eligible,
-			})
+		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 && !skillCheckReady {
+			continue
 		}
+		resp, ok := s.buildEligibleWelfareResp(user, characters, apps, w, skillCheckCache)
+		if !ok {
+			continue
+		}
+		result = append(result, resp)
 	}
 
 	return result, nil
@@ -310,7 +285,46 @@ func (s *WelfareService) isUserIneligible(user *model.User, apps []model.Welfare
 	return false
 }
 
-// filterEligibleCharacters 过滤 per_character 福利中有资格的角色
+// buildEligibleWelfareResp 组装单个福利的可申请状态
+func (s *WelfareService) buildEligibleWelfareResp(
+	user *model.User,
+	characters []model.EveCharacter,
+	apps []model.WelfareApplication,
+	w model.Welfare,
+	skillCheckCache map[int64]map[uint]bool,
+) (EligibleWelfareResp, bool) {
+	resp := EligibleWelfareResp{
+		ID:              w.ID,
+		Name:            w.Name,
+		Description:     w.Description,
+		DistMode:        w.DistMode,
+		RequireEvidence: w.RequireEvidence,
+		ExampleEvidence: w.ExampleEvidence,
+	}
+
+	if w.DistMode == model.WelfareDistModePerUser {
+		if s.isUserIneligible(user, apps) {
+			return EligibleWelfareResp{}, false
+		}
+		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 && len(characters) == 0 {
+			return EligibleWelfareResp{}, false
+		}
+		resp.CanApplyNow = true
+		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 {
+			resp.CanApplyNow = s.anyCharacterSatisfiesSkillPlan(characters, w.SkillPlanIDs, skillCheckCache)
+		}
+		return resp, true
+	}
+
+	eligible := s.filterEligibleCharacters(characters, apps, w, skillCheckCache)
+	if len(eligible) == 0 {
+		return EligibleWelfareResp{}, false
+	}
+	resp.EligibleCharacters = eligible
+	return resp, true
+}
+
+// filterEligibleCharacters 过滤 per_character 福利中可见的角色
 func (s *WelfareService) filterEligibleCharacters(
 	characters []model.EveCharacter,
 	apps []model.WelfareApplication,
@@ -333,15 +347,14 @@ func (s *WelfareService) filterEligibleCharacters(
 		if appliedCharIDs[char.CharacterID] || appliedCharNames[strings.TrimSpace(char.CharacterName)] {
 			continue
 		}
-		// 技能计划检查
+		canApplyNow := true
 		if w.RequireSkillPlan && len(w.SkillPlanIDs) > 0 {
-			if !s.characterSatisfiesAnySkillPlan(char.CharacterID, w.SkillPlanIDs, skillCheckCache) {
-				continue
-			}
+			canApplyNow = s.characterSatisfiesAnySkillPlan(char.CharacterID, w.SkillPlanIDs, skillCheckCache)
 		}
 		eligible = append(eligible, EligibleCharacterResp{
 			CharacterID:   char.CharacterID,
 			CharacterName: char.CharacterName,
+			CanApplyNow:   canApplyNow,
 		})
 	}
 	return eligible
@@ -351,7 +364,7 @@ func (s *WelfareService) filterEligibleCharacters(
 func (s *WelfareService) buildSkillCheckCache(
 	characters []model.EveCharacter,
 	welfares []model.Welfare,
-) map[int64]map[uint]bool {
+) (map[int64]map[uint]bool, bool) {
 	// 收集所有需要的技能计划 ID
 	planIDSet := make(map[uint]struct{})
 	for _, w := range welfares {
@@ -369,7 +382,7 @@ func (s *WelfareService) buildSkillCheckCache(
 	// 获取技能计划的技能要求
 	planSkills, err := s.planRepo.ListSkillsByPlanIDs(planIDs)
 	if err != nil {
-		return nil
+		return nil, false
 	}
 	planSkillsMap := make(map[uint][]model.SkillPlanSkill)
 	for _, skill := range planSkills {
@@ -398,7 +411,7 @@ func (s *WelfareService) buildSkillCheckCache(
 			cache[char.CharacterID][pid] = satisfied
 		}
 	}
-	return cache
+	return cache, true
 }
 
 // anyCharacterSatisfiesSkillPlan 检查是否有任一角色满足任一技能计划
@@ -547,7 +560,10 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 
 		if len(welfare.SkillPlanIDs) > 0 {
 			welfares := []model.Welfare{*welfare}
-			cache := s.buildSkillCheckCache(characters, welfares)
+			cache, ok := s.buildSkillCheckCache(characters, welfares)
+			if !ok {
+				return nil, errors.New("获取技能计划失败")
+			}
 
 			if welfare.DistMode == model.WelfareDistModePerUser {
 				if !s.anyCharacterSatisfiesSkillPlan(characters, welfare.SkillPlanIDs, cache) {
