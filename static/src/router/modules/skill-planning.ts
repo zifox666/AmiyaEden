@@ -27,7 +27,7 @@ export const skillPlanningRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.skillPlanning.skillPlans',
         keepAlive: true,
-        roles: ['super_admin', 'admin', 'fc']
+        roles: ['super_admin', 'admin', 'senior_fc', 'fc']
       }
     }
   ]

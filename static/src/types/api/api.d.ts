@@ -519,6 +519,34 @@ declare namespace Api {
     }
   }
 
+  /** PAP 兑换配置 */
+  namespace PapExchange {
+    interface RateItem {
+      pap_type: string
+      display_name: string
+      rate: number
+      updated_at: string
+    }
+
+    interface ConfigResponse {
+      rates: RateItem[]
+      fc_salary: number
+      fc_salary_monthly_limit: number
+    }
+
+    interface UpdateRateItem {
+      pap_type: string
+      display_name: string
+      rate: number
+    }
+
+    interface UpdateConfigParams {
+      rates: UpdateRateItem[]
+      fc_salary: number
+      fc_salary_monthly_limit: number
+    }
+  }
+
   /** 舰队配置类型 */
   namespace FleetConfig {
     /** 舰队配置装配条目（不含 EFT，通过专用端点获取） */

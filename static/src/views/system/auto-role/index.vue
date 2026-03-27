@@ -281,6 +281,7 @@
     admin: 'warning',
     srp: '',
     fc: '',
+    senior_fc: 'warning',
     captain: 'primary',
     user: 'success',
     guest: 'info'

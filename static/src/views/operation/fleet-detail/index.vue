@@ -235,7 +235,7 @@
   const { getName, resolve: resolveNames } = useNameResolver()
   const canManageFleet = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
-    return roles.some((role) => ['super_admin', 'admin', 'fc'].includes(role))
+    return roles.some((role) => ['super_admin', 'admin', 'fc', 'senior_fc'].includes(role))
   })
 
   // ---- 舰队信息 ----

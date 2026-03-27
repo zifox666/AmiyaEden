@@ -7,17 +7,58 @@
         <ElTabPane :label="$t('srp.manage.historyTab')" name="history" />
       </ElTabs>
 
-      <div class="flex items-center gap-3 flex-wrap mb-3">
-        <ElSelect
-          v-model="filter.review_status"
-          :placeholder="$t('srp.apply.columns.reviewStatus')"
-          clearable
-          style="width: 130px"
-          @change="handleSearch"
-        >
-          <template v-if="activeTab === 'pending'">
-            <ElOption :label="$t('srp.status.submitted')" value="submitted" />
-            <ElOption :label="$t('srp.status.approved')" value="approved" />
+        <div class="flex items-center gap-3 flex-wrap mb-3">
+          <ElSelect
+            v-model="filter.review_status"
+            :placeholder="$t('srp.apply.columns.reviewStatus')"
+            clearable
+            style="width: 130px"
+            @change="handleSearch"
+          >
+            <template v-if="activeTab === 'pending'">
+              <ElOption :label="$t('srp.status.submitted')" value="submitted" />
+              <ElOption :label="$t('srp.status.approved')" value="approved" />
+            </template>
+            <template v-else>
+              <ElOption :label="$t('srp.status.approved')" value="approved" />
+              <ElOption :label="$t('srp.status.rejected')" value="rejected" />
+            </template>
+          </ElSelect>
+          <ElSelect
+            v-model="filter.fleet_id"
+            :placeholder="$t('srp.manage.selectFleet')"
+            clearable
+            filterable
+            style="width: 220px"
+            @change="handleSearch"
+          >
+            <ElOption v-for="f in fleets" :key="f.id" :label="formatFleetLabel(f)" :value="f.id" />
+          </ElSelect>
+          <ElButton type="primary" @click="handleSearch">{{ $t('srp.manage.searchBtn') }}</ElButton>
+          <ElButton @click="resetFilter">{{ $t('srp.manage.resetBtn') }}</ElButton>
+        </div>
+
+        <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+          <template #left>
+            <div class="flex items-center gap-2">
+              <template v-if="activeTab === 'pending' && canPayout">
+                <ElButton type="primary" @click="handleAutoApprove">
+                  {{ $t('srp.manage.autoApproveBtn') }}
+                </ElButton>
+                <ElButton type="warning" @click="openBatchPayoutDialog">
+                  {{ $t('srp.manage.batchPayoutBtn') }}
+                </ElButton>
+              </template>
+              <ArtExcelExport
+                v-if="activeTab === 'history'"
+                :data="exportManageData"
+                :headers="manageExportHeaders"
+                :filename="`srp-manage_${new Date().toLocaleDateString()}`"
+                sheet-name="补损申请"
+                :button-text="$t('srp.manage.exportBtn')"
+                type="success"
+              />
+            </div>
           </template>
           <template v-else>
             <ElOption :label="$t('srp.status.approved')" value="approved" />
@@ -324,6 +365,12 @@
   const { getName, resolve: resolveNames } = useNameResolver()
   const userStore = useUserStore()
 
+  // fc can review but cannot payout or trigger auto-approve
+  const canPayout = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((r) => ['super_admin', 'admin', 'srp'].includes(r))
+  })
+
   const fleets = ref<Api.Fleet.FleetItem[]>([])
   const fleetMap = computed(() => new Map(fleets.value.map((f) => [f.id, f])))
   const loadFleets = async () => {
@@ -543,13 +590,17 @@
                 })
               )
             } else if (row.review_status === 'approved' && row.payout_status === 'notpaid') {
-              // 已批准 + 未发放：发放 + 编辑 + 重新拒绝
+              // 已批准 + 未发放：发放（仅 srp/admin）+ 编辑 + 重新拒绝
+              if (canPayout.value) {
+                btns.push(
+                  h(ArtButtonTable, {
+                    label: t('srp.manage.payoutBtn'),
+                    elType: 'primary',
+                    onClick: () => openPayoutDialog(row)
+                  })
+                )
+              }
               btns.push(
-                h(ArtButtonTable, {
-                  label: t('srp.manage.payoutBtn'),
-                  elType: 'primary',
-                  onClick: () => openPayoutDialog(row)
-                }),
                 h(ArtButtonTable, {
                   label: t('srp.manage.editBtn'),
                   elType: 'warning',

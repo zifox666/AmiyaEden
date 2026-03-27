@@ -736,6 +736,7 @@
       "admin": "Admin",
       "srp": "SRP Admin",
       "fc": "FC",
+      "senior_fc": "Senior FC",
       "captain": "Captain",
       "welfare": "Welfare Officer",
       "user": "Verified User",
@@ -1480,14 +1481,20 @@
   },
   "papExchange": {
     "title": "PAP Exchange Rate Config",
-    "tip": "Configure the wallet conversion rate for each fleet PAP type. When an FC issues PAPs, members automatically receive system wallet based on this rate.",
+    "tip": "Configure the Fuxi Coin conversion rate for each fleet PAP type, plus the FC fixed salary and monthly wage cap.",
     "loadFailed": "Failed to load exchange rate config",
     "saveSuccess": "Exchange rate config saved",
     "saveFailed": "Failed to save exchange rate config",
+    "fcSalary": "FC Salary",
+    "fcSalaryHint": "The FC receives this fixed amount when PAP is issued. Default: 400.",
+    "fcSalaryUnit": "Fuxi Coin",
+    "fcSalaryMonthlyLimit": "FC Salary Monthly Cap",
+    "fcSalaryMonthlyLimitHint": "The maximum number of salary payouts a single FC can receive each month. Default: 5.",
+    "fcSalaryMonthlyLimitUnit": "times / month",
     "columns": {
       "type": "PAP Type",
       "rate": "Exchange Rate",
-      "rateUnit": "wallet / 1 PAP",
+      "rateUnit": "Fuxi Coin / 1 PAP",
       "updatedAt": "Updated At"
     }
   },
@@ -1713,6 +1720,7 @@
     },
     "refTypes": {
       "pap_reward": "PAP Reward",
+      "pap_fc_salary": "FC Salary",
       "admin_adjust": "Admin Adjustment",
       "manual": "Manual",
       "redeem": "Redeem Spend",

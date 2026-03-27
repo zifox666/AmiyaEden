@@ -87,11 +87,18 @@ func TestCanManageSkillPlan(t *testing.T) {
 			expected:  true,
 		},
 		{
-			name:      "fc can manage",
+			name:      "senior fc can manage",
+			createdBy: 9,
+			userID:    4,
+			userRoles: []string{model.RoleSeniorFC},
+			expected:  true,
+		},
+		{
+			name:      "fc cannot manage",
 			createdBy: 9,
 			userID:    4,
 			userRoles: []string{model.RoleFC},
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name:      "super admin can manage",

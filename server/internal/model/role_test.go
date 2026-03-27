@@ -50,3 +50,19 @@ func TestNormalizeRoleCodes(t *testing.T) {
 		})
 	}
 }
+
+func TestSystemRoleSeedsIncludeSeniorFC(t *testing.T) {
+	for _, role := range SystemRoleSeeds {
+		if role.Code == RoleSeniorFC {
+			if role.Name == "" {
+				t.Fatal("expected senior_fc seed to have a name")
+			}
+			if role.Description == "" {
+				t.Fatal("expected senior_fc seed to have a description")
+			}
+			return
+		}
+	}
+
+	t.Fatal("expected senior_fc to be present in system role seeds")
+}

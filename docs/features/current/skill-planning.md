@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-27
+last_reviewed: 2026-03-28
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/skill_plan.go
@@ -35,7 +35,8 @@ source_of_truth:
 
 ## 权限边界
 
-- `skill-plans` 的列表、详情、创建、修改、删除要求 `super_admin`、`admin` 或 `fc`
+- `skill-plans` 的列表、详情查询要求 `super_admin`、`admin`、`senior_fc` 或 `fc`（`fc` 为只读，不显示创建 / 编辑 / 删除按钮）
+- `skill-plans` 的创建、修改、删除要求 `super_admin`、`admin` 或 `senior_fc`
 - `check/selection`、`check/plan-selection` 与 `check/run` 要求 `Login`
 - 当前技能规划只承载军团技能计划，不与 EVE 角色技能查询页面混用
 

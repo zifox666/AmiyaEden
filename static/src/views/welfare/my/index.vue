@@ -192,10 +192,7 @@
             size: 'small',
             effect: row.canApplyNow ? 'light' : 'plain'
           },
-          () =>
-            row.canApplyNow
-              ? t('welfareMy.eligibilityNow')
-              : t('welfareMy.eligibilityFuture')
+          () => (row.canApplyNow ? t('welfareMy.eligibilityNow') : t('welfareMy.eligibilityFuture'))
         )
     },
     {

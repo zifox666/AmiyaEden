@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-26
+last_reviewed: 2026-03-28
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/fleet.go
@@ -49,13 +49,13 @@ source_of_truth:
 
 ## 权限边界
 
-- `fleets`、`fleet-detail` 页面访问要求 `super_admin`、`admin` 或 `fc`
+- `fleets`、`fleet-detail` 页面访问要求 `super_admin`、`admin`、`fc` 或 `senior_fc`
 - `fleet-configs` 页面访问要求 `Login`
-- 舰队管理动作，包括刷新 ESI、成员同步 / 手动维护、PAP 发放、邀请链接与 Ping，要求 `super_admin`、`admin` 或 `fc`
+- 舰队管理动作，包括刷新 ESI、成员同步 / 手动维护、PAP 发放、邀请链接与 Ping，要求 `super_admin`、`admin`、`fc` 或 `senior_fc`；其中 `fc` 角色仅限操作自己创建的舰队（`fc_user_id == current_user_id`），`senior_fc`、`admin`、`super_admin` 不受此限制
 - 舰队删除仍要求 `super_admin` 或 `admin`
 - `fleet-configs` 的只读查询要求 `Login`
 - `fleet-configs` 的导出到 ESI（保存到自己的游戏装配）要求 `Login`
-- `fleet-configs` 的创建、修改、删除、导入装配和物品设置要求 `super_admin`、`admin` 或 `fc`
+- `fleet-configs` 的创建、修改、删除、导入装配和物品设置要求 `super_admin`、`admin` 或 `senior_fc`
 - `corporation-pap`、`pap`、`join` 按 `Login` 处理
 - 舰队相关角色边界由前端路由元数据决定
 
@@ -67,7 +67,7 @@ source_of_truth:
 - 保存到游戏是把现有舰队配置装配导出到当前用户自己的 ESI 角色，不是系统配置写操作
 - 联盟 PAP 的用户侧展示在 Operation，管理员配置与导入在 System
 - 军团 PAP 页面属于多块统计 + 表格混排的分析页，当前明确允许不走 `useTable` / `ArtTable` 默认模板
-- 发放 PAP 时的钱包换算不再是固定 1:1，而是按舰队 `importance`（`cta` / `strat_op` / `other`）查询 `pap_type_rate` 表中对应汇率；汇率配置入口在「系统管理 → PAP兑换」，详见 `docs/features/current/pap-exchange.md`
+- 发放 PAP 时的伏羲币换算不再是固定 1:1，而是按舰队 `importance`（`cta` / `strat_op` / `other`）查询 `pap_type_rate` 表中对应汇率；若成员是舰队 FC，则优先发放固定 `FC工资`，并受 `FC工资上限次数` 约束，汇率配置入口在「系统管理 → PAP兑换」，详见 `docs/features/current/pap-exchange.md`
 - 联盟 PAP 月度归档为纯归档操作，当前不进行钱包兑换（该能力预留为未来特性）
 
 ## 主要代码文件

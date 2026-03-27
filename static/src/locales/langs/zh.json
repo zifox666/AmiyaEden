@@ -737,6 +737,7 @@
       "admin": "管理员",
       "srp": "补损官",
       "fc": "FC",
+      "senior_fc": "资深FC",
       "captain": "队长",
       "welfare": "福利官",
       "user": "已认证用户",
@@ -1481,14 +1482,20 @@
   },
   "papExchange": {
     "title": "军团 PAP 兑换汇率配置",
-    "tip": "配置各类型军团舰队行动 PAP 兑换系统钱包的比率。FC 发放 PAP 时，将按此汇率自动换算为系统钱包金额。",
+    "tip": "配置各类型军团舰队行动 PAP 兑换伏羲币的比率，以及 FC 发放 PAP 时的固定工资和每月工资上限。",
     "loadFailed": "加载汇率配置失败",
     "saveSuccess": "汇率配置已保存",
     "saveFailed": "保存汇率配置失败",
+    "fcSalary": "FC工资",
+    "fcSalaryHint": "FC 在发放 PAP 时将固定获得此金额，默认 400。",
+    "fcSalaryUnit": "伏羲币",
+    "fcSalaryMonthlyLimit": "FC工资上限次数",
+    "fcSalaryMonthlyLimitHint": "同一名 FC 每月最多可领取的工资次数，默认 5 次。",
+    "fcSalaryMonthlyLimitUnit": "次 / 月",
     "columns": {
       "type": "PAP 类型",
       "rate": "兑换比率",
-      "rateUnit": "系统钱包 / 1 PAP",
+      "rateUnit": "伏羲币 / 1 PAP",
       "updatedAt": "更新时间"
     }
   },
@@ -1714,6 +1721,7 @@
     },
     "refTypes": {
       "pap_reward": "PAP 奖励",
+      "pap_fc_salary": "FC 工资",
       "admin_adjust": "管理员调整",
       "manual": "手动操作",
       "redeem": "兑换消费",

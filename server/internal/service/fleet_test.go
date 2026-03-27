@@ -40,6 +40,77 @@ func TestPapImportanceToWalletRateMissingKey(t *testing.T) {
 	}
 }
 
+func TestBuildPapWalletByUser(t *testing.T) {
+	entries := []papWalletEntry{
+		{UserID: 1, PapCount: 12},
+		{UserID: 1, PapCount: 8},
+		{UserID: 2, PapCount: 5},
+		{UserID: 3, PapCount: 7},
+	}
+
+	got := buildPapWalletByUser(entries, 10)
+
+	want := map[uint]float64{
+		1: 200,
+		2: 50,
+		3: 70,
+	}
+
+	if len(got) != len(want) {
+		t.Fatalf("buildPapWalletByUser() len = %d, want %d", len(got), len(want))
+	}
+	for uid, wantAmount := range want {
+		if got[uid] != wantAmount {
+			t.Fatalf("buildPapWalletByUser()[%d] = %v, want %v", uid, got[uid], wantAmount)
+		}
+	}
+}
+
+func TestCalculateFCSalaryAmount(t *testing.T) {
+	tests := []struct {
+		name                 string
+		fcInMembers          bool
+		existingSalaryAmount float64
+		monthlyCount         int64
+		monthlyLimit         int
+		currentSalary        float64
+		want                 float64
+	}{
+		{name: "not in members", fcInMembers: false, existingSalaryAmount: 400, monthlyCount: 0, monthlyLimit: 5, currentSalary: 400, want: 0},
+		{name: "existing salary stays", fcInMembers: true, existingSalaryAmount: 200, monthlyCount: 5, monthlyLimit: 5, currentSalary: 400, want: 400},
+		{name: "under limit", fcInMembers: true, existingSalaryAmount: 0, monthlyCount: 4, monthlyLimit: 5, currentSalary: 400, want: 400},
+		{name: "at limit", fcInMembers: true, existingSalaryAmount: 0, monthlyCount: 5, monthlyLimit: 5, currentSalary: 400, want: 0},
+		{name: "disabled limit", fcInMembers: true, existingSalaryAmount: 0, monthlyCount: 0, monthlyLimit: 0, currentSalary: 400, want: 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := calculateFCSalaryAmount(tt.fcInMembers, tt.existingSalaryAmount, tt.monthlyCount, tt.monthlyLimit, tt.currentSalary)
+			if got != tt.want {
+				t.Fatalf("calculateFCSalaryAmount() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestToPapWalletEntriesFromLogs(t *testing.T) {
+	logs := []model.FleetPapLog{
+		{UserID: 1, PapCount: 12},
+		{UserID: 2, PapCount: 34},
+	}
+
+	got := toPapWalletEntriesFromLogs(logs)
+
+	if len(got) != len(logs) {
+		t.Fatalf("toPapWalletEntriesFromLogs() len = %d, want %d", len(got), len(logs))
+	}
+	for i := range logs {
+		if got[i].UserID != logs[i].UserID || got[i].PapCount != logs[i].PapCount {
+			t.Fatalf("entry %d = %+v, want %+v", i, got[i], logs[i])
+		}
+	}
+}
+
 func TestNormalizeAutoSrpMode(t *testing.T) {
 	tests := []struct {
 		name string
@@ -67,20 +138,28 @@ func TestFleetServiceCanManageFleet(t *testing.T) {
 
 	tests := []struct {
 		name      string
+		fleet     *model.Fleet
 		userID    uint
 		userRoles []string
 		want      bool
 	}{
-		{name: "fc", userID: 42, userRoles: []string{model.RoleFC}, want: true},
-		{name: "admin", userID: 7, userRoles: []string{model.RoleAdmin}, want: true},
-		{name: "super admin", userID: 8, userRoles: []string{model.RoleSuperAdmin}, want: true},
-		{name: "user owner no longer manages", userID: 42, userRoles: []string{model.RoleUser}, want: false},
-		{name: "other user", userID: 9, userRoles: []string{model.RoleUser}, want: false},
+		// privileged roles can manage any fleet regardless of ownership
+		{name: "admin any fleet", fleet: fleet, userID: 7, userRoles: []string{model.RoleAdmin}, want: true},
+		{name: "super admin any fleet", fleet: fleet, userID: 8, userRoles: []string{model.RoleSuperAdmin}, want: true},
+		{name: "senior_fc any fleet", fleet: fleet, userID: 9, userRoles: []string{model.RoleSeniorFC}, want: true},
+		// fc can only manage own fleet
+		{name: "fc own fleet", fleet: fleet, userID: 42, userRoles: []string{model.RoleFC}, want: true},
+		{name: "fc other fleet", fleet: fleet, userID: 99, userRoles: []string{model.RoleFC}, want: false},
+		// fc with nil fleet (no fleet context, e.g. DeactivateInvite)
+		{name: "fc nil fleet", fleet: nil, userID: 99, userRoles: []string{model.RoleFC}, want: true},
+		// unprivileged roles are denied
+		{name: "user denied", fleet: fleet, userID: 42, userRoles: []string{model.RoleUser}, want: false},
+		{name: "other user denied", fleet: fleet, userID: 9, userRoles: []string{model.RoleUser}, want: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := svc.canManageFleet(fleet, tt.userID, tt.userRoles); got != tt.want {
+			if got := svc.canManageFleet(tt.fleet, tt.userID, tt.userRoles); got != tt.want {
 				t.Fatalf("canManageFleet() = %v, want %v", got, tt.want)
 			}
 		})

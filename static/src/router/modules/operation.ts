@@ -17,7 +17,7 @@ export const operationRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.operation.fleets',
         keepAlive: true,
-        roles: ['super_admin', 'admin', 'fc']
+        roles: ['super_admin', 'admin', 'fc', 'senior_fc']
       }
     },
     {
@@ -37,7 +37,7 @@ export const operationRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.operation.fleetDetail',
         isHide: true,
-        roles: ['super_admin', 'admin', 'fc']
+        roles: ['super_admin', 'admin', 'fc', 'senior_fc']
       }
     },
     {

@@ -427,7 +427,7 @@ func (s *FleetConfigService) ExportToESI(userID uint, req *ExportToESIRequest) e
 // ─────────────────────────────────────────────
 
 func (s *FleetConfigService) canManage(config *model.FleetConfig, userID uint, userRoles []string) bool {
-	return model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC)
+	return model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleSeniorFC)
 }
 
 func (s *FleetConfigService) buildResp(config *model.FleetConfig, fittings []model.FleetConfigFitting) *FleetConfigResp {

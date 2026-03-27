@@ -3,6 +3,7 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -85,6 +86,28 @@ func (r *SysWalletRepository) ExistsTransactionByRefID(refID string) (bool, erro
 	var count int64
 	err := global.DB.Model(&model.WalletTransaction{}).Where("ref_id = ?", refID).Count(&count).Error
 	return count > 0, err
+}
+
+// GetTransactionByUserRefTypeRefIDInRange 根据用户、流水类型、关联 ID 和时间范围获取单条钱包流水
+func (r *SysWalletRepository) GetTransactionByUserRefTypeRefIDInRange(userID uint, refType, refID string, startAt, endAt time.Time) (*model.WalletTransaction, error) {
+	var tx model.WalletTransaction
+	err := global.DB.Where(
+		"user_id = ? AND ref_type = ? AND ref_id = ? AND created_at >= ? AND created_at < ?",
+		userID, refType, refID, startAt, endAt,
+	).First(&tx).Error
+	if err != nil {
+		return nil, err
+	}
+	return &tx, nil
+}
+
+// CountTransactionsByUserRefTypeInRange 统计某用户在指定时间范围内的指定流水类型数量
+func (r *SysWalletRepository) CountTransactionsByUserRefTypeInRange(userID uint, refType string, startAt, endAt time.Time) (int64, error) {
+	var count int64
+	err := global.DB.Model(&model.WalletTransaction{}).
+		Where("user_id = ? AND ref_type = ? AND created_at >= ? AND created_at < ?", userID, refType, startAt, endAt).
+		Count(&count).Error
+	return count, err
 }
 
 // WalletTransactionFilter 流水查询筛选条件

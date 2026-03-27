@@ -41,7 +41,7 @@ type WalletTransaction struct {
 	UserID       uint      `gorm:"not null;index"             json:"user_id"`
 	Amount       float64   `gorm:"not null"                   json:"amount"` // 正数=收入 负数=支出
 	Reason       string    `gorm:"size:256"                   json:"reason"`
-	RefType      string    `gorm:"size:64;index"              json:"ref_type"` // pap_reward / manual / redeem / admin_adjust
+	RefType      string    `gorm:"size:64;index"              json:"ref_type"` // pap_reward / pap_fc_salary / manual / redeem / admin_adjust
 	RefID        string    `gorm:"size:64"                    json:"ref_id"`   // 关联 ID（如 fleet_id）
 	BalanceAfter float64   `gorm:"not null"                   json:"balance_after"`
 	OperatorID   uint      `gorm:"default:0;index"            json:"operator_id"` // 操作人 user_id（系统操作为 0）
@@ -68,6 +68,7 @@ func (WalletLog) TableName() string { return "wallet_log" }
 // 钱包流水类型常量
 const (
 	WalletRefPapReward           = "pap_reward"            // PAP 奖励
+	WalletRefPapFCSalary         = "pap_fc_salary"         // FC 工资
 	WalletRefPapConvert          = "pap_convert"           // 联盟 PAP 月度兑换
 	WalletRefManual              = "manual"                // 手动操作
 	WalletRefRedeem              = "redeem"                // 兑换消费

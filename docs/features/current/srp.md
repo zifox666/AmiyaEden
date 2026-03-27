@@ -54,7 +54,8 @@ source_of_truth:
 
 - 价格新增 / 更新要求 `srp:price:add`
 - 价格删除要求 `srp:price:delete`
-- 审核和发放要求 `srp:review`
+- 审核列表、详情、审批（approve/reject）要求 `srp` 或 `fc`
+- 发放、批量发放、自动审批要求 `srp`
 - 其余个人能力默认要求 `Login`
 
 ## 计算 SRP 推荐金额

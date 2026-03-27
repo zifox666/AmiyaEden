@@ -1,20 +1,17 @@
 import request from '@/utils/http'
 
-export interface PAPTypeRate {
-  pap_type: string
-  display_name: string
-  rate: number
-  updated_at: string
+export type PAPExchangeRate = Api.PapExchange.RateItem
+
+export type PAPExchangeConfig = Api.PapExchange.ConfigResponse
+
+export type UpdatePAPExchangeConfigParams = Api.PapExchange.UpdateConfigParams
+
+/** 管理员：获取 PAP 兑换配置 */
+export function fetchPAPExchangeConfig() {
+  return request.get<PAPExchangeConfig>({ url: '/api/v1/system/pap-exchange/rates' })
 }
 
-/** 管理员：获取 PAP 类型兑换汇率列表 */
-export function fetchPAPTypeRates() {
-  return request.get<PAPTypeRate[]>({ url: '/api/v1/system/pap-exchange/rates' })
-}
-
-/** 管理员：批量更新 PAP 类型兑换汇率 */
-export function updatePAPTypeRates(
-  data: Pick<PAPTypeRate, 'pap_type' | 'display_name' | 'rate'>[]
-) {
-  return request.put<PAPTypeRate[]>({ url: '/api/v1/system/pap-exchange/rates', data })
+/** 管理员：更新 PAP 兑换配置 */
+export function updatePAPExchangeConfig(data: UpdatePAPExchangeConfigParams) {
+  return request.put<PAPExchangeConfig>({ url: '/api/v1/system/pap-exchange/rates', data })
 }

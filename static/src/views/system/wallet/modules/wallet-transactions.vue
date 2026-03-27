@@ -18,6 +18,7 @@
         @change="handleSearch"
       >
         <ElOption :label="$t('walletAdmin.refTypes.pap_reward')" value="pap_reward" />
+        <ElOption :label="$t('walletAdmin.refTypes.pap_fc_salary')" value="pap_fc_salary" />
         <ElOption :label="$t('walletAdmin.refTypes.admin_adjust')" value="admin_adjust" />
         <ElOption :label="$t('walletAdmin.refTypes.manual')" value="manual" />
         <ElOption :label="$t('walletAdmin.refTypes.redeem')" value="redeem" />
@@ -57,6 +58,7 @@
 
   const REF_TYPE_MAP: Record<string, { label: string; tag: string }> = {
     pap_reward: { label: t('walletAdmin.refTypes.pap_reward'), tag: 'success' },
+    pap_fc_salary: { label: t('walletAdmin.refTypes.pap_fc_salary'), tag: 'success' },
     admin_adjust: { label: t('walletAdmin.refTypes.admin_adjust'), tag: 'warning' },
     manual: { label: t('walletAdmin.refTypes.manual'), tag: '' },
     redeem: { label: t('walletAdmin.refTypes.redeem'), tag: 'danger' },

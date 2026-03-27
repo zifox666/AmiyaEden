@@ -78,7 +78,7 @@ func RegisterRoutes(r *gin.Engine) {
 	operation := login.Group("/operation")
 	fleet := operation.Group("/fleets")
 	{
-		manageFleets := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
+		manageFleets := middleware.RequireRole(model.RoleAdmin, model.RoleFC, model.RoleSeniorFC)
 		deleteFleets := middleware.RequireRole(model.RoleAdmin)
 
 		fleet.POST("", manageFleets, fleetH.CreateFleet)
@@ -123,7 +123,7 @@ func RegisterRoutes(r *gin.Engine) {
 	fleetConfig := operation.Group("/fleet-configs")
 	{
 		viewFleetConfigs := middleware.RequireLoginUser()
-		manageFleetConfigs := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
+		manageFleetConfigs := middleware.RequireRole(model.RoleAdmin, model.RoleSeniorFC)
 
 		fleetConfig.GET("", viewFleetConfigs, fleetConfigH.ListFleetConfigs)
 		fleetConfig.GET("/:id", viewFleetConfigs, fleetConfigH.GetFleetConfig)
@@ -142,7 +142,8 @@ func RegisterRoutes(r *gin.Engine) {
 	skillPlanning := login.Group("/skill-planning")
 	skillPlan := skillPlanning.Group("/skill-plans")
 	{
-		manageSkillPlans := middleware.RequireRole(model.RoleAdmin, model.RoleFC)
+		viewSkillPlans := middleware.RequireRole(model.RoleAdmin, model.RoleSeniorFC, model.RoleFC)
+		manageSkillPlans := middleware.RequireRole(model.RoleAdmin, model.RoleSeniorFC)
 		viewSkillPlanChecks := middleware.RequireLoginUser()
 
 		skillPlan.GET("/check/selection", viewSkillPlanChecks, skillPlanH.GetCheckSelection)
@@ -150,8 +151,8 @@ func RegisterRoutes(r *gin.Engine) {
 		skillPlan.GET("/check/plan-selection", viewSkillPlanChecks, skillPlanH.GetCheckPlanSelection)
 		skillPlan.PUT("/check/plan-selection", viewSkillPlanChecks, skillPlanH.SaveCheckPlanSelection)
 		skillPlan.POST("/check/run", viewSkillPlanChecks, skillPlanH.RunCompletionCheck)
-		skillPlan.GET("", manageSkillPlans, skillPlanH.ListSkillPlans)
-		skillPlan.GET("/:id", manageSkillPlans, skillPlanH.GetSkillPlan)
+		skillPlan.GET("", viewSkillPlans, skillPlanH.ListSkillPlans)
+		skillPlan.GET("/:id", viewSkillPlans, skillPlanH.GetSkillPlan)
 		skillPlan.POST("", manageSkillPlans, skillPlanH.CreateSkillPlan)
 		skillPlan.PUT("/:id", manageSkillPlans, skillPlanH.UpdateSkillPlan)
 		skillPlan.DELETE("/:id", manageSkillPlans, skillPlanH.DeleteSkillPlan)
@@ -240,17 +241,16 @@ func RegisterRoutes(r *gin.Engine) {
 		srp.POST("/killmails/detail", srpH.GetKillmailDetail)
 		srp.POST("/open-info-window", srpH.OpenInfoWindow)
 
-		// 审核（需权限）
-		srpAdmin := srp.Group("", middleware.RequireRole(model.RoleSRP))
-		{
-			srpAdmin.GET("/applications", srpH.ListApplications)
-			srpAdmin.PUT("/applications/auto-approve", srpH.RunFleetAutoApproval)
-			srpAdmin.GET("/applications/batch-payout-summary", srpH.ListBatchPayoutSummary)
-			srpAdmin.GET("/applications/:id", srpH.GetApplication)
-			srpAdmin.PUT("/applications/:id/review", srpH.ReviewApplication)
-			srpAdmin.PUT("/applications/:id/payout", srpH.Payout)
-			srpAdmin.PUT("/applications/users/:user_id/payout", srpH.BatchPayoutByUser)
-		}
+		// 审核（fc 可查看列表 / 详情 / 审批；发放和自动审批仅 srp 角色）
+		reviewSRP := middleware.RequireRole(model.RoleSRP, model.RoleFC)
+		payoutSRP := middleware.RequireRole(model.RoleSRP)
+		srp.GET("/applications", reviewSRP, srpH.ListApplications)
+		srp.GET("/applications/:id", reviewSRP, srpH.GetApplication)
+		srp.PUT("/applications/:id/review", reviewSRP, srpH.ReviewApplication)
+		srp.PUT("/applications/auto-approve", payoutSRP, srpH.RunFleetAutoApproval)
+		srp.GET("/applications/batch-payout-summary", payoutSRP, srpH.ListBatchPayoutSummary)
+		srp.PUT("/applications/:id/payout", payoutSRP, srpH.Payout)
+		srp.PUT("/applications/users/:user_id/payout", payoutSRP, srpH.BatchPayoutByUser)
 	}
 
 	// ─── ESI 刷新队列 ───

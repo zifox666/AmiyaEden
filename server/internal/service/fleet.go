@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // FleetKMRefreshFunc 触发单个角色 KM 刷新的钩子，由 jobs 层注入以避免循环依赖
@@ -29,6 +30,8 @@ type FleetService struct {
 	papRepo    *repository.AlliancePAPRepository
 	userRepo   *repository.UserRepository
 	charRepo   *repository.EveCharacterRepository
+	configRepo *repository.SysConfigRepository
+	walletRepo *repository.SysWalletRepository
 	ssoSvc     *EveSSOService
 	walletSvc  *SysWalletService
 	webhookSvc *WebhookService
@@ -42,6 +45,8 @@ func NewFleetService() *FleetService {
 		papRepo:    repository.NewAlliancePAPRepository(),
 		userRepo:   repository.NewUserRepository(),
 		charRepo:   repository.NewEveCharacterRepository(),
+		configRepo: repository.NewSysConfigRepository(),
+		walletRepo: repository.NewSysWalletRepository(),
 		ssoSvc:     NewEveSSOService(),
 		walletSvc:  NewSysWalletService(),
 		webhookSvc: NewWebhookService(),
@@ -513,14 +518,43 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string)
 	if err != nil {
 		return err
 	}
-	oldPapPerUser := make(map[uint]float64, len(oldLogs))
-	for _, ol := range oldLogs {
-		oldPapPerUser[ol.UserID] = ol.PapCount
+	rateMap := s.rateRepo.GetRateMap()
+	walletRate := papImportanceToWalletRate(fleet.Importance, rateMap)
+	fcSalary := s.getPAPFCSalary()
+	fcSalaryMonthlyLimit := s.getPAPFCSalaryMonthlyLimit()
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	nextMonthStart := monthStart.AddDate(0, 1, 0)
+
+	fcInMembers := false
+	for _, m := range members {
+		if m.UserID == fleet.FCUserID {
+			fcInMembers = true
+			break
+		}
+	}
+
+	oldWalletPerUser := buildPapWalletByUser(toPapWalletEntriesFromLogs(oldLogs), walletRate)
+	oldFCSalaryAmount := 0.0
+	if tx, lookupErr := s.walletRepo.GetTransactionByUserRefTypeRefIDInRange(
+		fleet.FCUserID,
+		model.WalletRefPapFCSalary,
+		fleetID,
+		monthStart,
+		nextMonthStart,
+	); lookupErr == nil {
+		oldFCSalaryAmount = tx.Amount
+	} else if !errors.Is(lookupErr, gorm.ErrRecordNotFound) {
+		global.Logger.Warn("[Fleet] 查询 FC 工资历史流水失败",
+			zap.String("fleet_id", fleetID),
+			zap.Uint("user_id", fleet.FCUserID),
+			zap.Error(lookupErr),
+		)
 	}
 
 	// 4. 构建新 PAP 记录
 	newLogs := make([]model.FleetPapLog, 0, len(members))
-	newPapPerUser := make(map[uint]float64, len(members))
+	newEntries := make([]papWalletEntry, 0, len(members))
 	for _, m := range members {
 		newLogs = append(newLogs, model.FleetPapLog{
 			FleetID:     fleetID,
@@ -529,7 +563,10 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string)
 			PapCount:    fleet.PapCount,
 			IssuedBy:    userID,
 		})
-		newPapPerUser[m.UserID] += fleet.PapCount
+		newEntries = append(newEntries, papWalletEntry{
+			UserID:   m.UserID,
+			PapCount: fleet.PapCount,
+		})
 	}
 
 	// 5. 事务：更新 PAP 记录 + 钱包差量
@@ -551,30 +588,64 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string)
 
 	// 合并涉及的所有 user_id，计算并应用差量
 	allUsers := make(map[uint]struct{})
-	for uid := range oldPapPerUser {
+	for uid := range oldWalletPerUser {
 		allUsers[uid] = struct{}{}
 	}
-	for uid := range newPapPerUser {
+	newWalletPerUser := buildPapWalletByUser(newEntries, walletRate)
+	newFCSalaryAmount := 0.0
+	if fcInMembers || oldFCSalaryAmount > 0 {
+		// monthlyCount is only needed when this is a new entry (no prior salary for this fleet).
+		// When oldFCSalaryAmount > 0, calculateFCSalaryAmount ignores monthlyCount entirely,
+		// so skip the DB query in that case.
+		var monthlyCount int64
+		if fcInMembers && oldFCSalaryAmount == 0 {
+			var countErr error
+			monthlyCount, countErr = s.walletRepo.CountTransactionsByUserRefTypeInRange(
+				fleet.FCUserID,
+				model.WalletRefPapFCSalary,
+				monthStart,
+				nextMonthStart,
+			)
+			if countErr != nil {
+				global.Logger.Warn("[Fleet] 统计 FC 工资次数失败",
+					zap.String("fleet_id", fleetID),
+					zap.Uint("user_id", fleet.FCUserID),
+					zap.Error(countErr),
+				)
+				monthlyCount = int64(fcSalaryMonthlyLimit)
+			}
+		}
+		newFCSalaryAmount = calculateFCSalaryAmount(fcInMembers, oldFCSalaryAmount, monthlyCount, fcSalaryMonthlyLimit, fcSalary)
+	}
+	for uid := range newWalletPerUser {
 		allUsers[uid] = struct{}{}
 	}
-	// 按舰队重要性获取 PAP 兑换汇率（1 PAP → N 系统钱包）
-	rateMap := s.rateRepo.GetRateMap()
-	walletRate := papImportanceToWalletRate(fleet.Importance, rateMap)
 
 	reason := fmt.Sprintf("舰队 PAP 奖励: %s", fleetID)
 	for uid := range allUsers {
-		delta := newPapPerUser[uid] - oldPapPerUser[uid]
+		delta := newWalletPerUser[uid] - oldWalletPerUser[uid]
 		if delta == 0 {
 			continue
 		}
-		walletDelta := delta * walletRate
-		if err := s.walletSvc.ApplyWalletDeltaTx(tx, uid, walletDelta, reason, model.WalletRefPapReward, fleetID); err != nil {
+		if err := s.walletSvc.ApplyWalletDeltaTx(tx, uid, delta, reason, model.WalletRefPapReward, fleetID); err != nil {
 			global.Logger.Warn("[Fleet] 钱包差量更新失败",
 				zap.Uint("user_id", uid),
-				zap.Float64("delta", walletDelta),
+				zap.Float64("delta", delta),
 				zap.Error(err),
 			)
 			// 钱包失败不阻断整个操作，继续
+		}
+	}
+
+	fcSalaryDelta := newFCSalaryAmount - oldFCSalaryAmount
+	if fcSalaryDelta != 0 {
+		if err := s.walletSvc.ApplyWalletDeltaTx(tx, fleet.FCUserID, fcSalaryDelta, fmt.Sprintf("舰队 FC 工资: %s", fleetID), model.WalletRefPapFCSalary, fleetID); err != nil {
+			global.Logger.Warn("[Fleet] FC 工资差量更新失败",
+				zap.String("fleet_id", fleetID),
+				zap.Uint("user_id", fleet.FCUserID),
+				zap.Float64("delta", fcSalaryDelta),
+				zap.Error(err),
+			)
 		}
 	}
 
@@ -593,6 +664,49 @@ func (s *FleetService) IssuePap(fleetID string, userID uint, userRoles []string)
 	return nil
 }
 
+type papWalletEntry struct {
+	UserID   uint
+	PapCount float64
+}
+
+func toPapWalletEntriesFromLogs(logs []model.FleetPapLog) []papWalletEntry {
+	entries := make([]papWalletEntry, 0, len(logs))
+	for _, log := range logs {
+		entries = append(entries, papWalletEntry{
+			UserID:   log.UserID,
+			PapCount: log.PapCount,
+		})
+	}
+	return entries
+}
+
+func buildPapWalletByUser(entries []papWalletEntry, walletRate float64) map[uint]float64 {
+	result := make(map[uint]float64, len(entries))
+	for _, entry := range entries {
+		result[entry.UserID] += entry.PapCount * walletRate
+	}
+	return result
+}
+
+// calculateFCSalaryAmount returns the target FC salary amount for a fleet issuance.
+// If the FC is not in the member list, returns 0 (revoke any prior salary for this fleet).
+// If a salary was already issued for this fleet (existingSalaryAmount > 0), the monthly limit
+// is intentionally bypassed — this is a re-issue that updates the amount to the current rate,
+// not a new charge against the cap.
+// monthlyCount is only consulted for genuinely new entries (existingSalaryAmount == 0).
+func calculateFCSalaryAmount(fcInMembers bool, existingSalaryAmount float64, monthlyCount int64, monthlyLimit int, currentSalary float64) float64 {
+	if !fcInMembers {
+		return 0
+	}
+	if existingSalaryAmount > 0 {
+		return currentSalary
+	}
+	if monthlyLimit <= 0 || monthlyCount >= int64(monthlyLimit) {
+		return 0
+	}
+	return currentSalary
+}
+
 // papImportanceToWalletRate 将舰队重要性映射到对应的 PAP 兑换汇率（系统钱包 / 1 PAP）
 func papImportanceToWalletRate(importance string, rateMap map[string]float64) float64 {
 	var papType string
@@ -608,6 +722,14 @@ func papImportanceToWalletRate(importance string, rateMap map[string]float64) fl
 		return rate
 	}
 	return 1
+}
+
+func (s *FleetService) getPAPFCSalary() float64 {
+	return s.configRepo.GetFloat(model.SysConfigPAPFCSalary, model.SysConfigDefaultPAPFCSalary)
+}
+
+func (s *FleetService) getPAPFCSalaryMonthlyLimit() int {
+	return s.configRepo.GetInt(model.SysConfigPAPFCSalaryLimit, model.SysConfigDefaultPAPFCSalaryLimit)
 }
 
 // triggerNewMembersKMRefresh 对本舰队中需要 KM 刷新的成员执行触发：
@@ -976,9 +1098,21 @@ func (s *FleetService) DeactivateInvite(inviteID uint, userID uint, userRoles []
 //  权限判断
 // ─────────────────────────────────────────────
 
-// canManageFleet 判断用户是否有权管理舰队相关功能（super_admin / admin / fc）
-func (s *FleetService) canManageFleet(_ *model.Fleet, _ uint, userRoles []string) bool {
-	return model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleFC)
+// canManageFleet 判断用户是否有权管理舰队相关功能。
+// super_admin、admin、senior_fc 可管理任何舰队；
+// fc 角色仅能管理自己创建的舰队（fleet.FCUserID == userID）。
+// fleet 为 nil 时退化为纯角色判断（用于不依赖具体舰队的操作）。
+func (s *FleetService) canManageFleet(fleet *model.Fleet, userID uint, userRoles []string) bool {
+	if model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleSeniorFC) {
+		return true
+	}
+	if model.ContainsAnyRole(userRoles, model.RoleFC) {
+		if fleet == nil {
+			return true
+		}
+		return fleet.FCUserID == userID
+	}
+	return false
 }
 
 func (s *FleetService) canDeleteFleet(userRoles []string) bool {

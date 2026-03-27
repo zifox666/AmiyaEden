@@ -7,6 +7,7 @@ const (
 	RoleAdmin      = "admin"
 	RoleSRP        = "srp"
 	RoleFC         = "fc"
+	RoleSeniorFC   = "senior_fc"
 	RoleCaptain    = "captain"
 	RoleWelfare    = "welfare"
 	RoleUser       = "user"
@@ -118,6 +119,7 @@ var SystemRoleSeeds = []Role{
 	{Code: RoleAdmin, Name: "管理员", Description: "系统管理权限", IsSystem: true, Sort: 90, Status: 1},
 	{Code: RoleSRP, Name: "补损官", Description: "补损审批与舰船价格管理", IsSystem: true, Sort: 80, Status: 1},
 	{Code: RoleFC, Name: "FC", Description: "舰队指挥，管理舰队与活动", IsSystem: true, Sort: 70, Status: 1},
+	{Code: RoleSeniorFC, Name: "资深FC", Description: "资深舰队指挥，管理舰队配置与技能计划", IsSystem: true, Sort: 75, Status: 1},
 	{Code: RoleCaptain, Name: "队长", Description: "新人帮扶队长视图权限", IsSystem: true, Sort: 30, Status: 1},
 	{Code: RoleWelfare, Name: "福利官", Description: "军团福利审批与管理", IsSystem: true, Sort: 50, Status: 1},
 	{Code: RoleUser, Name: "用户", Description: "已认证用户，基本访问权限", IsSystem: true, Sort: 10, Status: 1},

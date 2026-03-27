@@ -51,7 +51,7 @@
   const userStore = useUserStore()
   const canManage = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
-    return roles.some((r) => ['super_admin', 'admin', 'fc'].includes(r))
+    return roles.some((r) => ['super_admin', 'admin', 'senior_fc'].includes(r))
   })
 
   const {

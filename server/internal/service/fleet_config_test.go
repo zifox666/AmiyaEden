@@ -110,7 +110,8 @@ func TestFleetConfigCanManage(t *testing.T) {
 	}{
 		{name: "super admin", userID: 7, roles: []string{model.RoleSuperAdmin}, want: true},
 		{name: "admin", userID: 7, roles: []string{model.RoleAdmin}, want: true},
-		{name: "fc", userID: 7, roles: []string{model.RoleFC}, want: true},
+		{name: "senior fc", userID: 7, roles: []string{model.RoleSeniorFC}, want: true},
+		{name: "fc cannot manage", userID: 7, roles: []string{model.RoleFC}, want: false},
 		{name: "owner user no longer manages", userID: 42, roles: []string{model.RoleUser}, want: false},
 		{name: "srp non owner", userID: 7, roles: []string{model.RoleSRP}, want: false},
 		{name: "user non owner", userID: 7, roles: []string{model.RoleUser}, want: false},

@@ -171,7 +171,7 @@
 
   const canManage = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
-    return roles.some((role) => ['super_admin', 'admin', 'fc'].includes(role))
+    return roles.some((role) => ['super_admin', 'admin', 'senior_fc'].includes(role))
   })
 
   const currentLang = computed(() => userStore.language || 'zh')

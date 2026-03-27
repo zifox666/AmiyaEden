@@ -17,6 +17,8 @@ func (SystemConfig) TableName() string { return "system_config" }
 const (
 	SysConfigPAPWalletPerPAP    = "pap.wallet_per_pap"   // 每 1 PAP 兑换多少系统钱包（float）
 	SysConfigPAPExchangeEnabled = "pap.exchange_enabled" // PAP 兑换是否开启（bool）
+	SysConfigPAPFCSalary        = "pap.fc_salary"        // FC 工资（float）
+	SysConfigPAPFCSalaryLimit   = "pap.fc_salary_limit"  // FC 工资每月上限次数（int）
 
 	SysConfigWebhookURL           = "webhook.url"            // Webhook URL
 	SysConfigWebhookEnabled       = "webhook.enabled"        // 是否启用（bool）
@@ -54,4 +56,6 @@ const (
 	SysConfigDefaultNewbroMultiCharacterThreshold         = 3
 	SysConfigDefaultNewbroRefreshIntervalDays             = 7
 	SysConfigDefaultNewbroBonusRate               float64 = 20
+	SysConfigDefaultPAPFCSalary                   float64 = 400
+	SysConfigDefaultPAPFCSalaryLimit              int     = 5
 )

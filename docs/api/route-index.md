@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-27
+last_reviewed: 2026-03-28
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -58,28 +58,28 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| POST | `/operation/fleets` | 创建舰队 | `RequireRole(admin, fc)` |
-| GET | `/operation/fleets` | 舰队列表 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets` | 创建舰队 | `RequireRole(admin, fc, senior_fc)` |
+| GET | `/operation/fleets` | 舰队列表 | `RequireRole(admin, fc, senior_fc)` |
 | GET | `/operation/fleets/me` | 我的舰队 | Login |
-| GET | `/operation/fleets/:id` | 舰队详情 | `RequireRole(admin, fc)` |
-| PUT | `/operation/fleets/:id` | 更新舰队 | `RequireRole(admin, fc)` |
+| GET | `/operation/fleets/:id` | 舰队详情 | `RequireRole(admin, fc, senior_fc)` |
+| PUT | `/operation/fleets/:id` | 更新舰队 | `RequireRole(admin, fc, senior_fc)` |
 | DELETE | `/operation/fleets/:id` | 删除舰队 | `RequireRole(admin)` |
-| POST | `/operation/fleets/:id/refresh-esi` | 刷新舰队 ESI 数据 | `RequireRole(admin, fc)` |
-| GET | `/operation/fleets/:id/members` | 舰队成员 | `RequireRole(admin, fc)` |
-| GET | `/operation/fleets/:id/members-pap` | 舰队成员与 PAP | `RequireRole(admin, fc)` |
-| POST | `/operation/fleets/:id/members/manual` | 手动添加成员 | `RequireRole(admin, fc)` |
-| POST | `/operation/fleets/:id/members/sync` | 同步 ESI 成员 | `RequireRole(admin, fc)` |
-| POST | `/operation/fleets/:id/pap` | 发放 PAP | `RequireRole(admin, fc)` |
-| GET | `/operation/fleets/:id/pap` | PAP 日志 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/refresh-esi` | 刷新舰队 ESI 数据 | `RequireRole(admin, fc, senior_fc)` |
+| GET | `/operation/fleets/:id/members` | 舰队成员 | `RequireRole(admin, fc, senior_fc)` |
+| GET | `/operation/fleets/:id/members-pap` | 舰队成员与 PAP | `RequireRole(admin, fc, senior_fc)` |
+| POST | `/operation/fleets/:id/members/manual` | 手动添加成员 | `RequireRole(admin, fc, senior_fc)` |
+| POST | `/operation/fleets/:id/members/sync` | 同步 ESI 成员 | `RequireRole(admin, fc, senior_fc)` |
+| POST | `/operation/fleets/:id/pap` | 发放 PAP | `RequireRole(admin, fc, senior_fc)` |
+| GET | `/operation/fleets/:id/pap` | PAP 日志 | `RequireRole(admin, fc, senior_fc)` |
 | GET | `/operation/fleets/pap/me` | 我的 PAP 日志 | Login |
 | GET | `/operation/fleets/pap/corporation` | 军团 PAP 汇总 | Login |
 | GET | `/operation/fleets/pap/alliance` | 我的联盟 PAP | Login |
-| POST | `/operation/fleets/:id/invites` | 创建邀请 | `RequireRole(admin, fc)` |
-| GET | `/operation/fleets/:id/invites` | 邀请列表 | `RequireRole(admin, fc)` |
-| DELETE | `/operation/fleets/invites/:invite_id` | 停用邀请 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/invites` | 创建邀请 | `RequireRole(admin, fc, senior_fc)` |
+| GET | `/operation/fleets/:id/invites` | 邀请列表 | `RequireRole(admin, fc, senior_fc)` |
+| DELETE | `/operation/fleets/invites/:invite_id` | 停用邀请 | `RequireRole(admin, fc, senior_fc)` |
 | POST | `/operation/fleets/join` | 加入舰队 | Login |
 | GET | `/operation/fleets/esi/:character_id` | 查询角色当前舰队 | Login |
-| POST | `/operation/fleets/:id/ping` | 发送 Webhook Ping | `RequireRole(admin, fc)` |
+| POST | `/operation/fleets/:id/ping` | 发送 Webhook Ping | `RequireRole(admin, fc, senior_fc)` |
 
 ### Fleet Configs
 
@@ -88,13 +88,13 @@ source_of_truth:
 | GET | `/operation/fleet-configs` | 配置列表 | Login |
 | GET | `/operation/fleet-configs/:id` | 配置详情 | Login |
 | GET | `/operation/fleet-configs/:id/eft` | 获取 EFT 文本 | Login |
-| POST | `/operation/fleet-configs` | 创建配置 | `RequireRole(admin, fc)` |
-| PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(admin, fc)` |
-| DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(admin, fc)` |
-| POST | `/operation/fleet-configs/import-fitting` | 从角色装配导入 | `RequireRole(admin, fc)` |
+| POST | `/operation/fleet-configs` | 创建配置 | `RequireRole(admin, senior_fc)` |
+| PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(admin, senior_fc)` |
+| DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(admin, senior_fc)` |
+| POST | `/operation/fleet-configs/import-fitting` | 从角色装配导入 | `RequireRole(admin, senior_fc)` |
 | POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | Login |
 | GET | `/operation/fleet-configs/:id/fittings/:fitting_id/items` | 装配物品 | Login |
-| PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(admin, fc)` |
+| PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(admin, senior_fc)` |
 
 ## Skill Planning
 
@@ -107,11 +107,11 @@ source_of_truth:
 | POST | `/skill-planning/skill-plans/check/run` | 执行技能规划完成度检查 | Login |
 | GET | `/skill-planning/skill-plans/check/plan-selection` | 获取当前用户保存的完成度检查规划选择 | Login |
 | PUT | `/skill-planning/skill-plans/check/plan-selection` | 保存当前用户的完成度检查规划选择 | Login |
-| GET | `/skill-planning/skill-plans` | 技能计划列表 | `RequireRole(admin, fc)` |
-| GET | `/skill-planning/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, fc)` |
-| POST | `/skill-planning/skill-plans` | 创建技能计划 | `RequireRole(admin, fc)` |
-| PUT | `/skill-planning/skill-plans/:id` | 更新技能计划 | `RequireRole(admin, fc)` |
-| DELETE | `/skill-planning/skill-plans/:id` | 删除技能计划 | `RequireRole(admin, fc)` |
+| GET | `/skill-planning/skill-plans` | 技能计划列表 | `RequireRole(admin, senior_fc)` |
+| GET | `/skill-planning/skill-plans/:id` | 技能计划详情 | `RequireRole(admin, senior_fc)` |
+| POST | `/skill-planning/skill-plans` | 创建技能计划 | `RequireRole(admin, senior_fc)` |
+| PUT | `/skill-planning/skill-plans/:id` | 更新技能计划 | `RequireRole(admin, senior_fc)` |
+| DELETE | `/skill-planning/skill-plans/:id` | 删除技能计划 | `RequireRole(admin, senior_fc)` |
 
 ## Info
 

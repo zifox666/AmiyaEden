@@ -795,7 +795,7 @@ func canManageSkillPlan(createdBy uint, userID uint, userRoles []string) bool {
 	if model.IsSuperAdmin(userRoles) {
 		return true
 	}
-	if model.ContainsAnyRole(userRoles, model.RoleAdmin, model.RoleFC) {
+	if model.ContainsAnyRole(userRoles, model.RoleAdmin, model.RoleSeniorFC) {
 		return true
 	}
 	return createdBy == userID

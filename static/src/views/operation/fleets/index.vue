@@ -155,12 +155,19 @@
   const papActionFleetId = ref<string | null>(null)
   const canManageFleet = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
-    return roles.some((role) => ['super_admin', 'admin', 'fc'].includes(role))
+    return roles.some((role) => ['super_admin', 'admin', 'fc', 'senior_fc'].includes(role))
   })
   const canDeleteFleet = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
     return roles.some((role) => ['super_admin', 'admin'].includes(role))
   })
+  // FC users may only edit/issue PAP for fleets they created; privileged roles are unrestricted.
+  const canManageThisFleet = (row: FleetItem): boolean => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    if (roles.some((r) => ['super_admin', 'admin', 'senior_fc'].includes(r))) return true
+    if (roles.includes('fc')) return row.fc_user_id === userStore.getUserInfo?.userId
+    return false
+  }
 
   // ─── 重要度颜色映射 ───
   const IMPORTANCE_MAP: Record<string, string> = {
@@ -265,7 +272,7 @@
           fixed: 'right',
           formatter: (row: FleetItem) =>
             h('div', { class: 'flex items-center gap-2' }, [
-              ...(canManageFleet.value
+              ...(canManageThisFleet(row)
                 ? [
                     h(ArtButtonTable, {
                       label: t('fleet.pap.issue'),
@@ -276,7 +283,7 @@
                   ]
                 : []),
               h(ArtButtonTable, { type: 'view', onClick: () => goDetail(row) }),
-              ...(canManageFleet.value
+              ...(canManageThisFleet(row)
                 ? [h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) })]
                 : []),
               ...(canDeleteFleet.value
