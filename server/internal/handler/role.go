@@ -115,47 +115,6 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	response.OK(c, nil)
 }
 
-// ─── 角色权限（菜单）管理 ───
-
-func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil || id > math.MaxUint32 {
-		response.Fail(c, response.CodeParamError, "无效的角色ID")
-		return
-	}
-	menuIDs, err := h.svc.GetRoleMenuIDs(uint(id))
-	if err != nil {
-		response.Fail(c, response.CodeBizError, err.Error())
-		return
-	}
-	if menuIDs == nil {
-		menuIDs = []uint{}
-	}
-	response.OK(c, menuIDs)
-}
-
-type setRoleMenusRequest struct {
-	MenuIDs []uint `json:"menu_ids"`
-}
-
-func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil || id > math.MaxUint32 {
-		response.Fail(c, response.CodeParamError, "无效的角色ID")
-		return
-	}
-	var req setRoleMenusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.CodeParamError, "请求参数错误")
-		return
-	}
-	if err := h.svc.SetRoleMenus(c.Request.Context(), uint(id), req.MenuIDs); err != nil {
-		response.Fail(c, response.CodeBizError, err.Error())
-		return
-	}
-	response.OK(c, nil)
-}
-
 // ─── 用户角色管理 ───
 
 func (h *RoleHandler) GetUserRoles(c *gin.Context) {

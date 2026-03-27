@@ -23,18 +23,9 @@ type Role struct {
 	IsSystem    bool   `gorm:"default:false"        json:"is_system"`
 	Sort        int    `gorm:"default:0"            json:"sort"`
 	Status      int8   `gorm:"default:1"            json:"status"`
-	MenuIDs     []uint `gorm:"-"                    json:"menu_ids,omitempty"`
 }
 
 func (Role) TableName() string { return "role" }
-
-// RoleMenu 角色-菜单关联
-type RoleMenu struct {
-	RoleID uint `gorm:"primaryKey;autoIncrement:false" json:"role_id"`
-	MenuID uint `gorm:"primaryKey;autoIncrement:false" json:"menu_id"`
-}
-
-func (RoleMenu) TableName() string { return "role_menu" }
 
 // UserRole 用户-角色关联
 type UserRole struct {

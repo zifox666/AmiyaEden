@@ -35,10 +35,6 @@ func (r *RoleRepository) Update(role *model.Role) error {
 
 func (r *RoleRepository) Delete(id uint) error {
 	tx := global.DB.Begin()
-	if err := tx.Where("role_id = ?", id).Delete(&model.RoleMenu{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
 	if err := tx.Where("role_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -80,36 +76,6 @@ func (r *RoleRepository) UpsertSystemRole(role *model.Role) error {
 		"name": role.Name, "description": role.Description,
 		"is_system": role.IsSystem, "sort": role.Sort, "status": role.Status,
 	}).Error
-}
-
-// ─── RoleMenu ───
-
-func (r *RoleRepository) GetRoleMenuIDs(roleID uint) ([]uint, error) {
-	var ids []uint
-	err := global.DB.Model(&model.RoleMenu{}).Where("role_id = ?", roleID).Pluck("menu_id", &ids).Error
-	return ids, err
-}
-
-func (r *RoleRepository) SetRoleMenus(roleID uint, menuIDs []uint) error {
-	tx := global.DB.Begin()
-	if err := tx.Where("role_id = ?", roleID).Delete(&model.RoleMenu{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	for _, mid := range menuIDs {
-		if err := tx.Create(&model.RoleMenu{RoleID: roleID, MenuID: mid}).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit().Error
-}
-
-// GetMenuIDsByRoles 获取多个角色的所有菜单ID并集
-func (r *RoleRepository) GetMenuIDsByRoles(roleIDs []uint) ([]uint, error) {
-	var ids []uint
-	err := global.DB.Model(&model.RoleMenu{}).Where("role_id IN ?", roleIDs).Distinct("menu_id").Pluck("menu_id", &ids).Error
-	return ids, err
 }
 
 // ─── UserRole ───

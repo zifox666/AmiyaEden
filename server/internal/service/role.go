@@ -12,12 +12,10 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type RoleService struct {
 	repo     *repository.RoleRepository
-	menuRepo *repository.MenuRepository
 	userRepo *repository.UserRepository
 }
 
@@ -29,7 +27,6 @@ type requestedRoleAssignment struct {
 func NewRoleService() *RoleService {
 	return &RoleService{
 		repo:     repository.NewRoleRepository(),
-		menuRepo: repository.NewMenuRepository(),
 		userRepo: repository.NewUserRepository(),
 	}
 }
@@ -78,65 +75,15 @@ func (s *RoleService) GetUserPermissions(ctx context.Context, userID uint) ([]st
 		}
 	}
 
-	// 获取用户角色
 	roleCodes, err := s.repo.GetUserRoleCodes(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// super_admin 拥有所有权限
-	if model.IsSuperAdmin(roleCodes) {
-		allMenus, err := s.menuRepo.ListAll()
-		if err != nil {
-			return nil, err
-		}
-		perms := make([]string, 0)
-		for _, m := range allMenus {
-			if m.Type == model.MenuTypeButton && m.Permission != "" {
-				perms = append(perms, m.Permission)
-			}
-		}
-		if data, err := json.Marshal(perms); err == nil {
-			global.Redis.Set(ctx, cacheKey, string(data), cacheTTL)
-		}
-		return perms, nil
-	}
-
-	// 获取角色ID
-	roleIDs, err := s.repo.GetUserRoleIDs(userID)
-	if err != nil {
-		return nil, err
-	}
-	if len(roleIDs) == 0 {
-		return []string{}, nil
-	}
-
-	// 获取角色所有菜单ID
-	menuIDs, err := s.repo.GetMenuIDsByRoles(roleIDs)
-	if err != nil {
-		return nil, err
-	}
-	if len(menuIDs) == 0 {
-		return []string{}, nil
-	}
-
-	// 获取菜单，过滤出按钮权限
-	menus, err := s.menuRepo.ListByIDs(menuIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	perms := make([]string, 0)
-	for _, m := range menus {
-		if m.Type == model.MenuTypeButton && m.Permission != "" {
-			perms = append(perms, m.Permission)
-		}
-	}
-
-	if data, err := json.Marshal(perms); err == nil {
+	if data, err := json.Marshal(roleCodes); err == nil {
 		global.Redis.Set(ctx, cacheKey, string(data), cacheTTL)
 	}
-	return perms, nil
+	return roleCodes, nil
 }
 
 // InvalidateUserCache 清除用户角色和权限缓存
@@ -171,8 +118,6 @@ func (s *RoleService) GetRole(id uint) (*model.Role, error) {
 	if err != nil {
 		return nil, err
 	}
-	menuIDs, _ := s.repo.GetRoleMenuIDs(id)
-	role.MenuIDs = menuIDs
 	return role, nil
 }
 
@@ -211,28 +156,6 @@ func (s *RoleService) DeleteRole(id uint) error {
 		return errors.New("系统内置角色不可删除")
 	}
 	return s.repo.Delete(id)
-}
-
-// ─── 角色权限（菜单）管理 ───
-
-func (s *RoleService) GetRoleMenuIDs(roleID uint) ([]uint, error) {
-	return s.repo.GetRoleMenuIDs(roleID)
-}
-
-func (s *RoleService) SetRoleMenus(ctx context.Context, roleID uint, menuIDs []uint) error {
-	_, err := s.repo.GetByID(roleID)
-	if err != nil {
-		return errors.New("角色不存在")
-	}
-	if err := s.repo.SetRoleMenus(roleID, menuIDs); err != nil {
-		return err
-	}
-	// 清除该角色所有用户的缓存
-	userIDs, _ := s.repo.GetRoleUserIDs(roleID)
-	for _, uid := range userIDs {
-		s.InvalidateUserCache(ctx, uid)
-	}
-	return nil
 }
 
 // ─── 用户角色管理 ───
@@ -351,234 +274,6 @@ func (s *RoleService) SeedSystemRoles() {
 		}
 	}
 	global.Logger.Info("系统角色种子同步完成")
-}
-
-// SeedSystemMenus 初始化系统菜单种子数据
-func (s *RoleService) SeedSystemMenus() {
-	seeds := model.GetSystemMenuSeeds()
-	nameToID := make(map[string]uint)
-
-	s.removeObsoleteSystemMenus()
-
-	// 先处理根菜单，再处理子菜单
-	for pass := 0; pass < 5; pass++ {
-		for _, seed := range seeds {
-			// 确定父ID
-			parentID := uint(0)
-			if seed.ParentName != "" {
-				pid, ok := nameToID[seed.ParentName]
-				if !ok {
-					continue // 父菜单未创建，等下一轮
-				}
-				parentID = pid
-			}
-
-			// 已处理过的跳过
-			if _, exists := nameToID[seed.Menu.Name]; exists {
-				continue
-			}
-
-			menu := seed.Menu
-			menu.ParentID = parentID
-			if err := s.menuRepo.UpsertByName(&menu); err != nil {
-				global.Logger.Error("种子菜单同步失败", zap.String("name", seed.Menu.Name), zap.Error(err))
-				continue
-			}
-
-			// 获取真实ID
-			created, err := s.menuRepo.GetByName(seed.Menu.Name)
-			if err != nil {
-				global.Logger.Error("查询种子菜单失败", zap.String("name", seed.Menu.Name), zap.Error(err))
-				continue
-			}
-			nameToID[seed.Menu.Name] = created.ID
-		}
-	}
-
-	global.Logger.Info("系统菜单种子同步完成", zap.Int("count", len(nameToID)))
-
-	// 设置默认角色-菜单映射
-	s.seedDefaultRoleMenus(nameToID)
-}
-
-func (s *RoleService) removeObsoleteSystemMenus() {
-	obsoleteRootMenus := []string{"Result"}
-
-	for _, name := range obsoleteRootMenus {
-		menu, err := s.menuRepo.GetByName(name)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			continue
-		}
-		if err != nil {
-			global.Logger.Warn("查询旧菜单失败", zap.String("name", name), zap.Error(err))
-			continue
-		}
-		if err := s.menuRepo.Delete(menu.ID); err != nil {
-			global.Logger.Warn("删除旧菜单失败", zap.String("name", name), zap.Error(err))
-			continue
-		}
-		global.Logger.Info("已删除旧菜单", zap.String("name", name))
-	}
-}
-
-func (s *RoleService) seedDefaultRoleMenus(nameToID map[string]uint) {
-	roleMenuMap := model.DefaultRoleMenuMap()
-
-	if err := s.seedAdminMenus(nameToID); err != nil {
-		global.Logger.Error("设置管理员全部菜单失败", zap.Error(err))
-	}
-
-	for roleCode, menuNames := range roleMenuMap {
-		role, err := s.repo.GetByCode(roleCode)
-		if err != nil {
-			global.Logger.Warn("默认角色未找到", zap.String("code", roleCode))
-			continue
-		}
-
-		// 计算 seed 中该角色应有的菜单 ID 集合
-		var seedMenuIDs []uint
-		for _, name := range menuNames {
-			if id, ok := nameToID[name]; ok {
-				seedMenuIDs = append(seedMenuIDs, id)
-			}
-		}
-		if len(seedMenuIDs) == 0 {
-			continue
-		}
-
-		existing, _ := s.repo.GetRoleMenuIDs(role.ID)
-
-		if len(existing) == 0 {
-			// 角色尚无菜单，直接写入
-			if err := s.repo.SetRoleMenus(role.ID, seedMenuIDs); err != nil {
-				global.Logger.Error("设置默认角色菜单失败", zap.String("role", roleCode), zap.Error(err))
-			}
-			continue
-		}
-
-		// 角色已有菜单配置：增量补入 seed 中新增但尚未分配的菜单
-		existSet := make(map[uint]struct{}, len(existing))
-		for _, id := range existing {
-			existSet[id] = struct{}{}
-		}
-		var toAdd []uint
-		for _, id := range seedMenuIDs {
-			if _, ok := existSet[id]; !ok {
-				toAdd = append(toAdd, id)
-			}
-		}
-		if len(toAdd) > 0 {
-			merged := append(existing, toAdd...)
-			if err := s.repo.SetRoleMenus(role.ID, merged); err != nil {
-				global.Logger.Error("增量更新角色菜单失败", zap.String("role", roleCode), zap.Error(err))
-			} else {
-				global.Logger.Info("角色菜单已增量更新", zap.String("role", roleCode), zap.Int("added", len(toAdd)))
-			}
-		}
-	}
-
-	if err := s.reconcileGuestMenuRestrictions(nameToID); err != nil {
-		global.Logger.Error("清理 guest 受限菜单失败", zap.Error(err))
-	}
-	global.Logger.Info("默认角色菜单映射完成")
-}
-
-func (s *RoleService) reconcileGuestMenuRestrictions(nameToID map[string]uint) error {
-	guestRole, err := s.repo.GetByCode(model.RoleGuest)
-	if err != nil {
-		return err
-	}
-
-	restrictedMenuNames := []string{
-		"EveInfo",
-		"EveInfoWallet",
-		"EveInfoSkill",
-		"NpcKillReport",
-		"EveInfoShips",
-		"EveInfoImplants",
-		"EveInfoFittings",
-		"EveInfoAssets",
-		"EveInfoContracts",
-	}
-
-	restrictedSet := make(map[uint]struct{}, len(restrictedMenuNames))
-	for _, name := range restrictedMenuNames {
-		if id, ok := nameToID[name]; ok {
-			restrictedSet[id] = struct{}{}
-		}
-	}
-	if len(restrictedSet) == 0 {
-		return nil
-	}
-
-	existing, err := s.repo.GetRoleMenuIDs(guestRole.ID)
-	if err != nil {
-		return err
-	}
-
-	filtered := make([]uint, 0, len(existing))
-	removed := 0
-	for _, id := range existing {
-		if _, blocked := restrictedSet[id]; blocked {
-			removed++
-			continue
-		}
-		filtered = append(filtered, id)
-	}
-
-	if removed == 0 {
-		return nil
-	}
-
-	if err := s.repo.SetRoleMenus(guestRole.ID, filtered); err != nil {
-		return err
-	}
-
-	global.Logger.Info("已清理 guest 受限菜单",
-		zap.Int("removed", removed),
-		zap.String("role", model.RoleGuest))
-
-	return nil
-}
-
-func (s *RoleService) seedAdminMenus(nameToID map[string]uint) error {
-	role, err := s.repo.GetByCode(model.RoleAdmin)
-	if err != nil {
-		global.Logger.Warn("管理员角色未找到", zap.String("code", model.RoleAdmin))
-		return nil
-	}
-
-	var allMenuIDs []uint
-	for _, id := range nameToID {
-		allMenuIDs = append(allMenuIDs, id)
-	}
-	if len(allMenuIDs) == 0 {
-		return nil
-	}
-
-	existing, _ := s.repo.GetRoleMenuIDs(role.ID)
-	existSet := make(map[uint]struct{}, len(existing))
-	for _, id := range existing {
-		existSet[id] = struct{}{}
-	}
-
-	var toAdd []uint
-	for _, id := range allMenuIDs {
-		if _, ok := existSet[id]; !ok {
-			toAdd = append(toAdd, id)
-		}
-	}
-	if len(toAdd) == 0 {
-		return nil
-	}
-
-	merged := append(existing, toAdd...)
-	if err := s.repo.SetRoleMenus(role.ID, merged); err != nil {
-		return err
-	}
-
-	global.Logger.Info("管理员菜单已增量更新", zap.String("role", model.RoleAdmin), zap.Int("added", len(toAdd)))
-	return nil
 }
 
 // CheckCorpAccessAndAdjustRole 检查用户名下所有角色的军团归属是否在准入列表内

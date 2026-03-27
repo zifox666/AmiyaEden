@@ -73,10 +73,6 @@ func RegisterRoutes(r *gin.Engine) {
 		notificationWrite.POST("/read-all", notifH.MarkAllAsRead)
 	}
 
-	// ─── 菜单 ───
-	menuH := handler.NewMenuHandler()
-	auth.GET("/menu/list", menuH.GetMenuList) // 当前用户可用菜单
-
 	// ─── 舰队 ───
 	fleetH := handler.NewFleetHandler()
 	operation := login.Group("/operation")
@@ -280,15 +276,6 @@ func RegisterRoutes(r *gin.Engine) {
 	admin.GET("/pap-exchange/rates", papExchangeH.GetRates)
 	admin.PUT("/pap-exchange/rates", papExchangeH.SetRates)
 
-	// 菜单管理
-	adminMenu := admin.Group("/menu")
-	{
-		adminMenu.GET("/tree", menuH.GetMenuTree)
-		adminMenu.POST("", menuH.CreateMenu)
-		adminMenu.PUT("/:id", menuH.UpdateMenu)
-		adminMenu.DELETE("/:id", menuH.DeleteMenu)
-	}
-
 	// 角色管理
 	roleH := handler.NewRoleHandler()
 	adminRole := admin.Group("/role")
@@ -299,10 +286,6 @@ func RegisterRoutes(r *gin.Engine) {
 		adminRole.POST("", roleH.CreateRole)
 		adminRole.PUT("/:id", roleH.UpdateRole)
 		adminRole.DELETE("/:id", roleH.DeleteRole)
-
-		// 角色权限
-		adminRole.GET("/:id/menus", roleH.GetRoleMenus)
-		adminRole.PUT("/:id/menus", roleH.SetRoleMenus)
 	}
 
 	// 用户管理
