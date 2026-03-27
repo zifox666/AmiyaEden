@@ -29,12 +29,14 @@
  */
 
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/store/modules/user'
 import type { AppRouteRecord } from '@/types/router'
 
 type AuthItem = NonNullable<AppRouteRecord['meta']['authList']>[number]
 
 export const useAuth = () => {
   const route = useRoute()
+  const userStore = useUserStore()
 
   const authList: AuthItem[] = Array.isArray(route.meta.authList)
     ? (route.meta.authList as AuthItem[])
@@ -46,6 +48,10 @@ export const useAuth = () => {
    * @returns 是否有权限
    */
   const hasAuth = (auth: string): boolean => {
+    const roles = userStore.info?.roles ?? []
+
+    if (!roles.length) return false
+
     return authList.some((item) => item?.authMark === auth)
   }
 
