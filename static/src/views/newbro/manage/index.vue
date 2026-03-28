@@ -307,13 +307,13 @@
               style="width: 280px"
             />
             <ElInput
-              v-model="historyFilters.captainUserIds"
+              v-model="historyFilters.captainSearch"
               clearable
               style="width: 240px"
               :placeholder="t('newbro.manage.historyCaptainFilter')"
             />
             <ElInput
-              v-model="historyFilters.playerCharacterIds"
+              v-model="historyFilters.playerSearch"
               clearable
               style="width: 260px"
               :placeholder="t('newbro.manage.historyPlayerFilter')"
@@ -462,8 +462,8 @@
     last_processed_at: null
   })
   const historyFilters = reactive({
-    captainUserIds: '',
-    playerCharacterIds: '',
+    captainSearch: '',
+    playerSearch: '',
     dateRange: [] as string[]
   })
 
@@ -489,8 +489,8 @@
       const data = await fetchAdminAffiliationHistory({
         current: historyPage.current,
         size: historyPage.size,
-        captain_user_ids: historyFilters.captainUserIds || undefined,
-        player_character_ids: historyFilters.playerCharacterIds || undefined,
+        captain_search: historyFilters.captainSearch || undefined,
+        player_search: historyFilters.playerSearch || undefined,
         change_start_date: changeStartDate || undefined,
         change_end_date: changeEndDate || undefined
       })
@@ -541,8 +541,8 @@
   }
 
   const handleHistoryReset = async () => {
-    historyFilters.captainUserIds = ''
-    historyFilters.playerCharacterIds = ''
+    historyFilters.captainSearch = ''
+    historyFilters.playerSearch = ''
     historyFilters.dateRange = []
     historyPage.current = 1
     await loadHistory()

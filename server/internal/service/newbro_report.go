@@ -18,12 +18,12 @@ type CaptainAttributionListRequest struct {
 }
 
 type AdminAffiliationHistoryListRequest struct {
-	Page               int
-	PageSize           int
-	CaptainUserIDs     []uint
-	PlayerCharacterIDs []int64
-	ChangeStartDate    *time.Time
-	ChangeEndDate      *time.Time
+	Page            int
+	PageSize        int
+	CaptainSearch   string
+	PlayerSearch    string
+	ChangeStartDate *time.Time
+	ChangeEndDate   *time.Time
 }
 
 type AdminCaptainDetail struct {
@@ -337,8 +337,8 @@ func (s *NewbroReportService) ListAdminAffiliationHistory(req AdminAffiliationHi
 	}
 
 	rows, total, err := s.affRepo.ListAdminAffiliationHistory(repository.AdminAffiliationHistoryFilter{
-		CaptainUserIDs:      req.CaptainUserIDs,
-		PlayerCharacterIDs:  req.PlayerCharacterIDs,
+		CaptainSearch:       req.CaptainSearch,
+		PlayerSearch:        req.PlayerSearch,
 		ChangeStartedAtFrom: req.ChangeStartDate,
 		ChangeStartedAtTo:   req.ChangeEndDate,
 	}, req.Page, req.PageSize)

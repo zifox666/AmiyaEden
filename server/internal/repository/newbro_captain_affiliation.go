@@ -12,8 +12,8 @@ import (
 type NewbroCaptainAffiliationRepository struct{}
 
 type AdminAffiliationHistoryFilter struct {
-	CaptainUserIDs      []uint
-	PlayerCharacterIDs  []int64
+	CaptainSearch       string
+	PlayerSearch        string
 	ChangeStartedAtFrom *time.Time
 	ChangeStartedAtTo   *time.Time
 }
@@ -235,11 +235,19 @@ func (r *NewbroCaptainAffiliationRepository) ListByCaptainUserID(
 func buildAdminAffiliationHistoryQuery(db *gorm.DB, filter AdminAffiliationHistoryFilter) *gorm.DB {
 	query := db.Model(&model.NewbroCaptainAffiliation{})
 
-	if len(filter.CaptainUserIDs) > 0 {
-		query = query.Where("captain_user_id IN ?", filter.CaptainUserIDs)
+	if strings.TrimSpace(filter.CaptainSearch) != "" {
+		pattern := "%" + strings.TrimSpace(filter.CaptainSearch) + "%"
+		query = query.
+			Joins(`LEFT JOIN "user" AS captain_user ON captain_user.id = newbro_captain_affiliation.captain_user_id`).
+			Joins(`LEFT JOIN eve_character AS captain_character ON captain_character.character_id = newbro_captain_affiliation.captain_primary_character_id_at_start`).
+			Where("(captain_user.nickname ILIKE ? OR captain_character.character_name ILIKE ?)", pattern, pattern)
 	}
-	if len(filter.PlayerCharacterIDs) > 0 {
-		query = query.Where("player_primary_character_id_at_start IN ?", filter.PlayerCharacterIDs)
+	if strings.TrimSpace(filter.PlayerSearch) != "" {
+		pattern := "%" + strings.TrimSpace(filter.PlayerSearch) + "%"
+		query = query.
+			Joins(`LEFT JOIN "user" AS player_user ON player_user.id = newbro_captain_affiliation.player_user_id`).
+			Joins(`LEFT JOIN eve_character AS player_character ON player_character.character_id = newbro_captain_affiliation.player_primary_character_id_at_start`).
+			Where("(player_user.nickname ILIKE ? OR player_character.character_name ILIKE ?)", pattern, pattern)
 	}
 	if filter.ChangeStartedAtFrom != nil {
 		query = query.Where("(started_at >= ? OR ended_at >= ?)", *filter.ChangeStartedAtFrom, *filter.ChangeStartedAtFrom)

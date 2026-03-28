@@ -3,9 +3,7 @@ package handler
 import (
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
-	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,12 +37,12 @@ func (h *NewbroAdminHandler) ListCaptains(c *gin.Context) {
 }
 
 func (h *NewbroAdminHandler) GetCaptainDetail(c *gin.Context) {
-	id, err := parseUintValue(c.Param("user_id"), "user_id")
+	id, err := strconv.ParseUint(c.Param("user_id"), 10, 64)
 	if err != nil {
 		response.Fail(c, response.CodeParamError, "invalid user_id")
 		return
 	}
-	result, err := h.reportSvc.GetAdminCaptainDetail(id)
+	result, err := h.reportSvc.GetAdminCaptainDetail(uint(id))
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -107,16 +105,6 @@ func (h *NewbroAdminHandler) UpdateSettings(c *gin.Context) {
 func (h *NewbroAdminHandler) ListAffiliationHistory(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	captainUserIDs, err := parseUintCSV(c.Query("captain_user_ids"))
-	if err != nil {
-		response.Fail(c, response.CodeParamError, err.Error())
-		return
-	}
-	playerCharacterIDs, err := parseInt64CSV(c.Query("player_character_ids"))
-	if err != nil {
-		response.Fail(c, response.CodeParamError, err.Error())
-		return
-	}
 	changeStartDate, err := parseOptionalNewbroDate(c.Query("change_start_date"), false)
 	if err != nil {
 		response.Fail(c, response.CodeParamError, err.Error())
@@ -129,12 +117,12 @@ func (h *NewbroAdminHandler) ListAffiliationHistory(c *gin.Context) {
 	}
 
 	result, total, err := h.reportSvc.ListAdminAffiliationHistory(service.AdminAffiliationHistoryListRequest{
-		Page:               page,
-		PageSize:           size,
-		CaptainUserIDs:     captainUserIDs,
-		PlayerCharacterIDs: playerCharacterIDs,
-		ChangeStartDate:    changeStartDate,
-		ChangeEndDate:      changeEndDate,
+		Page:            page,
+		PageSize:        size,
+		CaptainSearch:   c.Query("captain_search"),
+		PlayerSearch:    c.Query("player_search"),
+		ChangeStartDate: changeStartDate,
+		ChangeEndDate:   changeEndDate,
 	})
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
@@ -158,55 +146,4 @@ func (h *NewbroAdminHandler) ListRewardSettlements(c *gin.Context) {
 		"page":      page,
 		"page_size": size,
 	})
-}
-
-func parseUintCSV(raw string) ([]uint, error) {
-	if strings.TrimSpace(raw) == "" {
-		return nil, nil
-	}
-	parts := strings.Split(raw, ",")
-	result := make([]uint, 0, len(parts))
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed == "" {
-			continue
-		}
-		value, err := parseUintValue(trimmed, "captain_user_id")
-		if err != nil {
-			return nil, fmt.Errorf("invalid captain_user_id: %s", trimmed)
-		}
-		result = append(result, value)
-	}
-	return result, nil
-}
-
-func parseInt64CSV(raw string) ([]int64, error) {
-	if strings.TrimSpace(raw) == "" {
-		return nil, nil
-	}
-	parts := strings.Split(raw, ",")
-	result := make([]int64, 0, len(parts))
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed == "" {
-			continue
-		}
-		value, err := strconv.ParseInt(trimmed, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("invalid player_character_id: %s", trimmed)
-		}
-		result = append(result, value)
-	}
-	return result, nil
-}
-
-func parseUintValue(raw, field string) (uint, error) {
-	parsed, err := strconv.ParseUint(raw, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid %s", field)
-	}
-	if parsed > uint64(^uint(0)) {
-		return 0, fmt.Errorf("invalid %s", field)
-	}
-	return uint(parsed), nil
 }

@@ -2014,8 +2014,8 @@ declare namespace Api {
     type AdminAffiliationHistoryParams = Partial<{
       current: number
       size: number
-      captain_user_ids: string
-      player_character_ids: string
+      captain_search: string
+      player_search: string
       change_start_date: string
       change_end_date: string
     }>

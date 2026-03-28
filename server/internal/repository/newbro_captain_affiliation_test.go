@@ -68,8 +68,8 @@ func TestBuildAdminAffiliationHistoryQueryAppliesCaptainCharacterAndTimeFilters(
 	end := time.Date(2026, 3, 31, 23, 59, 59, 0, time.UTC)
 
 	filter := AdminAffiliationHistoryFilter{
-		CaptainUserIDs:      []uint{42, 84},
-		PlayerCharacterIDs:  []int64{90000001, 90000002},
+		CaptainSearch:       "Bee",
+		PlayerSearch:        "Alpha",
 		ChangeStartedAtFrom: &start,
 		ChangeStartedAtTo:   &end,
 	}
@@ -81,11 +81,11 @@ func TestBuildAdminAffiliationHistoryQueryAppliesCaptainCharacterAndTimeFilters(
 	if !strings.Contains(sql, `FROM "newbro_captain_affiliation"`) {
 		t.Fatalf("expected newbro_captain_affiliation table, got SQL: %s", sql)
 	}
-	if !strings.Contains(sql, `captain_user_id IN (`) {
-		t.Fatalf("expected captain_user_id IN filter, got SQL: %s", sql)
+	if !strings.Contains(sql, `captain_user.nickname ILIKE`) {
+		t.Fatalf("expected captain search filter, got SQL: %s", sql)
 	}
-	if !strings.Contains(sql, `player_primary_character_id_at_start IN (`) {
-		t.Fatalf("expected player character id IN filter, got SQL: %s", sql)
+	if !strings.Contains(sql, `player_character.character_name ILIKE`) {
+		t.Fatalf("expected player search filter, got SQL: %s", sql)
 	}
 	if !strings.Contains(sql, `started_at >= `) {
 		t.Fatalf("expected started_at lower-bound filter, got SQL: %s", sql)
@@ -101,5 +101,37 @@ func TestBuildAdminAffiliationHistoryQueryAppliesCaptainCharacterAndTimeFilters(
 	}
 	if !strings.Contains(sql, `ORDER BY started_at DESC, id DESC`) {
 		t.Fatalf("expected affiliation history to order by most recent start time, got SQL: %s", sql)
+	}
+}
+
+func TestBuildAdminAffiliationHistoryQueryAppliesCaseInsensitiveCaptainAndPlayerSearch(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	filter := AdminAffiliationHistoryFilter{
+		CaptainSearch: "Bee",
+		PlayerSearch:  "Alpha",
+	}
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return buildAdminAffiliationHistoryQuery(tx, filter).Find(&[]model.NewbroCaptainAffiliation{})
+	})
+
+	if !strings.Contains(sql, `LEFT JOIN "user" AS captain_user`) {
+		t.Fatalf("expected captain user join for search, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LEFT JOIN eve_character AS captain_character`) {
+		t.Fatalf("expected captain character join for search, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LEFT JOIN "user" AS player_user`) {
+		t.Fatalf("expected player user join for search, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LEFT JOIN eve_character AS player_character`) {
+		t.Fatalf("expected player character join for search, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `captain_user.nickname ILIKE`) || !strings.Contains(sql, `captain_character.character_name ILIKE`) {
+		t.Fatalf("expected case-insensitive captain nickname/name filter, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `player_user.nickname ILIKE`) || !strings.Contains(sql, `player_character.character_name ILIKE`) {
+		t.Fatalf("expected case-insensitive player nickname/name filter, got SQL: %s", sql)
 	}
 }
