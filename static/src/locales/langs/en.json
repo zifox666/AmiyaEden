@@ -1247,7 +1247,8 @@
     "syncFailed": "Failed to trigger sync",
     "tabs": {
       "esiRole": "Corporation Role Mappings",
-      "title": "Corporation Title Mappings"
+      "title": "Corporation Title Mappings",
+      "log": "Sync Logs"
     },
     "descriptions": {
       "esiRole": "Configure the mapping between EVE corporation roles and system roles.",
@@ -1259,7 +1260,15 @@
       "mappedRole": "Mapped System Role",
       "corporationId": "Corporation ID",
       "titleId": "Title ID",
-      "titleName": "Title Name"
+      "titleName": "Title Name",
+      "userId": "User ID",
+      "username": "Nickname",
+      "roleName": "Role",
+      "action": "Action"
+    },
+    "actions": {
+      "add": "Granted",
+      "remove": "Revoked"
     },
     "addMapping": "Add Mapping",
     "deleteConfirm": "Delete this mapping?",

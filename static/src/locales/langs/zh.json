@@ -1248,7 +1248,8 @@
     "syncFailed": "触发失败",
     "tabs": {
       "esiRole": "军团职位映射",
-      "title": "军团头衔映射"
+      "title": "军团头衔映射",
+      "log": "同步日志"
     },
     "descriptions": {
       "esiRole": "配置 EVE 军团职位（Corporation Role）与系统权限的对应关系。",
@@ -1260,7 +1261,15 @@
       "mappedRole": "映射系统角色",
       "corporationId": "军团 ID",
       "titleId": "头衔 ID",
-      "titleName": "头衔名称"
+      "titleName": "头衔名称",
+      "userId": "用户 ID",
+      "username": "用户昵称",
+      "roleName": "角色",
+      "action": "操作"
+    },
+    "actions": {
+      "add": "授予",
+      "remove": "撤销"
     },
     "addMapping": "新增映射",
     "deleteConfirm": "确认删除此映射？",

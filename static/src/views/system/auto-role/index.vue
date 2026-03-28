@@ -125,6 +125,45 @@
           </ElTableColumn>
         </ElTable>
       </ElTabPane>
+
+      <!-- ─── Tab 3：同步日志 ─── -->
+      <ElTabPane :label="t('autoRolePage.tabs.log')" name="log">
+        <ElTable v-loading="logLoading" :data="logs" border stripe>
+          <ElTableColumn :label="t('autoRolePage.columns.index')" type="index" width="60" />
+          <ElTableColumn :label="t('autoRolePage.columns.userId')" prop="user_id" width="100" />
+          <ElTableColumn :label="t('autoRolePage.columns.username')" prop="username" min-width="140" show-overflow-tooltip />
+          <ElTableColumn :label="t('autoRolePage.columns.roleName')" min-width="160">
+            <template #default="{ row }">
+              <ElTag size="small" :type="getRoleTagType(row.role_code)" effect="dark">
+                {{ row.role_name || row.role_code }}
+              </ElTag>
+              <span class="ml-1 text-xs text-gray-400">{{ row.role_code }}</span>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('autoRolePage.columns.action')" width="100">
+            <template #default="{ row }">
+              <ElTag size="small" :type="row.action === 'add' ? 'success' : 'danger'" effect="plain">
+                {{ t(`autoRolePage.actions.${row.action}`) }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('common.createdAt')" prop="created_at" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </ElTableColumn>
+        </ElTable>
+        <div class="flex justify-end mt-3">
+          <ElPagination
+            v-model:current-page="logPage"
+            :page-size="logSize"
+            :total="logTotal"
+            layout="total, prev, pager, next"
+            background
+            @current-change="onLogPageChange"
+          />
+        </div>
+      </ElTabPane>
     </ElTabs>
 
     <!-- ─── 新增 ESI 角色映射对话框 ─── -->
@@ -254,7 +293,8 @@
     fetchGetAllEsiRoles,
     fetchGetCorpTitles,
     fetchGetAllRoles,
-    fetchTriggerAutoRoleSync
+    fetchTriggerAutoRoleSync,
+    fetchGetAutoRoleLogs
   } from '@/api/system-manage'
 
   defineOptions({ name: 'AutoRole' })
@@ -264,6 +304,7 @@
   type EsiTitleMapping = Api.SystemManage.EsiTitleMapping
   type RoleItem = Api.SystemManage.RoleItem
   type CorpTitleInfo = Api.SystemManage.CorpTitleInfo
+  type AutoRoleLog = Api.SystemManage.AutoRoleLog
 
   // ─── Tab ───
   const activeTab = ref('esi-role')
@@ -464,8 +505,31 @@
     }
   }
 
+  // ─── 日志 ───
+  const logs = ref<AutoRoleLog[]>([])
+  const logLoading = ref(false)
+  const logTotal = ref(0)
+  const logPage = ref(1)
+  const logSize = ref(20)
+
+  async function loadLogs() {
+    logLoading.value = true
+    try {
+      const res = await fetchGetAutoRoleLogs({ current: logPage.value, size: logSize.value })
+      logs.value = res.list ?? []
+      logTotal.value = res.total ?? 0
+    } finally {
+      logLoading.value = false
+    }
+  }
+
+  function onLogPageChange(page: number) {
+    logPage.value = page
+    loadLogs()
+  }
+
   // ─── 初始化 ───
   onMounted(() => {
-    Promise.all([loadBaseData(), loadEsiRoleMappings(), loadTitleMappings()])
+    Promise.all([loadBaseData(), loadEsiRoleMappings(), loadTitleMappings(), loadLogs()])
   })
 </script>

@@ -133,6 +133,7 @@ func autoMigrate(db *gorm.DB) {
 		&model.EsiRoleMapping{},
 		&model.EsiTitleMapping{},
 		&model.EveCharacterCorpRole{},
+		&model.AutoRoleLog{},
 	); err != nil {
 		global.Logger.Fatal("数据库迁移失败", zap.Error(err))
 	}

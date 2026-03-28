@@ -39,6 +39,7 @@ func (RoleMenu) TableName() string { return "role_menu" }
 type UserRole struct {
 	UserID uint `gorm:"primaryKey;autoIncrement:false" json:"user_id"`
 	RoleID uint `gorm:"primaryKey;autoIncrement:false" json:"role_id"`
+	IsAuto bool `gorm:"default:false"                 json:"is_auto"` // true = 自动权限系统分配，false = 管理员手动分配
 }
 
 func (UserRole) TableName() string { return "user_role" }

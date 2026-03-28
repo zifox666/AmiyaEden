@@ -208,3 +208,11 @@ export function fetchTriggerAutoRoleSync() {
     url: '/api/v1/system/auto-role/sync'
   })
 }
+
+/** 分页查询自动权限操作日志 */
+export function fetchGetAutoRoleLogs(params: { current: number; size: number }) {
+  return request.get<Api.SystemManage.AutoRoleLogList>({
+    url: '/api/v1/system/auto-role/logs',
+    params
+  })
+}

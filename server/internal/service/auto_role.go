@@ -15,6 +15,7 @@ type AutoRoleService struct {
 	autoRoleRepo *repository.AutoRoleRepository
 	roleRepo     *repository.RoleRepository
 	charRepo     *repository.EveCharacterRepository
+	userRepo     *repository.UserRepository
 	roleSvc      *RoleService
 }
 
@@ -23,6 +24,7 @@ func NewAutoRoleService() *AutoRoleService {
 		autoRoleRepo: repository.NewAutoRoleRepository(),
 		roleRepo:     repository.NewRoleRepository(),
 		charRepo:     repository.NewEveCharacterRepository(),
+		userRepo:     repository.NewUserRepository(),
 		roleSvc:      NewRoleService(),
 	}
 }
@@ -90,8 +92,9 @@ func (s *AutoRoleService) ListEsiTitleMappings() ([]model.EsiTitleMapping, error
 }
 
 // ListCorpTitles 获取数据库中所有去重的军团头衔（用于前端下拉选择）
+// 只返回在 allow_corporations 白名单内的头衔（白名单为空时不限制）
 func (s *AutoRoleService) ListCorpTitles() ([]repository.CorpTitleInfo, error) {
-	return s.autoRoleRepo.ListDistinctCorpTitles()
+	return s.autoRoleRepo.ListDistinctCorpTitles(global.Config.App.AllowCorporations)
 }
 
 // CreateEsiTitleMapping 创建 ESI 头衔映射
@@ -246,18 +249,27 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 	}
 
-	// 获取用户当前角色 ID
+	// 获取用户所有当前角色 ID（用于判断是否需要新增）
 	currentRoleIDs, err := s.roleRepo.GetUserRoleIDs(userID)
 	if err != nil {
 		return err
 	}
-
-	// 合并：保留现有角色，补充自动映射的角色
 	existingSet := make(map[uint]struct{}, len(currentRoleIDs))
 	for _, id := range currentRoleIDs {
 		existingSet[id] = struct{}{}
 	}
 
+	// 获取用户当前由自动系统分配的角色 ID（用于判断是否需要移除）
+	currentAutoRoleIDs, err := s.roleRepo.GetUserAutoRoleIDs(userID)
+	if err != nil {
+		return err
+	}
+	currentAutoSet := make(map[uint]struct{}, len(currentAutoRoleIDs))
+	for _, id := range currentAutoRoleIDs {
+		currentAutoSet[id] = struct{}{}
+	}
+
+	// 计算需要新增的角色（当前没有的，无论手动还是自动）
 	var toAdd []uint
 	for rid := range autoRoleIDs {
 		if _, exists := existingSet[rid]; !exists {
@@ -265,20 +277,53 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 	}
 
-	if len(toAdd) > 0 {
-		for _, rid := range toAdd {
-			if err := s.roleRepo.AddUserRole(userID, rid); err != nil {
-				global.Logger.Warn("[AutoRole] 添加自动角色失败",
-					zap.Uint("user_id", userID),
-					zap.Uint("role_id", rid),
-					zap.Error(err))
-			}
+	// 计算需要移除的角色（自动分配但不再符合条件的）
+	var toRemove []uint
+	for rid := range currentAutoSet {
+		if _, shouldHave := autoRoleIDs[rid]; !shouldHave {
+			toRemove = append(toRemove, rid)
 		}
+	}
+
+	// 预先获取用户昵称（用于日志冗余）
+	username := ""
+	if u, err := s.userRepo.GetByID(userID); err == nil {
+		username = u.Nickname
+	}
+
+	changed := false
+
+	for _, rid := range toRemove {
+		if err := s.roleRepo.RemoveUserRole(userID, rid); err != nil {
+			global.Logger.Warn("[AutoRole] 移除过期自动角色失败",
+				zap.Uint("user_id", userID),
+				zap.Uint("role_id", rid),
+				zap.Error(err))
+		} else {
+			changed = true
+			s.writeLog(userID, username, rid, "remove")
+		}
+	}
+
+	for _, rid := range toAdd {
+		if err := s.roleRepo.AddAutoUserRole(userID, rid); err != nil {
+			global.Logger.Warn("[AutoRole] 添加自动角色失败",
+				zap.Uint("user_id", userID),
+				zap.Uint("role_id", rid),
+				zap.Error(err))
+		} else {
+			changed = true
+			s.writeLog(userID, username, rid, "add")
+		}
+	}
+
+	if changed {
 		s.roleSvc.InvalidateUserCache(ctx, userID)
 		s.roleSvc.SyncUserPrimaryRole(userID)
 		global.Logger.Info("[AutoRole] 用户自动角色已更新",
 			zap.Uint("user_id", userID),
-			zap.Int("added", len(toAdd)))
+			zap.Int("added", len(toAdd)),
+			zap.Int("removed", len(toRemove)))
 	}
 
 	return nil
@@ -333,4 +378,29 @@ func isValidEsiRole(name string) bool {
 		}
 	}
 	return false
+}
+
+// writeLog 写入一条自动权限操作日志（失败仅打 warn，不影响主流程）
+func (s *AutoRoleService) writeLog(userID uint, username string, roleID uint, action string) {
+	roleName, roleCode := "", ""
+	if role, err := s.roleRepo.GetByID(roleID); err == nil {
+		roleName = role.Name
+		roleCode = role.Code
+	}
+	log := &model.AutoRoleLog{
+		UserID:   userID,
+		Username: username,
+		RoleID:   roleID,
+		RoleName: roleName,
+		RoleCode: roleCode,
+		Action:   action,
+	}
+	if err := s.autoRoleRepo.CreateAutoRoleLog(log); err != nil {
+		global.Logger.Warn("[AutoRole] 写入日志失败", zap.Error(err))
+	}
+}
+
+// ListAutoRoleLogs 分页查询自动权限操作日志
+func (s *AutoRoleService) ListAutoRoleLogs(page, pageSize int) ([]model.AutoRoleLog, int64, error) {
+	return s.autoRoleRepo.ListAutoRoleLogs(page, pageSize)
 }

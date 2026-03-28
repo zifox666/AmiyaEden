@@ -368,6 +368,9 @@ func RegisterRoutes(r *gin.Engine) {
 
 		// 手动触发同步
 		adminAutoRole.POST("/sync", autoRoleH.TriggerSync)
+
+		// 操作日志
+		adminAutoRole.GET("/logs", autoRoleH.ListAutoRoleLogs)
 	}
 
 	// Webhook 配置（管理员）

@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // ─────────────────────────────────────────────
 //  ESI 自动权限映射
 // ─────────────────────────────────────────────
@@ -37,6 +39,21 @@ type EveCharacterCorpRole struct {
 }
 
 func (EveCharacterCorpRole) TableName() string { return "eve_character_corp_role" }
+
+// AutoRoleLog 自动权限同步操作日志
+type AutoRoleLog struct {
+	ID       uint      `gorm:"primarykey"                    json:"id"`
+	UserID   uint      `gorm:"not null;index"                json:"user_id"`
+	Username string    `gorm:"size:128;default:''"           json:"username"`  // 冗余用户名，方便展示
+	RoleID   uint      `gorm:"not null"                      json:"role_id"`
+	RoleName string    `gorm:"size:128;default:''"           json:"role_name"` // 冗余角色名，方便展示
+	RoleCode string    `gorm:"size:64;default:''"            json:"role_code"`
+	Action   string    `gorm:"size:16;not null"              json:"action"`    // "add" | "remove"
+	Reason   string    `gorm:"size:32;not null;default:''"   json:"reason"`    // "esi_role" | "title" | "director"
+	CreatedAt time.Time `gorm:"autoCreateTime;index"          json:"created_at"`
+}
+
+func (AutoRoleLog) TableName() string { return "auto_role_log" }
 
 // ─── ESI 军团角色名常量 ───
 

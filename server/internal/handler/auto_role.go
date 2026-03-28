@@ -133,3 +133,23 @@ func (h *AutoRoleHandler) TriggerSync(c *gin.Context) {
 	go h.svc.SyncAllUsersAutoRoles(c.Request.Context())
 	response.OK(c, "同步任务已触发")
 }
+
+// ─── 同步日志 ───
+
+// ListAutoRoleLogs 分页查询自动权限操作日志
+func (h *AutoRoleHandler) ListAutoRoleLogs(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 || size > 100 {
+		size = 20
+	}
+	logs, total, err := h.svc.ListAutoRoleLogs(page, size)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OKWithPage(c, logs, total, page, size)
+}

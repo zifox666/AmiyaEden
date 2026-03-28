@@ -124,7 +124,25 @@ func (r *AutoRoleRepository) ListAllCharacterCorpRoles() ([]model.EveCharacterCo
 	return roles, err
 }
 
-// ─── Corp Titles ───
+// ─── Auto Role Log ───
+
+// CreateAutoRoleLog 写入一条自动权限操作日志
+func (r *AutoRoleRepository) CreateAutoRoleLog(log *model.AutoRoleLog) error {
+	return global.DB.Create(log).Error
+}
+
+// ListAutoRoleLogs 分页查询自动权限操作日志（按时间倒序）
+func (r *AutoRoleRepository) ListAutoRoleLogs(page, pageSize int) ([]model.AutoRoleLog, int64, error) {
+	var logs []model.AutoRoleLog
+	var total int64
+	db := global.DB.Model(&model.AutoRoleLog{})
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * pageSize
+	err := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&logs).Error
+	return logs, total, err
+}
 
 // CorpTitleInfo 军团头衔去重信息（用于前端下拉选择）
 type CorpTitleInfo struct {
@@ -140,14 +158,18 @@ func stripEveTags(s string) string {
 }
 
 // ListDistinctCorpTitles 获取所有去重的(军团+头衔)组合，来源于 ESI 头衔快照
-func (r *AutoRoleRepository) ListDistinctCorpTitles() ([]CorpTitleInfo, error) {
+// allowCorps 非空时只返回指定军团的头衔
+func (r *AutoRoleRepository) ListDistinctCorpTitles(allowCorps []int64) ([]CorpTitleInfo, error) {
 	var results []CorpTitleInfo
-	err := global.DB.
+	db := global.DB.
 		Table("eve_character_title ect").
 		Select("ec.corporation_id, ect.title_id, MIN(ect.name) AS title_name").
 		Joins("JOIN eve_character ec ON ec.character_id = ect.character_id").
-		Where("ec.corporation_id > 0").
-		Group("ec.corporation_id, ect.title_id").
+		Where("ec.corporation_id > 0")
+	if len(allowCorps) > 0 {
+		db = db.Where("ec.corporation_id IN ?", allowCorps)
+	}
+	err := db.Group("ec.corporation_id, ect.title_id").
 		Order("ec.corporation_id, ect.title_id").
 		Scan(&results).Error
 	if err != nil {

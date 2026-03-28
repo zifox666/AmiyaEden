@@ -145,7 +145,23 @@ func (r *RoleRepository) SetUserRoles(userID uint, roleIDs []uint) error {
 }
 
 func (r *RoleRepository) AddUserRole(userID, roleID uint) error {
-	return global.DB.Create(&model.UserRole{UserID: userID, RoleID: roleID}).Error
+	return global.DB.Create(&model.UserRole{UserID: userID, RoleID: roleID, IsAuto: false}).Error
+}
+
+// AddAutoUserRole 由自动权限系统分配角色（标记 is_auto=true），若已存在则跳过
+func (r *RoleRepository) AddAutoUserRole(userID, roleID uint) error {
+	record := model.UserRole{UserID: userID, RoleID: roleID, IsAuto: true}
+	return global.DB.Where(model.UserRole{UserID: userID, RoleID: roleID}).
+		FirstOrCreate(&record).Error
+}
+
+// GetUserAutoRoleIDs 获取用户所有自动分配的角色 ID（is_auto=true）
+func (r *RoleRepository) GetUserAutoRoleIDs(userID uint) ([]uint, error) {
+	var ids []uint
+	err := global.DB.Model(&model.UserRole{}).
+		Where("user_id = ? AND is_auto = true", userID).
+		Pluck("role_id", &ids).Error
+	return ids, err
 }
 
 func (r *RoleRepository) RemoveUserRole(userID, roleID uint) error {

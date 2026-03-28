@@ -291,6 +291,22 @@ declare namespace Api {
       title_name?: string
       role_id: number
     }
+
+    /** 自动权限操作日志 */
+    interface AutoRoleLog {
+      id: number
+      user_id: number
+      username: string
+      role_id: number
+      role_name: string
+      role_code: string
+      action: 'add' | 'remove'
+      reason: string
+      created_at: string
+    }
+
+    /** 自动权限操作日志列表 */
+    type AutoRoleLogList = Api.Common.PaginatedResponse<AutoRoleLog>
   }
 
   /** ESI 刷新队列类型 */
