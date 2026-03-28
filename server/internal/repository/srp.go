@@ -70,6 +70,13 @@ func (r *SrpRepository) GetApplicationByID(id uint) (*model.SrpApplication, erro
 	return &app, err
 }
 
+// GetApplicationByIDForUpdate 在事务中按 ID 查询并加锁
+func (r *SrpRepository) GetApplicationByIDForUpdate(tx *gorm.DB, id uint) (*model.SrpApplication, error) {
+	var app model.SrpApplication
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&app, id).Error
+	return &app, err
+}
+
 // ExistsApplicationByKillmail 检查该 killmail 是否已被该角色提交过申请
 func (r *SrpRepository) ExistsApplicationByKillmail(killmailID int64, characterID int64) bool {
 	var count int64
@@ -82,6 +89,11 @@ func (r *SrpRepository) ExistsApplicationByKillmail(killmailID int64, characterI
 // UpdateApplication 更新申请（审批 / 发放）
 func (r *SrpRepository) UpdateApplication(app *model.SrpApplication) error {
 	return global.DB.Save(app).Error
+}
+
+// UpdateApplicationTx 在事务中更新申请
+func (r *SrpRepository) UpdateApplicationTx(tx *gorm.DB, app *model.SrpApplication) error {
+	return tx.Save(app).Error
 }
 
 func buildSubmittedLinkedApplicationsQuery(db *gorm.DB) *gorm.DB {
@@ -209,6 +221,13 @@ func buildApprovedUnpaidBatchPayoutApplicationsQuery(db *gorm.DB, userID uint) *
 		Order("id ASC")
 }
 
+func buildApprovedUnpaidApplicationsForUpdateQuery(db *gorm.DB) *gorm.DB {
+	return db.Model(&model.SrpApplication{}).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("payout_status = ? AND review_status = ?", model.SrpPayoutNotPaid, model.SrpReviewApproved).
+		Order("user_id ASC, id ASC")
+}
+
 func summarizeBatchPayoutApplications(userID uint, apps []model.SrpApplication) (SrpBatchPayoutSummaryRow, []uint) {
 	summary := SrpBatchPayoutSummaryRow{UserID: userID}
 	ids := make([]uint, 0, len(apps))
@@ -218,6 +237,13 @@ func summarizeBatchPayoutApplications(userID uint, apps []model.SrpApplication) 
 		ids = append(ids, app.ID)
 	}
 	return summary, ids
+}
+
+// ListApprovedUnpaidApplicationsForUpdate 查询全部已批准未发放的申请并加锁
+func (r *SrpRepository) ListApprovedUnpaidApplicationsForUpdate(tx *gorm.DB) ([]model.SrpApplication, error) {
+	var apps []model.SrpApplication
+	err := buildApprovedUnpaidApplicationsForUpdateQuery(tx).Find(&apps).Error
+	return apps, err
 }
 
 func buildBatchPayoutApplicationsUpdateQuery(db *gorm.DB, applicationIDs []uint, payerID uint, paidAt time.Time) *gorm.DB {

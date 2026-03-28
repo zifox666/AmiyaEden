@@ -47,7 +47,7 @@ export function adminAdjustWallet(data: Api.SysWallet.AdjustParams) {
 export function adminListTransactions(data?: Api.SysWallet.TransactionSearchParams) {
   return request.post<Api.Common.PaginatedResponse<Api.SysWallet.WalletTransaction>>({
     url: '/api/v1/system/wallet/transactions',
-    data: data ?? { current: 1, size: 20 }
+    data: data ?? { current: 1, size: 200 }
   })
 }
 

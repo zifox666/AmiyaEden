@@ -1,47 +1,50 @@
 <!-- 钱包流水查询子模块 -->
 <template>
-  <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
-    <template #left>
-      <ElInput
-        v-model="filterForm.user_id"
-        :placeholder="$t('walletAdmin.placeholders.userIdFilter')"
-        clearable
-        style="width: 160px"
-        @clear="handleSearch"
-        @keyup.enter="handleSearch"
-      />
-      <ElSelect
-        v-model="filterForm.ref_type"
-        :placeholder="$t('walletAdmin.placeholders.refType')"
-        clearable
-        style="width: 160px"
-        @change="handleSearch"
-      >
-        <ElOption :label="$t('walletAdmin.refTypes.pap_reward')" value="pap_reward" />
-        <ElOption :label="$t('walletAdmin.refTypes.pap_fc_salary')" value="pap_fc_salary" />
-        <ElOption :label="$t('walletAdmin.refTypes.admin_adjust')" value="admin_adjust" />
-        <ElOption :label="$t('walletAdmin.refTypes.manual')" value="manual" />
-        <ElOption :label="$t('walletAdmin.refTypes.redeem')" value="redeem" />
-        <ElOption :label="$t('walletAdmin.refTypes.srp_payout')" value="srp_payout" />
-        <ElOption :label="$t('walletAdmin.refTypes.shop_purchase')" value="shop_purchase" />
-        <ElOption
-          :label="$t('walletAdmin.refTypes.newbro_captain_reward')"
-          value="newbro_captain_reward"
+  <div class="wallet-transactions-panel">
+    <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+      <template #left>
+        <ElInput
+          v-model="filterForm.user_keyword"
+          :placeholder="$t('walletAdmin.placeholders.userKeywordFilter')"
+          clearable
+          style="width: 240px"
+          @clear="handleSearch"
+          @keyup.enter="handleSearch"
         />
-      </ElSelect>
-      <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
-    </template>
-  </ArtTableHeader>
+        <ElSelect
+          v-model="filterForm.ref_type"
+          :placeholder="$t('walletAdmin.placeholders.refType')"
+          clearable
+          style="width: 160px"
+          @change="handleSearch"
+        >
+          <ElOption :label="$t('walletAdmin.refTypes.pap_reward')" value="pap_reward" />
+          <ElOption :label="$t('walletAdmin.refTypes.pap_fc_salary')" value="pap_fc_salary" />
+          <ElOption :label="$t('walletAdmin.refTypes.admin_adjust')" value="admin_adjust" />
+          <ElOption :label="$t('walletAdmin.refTypes.manual')" value="manual" />
+          <ElOption :label="$t('walletAdmin.refTypes.redeem')" value="redeem" />
+          <ElOption :label="$t('walletAdmin.refTypes.srp_payout')" value="srp_payout" />
+          <ElOption :label="$t('walletAdmin.refTypes.shop_purchase')" value="shop_purchase" />
+          <ElOption :label="$t('walletAdmin.refTypes.shop_refund')" value="shop_refund" />
+          <ElOption
+            :label="$t('walletAdmin.refTypes.newbro_captain_reward')"
+            value="newbro_captain_reward"
+          />
+        </ElSelect>
+        <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
+      </template>
+    </ArtTableHeader>
 
-  <ArtTable
-    :loading="loading"
-    :data="data"
-    :columns="columns"
-    :pagination="pagination"
-    :pagination-options="{ pageSizes: [200, 500, 1000] }"
-    @pagination:size-change="handleSizeChange"
-    @pagination:current-change="handleCurrentChange"
-  />
+    <ArtTable
+      :loading="loading"
+      :data="data"
+      :columns="columns"
+      :pagination="pagination"
+      :pagination-options="{ pageSizes: [200, 500, 1000] }"
+      @pagination:size-change="handleSizeChange"
+      @pagination:current-change="handleCurrentChange"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -64,6 +67,7 @@
     redeem: { label: t('walletAdmin.refTypes.redeem'), tag: 'danger' },
     srp_payout: { label: t('walletAdmin.refTypes.srp_payout'), tag: 'primary' },
     shop_purchase: { label: t('walletAdmin.refTypes.shop_purchase'), tag: 'info' },
+    shop_refund: { label: t('walletAdmin.refTypes.shop_refund'), tag: 'warning' },
     newbro_captain_reward: {
       label: t('walletAdmin.refTypes.newbro_captain_reward'),
       tag: 'success'
@@ -75,7 +79,11 @@
   const formatISK = (v: number) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
-  const filterForm = reactive({ user_id: '', ref_type: '' })
+  const filterForm = reactive({
+    user_id: undefined as number | undefined,
+    user_keyword: '',
+    ref_type: ''
+  })
 
   const {
     columns,
@@ -137,12 +145,14 @@
         {
           prop: 'operator_id',
           label: t('walletAdmin.transactions.operator'),
-          width: 100,
+          minWidth: 120,
           formatter: (row: WalletTransaction) =>
             h(
               'span',
               {},
-              row.operator_id === 0 ? t('walletAdmin.actions.system') : `#${row.operator_id}`
+              row.operator_id === 0
+                ? t('walletAdmin.actions.system')
+                : row.operator_name || `#${row.operator_id}`
             )
         },
         {
@@ -157,16 +167,32 @@
 
   const handleSearch = () => {
     Object.assign(searchParams, {
-      user_id: filterForm.user_id ? Number(filterForm.user_id) : undefined,
+      user_id: filterForm.user_id,
+      user_keyword: filterForm.user_keyword || undefined,
       ref_type: filterForm.ref_type || undefined
     })
     getData()
   }
 
   const filterByUser = (userId: number) => {
-    filterForm.user_id = String(userId)
+    filterForm.user_id = userId
+    filterForm.user_keyword = ''
     handleSearch()
   }
 
   defineExpose({ filterByUser })
 </script>
+
+<style scoped lang="scss">
+  .wallet-transactions-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
+    :deep(.art-table) {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+</style>

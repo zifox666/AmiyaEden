@@ -8,9 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // slotCategory 将 HiSlot0, HiSlot1 等 flagName 归类为 "HiSlot"
@@ -27,6 +30,7 @@ type SrpService struct {
 	sdeRepo   *repository.SdeRepository
 	kmRepo    *repository.KillmailRepository
 	ssoSvc    *EveSSOService
+	walletSvc *SysWalletService
 }
 
 func NewSrpService() *SrpService {
@@ -38,8 +42,14 @@ func NewSrpService() *SrpService {
 		sdeRepo:   repository.NewSdeRepository(),
 		kmRepo:    repository.NewKillmailRepository(),
 		ssoSvc:    NewEveSSOService(),
+		walletSvc: NewSysWalletService(),
 	}
 }
+
+const (
+	SrpPayoutModeManualTransfer = "manual_transfer"
+	SrpPayoutModeFuxiCoin       = "fuxi_coin"
+)
 
 // ─────────────────────────────────────────────
 //  KM 解析辅助
@@ -546,13 +556,115 @@ func (s *SrpService) RunFleetAutoApproval(reviewerID uint, fleetID string) (*Run
 //  发放
 // ─────────────────────────────────────────────
 
+type SrpBatchFuxiPayoutSummary struct {
+	ApplicationCount int     `json:"application_count"`
+	UserCount        int     `json:"user_count"`
+	TotalISKAmount   float64 `json:"total_isk_amount"`
+	TotalFuxiCoin    float64 `json:"total_fuxi_coin"`
+}
+
+func normalizeSrpPayoutMode(mode string) string {
+	switch mode {
+	case "", SrpPayoutModeManualTransfer:
+		return SrpPayoutModeManualTransfer
+	case SrpPayoutModeFuxiCoin:
+		return SrpPayoutModeFuxiCoin
+	default:
+		return ""
+	}
+}
+
+func convertSrpAmountToFuxiCoin(iskAmount float64) float64 {
+	return math.Round((iskAmount/1_000_000)*100) / 100
+}
+
+func buildSrpPayoutWalletReason(app *model.SrpApplication, fleetTitle string) string {
+	shipName := strings.TrimSpace(app.ShipName)
+	if shipName == "" {
+		shipName = fmt.Sprintf("TypeID:%d", app.ShipTypeID)
+	}
+	reason := fmt.Sprintf("SRP#%d %s", app.ID, shipName)
+	if strings.TrimSpace(fleetTitle) != "" {
+		reason = fmt.Sprintf("%s | %s", reason, strings.TrimSpace(fleetTitle))
+	}
+	return reason
+}
+
+func buildSrpPayoutWalletRefID(appID uint) string {
+	return fmt.Sprintf("srp:%d", appID)
+}
+
+func markSrpApplicationPaid(app *model.SrpApplication, payerID uint, paidAt time.Time) {
+	app.PayoutStatus = model.SrpPayoutPaid
+	app.PaidBy = &payerID
+	app.PaidAt = &paidAt
+}
+
+func (s *SrpService) resolveSrpPayoutShipName(app *model.SrpApplication) string {
+	if strings.TrimSpace(app.ShipName) != "" {
+		return strings.TrimSpace(app.ShipName)
+	}
+	names, err := s.sdeRepo.GetNames(map[string][]int{"type": {int(app.ShipTypeID)}}, "zh")
+	if err != nil {
+		return fmt.Sprintf("TypeID:%d", app.ShipTypeID)
+	}
+	if name := strings.TrimSpace(names["type"][int(app.ShipTypeID)]); name != "" {
+		return name
+	}
+	return fmt.Sprintf("TypeID:%d", app.ShipTypeID)
+}
+
+func (s *SrpService) resolveSrpPayoutFleetTitle(app *model.SrpApplication) string {
+	if app.FleetID == nil || *app.FleetID == "" {
+		return ""
+	}
+	fleet, err := s.fleetRepo.GetByID(*app.FleetID)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(fleet.Title)
+}
+
+func (s *SrpService) buildSrpWalletPayoutData(app *model.SrpApplication) (float64, string, string, error) {
+	fuxiCoinAmount := convertSrpAmountToFuxiCoin(app.FinalAmount)
+	if fuxiCoinAmount <= 0 {
+		return 0, "", "", errors.New("最终金额必须大于 0 才能发放伏羲币")
+	}
+
+	appCopy := *app
+	appCopy.ShipName = s.resolveSrpPayoutShipName(app)
+	fleetTitle := s.resolveSrpPayoutFleetTitle(app)
+	reason := buildSrpPayoutWalletReason(&appCopy, fleetTitle)
+
+	return fuxiCoinAmount, reason, buildSrpPayoutWalletRefID(app.ID), nil
+}
+
+func (s *SrpService) payoutApplicationWithFuxiCoinTx(tx *gorm.DB, payerID uint, app *model.SrpApplication) error {
+	fuxiCoinAmount, reason, refID, err := s.buildSrpWalletPayoutData(app)
+	if err != nil {
+		return err
+	}
+	if err := s.walletSvc.ApplyWalletDeltaByOperatorTx(tx, app.UserID, payerID, fuxiCoinAmount, reason, model.WalletRefSrpPayout, refID); err != nil {
+		return err
+	}
+	paidAt := time.Now()
+	markSrpApplicationPaid(app, payerID, paidAt)
+	return s.repo.UpdateApplicationTx(tx, app)
+}
+
 // PayoutRequest 发放请求
 type SrpPayoutRequest struct {
 	FinalAmount float64 `json:"final_amount"` // 允许最终覆盖金额（0=保持原值）
+	Mode        string  `json:"mode"`         // manual_transfer / fuxi_coin
 }
 
 // Payout 发放补损（srp/admin 可操作）
 func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, error) {
+	mode := normalizeSrpPayoutMode(req.Mode)
+	if mode == "" {
+		return nil, errors.New("无效的发放方式")
+	}
+
 	app, err := s.repo.GetApplicationByID(appID)
 	if err != nil {
 		return nil, errors.New("申请不存在")
@@ -566,10 +678,36 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 	if req.FinalAmount > 0 {
 		app.FinalAmount = req.FinalAmount
 	}
+
+	if mode == SrpPayoutModeFuxiCoin {
+		err := global.DB.Transaction(func(tx *gorm.DB) error {
+			lockedApp, lockErr := s.repo.GetApplicationByIDForUpdate(tx, appID)
+			if lockErr != nil {
+				return errors.New("申请不存在")
+			}
+			if lockedApp.ReviewStatus != model.SrpReviewApproved {
+				return errors.New("申请未被批准，无法发放")
+			}
+			if lockedApp.PayoutStatus == model.SrpPayoutPaid {
+				return errors.New("该申请已发放，不能重复操作")
+			}
+			if req.FinalAmount > 0 {
+				lockedApp.FinalAmount = req.FinalAmount
+			}
+			if err := s.payoutApplicationWithFuxiCoinTx(tx, payerID, lockedApp); err != nil {
+				return err
+			}
+			*app = *lockedApp
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		return app, nil
+	}
+
 	now := time.Now()
-	app.PayoutStatus = model.SrpPayoutPaid
-	app.PaidBy = &payerID
-	app.PaidAt = &now
+	markSrpApplicationPaid(app, payerID, now)
 
 	if err := s.repo.UpdateApplication(app); err != nil {
 		return nil, err
@@ -597,6 +735,47 @@ func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayo
 		return nil, err
 	}
 	return &enriched[0], nil
+}
+
+// BatchPayoutAsFuxiCoin 将全部已批准未发放的申请换算为伏羲币并发放到系统钱包
+func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, error) {
+	summary := &SrpBatchFuxiPayoutSummary{}
+	userIDs := make(map[uint]struct{})
+
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
+		apps, err := s.repo.ListApprovedUnpaidApplicationsForUpdate(tx)
+		if err != nil {
+			return err
+		}
+		if len(apps) == 0 {
+			return errors.New("暂无可发放的 SRP 申请")
+		}
+
+		for i := range apps {
+			app := &apps[i]
+			fuxiCoinAmount, _, _, buildErr := s.buildSrpWalletPayoutData(app)
+			if buildErr != nil {
+				return buildErr
+			}
+			if err := s.payoutApplicationWithFuxiCoinTx(tx, payerID, app); err != nil {
+				return err
+			}
+
+			summary.ApplicationCount++
+			summary.TotalISKAmount += app.FinalAmount
+			summary.TotalFuxiCoin += fuxiCoinAmount
+			userIDs[app.UserID] = struct{}{}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	summary.UserCount = len(userIDs)
+	summary.TotalISKAmount = math.Round(summary.TotalISKAmount*100) / 100
+	summary.TotalFuxiCoin = math.Round(summary.TotalFuxiCoin*100) / 100
+	return summary, nil
 }
 
 // ─────────────────────────────────────────────

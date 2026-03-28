@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-23
+last_reviewed: 2026-03-28
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/srp.go
@@ -26,6 +26,7 @@ source_of_truth:
 - 管理端审核列表按「待处理 / 发放记录」tab 分组，并将 tab 条件传给 `/srp/applications`
 - 单条发放补损，`admin` 也可操作
 - 管理端批量发放补损汇总、按用户批量发放补损，`admin` 也可操作
+- 管理端待处理 tab 支持切换「伏羲币补损 / 手动打钱」两种发放模式，默认使用伏羲币补损
 
 ## 入口
 
@@ -46,6 +47,7 @@ source_of_truth:
 - `/api/v1/srp/open-info-window`
 - `/api/v1/srp/applications/auto-approve`
 - `/api/v1/srp/applications/batch-payout-summary`
+- `/api/v1/srp/applications/fuxi-payout`
 - `/api/v1/srp/applications/:id/review`
 - `/api/v1/srp/applications/:id/payout`
 - `/api/v1/srp/applications/users/:user_id/payout`
@@ -123,6 +125,9 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 - 不能重复发放（`payout_status` 已为 `paid` 则拒绝）
 - 发放时可以最终覆盖 `final_amount`
 - 记录 `paid_by`、`paid_at`
+- 当模式为 `manual_transfer`（手动打钱）时，仅将申请标记为已发放，保留当前人工线下打款流程
+- 当模式为 `fuxi_coin`（伏羲币补损）时，将 `final_amount` 按 `1,000,000 ISK : 1 伏羲币` 换算，四舍五入保留 `2` 位小数，写入系统钱包 `ref_type = srp_payout` 流水，并将申请结案
+- 伏羲币流水 `reason` 包含 SRP 申请 ID、舰船名，以及存在时的舰队标题
 
 **按用户批量发放**（`SrpService.BatchPayoutByUser`）：
 
@@ -130,11 +135,18 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 - 使用数据库事务 + `SELECT FOR UPDATE` 防止并发发放
 - 若发放过程中待发放集合发生变化，事务回滚并要求刷新重试
 
+**伏羲币批量发放**（`SrpService.BatchPayoutAsFuxiCoin`）：
+
+- 处理全部“已批准且未发放”的申请，不再按用户逐个确认
+- 对每条申请分别换算伏羲币金额、写系统钱包流水、再标记 SRP 为已发放
+- 整体使用数据库事务，任一申请发放失败则整批回滚
+
 ### 管理端列表
 
 - 申请列表支持按 tab 分组：`pending`（待处理：submitted/approved + notpaid）和 `history`（发放记录：paid 或 rejected）
 - 列表结果附带舰队标题、FC 名称、用户昵称等关联信息
 - 批量发放汇总按用户聚合，展示主角色名、昵称、总金额、申请数量
+- 待处理 tab 的发放方式单选默认选中「伏羲币补损」；切到「手动打钱」后，顶部“批量发放”和行内“发放”恢复旧的人工打款面板流程
 
 ### KM 查询
 

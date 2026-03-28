@@ -202,6 +202,7 @@ source_of_truth:
 | PUT | `/srp/applications/:id/review` | 审核申请 | `RequireRole(srp, fc, admin)` |
 | PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequireRole(srp, admin)` |
 | GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequireRole(srp, admin)` |
+| PUT | `/srp/applications/fuxi-payout` | 将全部已批准未发放的申请按 1,000,000 ISK : 1 伏羲币批量发放并结案 | `RequireRole(srp, admin)` |
 | PUT | `/srp/applications/:id/payout` | 发放补损 | `RequireRole(srp, admin)` |
 | PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequireRole(srp, admin)` |
 

@@ -26,6 +26,8 @@ type WalletWithCharacter struct {
 type TransactionWithCharacter struct {
 	WalletTransaction
 	CharacterName string `json:"character_name"`
+	Nickname      string `json:"nickname"`
+	OperatorName  string `json:"operator_name"`
 }
 
 // LogWithCharacter 钱包操作日志 + 操作人/目标用户角色名

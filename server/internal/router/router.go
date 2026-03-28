@@ -255,6 +255,7 @@ func RegisterRoutes(r *gin.Engine) {
 		srp.PUT("/applications/:id/review", reviewSRP, srpH.ReviewApplication)
 		srp.PUT("/applications/auto-approve", payoutSRP, srpH.RunFleetAutoApproval)
 		srp.GET("/applications/batch-payout-summary", payoutSRP, srpH.ListBatchPayoutSummary)
+		srp.PUT("/applications/fuxi-payout", payoutSRP, srpH.BatchPayoutAsFuxiCoin)
 		srp.PUT("/applications/:id/payout", payoutSRP, srpH.Payout)
 		srp.PUT("/applications/users/:user_id/payout", payoutSRP, srpH.BatchPayoutByUser)
 	}

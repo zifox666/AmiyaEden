@@ -166,3 +166,33 @@
     }
   }
 </script>
+
+<style scoped lang="scss">
+  .wallet-admin-page {
+    :deep(.el-card__body) {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    :deep(.el-tabs) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    :deep(.el-tabs__content) {
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    :deep(.el-tab-pane) {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+  }
+</style>

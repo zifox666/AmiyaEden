@@ -122,10 +122,11 @@ func (h *SysWalletHandler) AdminAdjust(c *gin.Context) {
 
 // adminTransactionListRequest 管理员查询流水请求
 type adminTransactionListRequest struct {
-	Current int    `json:"current"`
-	Size    int    `json:"size"`
-	UserID  *uint  `json:"user_id"`
-	RefType string `json:"ref_type"`
+	Current     int    `json:"current"`
+	Size        int    `json:"size"`
+	UserID      *uint  `json:"user_id"`
+	UserKeyword string `json:"user_keyword"`
+	RefType     string `json:"ref_type"`
 }
 
 // AdminListTransactions POST /system/wallet/transactions
@@ -138,8 +139,9 @@ func (h *SysWalletHandler) AdminListTransactions(c *gin.Context) {
 	}
 
 	filter := repository.WalletTransactionFilter{
-		UserID:  req.UserID,
-		RefType: req.RefType,
+		UserID:      req.UserID,
+		UserKeyword: req.UserKeyword,
+		RefType:     req.RefType,
 	}
 
 	records, total, err := h.svc.AdminListTransactions(req.Current, req.Size, filter)

@@ -36,6 +36,17 @@
           </ElSelect>
           <ElButton type="primary" @click="handleSearch">{{ $t('srp.manage.searchBtn') }}</ElButton>
           <ElButton @click="resetFilter">{{ $t('srp.manage.resetBtn') }}</ElButton>
+          <div v-if="activeTab === 'pending' && canPayout" class="flex items-center gap-2">
+            <span class="text-sm text-gray-500">{{ $t('srp.manage.payoutModeLabel') }}</span>
+            <ElRadioGroup v-model="payoutMode" size="small">
+              <ElRadioButton :value="'fuxi_coin'">
+                {{ $t('srp.manage.payoutModes.fuxiCoin') }}
+              </ElRadioButton>
+              <ElRadioButton :value="'manual_transfer'">
+                {{ $t('srp.manage.payoutModes.manualTransfer') }}
+              </ElRadioButton>
+            </ElRadioGroup>
+          </div>
         </div>
 
         <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
@@ -45,7 +56,7 @@
                 <ElButton type="primary" @click="handleAutoApprove">
                   {{ $t('srp.manage.autoApproveBtn') }}
                 </ElButton>
-                <ElButton type="warning" @click="openBatchPayoutDialog">
+                <ElButton type="warning" @click="handleBatchPayoutClick">
                   {{ $t('srp.manage.batchPayoutBtn') }}
                 </ElButton>
               </template>
@@ -338,7 +349,9 @@
     ElTableColumn,
     ElTabs,
     ElTabPane,
-    ElTooltip
+    ElTooltip,
+    ElRadioGroup,
+    ElRadioButton
   } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
@@ -349,6 +362,7 @@
     fetchApplicationList,
     runFleetAutoApproval,
     fetchBatchPayoutSummary,
+    batchPayoutAsFuxiCoin,
     reviewApplication,
     batchPayoutByUser,
     payoutApplication,
@@ -383,6 +397,7 @@
   }
 
   const activeTab = ref('pending')
+  const payoutMode = ref<Api.Srp.PayoutMode>('fuxi_coin')
   const filter = reactive({ review_status: '', fleet_id: '' })
 
   type SrpApp = Api.Srp.Application
@@ -596,7 +611,7 @@
                   h(ArtButtonTable, {
                     label: t('srp.manage.payoutBtn'),
                     elType: 'primary',
-                    onClick: () => openPayoutDialog(row)
+                    onClick: () => handlePayoutAction(row)
                   })
                 )
               }
@@ -766,17 +781,60 @@
   const batchSummaryLoading = ref(false)
   const batchPayoutLoadingUserId = ref<number | null>(null)
 
+  const convertISKToFuxiCoin = (amount: number) =>
+    Math.round((Number(amount ?? 0) / 1_000_000) * 100) / 100
+
+  const formatFuxiCoin = (amount: number) => convertISKToFuxiCoin(amount).toFixed(2)
+
   const openPayoutDialog = (row: Api.Srp.Application) => {
     payoutTarget.value = row
     payoutDialogVisible.value = true
     handleOpenInfoWindow()
   }
 
+  const handlePayoutAction = async (row: Api.Srp.Application) => {
+    if (payoutMode.value === 'manual_transfer') {
+      openPayoutDialog(row)
+      return
+    }
+
+    try {
+      await ElMessageBox.confirm(
+        t('srp.manage.fuxiPayoutConfirmText', {
+          name: row.character_name,
+          ship: getName(row.ship_type_id, `TypeID: ${row.ship_type_id}`, 'type'),
+          amount: formatFuxiCoin(row.final_amount)
+        }),
+        t('srp.manage.fuxiPayoutConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('srp.manage.confirmPayout'),
+          cancelButtonText: t('srp.apply.cancelBtn')
+        }
+      )
+    } catch {
+      return
+    }
+
+    actionLoading.value = true
+    try {
+      await payoutApplication(row.id, { mode: 'fuxi_coin' })
+      ElMessage.success(
+        t('srp.manage.fuxiPayoutSuccess', { amount: formatFuxiCoin(row.final_amount) })
+      )
+      await refreshData()
+    } catch {
+      /* handled */
+    } finally {
+      actionLoading.value = false
+    }
+  }
+
   const handlePayout = async () => {
     if (!payoutTarget.value) return
     actionLoading.value = true
     try {
-      await payoutApplication(payoutTarget.value.id)
+      await payoutApplication(payoutTarget.value.id, { mode: 'manual_transfer' })
       ElMessage.success(t('srp.manage.payoutSuccess'))
       payoutDialogVisible.value = false
       refreshData()
@@ -801,6 +859,44 @@
   const openBatchPayoutDialog = async () => {
     batchPayoutDialogVisible.value = true
     await loadBatchPayoutSummary()
+  }
+
+  const handleBatchPayoutClick = async () => {
+    if (payoutMode.value === 'manual_transfer') {
+      await openBatchPayoutDialog()
+      return
+    }
+
+    try {
+      await ElMessageBox.confirm(
+        t('srp.manage.fuxiBatchPayoutConfirmText'),
+        t('srp.manage.fuxiBatchPayoutConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('srp.manage.confirmPayout'),
+          cancelButtonText: t('srp.apply.cancelBtn')
+        }
+      )
+    } catch {
+      return
+    }
+
+    batchSummaryLoading.value = true
+    try {
+      const result = await batchPayoutAsFuxiCoin()
+      ElMessage.success(
+        t('srp.manage.fuxiBatchPayoutSuccess', {
+          users: result.user_count,
+          applications: result.application_count,
+          amount: result.total_fuxi_coin.toFixed(2)
+        })
+      )
+      await refreshData()
+    } catch {
+      /* handled */
+    } finally {
+      batchSummaryLoading.value = false
+    }
   }
 
   const handleAutoApprove = async () => {

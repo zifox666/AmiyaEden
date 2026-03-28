@@ -267,6 +267,17 @@ func (h *SrpHandler) BatchPayoutByUser(c *gin.Context) {
 	response.OK(c, result)
 }
 
+// BatchPayoutAsFuxiCoin PUT /srp/applications/fuxi-payout
+func (h *SrpHandler) BatchPayoutAsFuxiCoin(c *gin.Context) {
+	payerID := middleware.GetUserID(c)
+	result, err := h.svc.BatchPayoutAsFuxiCoin(payerID)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, result)
+}
+
 // OpenInfoWindow POST /srp/open-info-window
 // 通过 ESI 在客户端打开角色信息窗口
 func (h *SrpHandler) OpenInfoWindow(c *gin.Context) {

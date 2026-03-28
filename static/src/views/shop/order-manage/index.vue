@@ -3,6 +3,9 @@
   <div class="shop-order-manage-page art-full-height">
     <ElTabs v-model="activeTab" class="art-table-card p-4">
       <ElTabPane :label="$t('shopAdmin.tabs.orders')" name="orders">
+        <ElAlert type="success" :closable="false" class="mb-4" show-icon>
+          <p>{{ $t('shopAdmin.tabs.ordersSubtitle') }}</p>
+        </ElAlert>
         <ManageOrders ref="ordersRef" />
       </ElTabPane>
 

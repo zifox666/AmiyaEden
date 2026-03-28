@@ -21,3 +21,24 @@ func TestBuildSystemWalletTransactionUsesDeltaAndSystemOperator(t *testing.T) {
 		t.Fatalf("unexpected transaction metadata: %+v", tx)
 	}
 }
+
+func TestNormalizeWalletLedgerPageSizeUsesLedgerStandardBounds(t *testing.T) {
+	tests := []struct {
+		name string
+		size int
+		want int
+	}{
+		{name: "defaults when zero", size: 0, want: 200},
+		{name: "keeps ledger default", size: 200, want: 200},
+		{name: "allows larger ledger page", size: 500, want: 500},
+		{name: "caps at thousand", size: 5000, want: 1000},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := normalizeWalletLedgerPageSize(tt.size); got != tt.want {
+				t.Fatalf("normalizeWalletLedgerPageSize(%d) = %d, want %d", tt.size, got, tt.want)
+			}
+		})
+	}
+}

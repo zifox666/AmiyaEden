@@ -99,6 +99,14 @@ export function payoutApplication(id: number, data?: Api.Srp.PayoutParams) {
   })
 }
 
+/** 以伏羲币批量发放全部已批准未发放的 SRP */
+export function batchPayoutAsFuxiCoin() {
+  return request.put<Api.Srp.BatchFuxiPayoutSummary>({
+    url: '/api/v1/srp/applications/fuxi-payout',
+    data: {}
+  })
+}
+
 /** 获取批量发放汇总 */
 export function fetchBatchPayoutSummary() {
   return request.get<Api.Srp.BatchPayoutSummary[]>({

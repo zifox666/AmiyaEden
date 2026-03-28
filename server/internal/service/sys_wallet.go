@@ -15,7 +15,7 @@ type SysWalletService struct {
 	repo *repository.SysWalletRepository
 }
 
-func buildSystemWalletTransaction(userID uint, delta float64, newBalance float64, reason, refType, refID string) *model.WalletTransaction {
+func buildWalletTransaction(userID uint, operatorID uint, delta float64, newBalance float64, reason, refType, refID string) *model.WalletTransaction {
 	return &model.WalletTransaction{
 		UserID:       userID,
 		Amount:       delta,
@@ -23,18 +23,22 @@ func buildSystemWalletTransaction(userID uint, delta float64, newBalance float64
 		RefType:      refType,
 		RefID:        refID,
 		BalanceAfter: newBalance,
-		OperatorID:   0, // 系统操作
+		OperatorID:   operatorID,
 	}
 }
 
-func (s *SysWalletService) applyWalletDeltaTx(tx *gorm.DB, userID uint, delta float64, newBalance float64, reason, refType, refID string) error {
+func buildSystemWalletTransaction(userID uint, delta float64, newBalance float64, reason, refType, refID string) *model.WalletTransaction {
+	return buildWalletTransaction(userID, 0, delta, newBalance, reason, refType, refID)
+}
+
+func (s *SysWalletService) applyWalletDeltaTx(tx *gorm.DB, userID uint, operatorID uint, delta float64, newBalance float64, reason, refType, refID string) error {
 	if err := s.repo.UpdateBalanceTx(tx, userID, newBalance); err != nil {
 		return err
 	}
 
 	return s.repo.CreateTransactionTx(
 		tx,
-		buildSystemWalletTransaction(userID, delta, newBalance, reason, refType, refID),
+		buildWalletTransaction(userID, operatorID, delta, newBalance, reason, refType, refID),
 	)
 }
 
@@ -185,9 +189,7 @@ func (s *SysWalletService) AdminListTransactions(page, pageSize int, filter repo
 	if page < 1 {
 		page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	pageSize = normalizeWalletLedgerPageSize(pageSize)
 	return s.repo.ListTransactionsWithCharacter(page, pageSize, filter)
 }
 
@@ -226,7 +228,7 @@ func (s *SysWalletService) CreditUser(userID uint, amount float64, reason, refTy
 		}
 	}()
 
-	if err := s.applyWalletDeltaTx(tx, userID, amount, newBalance, reason, refType, refID); err != nil {
+	if err := s.applyWalletDeltaTx(tx, userID, 0, amount, newBalance, reason, refType, refID); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -258,7 +260,7 @@ func (s *SysWalletService) DebitUser(userID uint, amount float64, reason, refTyp
 		}
 	}()
 
-	if err := s.applyWalletDeltaTx(tx, userID, -amount, newBalance, reason, refType, refID); err != nil {
+	if err := s.applyWalletDeltaTx(tx, userID, 0, -amount, newBalance, reason, refType, refID); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -268,6 +270,10 @@ func (s *SysWalletService) DebitUser(userID uint, amount float64, reason, refTyp
 
 // ApplyWalletDeltaTx 在已有事务中对用户钱包应用差量（正=充值，负=扣减），用于 PAP 重复发放去重
 func (s *SysWalletService) ApplyWalletDeltaTx(tx *gorm.DB, userID uint, delta float64, reason, refType, refID string) error {
+	return s.ApplyWalletDeltaByOperatorTx(tx, userID, 0, delta, reason, refType, refID)
+}
+
+func (s *SysWalletService) ApplyWalletDeltaByOperatorTx(tx *gorm.DB, userID uint, operatorID uint, delta float64, reason, refType, refID string) error {
 	if delta == 0 {
 		return nil
 	}
@@ -279,5 +285,15 @@ func (s *SysWalletService) ApplyWalletDeltaTx(tx *gorm.DB, userID uint, delta fl
 	if newBalance < 0 {
 		newBalance = 0
 	}
-	return s.applyWalletDeltaTx(tx, userID, delta, newBalance, reason, refType, refID)
+	return s.applyWalletDeltaTx(tx, userID, operatorID, delta, newBalance, reason, refType, refID)
+}
+
+func normalizeWalletLedgerPageSize(pageSize int) int {
+	if pageSize < 1 {
+		return 200
+	}
+	if pageSize > 1000 {
+		return 1000
+	}
+	return pageSize
 }

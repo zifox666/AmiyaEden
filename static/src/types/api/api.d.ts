@@ -773,6 +773,8 @@ declare namespace Api {
       operator_id: number
       created_at: string
       character_name?: string
+      nickname?: string
+      operator_name?: string
     }
 
     /** 钱包操作日志 */
@@ -803,6 +805,7 @@ declare namespace Api {
       current: number
       size: number
       user_id: number
+      user_keyword: string
       ref_type: string
     }>
 
@@ -818,6 +821,8 @@ declare namespace Api {
 
   /** SRP 补损管理类型 */
   namespace Srp {
+    type PayoutMode = 'manual_transfer' | 'fuxi_coin'
+
     /** 舰船标准补损金额 */
     interface ShipPrice {
       id: number
@@ -905,6 +910,7 @@ declare namespace Api {
     /** 发放请求 */
     interface PayoutParams {
       final_amount?: number
+      mode?: PayoutMode
     }
 
     /** 批量发放汇总项 */
@@ -915,6 +921,14 @@ declare namespace Api {
       main_character_name: string
       total_amount: number
       application_count: number
+    }
+
+    /** 伏羲币批量发放结果 */
+    interface BatchFuxiPayoutSummary {
+      application_count: number
+      user_count: number
+      total_isk_amount: number
+      total_fuxi_coin: number
     }
 
     /** 批量自动审批请求 */

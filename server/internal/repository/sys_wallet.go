@@ -3,6 +3,7 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -112,8 +113,31 @@ func (r *SysWalletRepository) CountTransactionsByUserRefTypeInRange(userID uint,
 
 // WalletTransactionFilter 流水查询筛选条件
 type WalletTransactionFilter struct {
-	UserID  *uint
-	RefType string
+	UserID      *uint
+	UserKeyword string
+	RefType     string
+}
+
+func applyWalletTransactionUserFilter(db *gorm.DB, userIDColumn string, refTypeColumn string, filter WalletTransactionFilter) *gorm.DB {
+	if filter.UserID != nil {
+		db = db.Where(userIDColumn+" = ?", *filter.UserID)
+	}
+	if strings.TrimSpace(filter.UserKeyword) != "" {
+		pattern := "%" + strings.ToLower(strings.TrimSpace(filter.UserKeyword)) + "%"
+		db = db.Where(
+			userIDColumn+` IN (
+				SELECT DISTINCT u.id
+				FROM "user" u
+				LEFT JOIN eve_character ec ON ec.user_id = u.id
+				WHERE LOWER(u.nickname) LIKE ? OR LOWER(ec.character_name) LIKE ?
+			)`,
+			pattern, pattern,
+		)
+	}
+	if filter.RefType != "" {
+		db = db.Where(refTypeColumn+" = ?", filter.RefType)
+	}
+	return db
 }
 
 // ListTransactions 分页查询钱包流水
@@ -122,13 +146,7 @@ func (r *SysWalletRepository) ListTransactions(page, pageSize int, filter Wallet
 	var total int64
 	offset := (page - 1) * pageSize
 
-	db := global.DB.Model(&model.WalletTransaction{})
-	if filter.UserID != nil {
-		db = db.Where("user_id = ?", *filter.UserID)
-	}
-	if filter.RefType != "" {
-		db = db.Where("ref_type = ?", filter.RefType)
-	}
+	db := applyWalletTransactionUserFilter(global.DB.Model(&model.WalletTransaction{}), "user_id", "ref_type", filter)
 
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -145,27 +163,24 @@ func (r *SysWalletRepository) ListTransactionsWithCharacter(page, pageSize int, 
 	var total int64
 	offset := (page - 1) * pageSize
 
-	countDB := global.DB.Model(&model.WalletTransaction{})
-	if filter.UserID != nil {
-		countDB = countDB.Where("user_id = ?", *filter.UserID)
-	}
-	if filter.RefType != "" {
-		countDB = countDB.Where("ref_type = ?", filter.RefType)
-	}
+	countDB := applyWalletTransactionUserFilter(global.DB.Model(&model.WalletTransaction{}), "user_id", "ref_type", filter)
 	if err := countDB.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	queryDB := global.DB.Table("wallet_transaction wt").
-		Select("wt.*, COALESCE(ec.character_name, '') AS character_name").
+		Select(`wt.*,
+			COALESCE(ec.character_name, '') AS character_name,
+			COALESCE(NULLIF(u.nickname, ''), ec.character_name, '') AS nickname,
+			CASE
+				WHEN wt.operator_id = 0 THEN ''
+				ELSE COALESCE(NULLIF(operator_u.nickname, ''), operator_ec.character_name, '')
+			END AS operator_name`).
 		Joins(`LEFT JOIN "user" u ON wt.user_id = u.id`).
-		Joins("LEFT JOIN eve_character ec ON u.primary_character_id = ec.character_id")
-	if filter.UserID != nil {
-		queryDB = queryDB.Where("wt.user_id = ?", *filter.UserID)
-	}
-	if filter.RefType != "" {
-		queryDB = queryDB.Where("wt.ref_type = ?", filter.RefType)
-	}
+		Joins("LEFT JOIN eve_character ec ON u.primary_character_id = ec.character_id").
+		Joins(`LEFT JOIN "user" operator_u ON wt.operator_id = operator_u.id`).
+		Joins("LEFT JOIN eve_character operator_ec ON operator_u.primary_character_id = operator_ec.character_id")
+	queryDB = applyWalletTransactionUserFilter(queryDB, "wt.user_id", "wt.ref_type", filter)
 	if err := queryDB.Order("wt.created_at DESC").Offset(offset).Limit(pageSize).Scan(&results).Error; err != nil {
 		return nil, 0, err
 	}
