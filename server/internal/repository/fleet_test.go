@@ -2,12 +2,12 @@ package repository
 
 import (
 	"amiya-eden/internal/model"
-	"database/sql"
 	"strings"
 	"sync"
 	"testing"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -16,10 +16,16 @@ import (
 func newDryRunPostgresDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	sqlDB, err := sql.Open("pgx", "postgres://amiya:test@127.0.0.1:5432/amiya_test")
+	connConfig, err := pgx.ParseConfig("")
 	if err != nil {
-		t.Fatalf("open sql db: %v", err)
+		t.Fatalf("parse pgx config: %v", err)
 	}
+	connConfig.Host = "127.0.0.1"
+	connConfig.Port = 5432
+	connConfig.Database = "amiya_test"
+	connConfig.User = "amiya"
+
+	sqlDB := stdlib.OpenDB(*connConfig)
 	t.Cleanup(func() {
 		_ = sqlDB.Close()
 	})

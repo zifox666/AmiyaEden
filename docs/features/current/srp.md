@@ -59,9 +59,10 @@ source_of_truth:
 - 其余个人能力默认要求 `Login`
 
 ## 计算 SRP 推荐金额
+
 SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算SRP申请时的推荐推荐金额和默认最终金额
 
-### 在创建申请前额外执行装配验证：
+### 在创建申请前额外执行装配验证
 
 #### 前置条件
 
@@ -79,8 +80,8 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
   - 多项不符时，`none` 优先于 `half`（即只要有一项是 `none`，推荐金额为0）
 
 #### 若不符合额外装配验证条件
-- 从全局舰船价格表按 `ship_type_id` 查询获得推荐金额，再无则为0
 
+- 从全局舰船价格表按 `ship_type_id` 查询获得推荐金额，再无则为0
 
 ## 手动 SRP
 
@@ -117,12 +118,14 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 分为单条发放和批量发放两种方式：
 
 **单条发放**（`SrpService.Payout`）：
+
 - 申请必须已批准（`review_status = approved`）
 - 不能重复发放（`payout_status` 已为 `paid` 则拒绝）
 - 发放时可以最终覆盖 `final_amount`
 - 记录 `paid_by`、`paid_at`
 
 **按用户批量发放**（`SrpService.BatchPayoutByUser`）：
+
 - 将某用户所有已批准且未发放的申请一次性标记为已发放
 - 使用数据库事务 + `SELECT FOR UPDATE` 防止并发发放
 - 若发放过程中待发放集合发生变化，事务回滚并要求刷新重试
@@ -139,14 +142,13 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 - **按舰队筛选 KM**（`GetFleetKillmails`）：返回当前用户在指定舰队时间范围内、且为舰队成员的角色的受害 KM
 - **KM 详情**（`GetKillmailDetail`）：返回 KM 装配详情，按槽位类别分组并合并同类物品，支持中英文名称
 
-
 ## 自动 SRP（Auto-SRP）
 
 自动 SRP 在舰队 PAP 结算后触发，由 `AutoSrpService.ProcessAutoSRP(fleetID)` 入口驱动。
 
 - **手动触发**： 允许SRP管理员针对选定的特定舰队ID为目标重新跑自动审批逻辑。
 
-### 前置条件
+### 自动 SRP 前置条件
 
 - 舰队的 `auto_srp_mode` 不为 `disabled`（当前支持 `submit_only` 和 `auto_approve`）
 - 舰队必须关联一个 `FleetConfigID`，该配置下有装配（fittings）定义
@@ -163,7 +165,6 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 - `auto_approve` 模式：验证通过的申请自动标记为 `approved`，备注”补损根据舰队的自动补损设置，已由系统自动批准。”
 - `submit_only` 模式：申请保持 `submitted` 状态，等待管理员手动审批
 - 不符合规则的配置和KM，依然允许成员手动自行提交补损申请，自动SRP机制会跳过这些KM
-
 
 ## 关键不变量
 

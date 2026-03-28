@@ -50,14 +50,14 @@ source_of_truth:
 订单只有三种状态：
 
 | 状态 | 含义 |
-|------|------|
+| --- | --- |
 | `requested` | 已下单，钱包已扣款，等待管理员发放 |
 | `delivered` | 管理员已发放 |
 | `rejected` | 管理员拒绝，钱包已退款 |
 
 ## 购买流程
 
-```
+```text
 用户点击购买
   → 校验商品上架、库存、限购、余额
   → 事务：扣减库存 + 创建订单（status=requested）
@@ -67,7 +67,7 @@ source_of_truth:
 
 管理员处理：
 
-```
+```text
 订单管理（待发放）
   → 发放：status=delivered；若为兑换码类商品则生成兑换码
   → 拒绝：退款（CreditUser）+ 恢复库存 + status=rejected

@@ -17,13 +17,13 @@ This standard governs import direction between layers in both backend and fronte
 
 ## Backend Dependency Direction
 
-```
+```text
 model → repository → service → handler → router/middleware
   ↑                                            ↑
   pkg/* (shared infrastructure)                bootstrap/
 ```
 
-### Rules
+### Backend Rules
 
 | Layer | May Import | Must Not Import |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ if err != nil || id > math.MaxUint32 {
 typedID := uint(id)
 ```
 
-### Common Violations
+### Backend Common Violations
 
 **Handler importing repository:**
 
@@ -97,11 +97,11 @@ import "amiya-eden/internal/service"
 
 ## Frontend Dependency Direction
 
-```
+```text
 types → api → hooks/store → components → views
 ```
 
-### Rules
+### Frontend Rules
 
 | Layer | May Import | Must Not Import |
 | --- | --- | --- |
@@ -112,7 +112,7 @@ types → api → hooks/store → components → views
 | `components/` | `types/`, `hooks/`, `store/`, other components | `views/`, `api/` directly (should go through hooks) |
 | `views/` | all layers above | should not be imported by others |
 
-### Common Violations
+### Frontend Common Violations
 
 **View calling fetch directly:**
 

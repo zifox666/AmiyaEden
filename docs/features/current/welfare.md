@@ -64,6 +64,7 @@ source_of_truth:
 ### 后端路由
 
 管理员端：
+
 - `POST /api/v1/system/welfare/list`
 - `POST /api/v1/system/welfare/add`
 - `POST /api/v1/system/welfare/edit`
@@ -73,6 +74,7 @@ source_of_truth:
 - `POST /api/v1/system/welfare/review` — 审批福利申请（发放/拒绝）
 
 用户端：
+
 - `POST /api/v1/welfare/eligible` — 获取可申请的福利列表
 - `POST /api/v1/welfare/apply` — 提交福利申请
 - `POST /api/v1/welfare/my-applications` — 查询我的申请记录
@@ -82,7 +84,7 @@ source_of_truth:
 
 - 军团福利导航栏要求 `Login`（guest 不可见）
 - 我的福利页面及用户端 `/welfare/*` 接口要求 `Login`
-- 福利审批页面要求 `welfare` 或 `admin` 
+- 福利审批页面要求 `welfare` 或 `admin`
 - 福利设置页面及后端 `/system/welfare/*` 接口要求 `admin`
 - `welfare` 角色（福利官）为系统默认角色，优先级 50
 

@@ -131,7 +131,7 @@ source_of_truth:
 
 ## Shop
 
-### User Side
+### Common User Side
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
@@ -145,7 +145,7 @@ source_of_truth:
 
 ## Newbro Support
 
-### User Side
+### Newbro User Side
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
@@ -169,7 +169,7 @@ source_of_truth:
 
 ## Welfare
 
-### User Side
+### Welfare User Side
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |

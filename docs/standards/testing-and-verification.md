@@ -19,7 +19,7 @@ Applies to backend, frontend, contract, repository, hook, handler, and service c
 ## Required Tool Versions
 
 | Tool | Version | How to install |
-|------|---------|----------------|
+| --- | --- | --- |
 | golangci-lint | v2.11.4 | `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.11.4` |
 | pnpm | 10.32.1 | `npm install -g pnpm@10.32.1` |
 | Node.js | 24 | see `.nvmrc` at repo root |

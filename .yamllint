@@ -1,0 +1,8 @@
+extends: default
+
+ignore: |
+  static/pnpm-lock.yaml
+
+rules:
+  document-start: disable
+  truthy: disable

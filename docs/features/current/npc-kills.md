@@ -19,7 +19,7 @@ source_of_truth:
 NPC 刷怪报表展示角色通过 PvE 活动获得的 NPC 来源收入，涵盖以下来源：
 
 | 收入来源 | wallet journal ref_type | 说明 |
-|---|---|---|
+| --- | --- | --- |
 | 标准刷怪悬赏 | `bounty_prizes` | 星域/星系 NPC 悬赏奖励，含血族入侵和深渊 Pochven 内容 |
 | ESS 分账 | `ess_escrow_transfer` | 零空 ESS（紧急安全容器）到期结算转账 |
 
@@ -104,7 +104,7 @@ POST /api/v1/system/npc-kills
 
 ### 个人报表 `NpcKillResponse`
 
-```
+```text
 summary    NpcKillSummary          总览统计
 by_npc     []NpcKillByNpc          按 NPC 统计（杀怪数降序）
 by_system  []NpcKillBySystem       按星系统计（总金额降序）
@@ -117,7 +117,7 @@ page_size  int
 
 ### 公司报表 `NpcKillCorpResponse`
 
-```
+```text
 summary    NpcKillSummary                  全员汇总总览
 members    []NpcKillCorpMemberSummary      按成员统计（实际收入降序）
 by_system  []NpcKillBySystem               全员按星系统计
@@ -129,7 +129,7 @@ trend      []NpcKillTrend                  全员按天趋势
 ### 总览（calcSummary）
 
 | 字段 | 计算方式 |
-|---|---|
+| --- | --- |
 | `total_bounty` | 所有 `bounty_prizes` 条目 `amount` 之和 |
 | `total_ess` | 所有 `ess_escrow_transfer` 条目 `amount` 之和 |
 | `total_tax` | 所有条目 `tax` 之和（通常为负数） |
@@ -145,7 +145,7 @@ trend      []NpcKillTrend                  全员按天趋势
 
 仅处理 `bounty_prizes` 条目，解析 `reason` 字段格式：
 
-```
+```text
 "npc_type_id: kill_count, npc_type_id: kill_count, ..."
 ```
 
@@ -163,7 +163,7 @@ trend      []NpcKillTrend                  全员按天趋势
 ## 流水明细字段
 
 | 字段 | 说明 |
-|---|---|
+| --- | --- |
 | `ref_type` | `bounty_prizes`（标准悬赏）或 `ess_escrow_transfer`（ESS 转账） |
 | `amount` | 本次收入金额（正数） |
 | `tax` | 扣税金额（通常为负数） |
