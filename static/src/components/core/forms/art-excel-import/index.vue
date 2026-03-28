@@ -15,32 +15,35 @@
 </template>
 
 <script setup lang="ts">
-  import * as XLSX from 'xlsx'
+  import ExcelJS from 'exceljs'
   import type { UploadFile } from 'element-plus'
 
   defineOptions({ name: 'ArtExcelImport' })
 
   // Excel 导入工具函数
   async function importExcel(file: File): Promise<Array<Record<string, unknown>>> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
+    const arrayBuffer = await file.arrayBuffer()
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.load(arrayBuffer)
 
-      reader.onload = (e) => {
-        try {
-          const data = e.target?.result
-          const workbook = XLSX.read(data, { type: 'array' })
-          const firstSheetName = workbook.SheetNames[0]
-          const worksheet = workbook.Sheets[firstSheetName]
-          const results = XLSX.utils.sheet_to_json(worksheet)
-          resolve(results as Array<Record<string, unknown>>)
-        } catch (error) {
-          reject(error)
-        }
-      }
-
-      reader.onerror = (error) => reject(error)
-      reader.readAsArrayBuffer(file)
+    const worksheet = workbook.worksheets[0]
+    const headers: string[] = []
+    worksheet.getRow(1).eachCell((cell) => {
+      headers.push(String(cell.value ?? ''))
     })
+
+    const results: Array<Record<string, unknown>> = []
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return
+      const rowData: Record<string, unknown> = {}
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const header = headers[colNumber - 1]
+        if (header) rowData[header] = cell.value
+      })
+      results.push(rowData)
+    })
+
+    return results
   }
 
   // 定义 emits

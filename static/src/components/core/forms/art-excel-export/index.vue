@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-  import * as XLSX from 'xlsx'
+  import ExcelJS from 'exceljs'
   import FileSaver from 'file-saver'
   import { ref, computed, nextTick } from 'vue'
   import { Loading } from '@element-plus/icons-vue'
@@ -210,7 +210,7 @@
   }
 
   /** 计算列宽度 */
-  const calculateColumnWidths = (data: Record<string, string>[]): XLSX.ColInfo[] => {
+  const calculateColumnWidths = (data: Record<string, string>[]): number[] => {
     if (data.length === 0) return []
 
     const sampleSize = Math.min(data.length, 100) // 只取前100行计算列宽
@@ -221,7 +221,7 @@
       const configWidth = Object.values(props.columns).find((col) => col.title === column)?.width
 
       if (configWidth) {
-        return { wch: configWidth }
+        return configWidth
       }
 
       // 自动计算列宽度
@@ -231,8 +231,7 @@
       )
 
       // 限制最小和最大宽度
-      const width = Math.min(Math.max(maxLength + 2, 8), 50)
-      return { wch: width }
+      return Math.min(Math.max(maxLength + 2, 8), 50)
     })
   }
 
@@ -250,45 +249,41 @@
       emit('export-progress', 30)
 
       // 创建工作簿
-      const workbook = XLSX.utils.book_new()
+      const workbook = new ExcelJS.Workbook()
 
       // 设置工作簿属性
       if (props.workbookOptions) {
-        workbook.Props = {
-          Title: filename,
-          Subject: '数据导出',
-          Author: props.workbookOptions.creator || 'Art Design Pro',
-          Manager: props.workbookOptions.lastModifiedBy || '',
-          Company: '系统导出',
-          Category: '数据',
-          Keywords: 'excel,export,data',
-          Comments: '由系统自动生成',
-          CreatedDate: props.workbookOptions.created || new Date(),
-          ModifiedDate: props.workbookOptions.modified || new Date()
-        }
+        workbook.creator = props.workbookOptions.creator || 'Art Design Pro'
+        workbook.lastModifiedBy = props.workbookOptions.lastModifiedBy || ''
+        workbook.created = props.workbookOptions.created || new Date()
+        workbook.modified = props.workbookOptions.modified || new Date()
       }
 
       emit('export-progress', 50)
 
       // 创建工作表
-      const worksheet = XLSX.utils.json_to_sheet(processedData)
+      const worksheet = workbook.addWorksheet(sheetName)
 
-      // 设置列宽度
-      worksheet['!cols'] = calculateColumnWidths(processedData)
+      // 设置列定义（含标题和宽度）
+      if (processedData.length > 0) {
+        const keys = Object.keys(processedData[0])
+        const widths = calculateColumnWidths(processedData)
+        worksheet.columns = keys.map((key, i) => ({
+          header: key,
+          key,
+          width: widths[i]
+        }))
+      }
+
+      // 添加数据行
+      processedData.forEach((row) => worksheet.addRow(row))
 
       emit('export-progress', 70)
-
-      // 添加工作表到工作簿
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
 
       emit('export-progress', 85)
 
       // 生成 Excel 文件
-      const excelBuffer = XLSX.write(workbook, {
-        bookType: 'xlsx',
-        type: 'array',
-        compression: true
-      })
+      const excelBuffer = await workbook.xlsx.writeBuffer()
 
       // 创建 Blob 并下载
       const blob = new Blob([excelBuffer], {
