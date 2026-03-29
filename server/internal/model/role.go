@@ -30,21 +30,22 @@ func (UserRole) TableName() string { return "user_role" }
 type RoleDefinition struct {
 	Code        string `json:"code"`
 	Name        string `json:"name"`
+	I18nKey     string `json:"i18nKey"`
 	Description string `json:"description"`
 	Sort        int    `json:"sort"`
 }
 
 // SystemRoleDefinitions 系统角色定义列表（按 Sort 降序排列）
 var SystemRoleDefinitions = []RoleDefinition{
-	{Code: RoleSuperAdmin, Name: "超级管理员", Description: "拥有系统全部权限", Sort: 100},
-	{Code: RoleAdmin, Name: "管理员", Description: "系统管理权限", Sort: 90},
-	{Code: RoleSeniorFC, Name: "资深FC", Description: "资深舰队指挥，管理舰队配置与技能计划", Sort: 85},
-	{Code: RoleFC, Name: "FC", Description: "舰队指挥，管理舰队与活动", Sort: 70},
-	{Code: RoleSRP, Name: "补损官", Description: "补损审批与舰船价格管理", Sort: 60},
-	{Code: RoleWelfare, Name: "福利官", Description: "军团福利审批与管理", Sort: 50},
-	{Code: RoleCaptain, Name: "队长", Description: "新人帮扶队长视图权限", Sort: 30},
-	{Code: RoleUser, Name: "用户", Description: "已认证用户，基本访问权限", Sort: 10},
-	{Code: RoleGuest, Name: "访客", Description: "访客，只读公开信息", Sort: 0},
+	{Code: RoleSuperAdmin, Name: "Super Admin", I18nKey: "roles.super_admin", Description: "Has full system permissions", Sort: 100},
+	{Code: RoleAdmin, Name: "Admin", I18nKey: "roles.admin", Description: "System administration permissions", Sort: 90},
+	{Code: RoleSeniorFC, Name: "Senior FC", I18nKey: "roles.senior_fc", Description: "Senior Fleet Commander, manages fleet configurations and skill plans", Sort: 85},
+	{Code: RoleFC, Name: "FC", I18nKey: "roles.fc", Description: "Fleet Commander, manages fleets and operations", Sort: 70},
+	{Code: RoleSRP, Name: "SRP Officer", I18nKey: "roles.srp", Description: "SRP approval and ship price management", Sort: 60},
+	{Code: RoleWelfare, Name: "Welfare Officer", I18nKey: "roles.welfare", Description: "Corporation welfare approval and management", Sort: 50},
+	{Code: RoleCaptain, Name: "Captain", I18nKey: "roles.captain", Description: "Newbro mentor captain view permissions", Sort: 30},
+	{Code: RoleUser, Name: "Verified User", I18nKey: "roles.user", Description: "Authenticated user with basic access", Sort: 10},
+	{Code: RoleGuest, Name: "Guest", I18nKey: "roles.guest", Description: "Guest, read-only access to public information", Sort: 0},
 }
 
 // roleDefinitionMap 角色编码到定义的映射（内部使用）
