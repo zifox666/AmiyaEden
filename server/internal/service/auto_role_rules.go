@@ -42,11 +42,6 @@ func isDirectorCorpRole(name string) bool {
 	return strings.EqualFold(strings.TrimSpace(name), "Director")
 }
 
-func hasDirectorCorpRole(corpRoles map[string]struct{}) bool {
-	for role := range corpRoles {
-		if isDirectorCorpRole(role) {
-			return true
-		}
-	}
-	return false
+func shouldAutoAssignAdminFromDirector(corporationID int64, corpRole string) bool {
+	return corporationID == model.SystemCorporationID && isDirectorCorpRole(corpRole)
 }

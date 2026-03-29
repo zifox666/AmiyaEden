@@ -84,39 +84,42 @@ func TestShouldAutoPromoteGuestToUser(t *testing.T) {
 	})
 }
 
-func TestHasDirectorCorpRole(t *testing.T) {
+func TestShouldAutoAssignAdminFromDirector(t *testing.T) {
 	tests := []struct {
-		name      string
-		corpRoles map[string]struct{}
-		want      bool
+		name          string
+		corporationID int64
+		corpRole      string
+		want          bool
 	}{
 		{
-			name: "exact director role",
-			corpRoles: map[string]struct{}{
-				"Director": {},
-			},
-			want: true,
+			name:          "director in required corporation",
+			corporationID: model.SystemCorporationID,
+			corpRole:      "Director",
+			want:          true,
 		},
 		{
-			name: "case insensitive director role",
-			corpRoles: map[string]struct{}{
-				"director": {},
-			},
-			want: true,
+			name:          "case insensitive director role in required corporation",
+			corporationID: model.SystemCorporationID,
+			corpRole:      "director",
+			want:          true,
 		},
 		{
-			name: "other corp roles only",
-			corpRoles: map[string]struct{}{
-				"Accountant":      {},
-				"Station_Manager": {},
-			},
-			want: false,
+			name:          "director in non required corporation",
+			corporationID: 98000001,
+			corpRole:      "Director",
+			want:          false,
+		},
+		{
+			name:          "non director role in required corporation",
+			corporationID: model.SystemCorporationID,
+			corpRole:      "Accountant",
+			want:          false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := hasDirectorCorpRole(tt.corpRoles); got != tt.want {
+			if got := shouldAutoAssignAdminFromDirector(tt.corporationID, tt.corpRole); got != tt.want {
 				t.Fatalf("expected %v, got %v", tt.want, got)
 			}
 		})

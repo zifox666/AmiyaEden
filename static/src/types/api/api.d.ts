@@ -2111,11 +2111,6 @@ declare namespace Api {
       site_title: string
     }
 
-    interface UpdateBasicConfigParams {
-      corp_id?: number
-      site_title?: string
-    }
-
     interface AllowCorporationsConfig {
       allow_corporations: number[]
     }

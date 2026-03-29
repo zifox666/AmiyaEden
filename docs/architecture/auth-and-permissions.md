@@ -195,9 +195,9 @@ source_of_truth:
 
 - 当前产品不是用户名 / 密码登录系统
 - 角色编码以代码常量为准，不以文档中文称呼为准
-- `allow_corporations` 的基线准入当前以主角色军团为准，不再按任意绑定角色放行；当列表为空时，当前默认回退到伏羲军团 Fuxi Legion（`98185110`）
+- `allow_corporations` 的基线准入当前以主角色军团为准，不再按任意绑定角色放行；运行时列表总会强制包含代码常量中的伏羲军团 Fuxi Legion（`98185110`）
 - 非 `allow_corporations` 军团角色的 ESI corporation role 信号当前应被整体忽略，不参与权限判断或衍生任务判定
-- 自动补 `admin` 的内置快捷规则当前仅接受允许军团中的 ESI corp role `Director`
+- 自动补 `admin` 的内置快捷规则当前仅接受伏羲军团 Fuxi Legion（`98185110`）中的 ESI corp role `Director`
 - corp title 只参与显式 title mapping，不会因为标题名为 `Director` 就自动抬升为 `admin`
 - `super_admin` 仅通过配置文件（`config.yaml` 的 `app.super_admins`）管理，不可通过任何 API 或 UI 授予、修改或撤销
 - `super_admin` 用户不可通过 API 删除
@@ -217,7 +217,8 @@ source_of_truth:
 因此：
 
 - 真实判断输入来自 `eve_character_corp_role`
-- 当 `allow_corporations` 已配置时，非允许军团角色不会保留 `eve_character_corp_role` 快照供后续判断
+- 当角色不在 `allow_corporations` 中时，不会保留 `eve_character_corp_role` 快照供后续判断
+- 即使某个军团被加入 `allow_corporations`，也只有伏羲军团 Fuxi Legion（`98185110`）的 `Director` 能触发内置 `admin` 快捷规则
 - `Director` 只是 corp title 名称时，不应被当作管理员快捷信号
 - corp title 仍然可以通过 `esi_title_mapping` 参与显式映射，但那是配置行为，不是内置特判
 

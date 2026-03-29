@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { fetchBasicConfig, updateBasicConfig } from '@/api/sys-config'
+import { SYSTEM_IDENTITY } from '@/constants/system-identity'
 
 export const useSysConfigStore = defineStore(
   'sysConfig',
   () => {
     const config = ref<Api.SysConfig.BasicConfig>({
-      corp_id: 1,
-      site_title: 'Amiya eden'
+      corp_id: SYSTEM_IDENTITY.corporationId,
+      site_title: SYSTEM_IDENTITY.displayName
     })
 
     const loading = ref(false)
@@ -18,14 +18,19 @@ export const useSysConfigStore = defineStore(
     )
 
     const siteTitle = computed(() => config.value.site_title)
+    const hasCanonicalIdentity = computed(
+      () =>
+        config.value.corp_id === SYSTEM_IDENTITY.corporationId &&
+        config.value.site_title === SYSTEM_IDENTITY.displayName
+    )
 
     async function loadConfig() {
       loading.value = true
       try {
-        const res = await fetchBasicConfig()
-        config.value = res
-      } catch (error) {
-        console.error('Failed to load sys config:', error)
+        config.value = {
+          corp_id: SYSTEM_IDENTITY.corporationId,
+          site_title: SYSTEM_IDENTITY.displayName
+        }
       } finally {
         loaded.value = true
         loading.value = false
@@ -33,13 +38,9 @@ export const useSysConfigStore = defineStore(
     }
 
     async function ensureLoaded() {
-      if (loaded.value || loading.value) return
+      if (loading.value) return
+      if (loaded.value && hasCanonicalIdentity.value) return
       await loadConfig()
-    }
-
-    async function updateConfig(data: Api.SysConfig.UpdateBasicConfigParams) {
-      await updateBasicConfig(data)
-      Object.assign(config.value, data)
     }
 
     return {
@@ -49,8 +50,7 @@ export const useSysConfigStore = defineStore(
       loading,
       loaded,
       loadConfig,
-      ensureLoaded,
-      updateConfig
+      ensureLoaded
     }
   },
   {

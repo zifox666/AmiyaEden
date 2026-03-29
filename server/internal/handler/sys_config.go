@@ -5,7 +5,6 @@ import (
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/utils"
 	"amiya-eden/pkg/response"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,53 +19,8 @@ func NewSysConfigHandler() *SysConfigHandler {
 	}
 }
 
-type BasicConfigResponse struct {
-	CorpID    int64  `json:"corp_id"`
-	SiteTitle string `json:"site_title"`
-}
-
-type UpdateBasicConfigRequest struct {
-	CorpID    *int64  `json:"corp_id"`
-	SiteTitle *string `json:"site_title"`
-}
-
 func (h *SysConfigHandler) GetBasicConfig(c *gin.Context) {
-	defaultCorpID := strconv.FormatInt(model.SysConfigDefaultCorpID, 10)
-	corpIDStr, _ := h.repo.Get(model.SysConfigCorpID, defaultCorpID)
-	corpID, err := strconv.ParseInt(corpIDStr, 10, 64)
-	if err != nil {
-		corpID = model.SysConfigDefaultCorpID
-	}
-	siteTitle, _ := h.repo.Get(model.SysConfigSiteTitle, model.SysConfigDefaultSiteTitle)
-
-	response.OK(c, BasicConfigResponse{
-		CorpID:    corpID,
-		SiteTitle: siteTitle,
-	})
-}
-
-func (h *SysConfigHandler) UpdateBasicConfig(c *gin.Context) {
-	var req UpdateBasicConfigRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.CodeParamError, "请求参数错误")
-		return
-	}
-
-	if req.CorpID != nil {
-		if err := h.repo.Set(model.SysConfigCorpID, strconv.FormatInt(*req.CorpID, 10), "军团ID"); err != nil {
-			response.Fail(c, response.CodeBizError, "更新军团ID失败")
-			return
-		}
-	}
-
-	if req.SiteTitle != nil {
-		if err := h.repo.Set(model.SysConfigSiteTitle, *req.SiteTitle, "网站标题"); err != nil {
-			response.Fail(c, response.CodeBizError, "更新网站标题失败")
-			return
-		}
-	}
-
-	response.OK(c, nil)
+	response.OK(c, model.DefaultSystemIdentity())
 }
 
 // SDEConfigResponse SDE 配置响应
@@ -135,9 +89,8 @@ type UpdateAllowCorporationsRequest struct {
 }
 
 func (h *SysConfigHandler) GetAllowCorporations(c *gin.Context) {
-	allowCorps, _ := h.repo.GetInt64Slice(model.SysConfigAllowCorporations, []int64{})
 	response.OK(c, AllowCorporationsResponse{
-		AllowCorporations: allowCorps,
+		AllowCorporations: utils.GetAllowCorporations(),
 	})
 }
 
@@ -147,8 +100,13 @@ func (h *SysConfigHandler) UpdateAllowCorporations(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
+	if err := utils.ValidateAllowCorporations(req.AllowCorporations); err != nil {
+		response.Fail(c, response.CodeParamError, "军团 ID 必须为正整数")
+		return
+	}
 
-	if err := h.repo.SetInt64Slice(model.SysConfigAllowCorporations, req.AllowCorporations, "允许访问的公司 ID 列表"); err != nil {
+	normalizedAllowCorporations := utils.NormalizeAllowCorporations(req.AllowCorporations)
+	if err := h.repo.SetInt64Slice(model.SysConfigAllowCorporations, normalizedAllowCorporations, "允许访问的公司 ID 列表"); err != nil {
 		response.Fail(c, response.CodeBizError, "更新允许的军团列表失败")
 		return
 	}

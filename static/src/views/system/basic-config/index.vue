@@ -3,44 +3,6 @@
   <div class="basic-config-page">
     <ElCard shadow="never">
       <template #header>
-        <h2 class="section-title">{{ $t('system.basicConfig.title') }}</h2>
-      </template>
-
-      <ElForm
-        ref="formRef"
-        :model="form"
-        label-width="120px"
-        style="max-width: 680px"
-        v-loading="loadingConfig"
-      >
-        <ElFormItem :label="$t('system.basicConfig.corpId')" prop="corp_id">
-          <ElInputNumber
-            v-model="form.corp_id"
-            :min="1"
-            :controls="false"
-            style="width: 220px"
-            :placeholder="$t('system.basicConfig.corpIdPlaceholder')"
-          />
-        </ElFormItem>
-
-        <ElFormItem :label="$t('system.basicConfig.siteTitle')" prop="site_title">
-          <ElInput
-            v-model="form.site_title"
-            clearable
-            :placeholder="$t('system.basicConfig.siteTitlePlaceholder')"
-          />
-        </ElFormItem>
-
-        <ElFormItem>
-          <ElButton type="primary" :loading="saving" @click="handleSave">
-            {{ $t('system.basicConfig.save') }}
-          </ElButton>
-        </ElFormItem>
-      </ElForm>
-    </ElCard>
-
-    <ElCard shadow="never" style="margin-top: 16px">
-      <template #header>
         <h2 class="section-title">{{ $t('system.basicConfig.allowCorporations') }}</h2>
       </template>
 
@@ -61,7 +23,9 @@
             clearable
             :placeholder="$t('system.basicConfig.allowCorporationsPlaceholder')"
           />
-          <div class="form-hint">{{ $t('system.basicConfig.allowCorporationsHint') }}</div>
+          <div class="form-hint">
+            {{ $t('system.basicConfig.allowCorporationsHint', SYSTEM_IDENTITY_I18N) }}
+          </div>
         </ElFormItem>
 
         <ElFormItem>
@@ -123,39 +87,23 @@
 
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
-  import {
-    ElCard,
-    ElForm,
-    ElFormItem,
-    ElInput,
-    ElInputNumber,
-    ElButton,
-    ElMessage
-  } from 'element-plus'
-  import { useSysConfigStore } from '@/store/modules/sys-config'
+  import { ElCard, ElForm, ElFormItem, ElInput, ElButton, ElMessage } from 'element-plus'
   import {
     fetchSDEConfig,
     updateSDEConfig,
     fetchAllowCorporations,
     updateAllowCorporations
   } from '@/api/sys-config'
+  import { SYSTEM_IDENTITY, SYSTEM_IDENTITY_I18N } from '@/constants/system-identity'
 
   defineOptions({ name: 'BasicConfig' })
 
   const { t } = useI18n()
-  const sysConfigStore = useSysConfigStore()
-
-  const loadingConfig = ref(false)
-  const saving = ref(false)
   const loadingSDEConfig = ref(false)
   const savingSDE = ref(false)
   const loadingAllowCorpsConfig = ref(false)
   const savingAllowCorps = ref(false)
-
-  const form = reactive<Api.SysConfig.BasicConfig>({
-    corp_id: sysConfigStore.config.corp_id,
-    site_title: sysConfigStore.config.site_title
-  })
+  const REQUIRED_ALLOW_CORPORATION_ID = SYSTEM_IDENTITY.corporationId
 
   const sdeForm = reactive<Api.SysConfig.SDEConfig>({
     api_key: '',
@@ -169,32 +117,31 @@
 
   const allowCorpsInput = ref('')
 
-  const loadConfig = async () => {
-    loadingConfig.value = true
-    try {
-      await sysConfigStore.ensureLoaded()
-      form.corp_id = sysConfigStore.config.corp_id
-      form.site_title = sysConfigStore.config.site_title
-    } catch {
-      /* empty */
-    } finally {
-      loadingConfig.value = false
-    }
+  const normalizeAllowCorporations = (corporations: number[]) => {
+    const seen = new Set<number>([REQUIRED_ALLOW_CORPORATION_ID])
+    return [
+      REQUIRED_ALLOW_CORPORATION_ID,
+      ...corporations.filter((corporationID) => {
+        if (seen.has(corporationID)) {
+          return false
+        }
+        seen.add(corporationID)
+        return true
+      })
+    ]
   }
 
-  const handleSave = async () => {
-    saving.value = true
-    try {
-      await sysConfigStore.updateConfig({
-        corp_id: form.corp_id,
-        site_title: form.site_title
-      })
-      ElMessage.success(t('system.basicConfig.saveSuccess'))
-    } catch {
-      /* empty */
-    } finally {
-      saving.value = false
+  const parseCorporationId = (value: string) => {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(t('system.basicConfig.invalidCorpId'))
     }
+
+    const corporationId = Number.parseInt(value, 10)
+    if (!Number.isSafeInteger(corporationId) || corporationId <= 0) {
+      throw new Error(t('system.basicConfig.invalidCorpId'))
+    }
+
+    return corporationId
   }
 
   const loadSDEConfig = async () => {
@@ -231,8 +178,9 @@
     loadingAllowCorpsConfig.value = true
     try {
       const res = await fetchAllowCorporations()
-      allowCorpsForm.allow_corporations = res.allow_corporations
-      allowCorpsInput.value = res.allow_corporations.join('\n')
+      const corporations = normalizeAllowCorporations(res.allow_corporations)
+      allowCorpsForm.allow_corporations = corporations
+      allowCorpsInput.value = corporations.join('\n')
     } catch {
       /* empty */
     } finally {
@@ -241,32 +189,30 @@
   }
 
   const handleSaveAllowCorps = async () => {
-    const lines = allowCorpsInput.value
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line !== '')
-    const corps = lines.map((line) => {
-      const num = Number.parseInt(line, 10)
-      if (Number.isNaN(num)) {
-        throw new Error(t('system.basicConfig.invalidCorpId'))
-      }
-      return num
-    })
-
-    savingAllowCorps.value = true
     try {
+      const lines = allowCorpsInput.value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '')
+      const corps = normalizeAllowCorporations(lines.map(parseCorporationId))
+
+      savingAllowCorps.value = true
       await updateAllowCorporations({ allow_corporations: corps })
       allowCorpsForm.allow_corporations = corps
+      allowCorpsInput.value = corps.join('\n')
       ElMessage.success(t('system.basicConfig.saveSuccess'))
-    } catch {
-      /* empty */
+    } catch (error) {
+      ElMessage.error(
+        error instanceof Error && error.message
+          ? error.message
+          : t('system.basicConfig.invalidCorpId')
+      )
     } finally {
       savingAllowCorps.value = false
     }
   }
 
   onMounted(() => {
-    loadConfig()
     loadAllowCorpsConfig()
     loadSDEConfig()
   })

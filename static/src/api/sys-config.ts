@@ -6,13 +6,6 @@ export function fetchBasicConfig() {
   })
 }
 
-export function updateBasicConfig(data: Api.SysConfig.UpdateBasicConfigParams) {
-  return request.put({
-    url: '/api/v1/system/basic-config',
-    data
-  })
-}
-
 /** 获取允许军团列表 */
 export function fetchAllowCorporations() {
   return request.get<Api.SysConfig.AllowCorporationsConfig>({

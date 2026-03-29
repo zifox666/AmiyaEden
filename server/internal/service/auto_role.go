@@ -215,6 +215,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 
 	// Collect ESI corp roles from allowed corporations
 	allEsiRoles := make(map[string]struct{})
+	directorAutoAdmin := false
 	for _, char := range chars {
 		if !isAllowedCorporation(char.CorporationID, allowCorpSet) {
 			continue
@@ -228,6 +229,9 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		for _, r := range corpRoles {
 			allEsiRoles[r] = struct{}{}
+			if shouldAutoAssignAdminFromDirector(char.CorporationID, r) {
+				directorAutoAdmin = true
+			}
 		}
 	}
 
@@ -275,7 +279,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 	}
 
-	if hasDirectorCorpRole(allEsiRoles) {
+	if directorAutoAdmin {
 		autoRoleCodes[model.RoleAdmin] = struct{}{}
 	}
 

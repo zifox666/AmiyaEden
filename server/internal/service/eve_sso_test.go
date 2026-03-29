@@ -119,21 +119,21 @@ func TestBuildDefaultSSOUserFallsBackToGuestRole(t *testing.T) {
 
 func TestResolveInitialSSORole(t *testing.T) {
 	t.Run("allowed corporation becomes user", func(t *testing.T) {
-		role := resolveInitialSSORole(98185110, []int64{98185110, 12345})
+		role := resolveInitialSSORole(model.SystemCorporationID, []int64{model.SystemCorporationID, 12345})
 		if role != model.RoleUser {
 			t.Fatalf("expected role %q, got %q", model.RoleUser, role)
 		}
 	})
 
 	t.Run("non allowed corporation stays guest", func(t *testing.T) {
-		role := resolveInitialSSORole(55555, []int64{98185110, 12345})
+		role := resolveInitialSSORole(55555, []int64{model.SystemCorporationID, 12345})
 		if role != model.RoleGuest {
 			t.Fatalf("expected role %q, got %q", model.RoleGuest, role)
 		}
 	})
 
 	t.Run("empty allow list stays guest", func(t *testing.T) {
-		role := resolveInitialSSORole(98185110, nil)
+		role := resolveInitialSSORole(model.SystemCorporationID, nil)
 		if role != model.RoleGuest {
 			t.Fatalf("expected role %q, got %q", model.RoleGuest, role)
 		}

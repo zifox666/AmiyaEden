@@ -144,7 +144,9 @@ source_of_truth:
 - super_admin 用户不可通过 API 删除
 - 登录时 super_admin 角色根据配置文件自动同步
 - 角色列表 `roles[]` 与 legacy `role` fallback
-- auto-role 的 `Director -> admin` 规则
+- `GET /system/basic-config` 只返回固定系统标识，且无对应写接口
+- auto-role 的 `Director -> admin` 规则仅接受伏羲军团 Fuxi Legion（`98185110`）的 corp role 信号
+- `allow_corporations` 保存与读取时始终保留 `98185110`
 
 ### Auth And Characters
 

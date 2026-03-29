@@ -9,6 +9,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import ElementPlus from 'unplugin-element-plus/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import tailwindcss from '@tailwindcss/vite'
+import { SYSTEM_IDENTITY } from './src/constants/system-identity'
 // import { visualizer } from 'rollup-plugin-visualizer'
 
 export default ({ mode }: { mode: string }) => {
@@ -67,6 +68,14 @@ export default ({ mode }: { mode: string }) => {
     },
     plugins: [
       vue(),
+      {
+        name: 'system-identity-html',
+        transformIndexHtml(html) {
+          return html
+            .replaceAll('__APP_TITLE__', SYSTEM_IDENTITY.displayName)
+            .replaceAll('__APP_DESCRIPTION__', SYSTEM_IDENTITY.description)
+        }
+      },
       tailwindcss(),
       // 自动按需导入 API
       AutoImport({

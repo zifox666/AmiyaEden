@@ -32,13 +32,14 @@
 import { MenuThemeEnum, MenuTypeEnum, SystemThemeEnum } from '@/enums/appEnum'
 import { SystemConfig } from '@/types/config'
 import { configImages } from './assets/images'
+import { SYSTEM_IDENTITY } from '@/constants/system-identity'
 import fastEnterConfig from './modules/fastEnter'
 import { headerBarConfig } from './modules/headerBar'
 
 const appConfig: SystemConfig = {
   // 系统信息
   systemInfo: {
-    name: 'Amiya eden' // 系统名称
+    name: SYSTEM_IDENTITY.displayName // 系统名称
   },
   // 系统主题
   systemThemeStyles: {

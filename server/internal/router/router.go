@@ -277,7 +277,6 @@ func RegisterRoutes(r *gin.Engine) {
 	// 系统基础配置
 	sysConfigH := handler.NewSysConfigHandler()
 	admin.GET("/basic-config", sysConfigH.GetBasicConfig)
-	admin.PUT("/basic-config", sysConfigH.UpdateBasicConfig)
 
 	// SDE 配置管理
 	admin.GET("/sde-config", sysConfigH.GetSDEConfig)

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"amiya-eden/internal/model"
+
 	"gorm.io/gorm"
 )
 
@@ -37,8 +38,8 @@ func TestSysConfigConstants(t *testing.T) {
 	})
 
 	t.Run("has valid default corp ID", func(t *testing.T) {
-		if model.SysConfigDefaultCorpID != 1 {
-			t.Fatalf("expected default corp ID 1, got %d", model.SysConfigDefaultCorpID)
+		if model.SystemCorporationID <= 0 {
+			t.Fatalf("expected positive system corporation ID, got %d", model.SystemCorporationID)
 		}
 	})
 }

@@ -1547,7 +1547,7 @@
   "autoRolePage": {
     "title": "ESI Auto Roles",
     "description": "Automatically assign system roles based on a character's EVE corporation roles and titles.",
-    "directorHint": "Only characters with the ESI corporation role `Director` in the allowed corporations list are auto-mapped to admin.",
+    "directorHint": "Only characters with the ESI corporation role `Director` in {corporationName} ({corporationId}) are auto-mapped to admin.",
     "triggerSync": "Trigger Sync",
     "syncTriggered": "Sync task triggered and will run in the background",
     "syncFailed": "Failed to trigger sync",
@@ -1888,17 +1888,13 @@
   "system": {
     "basicConfig": {
       "title": "Basic Config",
-      "corpId": "Corporation ID",
-      "siteTitle": "Site Title",
       "save": "Save",
-      "corpIdPlaceholder": "Please enter corporation ID",
-      "siteTitlePlaceholder": "Please enter site title",
       "saveSuccess": "Configuration saved",
       "allowCorporations": "Allowed Corporations",
       "allowCorporationsLabel": "Corporation ID List",
       "allowCorporationsPlaceholder": "Enter one corporation ID per line",
-      "allowCorporationsHint": "Leave empty to not trust any corporation signals. Only corporation permission signals are affected by this configuration.",
-      "invalidCorpId": "Invalid corporation ID format",
+      "allowCorporationsHint": "Corporation {corporationId} ({corporationName}) is always enforced in this list and cannot be removed. Other corporation permission signals are controlled by this configuration.",
+      "invalidCorpId": "Corporation ID must be a positive integer",
       "sdeConfig": "SDE Configuration",
       "sdeApiKey": "API Key",
       "sdeApiKeyPlaceholder": "API key for protecting SDE data query endpoints",

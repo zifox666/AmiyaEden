@@ -51,7 +51,7 @@ source_of_truth:
 - 登录入口与回调是 `Public`
 - `/api/v1/me` 与角色绑定相关接口要求有效 `JWT`，允许 `guest` 使用
 - `guest` 通过这些接口完成权限上下文建立、角色绑定与资料补全，再决定是否能进入 `Login` 边界的业务页面
-- 首次 SSO 登录时，若主角色所属军团在 `allow_corporations` 内，后端会直接赋予 `user`
+- 首次 SSO 登录时，若主角色所属军团在 `allow_corporations` 内，后端会直接赋予 `user`；该列表运行时始终包含代码常量中的伏羲军团 Fuxi Legion（`98185110`）
 - 首次 SSO 登录时，若主角色 ID 在 `config.yaml` 的 `app.super_admins` 列表中，后端会直接赋予 `super_admin`
 - 每次 SSO 登录时，`SyncConfigSuperAdmins` 会根据配置文件自动同步 `super_admin` 角色
 - 角色和权限的最终决策在后端完成，前端只消费结果

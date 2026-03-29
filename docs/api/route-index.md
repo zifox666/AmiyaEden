@@ -224,8 +224,7 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/system/basic-config` | 获取基础配置 | `RequireRole(admin)` |
-| PUT | `/system/basic-config` | 更新基础配置 | `RequireRole(admin)` |
+| GET | `/system/basic-config` | 获取固定系统标识（军团 ID / 网站标题） | `RequireRole(admin)` |
 | GET | `/system/basic-config/allow-corporations` | 获取允许军团列表 | `RequireRole(admin)` |
 | PUT | `/system/basic-config/allow-corporations` | 更新允许军团列表 | `RequireRole(admin)` |
 
