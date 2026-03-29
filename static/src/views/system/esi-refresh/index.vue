@@ -195,7 +195,7 @@
         { type: 'index', width: 60, label: '#' },
         { prop: 'task_name', label: '任务名称', width: 200, showOverflowTooltip: true },
         { prop: 'description', label: '描述', minWidth: 160, showOverflowTooltip: true },
-        { prop: 'character_id', label: '角色 ID', width: 120 },
+        { prop: 'character_id', label: '人物 ID', width: 120 },
         {
           prop: 'priority',
           label: '优先级',
@@ -263,9 +263,9 @@
     getData()
   }
 
-  // ─── 手动触发（按任务名 — 所有角色） ───
+  // ─── 手动触发（按任务名 — 所有人物） ───
   const handleRunTaskByName = async (row: TaskInfo) => {
-    await ElMessageBox.confirm(`确定要对所有角色执行「${row.description}」吗？`, '执行确认', {
+    await ElMessageBox.confirm(`确定要对所有人物执行「${row.description}」吗？`, '执行确认', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -273,7 +273,7 @@
     runningByName.value.add(row.name)
     try {
       await runESIRefreshTaskByName({ task_name: row.name })
-      ElMessage.success(`任务「${row.description}」已触发（所有角色）`)
+      ElMessage.success(`任务「${row.description}」已触发（所有人物）`)
       setTimeout(() => refreshData(), 2000)
     } catch {
       ElMessage.error(`任务「${row.description}」触发失败`)
@@ -282,7 +282,7 @@
     }
   }
 
-  // ─── 手动触发（指定角色） ───
+  // ─── 手动触发（指定人物） ───
   const handleRunTask = async (row: TaskStatus) => {
     const key = `${row.task_name}_${row.character_id}`
     runningTasks.value.add(key)

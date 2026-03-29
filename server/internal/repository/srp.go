@@ -77,7 +77,7 @@ func (r *SrpRepository) GetApplicationByIDForUpdate(tx *gorm.DB, id uint) (*mode
 	return &app, err
 }
 
-// ExistsApplicationByKillmail 检查该 killmail 是否已被该角色提交过申请
+// ExistsApplicationByKillmail 检查该 killmail 是否已被该人物提交过申请
 func (r *SrpRepository) ExistsApplicationByKillmail(killmailID int64, characterID int64) bool {
 	var count int64
 	global.DB.Model(&model.SrpApplication{}).
@@ -137,6 +137,7 @@ type SrpApplicationFilter struct {
 	FleetID      *string
 	ReviewStatus string
 	PayoutStatus string
+	Keyword      string
 }
 
 // SrpBatchPayoutSummaryRow 按用户聚合的待批量发放汇总
@@ -172,6 +173,11 @@ func buildSrpApplicationListQuery(db *gorm.DB, filter SrpApplicationFilter) *gor
 	if filter.PayoutStatus != "" {
 		query = query.Where("payout_status = ?", filter.PayoutStatus)
 	}
+	query = applyKeywordLikeFilter(
+		query,
+		filter.Keyword,
+		`EXISTS (SELECT 1 FROM "user" AS applicant_user WHERE applicant_user.id = srp_application.user_id AND LOWER(applicant_user.nickname) LIKE ?)`,
+		"LOWER(character_name) LIKE ?")
 
 	return query
 }

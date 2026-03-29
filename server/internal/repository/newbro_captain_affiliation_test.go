@@ -122,6 +122,9 @@ func TestBuildAdminAffiliationHistoryQueryAppliesCaseInsensitiveCaptainAndPlayer
 	if !strings.Contains(sql, `LEFT JOIN eve_character AS captain_character`) {
 		t.Fatalf("expected captain character join for search, got SQL: %s", sql)
 	}
+	if !strings.Contains(sql, `captain_character.character_id = captain_user.primary_character_id`) {
+		t.Fatalf("expected captain search to join current captain primary character, got SQL: %s", sql)
+	}
 	if !strings.Contains(sql, `LEFT JOIN "user" AS player_user`) {
 		t.Fatalf("expected player user join for search, got SQL: %s", sql)
 	}

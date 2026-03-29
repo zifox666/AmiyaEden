@@ -18,12 +18,12 @@ func NewRoleHandler() *RoleHandler {
 	return &RoleHandler{svc: service.NewRoleService()}
 }
 
-// ListRoleDefinitions 返回系统角色定义列表（纯内存，不查库）
+// ListRoleDefinitions 返回系统职权定义列表（纯内存，不查库）
 func (h *RoleHandler) ListRoleDefinitions(c *gin.Context) {
 	response.OK(c, h.svc.ListRoleDefinitions())
 }
 
-// ─── 用户角色管理 ───
+// ─── 用户职权管理 ───
 
 func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)

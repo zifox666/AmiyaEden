@@ -11,7 +11,7 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Contracts 角色合同
+//  Character Contracts 人物合同
 //  GET /characters/{character_id}/contracts
 //  GET /characters/{character_id}/contracts/{contract_id}/bids
 //  GET /characters/{character_id}/contracts/{contract_id}/items
@@ -22,11 +22,11 @@ func init() {
 	Register(&ContractsTask{})
 }
 
-// ContractsTask 角色合同刷新任务
+// ContractsTask 人物合同刷新任务
 type ContractsTask struct{}
 
 func (t *ContractsTask) Name() string        { return "character_contracts" }
-func (t *ContractsTask) Description() string { return "角色合同（含竞标/物品）" }
+func (t *ContractsTask) Description() string { return "人物合同（含竞标/物品）" }
 func (t *ContractsTask) Priority() Priority  { return PriorityNormal }
 
 func (t *ContractsTask) Interval() RefreshInterval {
@@ -38,7 +38,7 @@ func (t *ContractsTask) Interval() RefreshInterval {
 
 func (t *ContractsTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-contracts.read_character_contracts.v1", Description: "读取角色合同"},
+		{Scope: "esi-contracts.read_character_contracts.v1", Description: "读取人物合同"},
 	}
 }
 
@@ -96,7 +96,7 @@ func (t *ContractsTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch contracts: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色合同刷新完成",
+	global.Logger.Debug("[ESI] 人物合同刷新完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(contracts)),
 	)
@@ -209,7 +209,7 @@ func (t *ContractsTask) Execute(ctx *TaskContext) error {
 		}
 	}
 
-	global.Logger.Debug("[ESI] 角色合同入库完成",
+	global.Logger.Debug("[ESI] 人物合同入库完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(contracts)),
 	)

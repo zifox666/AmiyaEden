@@ -14,10 +14,10 @@ import (
 func RegisterRoleJobs(c *cron.Cron) {
 	id, err := c.AddFunc("0 0/5 * * * ?", roleCheckTask)
 	if err != nil {
-		global.Logger.Error("注册角色检查定时任务失败", zap.Error(err))
+		global.Logger.Error("注册职权检查定时任务失败", zap.Error(err))
 		return
 	}
-	global.Logger.Info("注册角色检查定时任务成功", zap.Int("entry_id", int(id)))
+	global.Logger.Info("注册职权检查定时任务成功", zap.Int("entry_id", int(id)))
 }
 
 // roleCheckTask 遍历所有用户，根据军团准入列表调整用户权限

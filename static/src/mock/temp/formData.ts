@@ -198,7 +198,7 @@ export interface Role {
   enable: boolean
 }
 
-// 角色列表
+// 职权列表
 export const ROLE_LIST_DATA: Role[] = [
   {
     roleName: '超级管理员',

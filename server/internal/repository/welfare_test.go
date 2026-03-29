@@ -38,3 +38,58 @@ func TestBuildApplicationsByUserIDQueryAppliesUserStatusAndPagination(t *testing
 		t.Fatalf("expected page offset, got SQL: %s", sql)
 	}
 }
+
+func TestListApplicationsPaginatedAppliesApplicantIdentityKeywordFilter(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		query := tx.Model(&model.WelfareApplication{}).
+			Joins(`LEFT JOIN "user" AS applicant_user ON applicant_user.id = welfare_application.user_id`)
+		query = applyKeywordLikeFilter(
+			query,
+			"bee",
+			`LOWER(applicant_user.nickname) LIKE ?`,
+			`LOWER(welfare_application.character_name) LIKE ?`,
+			`LOWER(welfare_application.qq) LIKE ?`,
+		)
+		return query.Order("id DESC").Offset(0).Limit(20).Find(&[]model.WelfareApplication{})
+	})
+
+	if !strings.Contains(sql, `LEFT JOIN "user" AS applicant_user`) {
+		t.Fatalf("expected applicant user join for nickname search, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LOWER(applicant_user.nickname) LIKE`) {
+		t.Fatalf("expected applicant nickname keyword predicate, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LOWER(welfare_application.character_name) LIKE`) {
+		t.Fatalf("expected character keyword predicate, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LOWER(welfare_application.qq) LIKE`) {
+		t.Fatalf("expected QQ keyword predicate, got SQL: %s", sql)
+	}
+}
+
+func TestListApplicationsPaginatedQualifiesStatusAndOrderColumnsWhenJoined(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		query := tx.Model(&model.WelfareApplication{}).
+			Where("welfare_application.status IN ?", []string{"delivered", "rejected"}).
+			Joins(`LEFT JOIN "user" AS applicant_user ON applicant_user.id = welfare_application.user_id`)
+		query = applyKeywordLikeFilter(
+			query,
+			"bee",
+			`LOWER(applicant_user.nickname) LIKE ?`,
+			`LOWER(welfare_application.character_name) LIKE ?`,
+			`LOWER(welfare_application.qq) LIKE ?`,
+		)
+		return query.Order("welfare_application.id DESC").Offset(0).Limit(20).Find(&[]model.WelfareApplication{})
+	})
+
+	if !strings.Contains(sql, `welfare_application.status IN`) {
+		t.Fatalf("expected joined welfare query to qualify status column, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `ORDER BY welfare_application.id DESC`) {
+		t.Fatalf("expected joined welfare query to qualify order column, got SQL: %s", sql)
+	}
+}

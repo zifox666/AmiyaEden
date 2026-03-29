@@ -1,6 +1,6 @@
 package esimodel
 
-// EveCharacterFitting 角色装配主记录
+// EveCharacterFitting 人物装配主记录
 type EveCharacterFitting struct {
 	ID          uint   `gorm:"primarykey"                                      json:"id"`
 	FittingID   int64  `gorm:"not null;uniqueIndex:udx_char_fitting"           json:"fitting_id"`

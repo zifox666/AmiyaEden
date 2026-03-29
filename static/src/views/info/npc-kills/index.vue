@@ -1,6 +1,6 @@
 <template>
   <div class="npc-kills-page">
-    <!-- 角色切换 + 日期范围 -->
+    <!-- 人物切换 + 日期范围 -->
     <ElCard class="art-card" shadow="never">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-4 flex-wrap">
@@ -11,7 +11,7 @@
             style="width: 240px"
             @change="onCharacterChange"
           >
-            <!-- 全部角色 -->
+            <!-- 全部人物 -->
             <ElOption :value="0" :label="$t('npcKill.allCharacters')">
               <span>{{ $t('npcKill.allCharacters') }}</span>
             </ElOption>
@@ -198,7 +198,7 @@
 
   // ─── 状态 ───
   const characters = ref<Api.Auth.EveCharacter[]>([])
-  const selectedCharacterId = ref<number>(0) // 0 表示全部角色
+  const selectedCharacterId = ref<number>(0) // 0 表示全部人物
   const dateRange = ref<[string, string] | null>(null)
   const reportData = ref<Api.NpcKill.NpcKillResponse | null>(null)
 
@@ -223,7 +223,7 @@
     const charId = params.character_id ?? 0
     let res: Api.NpcKill.NpcKillResponse | undefined
     if (charId === 0) {
-      // 全部角色汇总
+      // 全部人物汇总
       res = await fetchNpcKillsAll({
         start_date: params.start_date,
         end_date: params.end_date,
@@ -363,7 +363,7 @@
   const loadCharacters = async () => {
     try {
       characters.value = (await fetchMyCharacters()) ?? []
-      // 不自动选中第一个角色，保持默认"全部角色"模式
+      // 不自动选中第一个人物，保持默认"全部人物"模式
     } catch {
       characters.value = []
     }

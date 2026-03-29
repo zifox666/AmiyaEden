@@ -46,8 +46,8 @@ func RegisterRoutes(r *gin.Engine) {
 	// 福利（用户端 + 管理端共用 handler）
 	welfareH := handler.NewWelfareHandler()
 
-	// SSO 角色管理（绑定/解绑/设主角色）
-	// guest 也应可访问，用于完成初次登录后的角色管理与补充授权。
+	// SSO 人物管理（绑定/解绑/设主人物）
+	// guest 也应可访问，用于完成初次登录后的人物管理与补充授权。
 	ssoAuth := auth.Group("/sso/eve")
 	{
 		// ssoAuth.GET("/scopes", ssoH.GetScopes)
@@ -116,7 +116,7 @@ func RegisterRoutes(r *gin.Engine) {
 		fleet.DELETE("/invites/:invite_id", manageFleets, fleetH.DeactivateInvite)
 		fleet.POST("/join", fleetH.JoinFleet)
 
-		// 查角色所在舰队
+		// 查人物所在舰队
 		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
 
 		// Webhook Ping（FC 或管理员手动触发）
@@ -164,7 +164,7 @@ func RegisterRoutes(r *gin.Engine) {
 		skillPlan.DELETE("/:id", manageSkillPlans, skillPlanH.DeleteSkillPlan)
 	}
 
-	// ─── EVE 角色信息 ───
+	// ─── EVE 人物信息 ───
 	infoH := handler.NewEveInfoHandler()
 	info := login.Group("/info")
 	{
@@ -271,7 +271,7 @@ func RegisterRoutes(r *gin.Engine) {
 		esiRefresh.POST("/run-all", esiH.RunAll)
 	}
 
-	// ─── 系统管理（需要 admin 角色）───
+	// ─── 系统管理（需要 admin 职权）───
 	admin := login.Group("/system", middleware.RequireRole(model.RoleAdmin))
 
 	// 系统基础配置
@@ -305,7 +305,7 @@ func RegisterRoutes(r *gin.Engine) {
 	admin.GET("/pap-exchange/rates", papExchangeH.GetRates)
 	admin.PUT("/pap-exchange/rates", papExchangeH.SetRates)
 
-	// 角色定义（只读）
+	// 职权定义（只读）
 	roleH := handler.NewRoleHandler()
 	admin.GET("/role/definitions", roleH.ListRoleDefinitions)
 
@@ -318,7 +318,7 @@ func RegisterRoutes(r *gin.Engine) {
 		adminUser.PUT("/:id", userH.UpdateUser)
 		adminUser.DELETE("/:id", userH.DeleteUser)
 
-		// 用户角色分配
+		// 用户职权分配
 		adminUser.GET("/:id/roles", roleH.GetUserRoles)
 		adminUser.PUT("/:id/roles", roleH.SetUserRoles)
 
@@ -398,7 +398,7 @@ func RegisterRoutes(r *gin.Engine) {
 	autoRoleH := handler.NewAutoRoleHandler()
 	adminAutoRole := admin.Group("/auto-role")
 	{
-		// ESI 军团角色映射
+		// ESI 军团职权映射
 		adminAutoRole.GET("/esi-roles", autoRoleH.GetAllEsiRoles)
 		adminAutoRole.GET("/esi-role-mappings", autoRoleH.ListEsiRoleMappings)
 		adminAutoRole.POST("/esi-role-mappings", autoRoleH.CreateEsiRoleMapping)

@@ -1,6 +1,6 @@
 <template>
   <div class="info-implants-page art-full-height">
-    <!-- 顶部：角色选择器 -->
+    <!-- 顶部：人物选择器 -->
     <ElCard shadow="never" class="mb-2">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-4">

@@ -33,7 +33,7 @@ source_of_truth:
 - 每种数据类型一个独立 `.go` 文件，方便扩展
 - 任务自动注册机制（通过 `init()` + `Register()`）
 - 支持任务优先级
-- 不活跃角色自动降频刷新
+- 不活跃人物自动降频刷新
 - Redis 记录任务执行状态，支持可视化
 - 并发控制，防止 ESI 限流
 - **自动分页**：`GetPaginated` 自动处理 `x-pages` 多页响应，合并所有数据
@@ -49,7 +49,7 @@ pkg/eve/esi/
 ├── request.go       # 增强请求客户端（分页、限速、元数据）
 ├── task.go          # 任务接口定义、优先级、注册表
 ├── queue.go         # 队列调度引擎
-├── activity.go      # 角色活跃度检测
+├── activity.go      # 人物活跃度检测
 └── task_*.go        # 各类刷新任务，按数据域拆分
 ```
 
@@ -182,8 +182,8 @@ func (t *XxxTask) Priority() Priority  { return PriorityNormal }
 
 func (t *XxxTask) Interval() RefreshInterval {
     return RefreshInterval{
-        Active:   6 * time.Hour,       // 活跃角色刷新间隔
-        Inactive: 7 * 24 * time.Hour,  // 不活跃角色刷新间隔
+        Active:   6 * time.Hour,       // 活跃人物刷新间隔
+        Inactive: 7 * 24 * time.Hour,  // 不活跃人物刷新间隔
     }
 }
 
@@ -229,8 +229,8 @@ func (t *XxxTask) Execute(ctx *TaskContext) error {
 | **`init()` 中调用 `Register()`** | 任务会自动注册到全局注册表，无需其他配置 |
 | **`Name()`** | 全局唯一的任务标识，建议格式 `character_xxx` |
 | **`Priority()`** | `PriorityCritical(1)` > `PriorityHigh(10)` > `PriorityNormal(50)` > `PriorityLow(90)` |
-| **`Interval()`** | 分别设置活跃/不活跃角色的刷新间隔 |
-| **`RequiredScopes()`** | 角色必须拥有这些 scope 才会执行该任务 |
+| **`Interval()`** | 分别设置活跃/不活跃人物的刷新间隔 |
+| **`RequiredScopes()`** | 人物必须拥有这些 scope 才会执行该任务 |
 | **`Execute()`** | 核心执行逻辑，`ctx` 中携带 characterID、accessToken、client |
 
 ### 3. 请求方法选择
@@ -254,7 +254,7 @@ func init() {
     service.RegisterScope(
         "xxx",                       // 模块名
         "esi-xxx.read_xxx.v1",       // scope
-        "读取角色 xxx 数据",           // 描述
+        "读取人物 xxx 数据",           // 描述
         false,                       // 是否必选
     )
 }
@@ -262,7 +262,7 @@ func init() {
 
 ### 5. 批量任务（可选）
 
-如果需要批量处理多个角色（如 affiliation），实现 `BatchTask` 接口：
+如果需要批量处理多个人物（如 affiliation），实现 `BatchTask` 接口：
 
 ```go
 func (t *XxxTask) ExecuteBatch(client *Client, characterIDs []int64) error {
@@ -282,7 +282,7 @@ func (t *XxxTask) ExecuteBatch(client *Client, characterIDs []int64) error {
 
 ## 刷新间隔参考
 
-| 任务 | 活跃角色 | 不活跃角色 | 分页 |
+| 任务 | 活跃人物 | 不活跃人物 | 分页 |
 |------|---------|-----------|------|
 | killmails | 20m | 3d | ✓ |
 | online | 30m | 2h | ✗ |
@@ -303,8 +303,8 @@ func (t *XxxTask) ExecuteBatch(client *Client, characterIDs []int64) error {
 ```
 Cron (每5分钟) ──> Queue.Run()
                      │
-                     ├─ 1. 获取所有有 Token 的角色
-                     ├─ 2. 检测各角色活跃度
+                     ├─ 1. 获取所有有 Token 的人物
+                     ├─ 2. 检测各人物活跃度
                      ├─ 3. 按优先级排序任务
                      ├─ 4. 过滤（scope 检查 + 间隔检查）
                      └─ 5. 并发执行（信号量控制）

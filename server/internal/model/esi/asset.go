@@ -1,6 +1,6 @@
 package esimodel
 
-// EveCharacterAsset 角色资产
+// EveCharacterAsset 人物资产
 type EveCharacterAsset struct {
 	ID              uint   `gorm:"primarykey"                                    json:"id"`
 	CharacterID     int64  `gorm:"not null;index:idx_char_asset,unique"          json:"character_id"`

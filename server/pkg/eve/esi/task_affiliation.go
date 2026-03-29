@@ -11,9 +11,9 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Affiliation 角色归属
+//  Character Affiliation 人物归属
 //  POST /characters/affiliation
-//  批量任务：每次最多 1000 个角色 ID
+//  批量任务：每次最多 1000 个人物 ID
 //  默认刷新间隔: 2 Hours
 // ─────────────────────────────────────────────
 
@@ -21,11 +21,11 @@ func init() {
 	Register(&AffiliationTask{})
 }
 
-// AffiliationTask 角色归属刷新任务
+// AffiliationTask 人物归属刷新任务
 type AffiliationTask struct{}
 
 func (t *AffiliationTask) Name() string        { return "character_affiliation" }
-func (t *AffiliationTask) Description() string { return "角色归属信息（军团/联盟/阵营）" }
+func (t *AffiliationTask) Description() string { return "人物归属信息（军团/联盟/阵营）" }
 func (t *AffiliationTask) Priority() Priority  { return PriorityNormal }
 
 func (t *AffiliationTask) Interval() RefreshInterval {
@@ -48,11 +48,11 @@ type AffiliationResult struct {
 }
 
 func (t *AffiliationTask) Execute(ctx *TaskContext) error {
-	// 单个角色模式：仅查询当前角色
+	// 单个人物模式：仅查询当前人物
 	return t.fetchAffiliation(ctx.Client, []int64{ctx.CharacterID})
 }
 
-// ExecuteBatch 批量查询角色归属（最多 1000 个）
+// ExecuteBatch 批量查询人物归属（最多 1000 个）
 func (t *AffiliationTask) ExecuteBatch(client *Client, characterIDs []int64) error {
 	// 分批处理，每批最多 1000
 	const batchSize = 1000
@@ -86,14 +86,14 @@ func (t *AffiliationTask) fetchAffiliation(client *Client, ids []int64) error {
 		if err := global.DB.Model(&model.EveCharacter{}).
 			Where("character_id = ?", r.CharacterID).
 			Updates(updates).Error; err != nil {
-			global.Logger.Warn("[ESI] 更新角色归属失败",
+			global.Logger.Warn("[ESI] 更新人物归属失败",
 				zap.Int64("character_id", r.CharacterID),
 				zap.Error(err),
 			)
 		}
 	}
 
-	global.Logger.Debug("[ESI] 角色归属刷新并入库完成",
+	global.Logger.Debug("[ESI] 人物归属刷新并入库完成",
 		zap.Int("count", len(results)),
 	)
 

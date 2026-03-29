@@ -28,7 +28,7 @@ type OnlineStatus struct {
 	Online     bool       `json:"online"`
 }
 
-// checkActivity 批量检测角色活跃度
+// checkActivity 批量检测人物活跃度
 // 返回 map[characterID]isActive
 func (q *Queue) checkActivity(ctx context.Context, characters []model.EveCharacter) map[int64]bool {
 	result := make(map[int64]bool, len(characters))
@@ -40,7 +40,7 @@ func (q *Queue) checkActivity(ctx context.Context, characters []model.EveCharact
 	return result
 }
 
-// checkSingleActivity 检测单个角色活跃度
+// checkSingleActivity 检测单个人物活跃度
 func (q *Queue) checkSingleActivity(ctx context.Context, char model.EveCharacter) bool {
 	// 先查 Redis 缓存
 	cacheKey := fmt.Sprintf("%s%d", activityCachePrefix, char.CharacterID)

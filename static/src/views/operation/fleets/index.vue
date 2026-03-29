@@ -303,7 +303,7 @@
     getData()
   }
 
-  // ─── FC 候选角色列表 ───
+  // ─── FC 候选人物列表 ───
   const characters = ref<Api.Auth.EveCharacter[]>([])
 
   const loadCharacters = async () => {

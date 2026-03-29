@@ -17,7 +17,7 @@ const (
 )
 
 // JWTAuth JWT 认证中间件
-// 解析 Token，加载用户角色与权限到 context
+// 解析 Token，加载用户职权与权限到 context
 func JWTAuth() gin.HandlerFunc {
 	roleSvc := service.NewRoleService()
 
@@ -39,7 +39,7 @@ func JWTAuth() gin.HandlerFunc {
 		c.Set(ctxKeyUserID, claims.UserID)
 		c.Set(ctxKeyCharacterID, claims.CharacterID)
 
-		// 加载用户角色（带 Redis 缓存）
+		// 加载用户职权（带 Redis 缓存）
 		roles, err := roleSvc.GetUserRoleNames(c.Request.Context(), claims.UserID)
 		if err != nil {
 			roles = []string{model.RoleGuest}
@@ -50,7 +50,7 @@ func JWTAuth() gin.HandlerFunc {
 	}
 }
 
-// RequireRole 要求用户拥有指定角色之一（super_admin 自动通过）
+// RequireRole 要求用户拥有指定职权之一（super_admin 自动通过）
 func RequireRole(codes ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roles := GetUserRoles(c)
@@ -64,7 +64,7 @@ func RequireRole(codes ...string) gin.HandlerFunc {
 				return
 			}
 		}
-		response.Fail(c, response.CodeForbidden, "权限不足，需要角色: "+strings.Join(codes, "/"))
+		response.Fail(c, response.CodeForbidden, "权限不足，需要职权: "+strings.Join(codes, "/"))
 		c.Abort()
 	}
 }

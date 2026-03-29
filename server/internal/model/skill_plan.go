@@ -27,7 +27,7 @@ type SkillPlanSkill struct {
 
 func (SkillPlanSkill) TableName() string { return "skill_plan_skill" }
 
-// SkillPlanCheckCharacter 用户保存的技能完成度检查角色选择
+// SkillPlanCheckCharacter 用户保存的技能完成度检查人物选择
 type SkillPlanCheckCharacter struct {
 	ID          uint  `gorm:"primarykey"                              json:"id"`
 	UserID      uint  `gorm:"not null;uniqueIndex:udx_spcc_user_char" json:"user_id"`

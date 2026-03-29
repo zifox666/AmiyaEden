@@ -61,7 +61,7 @@ source_of_truth:
 | 权限边界 | admin 误编辑 admin、guest 误入 Login 页面 | service 单元测试 |
 | 输入校验 / 归一化 | 昵称、QQ、Discord、时间范围、枚举修正 | service 或 helper 单元测试 |
 | repository 查询拼接 | join 后列名歧义、筛选条件丢失、排序错误 | repository SQL / query-shape 测试 |
-| repository fallback / merge | nickname 回退角色名、角色列表回退 guest | repository 行为测试 |
+| repository fallback / merge | nickname 回退人物名、职权列表回退 guest | repository 行为测试 |
 | API contract | 字段名改动、roles[] / role 差异、分页结构 | handler 或 API contract 测试 |
 | frontend 纯逻辑 | 筛选参数转换、fallback 文案、表格 helper | `pnpm test:unit` |
 | 本地化回归 | key 缺失、页面显示 raw key | 最少做 JSON 校验 + 页面层改动时人工验证 |
@@ -73,7 +73,7 @@ source_of_truth:
 
 - `operation`: fleets、fleet-detail、pap、fleet-configs
 - `system`: user、role、auto-role、pap、webhook
-- `auth-and-characters`: `/api/v1/me`、角色绑定、资料补全
+- `auth-and-characters`: `/api/v1/me`、人物绑定、资料补全
 
 原因：
 
@@ -113,7 +113,7 @@ source_of_truth:
 
 - 舰队列表 FC 昵称 fallback
 - join 后的 `deleted_at`、`status`、`id` 等歧义列问题
-- 用户列表角色 fallback 与排序
+- 用户列表职权 fallback 与排序
 - admin / super_admin 保护逻辑（super_admin 仅通过配置文件管理，API 不可分配 / 修改 / 删除）
 - `/api/v1/me` 资料补全与联系方式唯一性
 
@@ -140,10 +140,10 @@ source_of_truth:
 
 - 用户资料更新校验与唯一性
 - 保护管理员账号不能被普通 admin 修改 / 删除
-- super_admin 角色不可通过 API 授予、修改或删除
+- super_admin 职权不可通过 API 授予、修改或删除
 - super_admin 用户不可通过 API 删除
-- 登录时 super_admin 角色根据配置文件自动同步
-- 角色列表 `roles[]` 与 legacy `role` fallback
+- 登录时 super_admin 职权根据配置文件自动同步
+- 职权列表 `roles[]` 与 legacy `role` fallback
 - `GET /system/basic-config` 只返回固定系统标识，且无对应写接口
 - auto-role 的 `Director -> admin` 规则仅接受伏羲军团 Fuxi Legion（`98185110`）的 corp role 信号
 - `allow_corporations` 保存与读取时始终保留 `98185110`
@@ -151,7 +151,7 @@ source_of_truth:
 ### Auth And Characters
 
 - 资料完整度判定
-- 角色绑定 / 主角色切换的权限与输入校验
+- 人物绑定 / 主人物切换的权限与输入校验
 - `guest` 到 `user` 的边界行为
 
 ### Phase 3: 建共享测试夹具
@@ -292,7 +292,7 @@ source_of_truth:
 
 - `ProfileComplete()` 与前端资料完成判断保持一致
 - QQ / Discord 唯一性
-- `/api/v1/me` 返回角色与权限上下文
+- `/api/v1/me` 返回职权与权限上下文
 
 ### operation
 
@@ -304,7 +304,7 @@ source_of_truth:
 ### administration
 
 - 用户列表 DTO 不再泄漏 legacy `role`
-- 用户角色排序与 fallback
+- 用户职权排序与 fallback
 - admin 无法操作受保护账号
 - auto-role 内置快捷规则与 title mapping 区分
 

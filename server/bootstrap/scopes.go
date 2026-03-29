@@ -32,5 +32,5 @@ func InitScopes() {
 	service.RegisterScope("fleet", "esi-fleets.write_fleet.v1", "更新舰队 MOTD、邀请成员", true)
 
 	// ── SRP 补损模块额外 scope ──
-	service.RegisterScope("srp", "esi-ui.open_window.v1", "打开游戏内信息窗口（角色/军团/联盟）", true)
+	service.RegisterScope("srp", "esi-ui.open_window.v1", "打开游戏内信息窗口（人物/军团/联盟）", true)
 }

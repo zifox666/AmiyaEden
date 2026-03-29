@@ -13,11 +13,11 @@ func init() {
 	Register(&WalletTask{})
 }
 
-// WalletTask 角色钱包刷新任务
+// WalletTask 人物钱包刷新任务
 type WalletTask struct{}
 
 func (t *WalletTask) Name() string        { return "character_wallet" }
-func (t *WalletTask) Description() string { return "角色钱包信息" }
+func (t *WalletTask) Description() string { return "人物钱包信息" }
 func (t *WalletTask) Priority() Priority  { return PriorityNormal }
 
 func (t *WalletTask) Interval() RefreshInterval {
@@ -29,7 +29,7 @@ func (t *WalletTask) Interval() RefreshInterval {
 
 func (t *WalletTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-wallet.read_character_wallet.v1", Description: "读取角色钱包信息"},
+		{Scope: "esi-wallet.read_character_wallet.v1", Description: "读取人物钱包信息"},
 	}
 }
 

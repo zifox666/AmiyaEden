@@ -15,7 +15,7 @@ export function fetchESIRefreshStatuses(params?: Api.ESIRefresh.TaskStatusSearch
   })
 }
 
-/** 手动触发指定任务（单角色） */
+/** 手动触发指定任务（单人物） */
 export function runESIRefreshTask(params: Api.ESIRefresh.RunTaskParams) {
   return request.post<{ message: string }>({
     url: '/api/v1/esi/refresh/run',
@@ -23,7 +23,7 @@ export function runESIRefreshTask(params: Api.ESIRefresh.RunTaskParams) {
   })
 }
 
-/** 手动触发指定任务（所有角色） */
+/** 手动触发指定任务（所有人物） */
 export function runESIRefreshTaskByName(params: Api.ESIRefresh.RunTaskByNameParams) {
   return request.post<{ message: string }>({
     url: '/api/v1/esi/refresh/run-task',

@@ -137,7 +137,7 @@ func (h *SkillPlanHandler) ReorderSkillPlans(c *gin.Context) {
 	response.OK(c, nil)
 }
 
-// GetCheckSelection 获取当前用户保存的检查角色选择
+// GetCheckSelection 获取当前用户保存的检查人物选择
 func (h *SkillPlanHandler) GetCheckSelection(c *gin.Context) {
 	result, err := h.svc.GetCheckSelection(middleware.GetUserID(c))
 	if err != nil {
@@ -148,7 +148,7 @@ func (h *SkillPlanHandler) GetCheckSelection(c *gin.Context) {
 	response.OK(c, result)
 }
 
-// SaveCheckSelection 保存当前用户的检查角色选择
+// SaveCheckSelection 保存当前用户的检查人物选择
 func (h *SkillPlanHandler) SaveCheckSelection(c *gin.Context) {
 	var req service.SkillPlanCheckSelectionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

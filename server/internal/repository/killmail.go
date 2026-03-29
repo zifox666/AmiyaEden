@@ -13,7 +13,7 @@ func NewKillmailRepository() *KillmailRepository {
 	return &KillmailRepository{}
 }
 
-// GetCharacterKillmailLink 查询角色-KM 关联记录
+// GetCharacterKillmailLink 查询人物-KM 关联记录
 func (r *KillmailRepository) GetCharacterKillmailLink(characterID, killmailID int64) (*model.EveCharacterKillmail, error) {
 	var ckm model.EveCharacterKillmail
 	err := global.DB.Where("character_id = ? AND killmail_id = ?", characterID, killmailID).First(&ckm).Error
@@ -27,14 +27,14 @@ func (r *KillmailRepository) GetKillmailByID(killmailID int64) (*model.EveKillma
 	return &km, err
 }
 
-// ListCharacterKillmailsByCharacterIDs 按角色 ID 列表查询关联记录
+// ListCharacterKillmailsByCharacterIDs 按人物 ID 列表查询关联记录
 func (r *KillmailRepository) ListCharacterKillmailsByCharacterIDs(charIDs []int64) ([]model.EveCharacterKillmail, error) {
 	var list []model.EveCharacterKillmail
 	err := global.DB.Where("character_id IN ?", charIDs).Find(&list).Error
 	return list, err
 }
 
-// ListVictimKillmailsByCharacterID 查询角色作为受害者的 KM 关联记录
+// ListVictimKillmailsByCharacterID 查询人物作为受害者的 KM 关联记录
 func (r *KillmailRepository) ListVictimKillmailsByCharacterID(characterID int64) ([]model.EveCharacterKillmail, error) {
 	var list []model.EveCharacterKillmail
 	err := global.DB.Where("character_id = ? AND victim = ?", characterID, true).Find(&list).Error

@@ -214,7 +214,7 @@ func (r *FleetRepository) SumPapByUserTotal(userID uint) (float64, error) {
 	return total, err
 }
 
-// PapLogDetail PAP 记录（含角色名、FC 名称、舰队信息）
+// PapLogDetail PAP 记录（含人物名、FC 名称、舰队信息）
 type PapLogDetail struct {
 	model.FleetPapLog
 	CharacterName   string `json:"character_name"`
@@ -225,7 +225,7 @@ type PapLogDetail struct {
 	ShipTypeID      *int64 `json:"ship_type_id"`
 }
 
-// ListPapLogsDetailByUser 查询某用户的 PAP 记录（JOIN 舰队、角色信息）
+// ListPapLogsDetailByUser 查询某用户的 PAP 记录（JOIN 舰队、人物信息）
 func (r *FleetRepository) ListPapLogsDetailByUser(userID uint) ([]PapLogDetail, error) {
 	var results []PapLogDetail
 	err := global.DB.Table("fleet_pap_log p").

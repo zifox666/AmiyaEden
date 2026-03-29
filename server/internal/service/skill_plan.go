@@ -306,7 +306,7 @@ func (s *SkillPlanService) ReorderSkillPlans(ids []uint, userRoles []string) err
 func (s *SkillPlanService) GetCheckSelection(userID uint) (*SkillPlanCheckSelectionResp, error) {
 	owned, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 
 	ownedSet := make(map[int64]struct{}, len(owned))
@@ -450,12 +450,12 @@ func (s *SkillPlanService) RunCompletionCheck(userID uint, req *RunSkillPlanChec
 	}
 
 	if len(characterIDs) == 0 {
-		return nil, errors.New("请先选择至少一个角色")
+		return nil, errors.New("请先选择至少一个人物")
 	}
 
 	characters, err := s.charRepo.ListByCharacterIDs(characterIDs)
 	if err != nil {
-		return nil, errors.New("获取角色信息失败")
+		return nil, errors.New("获取人物信息失败")
 	}
 
 	characterMap := make(map[int64]model.EveCharacter, len(characters))
@@ -520,7 +520,7 @@ func (s *SkillPlanService) RunCompletionCheck(userID uint, req *RunSkillPlanChec
 
 		skills, err := s.skillRepo.GetSkillList(int(characterID))
 		if err != nil {
-			return nil, errors.New("获取角色技能数据失败")
+			return nil, errors.New("获取人物技能数据失败")
 		}
 
 		levelMap := buildCharacterSkillLevelMap(skills)
@@ -636,7 +636,7 @@ func normalizeOptionalSkillPlanShipTypeID(shipTypeID *int) *int {
 func (s *SkillPlanService) validateAndNormalizeOwnedCharacterIDs(userID uint, characterIDs []int64) ([]int64, error) {
 	ownedChars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 
 	ownedSet := make(map[int64]struct{}, len(ownedChars))
@@ -654,7 +654,7 @@ func (s *SkillPlanService) validateAndNormalizeOwnedCharacterIDs(userID uint, ch
 			continue
 		}
 		if _, ok := ownedSet[characterID]; !ok {
-			return nil, fmt.Errorf("角色 %d 不属于当前用户", characterID)
+			return nil, fmt.Errorf("人物 %d 不属于当前用户", characterID)
 		}
 		seen[characterID] = struct{}{}
 		result = append(result, characterID)

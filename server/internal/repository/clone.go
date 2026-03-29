@@ -13,7 +13,7 @@ type CloneRepository struct{}
 
 func NewCloneRepository() *CloneRepository { return &CloneRepository{} }
 
-// GetCloneBaseInfo 获取角色克隆基础信息
+// GetCloneBaseInfo 获取人物克隆基础信息
 func (r *CloneRepository) GetCloneBaseInfo(characterID int64) (*model.EveCharacterCloneBaseInfo, error) {
 	var info model.EveCharacterCloneBaseInfo
 	err := global.DB.Where("character_id = ?", characterID).First(&info).Error
@@ -23,7 +23,7 @@ func (r *CloneRepository) GetCloneBaseInfo(characterID int64) (*model.EveCharact
 	return &info, nil
 }
 
-// GetImplants 获取角色所有植入体（含跳跃克隆体植入体）
+// GetImplants 获取人物所有植入体（含跳跃克隆体植入体）
 func (r *CloneRepository) GetImplants(characterID int64) ([]model.EveCharacterImplants, error) {
 	var implants []model.EveCharacterImplants
 	err := global.DB.Where("character_id = ?", characterID).Find(&implants).Error

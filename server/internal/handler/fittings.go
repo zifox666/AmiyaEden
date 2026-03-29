@@ -20,7 +20,7 @@ func NewFittingsHandler() *FittingsHandler {
 }
 
 // GetFittings POST /info/fittings
-// 获取当前用户名下所有角色的装配列表
+// 获取当前用户名下所有人物的装配列表
 func (h *FittingsHandler) GetFittings(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

@@ -122,31 +122,31 @@ func getFlagGroup(flag string) string {
 //  业务方法
 // ─────────────────────────────────────────────
 
-// validateCharacterOwnership 校验角色归属
+// validateCharacterOwnership 校验人物归属
 func (s *FittingsService) validateCharacterOwnership(userID uint, characterID int64) (*model.EveCharacter, error) {
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 	for i := range chars {
 		if chars[i].CharacterID == characterID {
 			return &chars[i], nil
 		}
 	}
-	return nil, errors.New("该角色不属于当前用户")
+	return nil, errors.New("该人物不属于当前用户")
 }
 
-// GetFittings 获取用户名下所有角色的装配列表
+// GetFittings 获取用户名下所有人物的装配列表
 func (s *FittingsService) GetFittings(userID uint, req *FittingsRequest) (*FittingsListResponse, error) {
 	lang := req.Language
 	if lang == "" {
 		lang = "zh"
 	}
 
-	// 获取用户所有角色
+	// 获取用户所有人物
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 	if len(chars) == 0 {
 		return &FittingsListResponse{Fittings: []FittingResponse{}}, nil
@@ -305,7 +305,7 @@ func (s *FittingsService) SaveFitting(userID uint, req *SaveFittingRequest) (*Fi
 	}
 
 	if char.AccessToken == "" || char.TokenInvalid {
-		return nil, errors.New("角色 Token 不可用，请重新绑定")
+		return nil, errors.New("人物 Token 不可用，请重新绑定")
 	}
 
 	httpClient := &http.Client{Timeout: 30 * time.Second}

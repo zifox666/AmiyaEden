@@ -76,7 +76,7 @@ type alliancePAPRanking struct {
 
 const alliancePAPTimeLayout = "2006-01-02 15:04:05"
 
-// FetchAndStore 拉取指定主角色某月的联盟 PAP 数据并入库
+// FetchAndStore 拉取指定主人物某月的联盟 PAP 数据并入库
 func (s *AlliancePAPService) FetchAndStore(mainChar string, year, month int) error {
 	cfg := global.Config.AlliancePAP
 	if cfg.BaseURL == "" || cfg.APIKey == "" {
@@ -180,7 +180,7 @@ func (s *AlliancePAPService) FetchAndStore(mainChar string, year, month int) err
 		}
 	}
 
-	// API 未返回 corporation_id 时，从数据库角色表中查找
+	// API 未返回 corporation_id 时，从数据库人物表中查找
 	if corporationID == "" {
 		if char, err := s.charRepo.GetByCharacterName(mainChar); err == nil && char.CorporationID != 0 {
 			corporationID = strconv.FormatInt(char.CorporationID, 10)
@@ -206,7 +206,7 @@ func (s *AlliancePAPService) FetchAndStore(mainChar string, year, month int) err
 	return s.repo.UpsertSummary(summary)
 }
 
-// FetchAllUsers 拉取系统中所有用户主角色的当前月 PAP 数据
+// FetchAllUsers 拉取系统中所有用户主人物的当前月 PAP 数据
 func (s *AlliancePAPService) FetchAllUsers(year, month int) {
 	userIDs, err := s.userRepo.ListAllIDs()
 	if err != nil {

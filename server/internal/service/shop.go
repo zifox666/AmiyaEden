@@ -177,7 +177,7 @@ func (s *ShopService) rollbackOrder(order *model.ShopOrder, product *model.ShopP
 	_ = s.repo.UpdateOrder(order)
 }
 
-// getUserSnapshot 获取用户信息快照（主角色名、昵称、QQ、Discord）
+// getUserSnapshot 获取用户信息快照（主人物名、昵称、QQ、Discord）
 func (s *ShopService) getUserSnapshot(userID uint) (mainCharName, nickname, qq, discordID string) {
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {

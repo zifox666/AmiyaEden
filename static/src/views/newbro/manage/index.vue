@@ -29,6 +29,8 @@
                   clearable
                   style="width: 220px"
                   :placeholder="t('newbro.manage.keyword')"
+                  @clear="handleCaptainSearch"
+                  @keyup="handleCaptainSearchKeyup"
                 />
                 <ElButton @click="handleCaptainSearch">{{ $t('common.search') }}</ElButton>
               </div>
@@ -40,8 +42,6 @@
             :data="captains"
             :columns="captainColumns"
             :pagination="page"
-            visual-variant="ledger"
-            :show-table-header="false"
             @pagination:size-change="handleCaptainSizeChange"
             @pagination:current-change="handleCaptainCurrentChange"
           />
@@ -157,6 +157,25 @@
         </div>
 
         <ElCard shadow="never">
+          <template #header>
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <span>{{ t('newbro.manage.rewardHistoryTab') }}</span>
+              <div class="flex items-center gap-3 flex-wrap">
+                <ElInput
+                  v-model="rewardKeyword"
+                  clearable
+                  style="width: 240px"
+                  :placeholder="t('newbro.manage.keyword')"
+                  @clear="handleRewardSearch"
+                  @keyup="handleRewardSearchKeyup"
+                />
+                <ElButton type="primary" @click="handleRewardSearch">
+                  {{ $t('common.search') }}
+                </ElButton>
+                <ElButton @click="handleRewardReset">{{ $t('common.reset') }}</ElButton>
+              </div>
+            </div>
+          </template>
           <ArtTable
             :loading="loadingRewards"
             :data="rewardRows"
@@ -229,6 +248,7 @@
 <script setup lang="ts">
   import type { ColumnOption } from '@/types/component'
   import { useI18n } from 'vue-i18n'
+  import { useEnterSearch } from '@/hooks/core/useEnterSearch'
   import {
     fetchAdminAffiliationHistory,
     fetchAdminCaptainDetail,
@@ -243,6 +263,7 @@
 
   const { t } = useI18n()
   const { formatDateTime, formatIsk, formatCredit, formatPercentage } = useNewbroFormatters()
+  const { createEnterSearchHandler } = useEnterSearch()
 
   const activeTab = ref('performance')
   const loadingCaptains = ref(false)
@@ -251,13 +272,14 @@
   const syncing = ref(false)
   const processingRewards = ref(false)
   const keyword = ref('')
+  const rewardKeyword = ref('')
   const captains = ref<Api.Newbro.CaptainOverview[]>([])
   const detail = ref<Api.Newbro.AdminCaptainDetail | null>(null)
   const historyRows = ref<Api.Newbro.AdminAffiliationHistoryItem[]>([])
   const rewardRows = ref<Api.Newbro.CaptainRewardSettlementItem[]>([])
   const historyLoaded = ref(false)
   const rewardLoaded = ref(false)
-  const page = reactive({ current: 1, size: 200, total: 0 })
+  const page = reactive({ current: 1, size: 20, total: 0 })
   const rewardPage = reactive({ current: 1, size: 200, total: 0 })
   const historyPage = reactive({ current: 1, size: 200, total: 0 })
   const rewardSummary = ref<Api.Newbro.CaptainRewardSummary>({
@@ -427,7 +449,7 @@
       const data = await fetchAdminCaptainList({
         current: page.current,
         size: page.size,
-        keyword: keyword.value || undefined
+        keyword: keyword.value.trim() || undefined
       })
       captains.value = data.list
       page.total = data.total
@@ -461,7 +483,8 @@
     try {
       const data = await fetchAdminRewardSettlements({
         current: rewardPage.current,
-        size: rewardPage.size
+        size: rewardPage.size,
+        keyword: rewardKeyword.value.trim() || undefined
       })
       rewardRows.value = data.list
       rewardSummary.value = data.summary
@@ -488,6 +511,7 @@
     page.current = 1
     await loadCaptains()
   }
+  const handleCaptainSearchKeyup = createEnterSearchHandler(handleCaptainSearch)
 
   const handleCaptainCurrentChange = async (value: number) => {
     page.current = value
@@ -512,6 +536,18 @@
 
   const handleRewardSizeChange = async (value: number) => {
     rewardPage.size = value
+    rewardPage.current = 1
+    await loadRewards()
+  }
+
+  const handleRewardSearch = async () => {
+    rewardPage.current = 1
+    await loadRewards()
+  }
+  const handleRewardSearchKeyup = createEnterSearchHandler(handleRewardSearch)
+
+  const handleRewardReset = async () => {
+    rewardKeyword.value = ''
     rewardPage.current = 1
     await loadRewards()
   }

@@ -248,6 +248,7 @@ func (r *WelfareRepository) ListApplicationsByWelfareIDs(welfareIDs []uint) ([]m
 type WelfareApplicationFilter struct {
 	Status   string   // 单状态精确匹配
 	StatusIn []string // 多状态匹配
+	Keyword  string   // 匹配申请人昵称、人物名或 QQ（不区分大小写）
 }
 
 // ListApplicationsPaginated 分页查询所有福利申请（管理端）
@@ -258,15 +259,24 @@ func (r *WelfareRepository) ListApplicationsPaginated(page, pageSize int, filter
 
 	db := global.DB.Model(&model.WelfareApplication{})
 	if filter.Status != "" {
-		db = db.Where("status = ?", filter.Status)
+		db = db.Where("welfare_application.status = ?", filter.Status)
 	} else if len(filter.StatusIn) > 0 {
-		db = db.Where("status IN ?", filter.StatusIn)
+		db = db.Where("welfare_application.status IN ?", filter.StatusIn)
+	}
+	if filter.Keyword != "" {
+		db = db.Joins(`LEFT JOIN "user" AS applicant_user ON applicant_user.id = welfare_application.user_id`)
+		db = applyKeywordLikeFilter(
+			db,
+			filter.Keyword,
+			`LOWER(applicant_user.nickname) LIKE ?`,
+			`LOWER(welfare_application.character_name) LIKE ?`,
+			`LOWER(welfare_application.qq) LIKE ?`)
 	}
 
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	if err := db.Order("id DESC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
+	if err := db.Order("welfare_application.id DESC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
 	return list, total, nil

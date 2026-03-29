@@ -29,11 +29,11 @@ func DefaultNewbroSettings() NewbroSettings {
 func (s NewbroSettings) Validate() error {
 	switch {
 	case s.MaxCharacterSP <= 0:
-		return errors.New("单角色技能点阈值必须大于 0")
+		return errors.New("单人物技能点阈值必须大于 0")
 	case s.MultiCharacterSP <= 0:
-		return errors.New("多角色技能点阈值必须大于 0")
+		return errors.New("多人物技能点阈值必须大于 0")
 	case s.MultiCharacterThreshold <= 0:
-		return errors.New("多角色计数阈值必须大于 0")
+		return errors.New("多人物计数阈值必须大于 0")
 	case s.RefreshIntervalDays <= 0:
 		return errors.New("资格快照刷新间隔必须大于 0")
 	case s.BonusRate < 0:
@@ -93,17 +93,17 @@ func (s *NewbroSettingsService) UpdateSettings(cfg NewbroSettings) (NewbroSettin
 		{
 			Key:   model.SysConfigNewbroMaxCharacterSP,
 			Value: fmt.Sprintf("%d", cfg.MaxCharacterSP),
-			Desc:  "新人资格：单角色技能点阈值",
+			Desc:  "新人资格：单人物技能点阈值",
 		},
 		{
 			Key:   model.SysConfigNewbroMultiCharacterSP,
 			Value: fmt.Sprintf("%d", cfg.MultiCharacterSP),
-			Desc:  "新人资格：多角色技能点阈值",
+			Desc:  "新人资格：多人物技能点阈值",
 		},
 		{
 			Key:   model.SysConfigNewbroMultiCharacterThreshold,
 			Value: fmt.Sprintf("%d", cfg.MultiCharacterThreshold),
-			Desc:  "新人资格：达到多角色阈值的角色数量",
+			Desc:  "新人资格：达到多人物阈值的人物数量",
 		},
 		{
 			Key:   model.SysConfigNewbroRefreshIntervalDays,

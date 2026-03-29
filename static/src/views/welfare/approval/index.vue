@@ -37,7 +37,20 @@
             @refresh="loadHistory"
           >
             <template #left>
-              <span />
+              <div class="flex items-center gap-3 flex-wrap">
+                <ElInput
+                  v-model="historyKeyword"
+                  :placeholder="t('welfareApproval.historyKeywordPlaceholder')"
+                  clearable
+                  style="width: 240px"
+                  @clear="handleHistorySearch"
+                  @keyup="handleHistorySearchKeyup"
+                />
+                <ElButton type="primary" @click="handleHistorySearch">
+                  {{ t('welfareApproval.searchBtn') }}
+                </ElButton>
+                <ElButton @click="handleHistoryReset">{{ t('welfareApproval.resetBtn') }}</ElButton>
+              </div>
             </template>
           </ArtTableHeader>
           <ArtTable
@@ -60,19 +73,22 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElMessage, ElMessageBox, ElEmpty } from 'element-plus'
+  import { ElTag, ElButton, ElInput, ElMessage, ElMessageBox, ElEmpty } from 'element-plus'
   import { CopyDocument } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
   import { formatTime } from '@utils/common'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import { useEnterSearch } from '@/hooks/core/useEnterSearch'
   import { useTable } from '@/hooks/core/useTable'
   import { adminListApplications, adminReviewApplication } from '@/api/welfare'
 
   defineOptions({ name: 'WelfareApproval' })
   const { t } = useI18n()
+  const { createEnterSearchHandler } = useEnterSearch()
 
   // ─── Tab state ───
   const activeTab = ref('pending')
+  const historyKeyword = ref('')
 
   type AppRow = Api.Welfare.AdminApplication
 
@@ -231,7 +247,8 @@
     pagination: historyPagination,
     handleSizeChange: historyHandleSizeChange,
     handleCurrentChange: historyHandleCurrentChange,
-    getData: loadHistory
+    getData: loadHistory,
+    searchParams: historySearchParams
   } = useTable({
     core: {
       apiFn: adminListApplications,
@@ -255,6 +272,24 @@
       ]
     }
   })
+
+  const handleHistorySearch = () => {
+    Object.assign(historySearchParams, {
+      current: 1,
+      keyword: historyKeyword.value.trim() || undefined
+    })
+    loadHistory()
+  }
+  const handleHistorySearchKeyup = createEnterSearchHandler(handleHistorySearch)
+
+  const handleHistoryReset = () => {
+    historyKeyword.value = ''
+    Object.assign(historySearchParams, {
+      current: 1,
+      keyword: undefined
+    })
+    loadHistory()
+  }
 
   // ─── Actions ───
   const actionLoading = ref(false)

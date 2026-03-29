@@ -67,7 +67,7 @@ source_of_truth:
 - 新增工程约束时，更新 `docs/ai/repo-rules.md` 或 `docs/standards`，不要把规则写进 feature doc。
 - 测试与验证规则优先维护在 `docs/ai/repo-rules.md` 与 `docs/standards/testing-and-verification.md`。
 - 新增尚未落地的设计时，只放进 `docs/specs/draft`。
-- 不要在多个文件里重复维护同一份角色定义、路由表、权限矩阵。
+- 不要在多个文件里重复维护同一份职权定义、路由表、权限矩阵。
 - 不要保留并行的“第二套文档入口”。
 - 仓库内允许存在少量模块级 `README.md` 作为局部实现说明，但它们不是 repo-level canonical doc，不能覆盖 `docs/ai/repo-rules.md` 与 `docs/`。
 - 根目录 `README.md` 应保持适合新开发者快速上手，但若涉及工程规则、当前架构边界、接口裁决，仍以 `docs/ai/repo-rules.md` 与 `docs/` 为准。
@@ -77,7 +77,7 @@ source_of_truth:
 典型场景：
 
 - 认证 / 鉴权边界
-- RBAC 角色提升规则
+- RBAC 职权提升规则
 - 自动权限映射的特殊分支
 - 兼容字段与当前权威字段的区别
 

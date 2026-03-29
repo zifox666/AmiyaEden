@@ -19,7 +19,7 @@ func NewEveSkillHandler() *EveSkillHandler {
 }
 
 // GetEveCharacterSkills GET /eve/character/:id/skills
-// 获取角色技能信息（总 SP + 技能列表 + 每个 group_id 的技能数量）
+// 获取人物技能信息（总 SP + 技能列表 + 每个 group_id 的技能数量）
 func (h *EveSkillHandler) GetEveCharacterSkills(c *gin.Context) {
 	characterID := c.Param("id")
 	if characterID == "" {

@@ -11,7 +11,12 @@ func TestNewUserListItem(t *testing.T) {
 			BaseModel: BaseModel{ID: 7},
 			Nickname:  "Capsuleer",
 			Role:      RoleGuest,
-		}, []string{RoleSuperAdmin, RoleAdmin})
+		}, []string{RoleSuperAdmin, RoleAdmin}, []UserListCharacter{{
+			CharacterID:   9001,
+			CharacterName: "Amiya Prime",
+			PortraitURL:   "portrait.png",
+			TotalSP:       123456,
+		}})
 
 		payload, err := json.Marshal(item)
 		if err != nil {
@@ -34,12 +39,34 @@ func TestNewUserListItem(t *testing.T) {
 		if len(rawRoles) != 2 || rawRoles[0] != RoleSuperAdmin || rawRoles[1] != RoleAdmin {
 			t.Fatalf("unexpected roles payload: %#v", rawRoles)
 		}
+
+		rawCharacters, ok := got["characters"].([]any)
+		if !ok {
+			t.Fatalf("expected characters array in payload, got %#v", got["characters"])
+		}
+		if len(rawCharacters) != 1 {
+			t.Fatalf("expected one character in payload, got %#v", rawCharacters)
+		}
+
+		firstCharacter, ok := rawCharacters[0].(map[string]any)
+		if !ok {
+			t.Fatalf("expected character object, got %#v", rawCharacters[0])
+		}
+		if firstCharacter["character_id"] != float64(9001) {
+			t.Fatalf("unexpected character id payload: %#v", firstCharacter)
+		}
+		if firstCharacter["total_sp"] != float64(123456) {
+			t.Fatalf("unexpected character total_sp payload: %#v", firstCharacter)
+		}
 	})
 
 	t.Run("falls back to guest when no active roles exist", func(t *testing.T) {
-		item := NewUserListItem(User{}, nil)
+		item := NewUserListItem(User{}, nil, nil)
 		if len(item.Roles) != 1 || item.Roles[0] != RoleGuest {
 			t.Fatalf("expected guest fallback, got %#v", item.Roles)
+		}
+		if item.Characters == nil || len(item.Characters) != 0 {
+			t.Fatalf("expected characters to default to an empty slice, got %#v", item.Characters)
 		}
 	})
 }

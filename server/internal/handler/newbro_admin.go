@@ -27,7 +27,7 @@ func NewNewbroAdminHandler() *NewbroAdminHandler {
 }
 
 func (h *NewbroAdminHandler) ListCaptains(c *gin.Context) {
-	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	page, pageSize, err := parsePaginationQuery(c, 20, 100)
 	if err != nil {
 		response.Fail(c, response.CodeParamError, err.Error())
 		return
@@ -144,7 +144,7 @@ func (h *NewbroAdminHandler) ListRewardSettlements(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, err.Error())
 		return
 	}
-	summary, result, total, err := h.reportSvc.ListAdminRewardSettlements(page, pageSize)
+	summary, result, total, err := h.reportSvc.ListAdminRewardSettlements(page, pageSize, c.Query("keyword"))
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

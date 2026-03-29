@@ -37,7 +37,7 @@ func (r *EveWalletRepository) getWalletJournalRefTypesQuery(db *gorm.DB, charact
 		Order("ref_type ASC")
 }
 
-// GetWalletJournals 分页获取角色钱包流水
+// GetWalletJournals 分页获取人物钱包流水
 func (r *EveWalletRepository) GetWalletJournals(characterID int64, page, pageSize int, refTypes []string) ([]model.EVECharacterWalletJournal, int64, error) {
 	var journals []model.EVECharacterWalletJournal
 	var total int64
@@ -55,7 +55,7 @@ func (r *EveWalletRepository) GetWalletJournals(characterID int64, page, pageSiz
 	return journals, total, nil
 }
 
-// ListWalletJournalRefTypes 获取角色钱包流水中出现过的所有交易类型
+// ListWalletJournalRefTypes 获取人物钱包流水中出现过的所有交易类型
 func (r *EveWalletRepository) ListWalletJournalRefTypes(characterID int64) ([]string, error) {
 	var refTypes []string
 	err := r.getWalletJournalRefTypesQuery(global.DB, characterID).Pluck("ref_type", &refTypes).Error
@@ -65,7 +65,7 @@ func (r *EveWalletRepository) ListWalletJournalRefTypes(characterID int64) ([]st
 	return refTypes, nil
 }
 
-// SumBalanceByCharacterIDs 汇总多个角色的钱包余额
+// SumBalanceByCharacterIDs 汇总多个人物的钱包余额
 func (r *EveWalletRepository) SumBalanceByCharacterIDs(characterIDs []int64) (float64, error) {
 	if len(characterIDs) == 0 {
 		return 0, nil

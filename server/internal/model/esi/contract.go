@@ -2,7 +2,7 @@ package esimodel
 
 import "time"
 
-// EveCharacterContract 角色合同
+// EveCharacterContract 人物合同
 type EveCharacterContract struct {
 	ID                  uint       `gorm:"primarykey"                             json:"id"`
 	CharacterID         int64      `gorm:"not null;uniqueIndex:idx_char_contract" json:"character_id"`

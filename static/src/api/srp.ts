@@ -50,7 +50,7 @@ export function fetchFleetKillmails(fleetId: string) {
   })
 }
 
-/** 获取当前用户所有角色的全部 KM 列表（不限舰队；可按 characterId 筛选） */
+/** 获取当前用户所有人物的全部 KM 列表（不限舰队；可按 characterId 筛选） */
 export function fetchMyKillmails(characterId?: number) {
   return request.get<Api.Srp.FleetKillmailItem[]>({
     url: '/api/v1/srp/killmails/me',
@@ -130,7 +130,7 @@ export function batchPayoutByUser(userId: number) {
   })
 }
 
-/** 通过 ESI 在客户端打开角色信息窗口 */
+/** 通过 ESI 在客户端打开人物信息窗口 */
 export function openInfoWindow(data: { character_id: number; target_id: number }) {
   return request.post({
     url: '/api/v1/srp/open-info-window',

@@ -11,7 +11,7 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Clones 角色克隆相关
+//  Character Clones 人物克隆相关
 //  GET /characters/{character_id}/clones
 //  GET /characters/{character_id}/implants
 //  GET /characters/{character_id}/fatigue
@@ -22,11 +22,11 @@ func init() {
 	Register(&ClonesTask{})
 }
 
-// ClonesTask 角色克隆信息刷新任务
+// ClonesTask 人物克隆信息刷新任务
 type ClonesTask struct{}
 
 func (t *ClonesTask) Name() string        { return "character_clones" }
-func (t *ClonesTask) Description() string { return "角色克隆体/植入体/跳跃疲劳" }
+func (t *ClonesTask) Description() string { return "人物克隆体/植入体/跳跃疲劳" }
 func (t *ClonesTask) Priority() Priority  { return PriorityNormal }
 
 func (t *ClonesTask) Interval() RefreshInterval {

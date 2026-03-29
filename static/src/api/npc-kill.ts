@@ -5,7 +5,7 @@ export function fetchNpcKills(data: Api.NpcKill.NpcKillRequest) {
   return request.post<Api.NpcKill.NpcKillResponse>({ url: '/api/v1/info/npc-kills', data })
 }
 
-/** 获取名下所有角色的汇总刷怪报表 */
+/** 获取名下所有人物的汇总刷怪报表 */
 export function fetchNpcKillsAll(data: Api.NpcKill.NpcKillAllRequest) {
   return request.post<Api.NpcKill.NpcKillResponse>({ url: '/api/v1/info/npc-kills/all', data })
 }

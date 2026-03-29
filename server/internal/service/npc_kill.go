@@ -31,7 +31,7 @@ func NewNpcKillService() *NpcKillService {
 //  请求 & 响应结构
 // ─────────────────────────────────────────────
 
-// NpcKillRequest 刷怪报表请求（个人 - 单角色）
+// NpcKillRequest 刷怪报表请求（个人 - 单人物）
 type NpcKillRequest struct {
 	CharacterID int64  `json:"character_id" binding:"required"`
 	StartDate   string `json:"start_date"`           // 格式: 2006-01-02
@@ -41,7 +41,7 @@ type NpcKillRequest struct {
 	PageSize    int    `json:"page_size" binding:"min=0"`
 }
 
-// NpcKillAllRequest 刷怪报表请求（个人 - 名下所有角色汇总）
+// NpcKillAllRequest 刷怪报表请求（个人 - 名下所有人物汇总）
 type NpcKillAllRequest struct {
 	StartDate string `json:"start_date"`
 	EndDate   string `json:"end_date"`
@@ -147,7 +147,7 @@ type NpcKillCorpResponse struct {
 
 // GetNpcKills 获取个人刷怪报表
 func (s *NpcKillService) GetNpcKills(userID uint, req *NpcKillRequest) (*NpcKillResponse, error) {
-	// 校验角色归属
+	// 校验人物归属
 	if err := s.validateCharacterOwnership(userID, req.CharacterID); err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (s *NpcKillService) GetNpcKills(userID uint, req *NpcKillRequest) (*NpcKill
 	return resp, nil
 }
 
-// GetAllNpcKills 获取当前用户名下所有角色的汇总刷怪报表
+// GetAllNpcKills 获取当前用户名下所有人物的汇总刷怪报表
 func (s *NpcKillService) GetAllNpcKills(userID uint, req *NpcKillAllRequest) (*NpcKillResponse, error) {
 	lang := req.Language
 	if lang == "" {
@@ -212,10 +212,10 @@ func (s *NpcKillService) GetAllNpcKills(userID uint, req *NpcKillAllRequest) (*N
 
 	startDate, endDate := parseDateRange(req.StartDate, req.EndDate)
 
-	// 获取该用户名下的所有角色
+	// 获取该用户名下的所有人物
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("获取角色列表失败: %w", err)
+		return nil, fmt.Errorf("获取人物列表失败: %w", err)
 	}
 
 	charIDs := make([]int64, 0, len(chars))
@@ -263,10 +263,10 @@ func (s *NpcKillService) GetAllNpcKills(userID uint, req *NpcKillAllRequest) (*N
 func (s *NpcKillService) GetCorpNpcKills(req *NpcKillCorpRequest) (*NpcKillCorpResponse, error) {
 	startDate, endDate := parseDateRange(req.StartDate, req.EndDate)
 
-	// 获取所有已绑定的角色
+	// 获取所有已绑定的人物
 	allChars, err := s.charRepo.ListAllWithToken()
 	if err != nil {
-		return nil, fmt.Errorf("获取角色列表失败: %w", err)
+		return nil, fmt.Errorf("获取人物列表失败: %w", err)
 	}
 
 	charIDs := make([]int64, 0, len(allChars))
@@ -338,14 +338,14 @@ func (s *NpcKillService) GetCorpNpcKills(req *NpcKillCorpRequest) (*NpcKillCorpR
 func (s *NpcKillService) validateCharacterOwnership(userID uint, characterID int64) error {
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return fmt.Errorf("获取角色列表失败")
+		return fmt.Errorf("获取人物列表失败")
 	}
 	for _, c := range chars {
 		if c.CharacterID == characterID {
 			return nil
 		}
 	}
-	return fmt.Errorf("该角色不属于当前用户")
+	return fmt.Errorf("该人物不属于当前用户")
 }
 
 // calcSummary 计算总览统计

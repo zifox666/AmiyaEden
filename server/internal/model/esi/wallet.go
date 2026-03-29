@@ -2,7 +2,7 @@ package esimodel
 
 import "time"
 
-// EVECharacterWallet 角色钱包余额
+// EVECharacterWallet 人物钱包余额
 type EVECharacterWallet struct {
 	ID          uint      `gorm:"primaryKey;autoIncrement"                      json:"id"`
 	CharacterID int64     `gorm:"not null;uniqueIndex:udx_chr_wallet_char"                          json:"character_id"`
@@ -12,7 +12,7 @@ type EVECharacterWallet struct {
 
 func (EVECharacterWallet) TableName() string { return "eve_character_wallet" }
 
-// EVECharacterWalletJournal 角色钱包交易记录
+// EVECharacterWalletJournal 人物钱包交易记录
 type EVECharacterWalletJournal struct {
 	ID            int64     `gorm:"primarykey"                                    json:"id"`
 	CharacterID   int64     `gorm:"not null;index:idx_char_wallet_journal"        json:"character_id"`
@@ -32,7 +32,7 @@ type EVECharacterWalletJournal struct {
 
 func (EVECharacterWalletJournal) TableName() string { return "eve_character_wallet_journal" }
 
-// EVECharacterWalletTransaction 角色钱包市场交易
+// EVECharacterWalletTransaction 人物钱包市场交易
 type EVECharacterWalletTransaction struct {
 	TransactionID int64     `gorm:"primarykey"                                    json:"transaction_id"`
 	ClientID      int64     `gorm:"not null"                                      json:"client_id"`

@@ -29,18 +29,18 @@ var headerEncoded = base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256",
 // Claims 我们系统的 JWT 载荷
 type Claims struct {
 	UserID      uint   `json:"uid"`
-	CharacterID int64  `json:"cid"`  // 登录时使用的 EVE 角色 ID
-	Role        string `json:"role"` // 用户角色
+	CharacterID int64  `json:"cid"`  // 登录时使用的 EVE 人物 ID
+	Role        string `json:"role"` // 兼容历史单职权字段
 	ExpiresAt   int64  `json:"exp"`
 	IssuedAt    int64  `json:"iat"`
 }
 
 // GenerateToken 生成 JWT Token
-func GenerateToken(userID uint, characterID int64, role string, expireDays int) (string, error) {
+func GenerateToken(userID uint, characterID int64, legacyRole string, expireDays int) (string, error) {
 	claims := Claims{
 		UserID:      userID,
 		CharacterID: characterID,
-		Role:        role,
+		Role:        legacyRole,
 		ExpiresAt:   time.Now().Add(time.Duration(expireDays) * 24 * time.Hour).Unix(),
 		IssuedAt:    time.Now().Unix(),
 	}

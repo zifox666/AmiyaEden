@@ -29,7 +29,7 @@ func NewAlliancePAPHandler() *AlliancePAPHandler {
 	}
 }
 
-// getAllowCorpFilter 根据调用者角色返回军团过滤列表
+// getAllowCorpFilter 根据调用者职权返回军团过滤列表
 // super_admin 返回 nil（不过滤），admin 返回配置的 allow_corporations
 func getAllowCorpFilter(c *gin.Context) []int64 {
 	roles := middleware.GetUserRoles(c)
@@ -40,7 +40,7 @@ func getAllowCorpFilter(c *gin.Context) []int64 {
 }
 
 // GetMyAlliancePAP  GET /operation/pap/alliance
-// 查询当前登录用户主角色的联盟 PAP 数据（默认当月）
+// 查询当前登录用户主人物的联盟 PAP 数据（默认当月）
 func (h *AlliancePAPHandler) GetMyAlliancePAP(c *gin.Context) {
 	now := time.Now()
 	year := now.Year()
@@ -60,13 +60,13 @@ func (h *AlliancePAPHandler) GetMyAlliancePAP(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	user, err := h.userRepo.GetByID(userID)
 	if err != nil || user.PrimaryCharacterID == 0 {
-		response.Fail(c, response.CodeBizError, "未设置主角色")
+		response.Fail(c, response.CodeBizError, "未设置主人物")
 		return
 	}
 
 	char, err := h.charRepo.GetByCharacterID(user.PrimaryCharacterID)
 	if err != nil {
-		response.Fail(c, response.CodeBizError, "主角色不存在")
+		response.Fail(c, response.CodeBizError, "主人物不存在")
 		return
 	}
 
@@ -156,13 +156,13 @@ func (h *AlliancePAPHandler) ImportAlliancePAP(c *gin.Context) {
 
 	char, err := h.charRepo.GetByCharacterName(req.PAPImportInfo.PrimaryCharacterName)
 	if err != nil {
-		response.Fail(c, response.CodeBizError, "主角色不存在")
+		response.Fail(c, response.CodeBizError, "主人物不存在")
 		return
 	}
 
 	user, err := h.userRepo.GetByPrimaryCharacterID(char.CharacterID)
 	if err != nil || user.PrimaryCharacterID == 0 {
-		response.Fail(c, response.CodeBizError, "未设置主角色")
+		response.Fail(c, response.CodeBizError, "未设置主人物")
 		return
 	}
 

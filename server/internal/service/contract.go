@@ -98,15 +98,15 @@ func NewContractService() *ContractService {
 	}
 }
 
-// GetUserContracts 分页获取用户名下所有角色的合同
+// GetUserContracts 分页获取用户名下所有人物的合同
 func (s *ContractService) GetUserContracts(userID uint, req *InfoContractsRequest) ([]ContractResponse, int64, error) {
 	page := normalizePage(req.Current)
 	pageSize := normalizeLedgerPageSize(req.Size)
 
-	// 1. 获取角色列表
+	// 1. 获取人物列表
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, 0, errors.New("获取角色列表失败")
+		return nil, 0, errors.New("获取人物列表失败")
 	}
 	if len(chars) == 0 {
 		return []ContractResponse{}, 0, nil
@@ -168,10 +168,10 @@ func (s *ContractService) GetContractDetail(userID uint, req *InfoContractDetail
 		lang = "zh"
 	}
 
-	// 1. 验证角色属于当前用户
+	// 1. 验证人物属于当前用户
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 	owned := false
 	for _, c := range chars {

@@ -87,23 +87,23 @@ func NewCloneService() *CloneService {
 	}
 }
 
-// validateCharacterOwnership 校验角色归属
+// validateCharacterOwnership 校验人物归属
 func (s *CloneService) validateCharacterOwnership(userID uint, characterID int64) error {
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return errors.New("获取角色列表失败")
+		return errors.New("获取人物列表失败")
 	}
 	for _, c := range chars {
 		if c.CharacterID == characterID {
 			return nil
 		}
 	}
-	return errors.New("该角色不属于当前用户")
+	return errors.New("该人物不属于当前用户")
 }
 
-// GetCharacterImplants 获取角色克隆体/植入体信息
+// GetCharacterImplants 获取人物克隆体/植入体信息
 func (s *CloneService) GetCharacterImplants(userID uint, req *InfoImplantsRequest) (*InfoImplantsResponse, error) {
-	// 校验角色归属
+	// 校验人物归属
 	if err := s.validateCharacterOwnership(userID, req.CharacterID); err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func (s *CloneService) resolveStationName(stationID int64) string {
 
 // fetchAndCacheStructure 从 ESI 获取建筑详情并入库
 func (s *CloneService) fetchAndCacheStructure(characterID, structureID int64) string {
-	// 获取角色的 access token
+	// 获取人物的 access token
 	accessToken, err := s.ssoSvc.GetValidToken(context.Background(), characterID)
 	if err != nil {
 		global.Logger.Warn("[Clone] 获取 access token 失败",

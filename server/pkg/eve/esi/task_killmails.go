@@ -12,7 +12,7 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Killmails 角色击杀邮件
+//  Character Killmails 人物击杀邮件
 //  GET /characters/{character_id}/killmails/recent
 //  GET /killmails/{killmail_id}/{killmail_hash}  (详情)
 //  默认刷新间隔: 20 Minutes / 不活跃: 3 Days
@@ -22,11 +22,11 @@ func init() {
 	Register(&KillmailsTask{})
 }
 
-// KillmailsTask 角色击杀邮件刷新任务
+// KillmailsTask 人物击杀邮件刷新任务
 type KillmailsTask struct{}
 
 func (t *KillmailsTask) Name() string        { return "character_killmails" }
-func (t *KillmailsTask) Description() string { return "角色击杀/损失邮件" }
+func (t *KillmailsTask) Description() string { return "人物击杀/损失邮件" }
 func (t *KillmailsTask) Priority() Priority  { return PriorityCritical } // 高频关键任务
 
 func (t *KillmailsTask) Interval() RefreshInterval {
@@ -98,7 +98,7 @@ func (t *KillmailsTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch recent killmails: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色击杀邮件引用获取完成",
+	global.Logger.Debug("[ESI] 人物击杀邮件引用获取完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(refs)),
 	)
@@ -203,7 +203,7 @@ func (t *KillmailsTask) Execute(ctx *TaskContext) error {
 				}
 			}
 
-			// 创建角色-killmail 关联
+			// 创建人物-killmail 关联
 			return tx.Create(&model.EveCharacterKillmail{
 				CharacterID: ctx.CharacterID,
 				KillmailID:  ref.KillmailID,

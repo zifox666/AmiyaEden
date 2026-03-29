@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// EveInfoHandler EVE 角色信息处理器
+// EveInfoHandler EVE 人物信息处理器
 type EveInfoHandler struct {
 	svc         *service.EveInfoService
 	cloneSvc    *service.CloneService
@@ -26,7 +26,7 @@ func NewEveInfoHandler() *EveInfoHandler {
 }
 
 // GetWalletJournal POST /info/wallet
-// 获取指定角色的钱包余额和流水记录
+// 获取指定人物的钱包余额和流水记录
 func (h *EveInfoHandler) GetWalletJournal(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -45,7 +45,7 @@ func (h *EveInfoHandler) GetWalletJournal(c *gin.Context) {
 }
 
 // GetCharacterSkills POST /info/skills
-// 获取指定角色的技能列表和学习队列
+// 获取指定人物的技能列表和学习队列
 func (h *EveInfoHandler) GetCharacterSkills(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -64,7 +64,7 @@ func (h *EveInfoHandler) GetCharacterSkills(c *gin.Context) {
 }
 
 // GetCharacterShips POST /info/ships
-// 获取指定角色的可用舰船列表
+// 获取指定人物的可用舰船列表
 func (h *EveInfoHandler) GetCharacterShips(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -83,7 +83,7 @@ func (h *EveInfoHandler) GetCharacterShips(c *gin.Context) {
 }
 
 // GetCharacterImplants POST /info/implants
-// 获取指定角色的克隆体/植入体/跳跃疲劳信息
+// 获取指定人物的克隆体/植入体/跳跃疲劳信息
 func (h *EveInfoHandler) GetCharacterImplants(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -102,7 +102,7 @@ func (h *EveInfoHandler) GetCharacterImplants(c *gin.Context) {
 }
 
 // GetAssets POST /info/assets
-// 获取当前用户所有角色的资产汇总
+// 获取当前用户所有人物的资产汇总
 func (h *EveInfoHandler) GetAssets(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -121,7 +121,7 @@ func (h *EveInfoHandler) GetAssets(c *gin.Context) {
 }
 
 // GetContracts POST /info/contracts
-// 分页获取当前用户所有角色的合同
+// 分页获取当前用户所有人物的合同
 func (h *EveInfoHandler) GetContracts(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

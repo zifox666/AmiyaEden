@@ -194,7 +194,9 @@
     const { year, month } = parseMonth()
     const items = rows
       .map((row) => ({
-        primary_character_name: String(row['主角色'] ?? row['primary_character_name'] ?? ''),
+        primary_character_name: String(
+          row['主人物'] ?? row['主角色'] ?? row['primary_character_name'] ?? ''
+        ),
         monthly_pap: Number(row['月 PAP'] ?? row['monthly_pap'] ?? 0),
         calculated_at: String(row['数据时间'] ?? row['calculated_at'] ?? 0)
       }))
@@ -215,7 +217,12 @@
             data: { primary_character_name, monthly_pap, calculated_at }
           })
         } catch (err: any) {
-          if (err.message == '主角色不存在' || err.message == '未设置主角色') {
+          if (
+            err.message == '主人物不存在' ||
+            err.message == '未设置主人物' ||
+            err.message == '主角色不存在' ||
+            err.message == '未设置主角色'
+          ) {
             continue
           }
           throw err

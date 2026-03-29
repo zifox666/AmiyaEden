@@ -16,7 +16,7 @@ func NewNpcKillRepository() *NpcKillRepository {
 // npcIncomeRefTypes 包含所有 NPC 来源收入的 ref_type
 var npcIncomeRefTypes = []string{"bounty_prizes", "ess_escrow_transfer", "incursion_payout", "agent_mission_reward"}
 
-// GetBountyJournals 获取指定角色的 NPC 收入流水
+// GetBountyJournals 获取指定人物的 NPC 收入流水
 // 支持时间范围过滤
 func (r *NpcKillRepository) GetBountyJournals(characterID int64, startDate, endDate *time.Time) ([]model.EVECharacterWalletJournal, error) {
 	var journals []model.EVECharacterWalletJournal
@@ -39,7 +39,7 @@ func (r *NpcKillRepository) GetBountyJournals(characterID int64, startDate, endD
 	return journals, nil
 }
 
-// GetBountyJournalsPaged 分页获取指定角色的 NPC 收入流水
+// GetBountyJournalsPaged 分页获取指定人物的 NPC 收入流水
 func (r *NpcKillRepository) GetBountyJournalsPaged(characterID int64, startDate, endDate *time.Time, page, pageSize int) ([]model.EVECharacterWalletJournal, int64, error) {
 	var journals []model.EVECharacterWalletJournal
 	var total int64
@@ -69,7 +69,7 @@ func (r *NpcKillRepository) GetBountyJournalsPaged(characterID int64, startDate,
 	return journals, total, nil
 }
 
-// GetBountyJournalsByCharacterIDs 获取多个角色的 NPC 收入流水（admin 用）
+// GetBountyJournalsByCharacterIDs 获取多个人物的 NPC 收入流水（admin 用）
 func (r *NpcKillRepository) GetBountyJournalsByCharacterIDs(characterIDs []int64, startDate, endDate *time.Time) ([]model.EVECharacterWalletJournal, error) {
 	if len(characterIDs) == 0 {
 		return nil, nil
@@ -94,7 +94,7 @@ func (r *NpcKillRepository) GetBountyJournalsByCharacterIDs(characterIDs []int64
 	return journals, nil
 }
 
-// GetBountyJournalsByCharacterIDsPaged 分页获取多个角色的 NPC 收入流水（admin 用）
+// GetBountyJournalsByCharacterIDsPaged 分页获取多个人物的 NPC 收入流水（admin 用）
 func (r *NpcKillRepository) GetBountyJournalsByCharacterIDsPaged(characterIDs []int64, startDate, endDate *time.Time, page, pageSize int) ([]model.EVECharacterWalletJournal, int64, error) {
 	if len(characterIDs) == 0 {
 		return nil, 0, nil

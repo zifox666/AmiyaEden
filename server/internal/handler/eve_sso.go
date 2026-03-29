@@ -99,7 +99,7 @@ func (h *EveSSOHandler) GetScopes(c *gin.Context) {
 	response.OK(c, scopes)
 }
 
-// GetMyCharacters 获取当前用户绑定的所有 EVE 角色
+// GetMyCharacters 获取当前用户绑定的所有 EVE 人物
 //
 // GET /api/v1/sso/eve/characters（需要 JWT）
 func (h *EveSSOHandler) GetMyCharacters(c *gin.Context) {
@@ -117,8 +117,8 @@ func (h *EveSSOHandler) GetMyCharacters(c *gin.Context) {
 	response.OK(c, chars)
 }
 
-// BindLogin 发起「绑定新角色」的 EVE SSO 授权
-// 与 Login 类似，但 state 中记录当前用户 ID，回调时将角色绑到该用户
+// BindLogin 发起「绑定新人物」的 EVE SSO 授权
+// 与 Login 类似，但 state 中记录当前用户 ID，回调时将人物绑到该用户
 //
 // GET /api/v1/sso/eve/bind?redirect=xxx&scopes=esi-xxx.v1
 func (h *EveSSOHandler) BindLogin(c *gin.Context) {
@@ -149,7 +149,7 @@ func (h *EveSSOHandler) BindLogin(c *gin.Context) {
 	response.OK(c, gin.H{"url": authURL})
 }
 
-// SetPrimary 设置主角色
+// SetPrimary 设置主人物
 //
 // PUT /api/v1/sso/eve/primary/:character_id
 func (h *EveSSOHandler) SetPrimary(c *gin.Context) {
@@ -162,7 +162,7 @@ func (h *EveSSOHandler) SetPrimary(c *gin.Context) {
 	cidStr := c.Param("character_id")
 	var characterID int64
 	if _, err := fmt.Sscanf(cidStr, "%d", &characterID); err != nil || characterID <= 0 {
-		response.Fail(c, response.CodeParamError, "无效的角色 ID")
+		response.Fail(c, response.CodeParamError, "无效的人物 ID")
 		return
 	}
 
@@ -174,7 +174,7 @@ func (h *EveSSOHandler) SetPrimary(c *gin.Context) {
 	response.OK(c, nil)
 }
 
-// Unbind 解除绑定角色
+// Unbind 解除绑定人物
 //
 // DELETE /api/v1/sso/eve/characters/:character_id
 func (h *EveSSOHandler) Unbind(c *gin.Context) {
@@ -187,7 +187,7 @@ func (h *EveSSOHandler) Unbind(c *gin.Context) {
 	cidStr := c.Param("character_id")
 	var characterID int64
 	if _, err := fmt.Sscanf(cidStr, "%d", &characterID); err != nil || characterID <= 0 {
-		response.Fail(c, response.CodeParamError, "无效的角色 ID")
+		response.Fail(c, response.CodeParamError, "无效的人物 ID")
 		return
 	}
 

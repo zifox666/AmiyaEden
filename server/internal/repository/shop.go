@@ -138,7 +138,7 @@ type OrderFilter struct {
 	ProductID *uint
 	Status    string   // 单状态精确匹配
 	Statuses  []string // 多状态 IN 查询（优先于 Status）
-	Keyword   string   // 商品名、主角色名或昵称模糊搜索
+	Keyword   string   // 商品名、主人物名或昵称模糊搜索
 }
 
 // ListOrders 分页查询订单

@@ -6,6 +6,7 @@ import (
 	"amiya-eden/internal/repository"
 	"amiya-eden/pkg/jwt"
 	"errors"
+	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -14,8 +15,10 @@ import (
 )
 
 type UserService struct {
-	repo     *repository.UserRepository
-	roleRepo *repository.RoleRepository
+	repo      *repository.UserRepository
+	roleRepo  *repository.RoleRepository
+	charRepo  *repository.EveCharacterRepository
+	skillRepo *repository.EveSkillRepository
 }
 
 const (
@@ -32,8 +35,10 @@ type UserPatch struct {
 
 func NewUserService() *UserService {
 	return &UserService{
-		repo:     repository.NewUserRepository(),
-		roleRepo: repository.NewRoleRepository(),
+		repo:      repository.NewUserRepository(),
+		roleRepo:  repository.NewRoleRepository(),
+		charRepo:  repository.NewEveCharacterRepository(),
+		skillRepo: repository.NewEveSkillRepository(),
 	}
 }
 
@@ -246,9 +251,44 @@ func (s *UserService) buildUserListItems(users []model.User) []model.UserListIte
 		roleCodesByUserID = map[uint][]string{}
 	}
 
+	userCharactersByUserID := map[uint][]model.UserListCharacter{}
+	chars, err := s.charRepo.ListByUserIDs(userIDs)
+	if err == nil {
+		characterIDs := make([]int64, 0, len(chars))
+		for _, char := range chars {
+			characterIDs = append(characterIDs, char.CharacterID)
+		}
+
+		totalSPByCharacterID, err := s.skillRepo.GetSkillTotalsByCharacterIDs(characterIDs)
+		if err != nil {
+			totalSPByCharacterID = map[int64]int64{}
+		}
+
+		for _, char := range chars {
+			userCharactersByUserID[char.UserID] = append(
+				userCharactersByUserID[char.UserID],
+				model.NewUserListCharacter(char, totalSPByCharacterID[char.CharacterID]),
+			)
+		}
+	}
+
 	items := make([]model.UserListItem, 0, len(users))
 	for _, user := range users {
-		items = append(items, model.NewUserListItem(user, roleCodesByUserID[user.ID]))
+		userCharacters := append([]model.UserListCharacter(nil), userCharactersByUserID[user.ID]...)
+		sort.Slice(userCharacters, func(i, j int) bool {
+			if userCharacters[i].CharacterID == user.PrimaryCharacterID {
+				return true
+			}
+			if userCharacters[j].CharacterID == user.PrimaryCharacterID {
+				return false
+			}
+			if userCharacters[i].CharacterName != userCharacters[j].CharacterName {
+				return userCharacters[i].CharacterName < userCharacters[j].CharacterName
+			}
+			return userCharacters[i].CharacterID < userCharacters[j].CharacterID
+		})
+
+		items = append(items, model.NewUserListItem(user, roleCodesByUserID[user.ID], userCharacters))
 	}
 	return items
 }

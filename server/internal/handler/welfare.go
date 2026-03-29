@@ -214,6 +214,7 @@ type adminApplicationListRequest struct {
 	Current int    `json:"current"`
 	Size    int    `json:"size"`
 	Status  string `json:"status"`
+	Keyword string `json:"keyword"`
 }
 
 // AdminListApplications POST /system/welfare/applications
@@ -231,6 +232,7 @@ func (h *WelfareHandler) AdminListApplications(c *gin.Context) {
 	} else {
 		filter.Status = req.Status
 	}
+	filter.Keyword = req.Keyword
 
 	list, total, err := h.svc.AdminListApplications(req.Current, req.Size, filter)
 	if err != nil {

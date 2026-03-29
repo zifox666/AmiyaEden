@@ -2,7 +2,7 @@ package esimodel
 
 import "time"
 
-// EveCharacterCloneBaseInfo 角色克隆信息
+// EveCharacterCloneBaseInfo 人物克隆信息
 type EveCharacterCloneBaseInfo struct {
 	ID                    uint       `gorm:"primarykey"                                    json:"id"`
 	CharacterID           int64      `gorm:"uniqueIndex;not null"                          json:"character_id"`
@@ -17,7 +17,7 @@ type EveCharacterCloneBaseInfo struct {
 
 func (EveCharacterCloneBaseInfo) TableName() string { return "eve_character_clone_base_info" }
 
-// EveCharacterImplants 角色植入体信息
+// EveCharacterImplants 人物植入体信息
 type EveCharacterImplants struct {
 	ID           uint      `gorm:"primarykey"                                     json:"id"`
 	JumpCloneID  int64     `gorm:"index:idx_character_implants;not null"          json:"jump_clone_id"`

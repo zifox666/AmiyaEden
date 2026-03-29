@@ -1,6 +1,6 @@
 package esimodel
 
-// EveCharacterTitle 角色军团头衔
+// EveCharacterTitle 人物军团头衔
 type EveCharacterTitle struct {
 	ID          uint   `gorm:"primarykey"                                    json:"id"`
 	CharacterID int64  `gorm:"not null;index:idx_char_title,unique"          json:"character_id"`

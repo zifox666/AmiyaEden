@@ -508,7 +508,7 @@
     }
   }
 
-  // ─── 角色列表 ───
+  // ─── 人物列表 ───
   const characters = ref<Api.Auth.EveCharacter[]>([])
 
   async function loadCharacters() {

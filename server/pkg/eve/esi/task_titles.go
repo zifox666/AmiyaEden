@@ -11,7 +11,7 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Titles 角色军团头衔
+//  Character Titles 人物军团头衔
 //  GET /characters/{character_id}/titles
 //  默认刷新间隔: 6 Hours / 不活跃: 7 Days
 // ─────────────────────────────────────────────
@@ -20,11 +20,11 @@ func init() {
 	Register(&TitlesTask{})
 }
 
-// TitlesTask 角色头衔刷新任务
+// TitlesTask 人物头衔刷新任务
 type TitlesTask struct{}
 
 func (t *TitlesTask) Name() string        { return "character_titles" }
-func (t *TitlesTask) Description() string { return "角色军团头衔" }
+func (t *TitlesTask) Description() string { return "人物军团头衔" }
 func (t *TitlesTask) Priority() Priority  { return PriorityNormal }
 
 func (t *TitlesTask) Interval() RefreshInterval {
@@ -36,11 +36,11 @@ func (t *TitlesTask) Interval() RefreshInterval {
 
 func (t *TitlesTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-characters.read_titles.v1", Description: "读取角色头衔"},
+		{Scope: "esi-characters.read_titles.v1", Description: "读取人物头衔"},
 	}
 }
 
-// CharacterTitle 角色头衔
+// CharacterTitle 人物头衔
 type CharacterTitle struct {
 	Name    *string `json:"name,omitempty"`
 	TitleID *int    `json:"title_id,omitempty"`
@@ -55,7 +55,7 @@ func (t *TitlesTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch titles: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色头衔刷新完成",
+	global.Logger.Debug("[ESI] 人物头衔刷新完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(titles)),
 	)

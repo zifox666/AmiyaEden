@@ -32,7 +32,7 @@ type EveKillmailItem struct {
 
 func (EveKillmailItem) TableName() string { return "eve_killmail_item" }
 
-// EveCharacterKillmail 角色-击杀邮件关联表
+// EveCharacterKillmail 人物-击杀邮件关联表
 type EveCharacterKillmail struct {
 	ID          uint      `gorm:"primarykey"                                    json:"id"`
 	CharacterID int64     `gorm:"not null;uniqueIndex:idx_char_km"              json:"character_id"`

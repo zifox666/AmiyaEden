@@ -35,8 +35,8 @@ const (
 
 // RefreshInterval 刷新间隔配置
 type RefreshInterval struct {
-	Active   time.Duration // 活跃角色刷新间隔
-	Inactive time.Duration // 不活跃角色刷新间隔
+	Active   time.Duration // 活跃人物刷新间隔
+	Inactive time.Duration // 不活跃人物刷新间隔
 }
 
 // ─────────────────────────────────────────────
@@ -68,7 +68,7 @@ type RefreshTask interface {
 	RequiredScopes() []TaskScope
 
 	// Execute 执行数据刷新
-	// characterID: 角色 ID
+	// characterID: 人物 ID
 	// accessToken: 当前有效的 ESI access_token
 	// client: ESI HTTP 客户端
 	// 返回 error（nil 表示成功）
@@ -80,19 +80,19 @@ type TaskContext struct {
 	CharacterID int64
 	AccessToken string
 	Client      *Client
-	IsActive    bool // 角色是否活跃
+	IsActive    bool // 人物是否活跃
 }
 
 // ─────────────────────────────────────────────
 //  批量任务接口（可选实现）
 // ─────────────────────────────────────────────
 
-// BatchTask 批量执行的任务（如 affiliation 可一次查询多个角色）
+// BatchTask 批量执行的任务（如 affiliation 可一次查询多个人物）
 type BatchTask interface {
 	RefreshTask
 
 	// ExecuteBatch 批量执行
-	// characterIDs: 需要刷新的角色 ID 列表
+	// characterIDs: 需要刷新的人物 ID 列表
 	ExecuteBatch(client *Client, characterIDs []int64) error
 }
 
@@ -140,7 +140,7 @@ func TaskNames() []string {
 //  任务状态（用于可视化）
 // ─────────────────────────────────────────────
 
-// TaskStatus 单个任务在某角色下的状态
+// TaskStatus 单个任务在某人物下的状态
 type TaskStatus struct {
 	TaskName    string     `json:"task_name"`
 	Description string     `json:"description"`

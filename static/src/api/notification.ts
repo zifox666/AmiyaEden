@@ -1,6 +1,6 @@
 import request from '@/utils/http'
 
-/** 获取通知列表（当前用户所有角色） */
+/** 获取通知列表（当前用户所有人物） */
 export function fetchNotifications(data?: Api.Notification.ListParams) {
   return request.post<Api.Notification.NotificationSummary>({
     url: '/api/v1/notification/list',

@@ -20,7 +20,7 @@ func NewNpcKillHandler() *NpcKillHandler {
 }
 
 // GetNpcKills POST /info/npc-kills
-// 获取当前用户指定角色的刷怪报表
+// 获取当前用户指定人物的刷怪报表
 func (h *NpcKillHandler) GetNpcKills(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -39,7 +39,7 @@ func (h *NpcKillHandler) GetNpcKills(c *gin.Context) {
 }
 
 // GetAllNpcKills POST /info/npc-kills/all
-// 获取当前用户名下所有角色的汇总刷怪报表
+// 获取当前用户名下所有人物的汇总刷怪报表
 func (h *NpcKillHandler) GetAllNpcKills(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

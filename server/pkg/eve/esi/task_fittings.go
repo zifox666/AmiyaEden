@@ -17,7 +17,7 @@ func init() {
 type FittingsTask struct{}
 
 func (t *FittingsTask) Name() string        { return "character_fittings" }
-func (t *FittingsTask) Description() string { return "角色装配" }
+func (t *FittingsTask) Description() string { return "人物装配" }
 func (t *FittingsTask) Priority() Priority  { return PriorityNormal }
 
 func (t *FittingsTask) Interval() RefreshInterval {
@@ -29,8 +29,8 @@ func (t *FittingsTask) Interval() RefreshInterval {
 
 func (t *FittingsTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-fittings.read_fittings.v1", Description: "读取角色装配"},
-		{Scope: "esi-fittings.write_fittings.v1", Description: "修改角色装配"},
+		{Scope: "esi-fittings.read_fittings.v1", Description: "读取人物装配"},
+		{Scope: "esi-fittings.write_fittings.v1", Description: "修改人物装配"},
 	}
 }
 
@@ -57,12 +57,12 @@ func (t *FittingsTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch fittings: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色装配刷新完成",
+	global.Logger.Debug("[ESI] 人物装配刷新完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(fittings)),
 	)
 
-	// 入库：先删除该角色旧数据，再批量插入
+	// 入库：先删除该人物旧数据，再批量插入
 	tx := global.DB.Begin()
 
 	if err := tx.Where("character_id = ?", ctx.CharacterID).Delete(&model.EveCharacterFittingItem{}).Error; err != nil {
@@ -116,7 +116,7 @@ func (t *FittingsTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("commit fittings: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色装配入库完成",
+	global.Logger.Debug("[ESI] 人物装配入库完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(fittings)),
 	)

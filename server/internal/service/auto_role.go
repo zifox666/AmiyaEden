@@ -31,7 +31,7 @@ func NewAutoRoleService() *AutoRoleService {
 
 // ─── ESI Role Mapping CRUD ───
 
-// ListEsiRoleMappings 获取所有 ESI 角色映射（带角色信息）
+// ListEsiRoleMappings 获取所有 ESI 职权映射（带职权信息）
 func (s *AutoRoleService) ListEsiRoleMappings() ([]model.EsiRoleMapping, error) {
 	mappings, err := s.autoRoleRepo.ListEsiRoleMappings()
 	if err != nil {
@@ -41,13 +41,13 @@ func (s *AutoRoleService) ListEsiRoleMappings() ([]model.EsiRoleMapping, error) 
 	return mappings, nil
 }
 
-// CreateEsiRoleMapping 创建 ESI 角色映射
+// CreateEsiRoleMapping 创建 ESI 职权映射
 func (s *AutoRoleService) CreateEsiRoleMapping(esiRole string, roleCode string) (*model.EsiRoleMapping, error) {
 	if !isValidEsiRole(esiRole) {
-		return nil, errors.New("无效的 ESI 军团角色名")
+		return nil, errors.New("无效的 ESI 军团职权名")
 	}
 	if !model.IsValidRoleCode(roleCode) {
-		return nil, errors.New("未知的系统角色编码")
+		return nil, errors.New("未知的系统职权编码")
 	}
 	if roleCode == model.RoleSuperAdmin {
 		return nil, errors.New("不可映射到超级管理员")
@@ -66,19 +66,19 @@ func (s *AutoRoleService) CreateEsiRoleMapping(esiRole string, roleCode string) 
 	return mapping, nil
 }
 
-// DeleteEsiRoleMapping 删除 ESI 角色映射
+// DeleteEsiRoleMapping 删除 ESI 职权映射
 func (s *AutoRoleService) DeleteEsiRoleMapping(id uint) error {
 	return s.autoRoleRepo.DeleteEsiRoleMapping(id)
 }
 
-// GetAllEsiRoles 获取所有 ESI 军团角色名列表（供前端选择）
+// GetAllEsiRoles 获取所有 ESI 军团职权名列表（供前端选择）
 func (s *AutoRoleService) GetAllEsiRoles() []string {
 	return model.AllEsiCorpRoles
 }
 
 // ─── ESI Title Mapping CRUD ───
 
-// ListEsiTitleMappings 获取所有 ESI 头衔映射（带角色信息）
+// ListEsiTitleMappings 获取所有 ESI 头衔映射（带职权信息）
 func (s *AutoRoleService) ListEsiTitleMappings() ([]model.EsiTitleMapping, error) {
 	mappings, err := s.autoRoleRepo.ListEsiTitleMappings()
 	if err != nil {
@@ -155,7 +155,7 @@ func (s *AutoRoleService) fetchCorporationNames(titles []repository.CorpTitleInf
 // CreateEsiTitleMapping 创建 ESI 头衔映射
 func (s *AutoRoleService) CreateEsiTitleMapping(corpID int64, titleID int, titleName string, roleCode string) (*model.EsiTitleMapping, error) {
 	if !model.IsValidRoleCode(roleCode) {
-		return nil, errors.New("未知的系统角色编码")
+		return nil, errors.New("未知的系统职权编码")
 	}
 	if roleCode == model.RoleSuperAdmin {
 		return nil, errors.New("不可映射到超级管理员")
@@ -183,7 +183,7 @@ func (s *AutoRoleService) DeleteEsiTitleMapping(id uint) error {
 
 // ─── 自动权限同步 ───
 
-// SyncUserAutoRoles 根据 ESI 军团角色 + 头衔，自动同步用户的系统权限
+// SyncUserAutoRoles 根据 ESI 军团职权 + 头衔，自动同步用户的系统职权
 func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) error {
 	currentCodes, err := s.roleRepo.GetUserRoleCodes(userID)
 	if err != nil {
@@ -222,7 +222,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		corpRoles, err := s.autoRoleRepo.ListCharacterCorpRoles(char.CharacterID)
 		if err != nil {
-			global.Logger.Warn("[AutoRole] 查询角色军团角色失败",
+			global.Logger.Warn("[AutoRole] 查询人物军团职权失败",
 				zap.Int64("character_id", char.CharacterID),
 				zap.Error(err))
 			continue
@@ -243,7 +243,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		mappings, err := s.autoRoleRepo.GetEsiRoleMappingsByEsiRoles(esiRoleNames)
 		if err != nil {
-			global.Logger.Warn("[AutoRole] 查询 ESI 角色映射失败", zap.Error(err))
+			global.Logger.Warn("[AutoRole] 查询 ESI 职权映射失败", zap.Error(err))
 		} else {
 			for _, m := range mappings {
 				autoRoleCodes[m.RoleCode] = struct{}{}
@@ -258,7 +258,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		titles, err := s.autoRoleRepo.ListCharacterTitles(char.CharacterID)
 		if err != nil {
-			global.Logger.Warn("[AutoRole] 查询角色头衔失败",
+			global.Logger.Warn("[AutoRole] 查询人物头衔失败",
 				zap.Int64("character_id", char.CharacterID),
 				zap.Error(err))
 			continue
@@ -299,7 +299,7 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 	if len(toAdd) > 0 {
 		for _, code := range toAdd {
 			if err := s.roleRepo.AddUserRole(userID, code); err != nil {
-				global.Logger.Warn("[AutoRole] 添加自动角色失败",
+				global.Logger.Warn("[AutoRole] 添加自动职权失败",
 					zap.Uint("user_id", userID),
 					zap.String("role_code", code),
 					zap.Error(err))
@@ -307,14 +307,14 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		if shouldPromoteGuestToUser {
 			if err := s.roleRepo.RemoveUserRole(userID, model.RoleGuest); err != nil {
-				global.Logger.Warn("[AutoRole] 移除 guest 角色失败",
+				global.Logger.Warn("[AutoRole] 移除 guest 职权失败",
 					zap.Uint("user_id", userID),
 					zap.Error(err))
 			}
 		}
 		s.roleSvc.InvalidateUserCache(ctx, userID)
 		s.roleSvc.SyncUserPrimaryRole(userID)
-		global.Logger.Info("[AutoRole] 用户自动角色已更新",
+		global.Logger.Info("[AutoRole] 用户自动职权已更新",
 			zap.Uint("user_id", userID),
 			zap.Int("added", len(toAdd)))
 	}

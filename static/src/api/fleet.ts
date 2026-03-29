@@ -78,7 +78,7 @@ export function syncESIFleetMembers(fleetId: string) {
   })
 }
 
-/** 手动按角色名添加舰队成员 */
+/** 手动按人物名添加舰队成员 */
 export function addFleetMembersByCharacterNames(
   fleetId: string,
   data: Api.Fleet.ManualAddFleetMembersParams
@@ -153,7 +153,7 @@ export function joinFleet(data: Api.Fleet.JoinFleetParams) {
 
 // ─── ESI 舰队 ───
 
-/** 获取角色当前 ESI 舰队信息 */
+/** 获取人物当前 ESI 舰队信息 */
 export function fetchCharacterFleetInfo(characterId: number) {
   return request.get<Api.Fleet.CharacterFleetInfo>({
     url: `/api/v1/operation/fleets/esi/${characterId}`

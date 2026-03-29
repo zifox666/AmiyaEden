@@ -4,13 +4,13 @@ package model
 //  ESI 自动权限映射
 // ─────────────────────────────────────────────
 
-// EsiRoleMapping ESI 军团角色 → 系统权限映射
-// 一个 ESI role 可以映射到多个系统角色，一个系统角色也可被多个 ESI role 映射
+// EsiRoleMapping ESI 军团职权 → 系统权限映射
+// 一个 ESI role 可以映射到多个系统职权，一个系统职权也可被多个 ESI role 映射
 type EsiRoleMapping struct {
 	BaseModel
-	EsiRole  string `gorm:"size:100;not null;index:idx_esi_role_mapping,unique" json:"esi_role"`  // ESI 军团角色名（如 Director、Accountant）
-	RoleCode string `gorm:"size:50;not null;index:idx_esi_role_mapping,unique"  json:"role_code"` // 系统角色编码
-	RoleName string `gorm:"-"                                                   json:"role_name"` // 系统角色名称（仅展示用，不入库）
+	EsiRole  string `gorm:"size:100;not null;index:idx_esi_role_mapping,unique" json:"esi_role"`  // ESI 军团职权名（如 Director、Accountant）
+	RoleCode string `gorm:"size:50;not null;index:idx_esi_role_mapping,unique"  json:"role_code"` // 系统职权编码
+	RoleName string `gorm:"-"                                                   json:"role_name"` // 系统职权名称（仅展示用，不入库）
 }
 
 func (EsiRoleMapping) TableName() string { return "esi_role_mapping" }
@@ -21,22 +21,22 @@ type EsiTitleMapping struct {
 	CorporationID int64  `gorm:"not null;index:idx_esi_title_mapping,unique"        json:"corporation_id"` // 军团 ID
 	TitleID       int    `gorm:"not null;index:idx_esi_title_mapping,unique"         json:"title_id"`      // ESI 头衔 ID
 	TitleName     string `gorm:"size:256"                                            json:"title_name"`    // 头衔名称（展示用）
-	RoleCode      string `gorm:"size:50;not null;index:idx_esi_title_mapping,unique" json:"role_code"`     // 系统角色编码
-	RoleName      string `gorm:"-"                                                   json:"role_name"`     // 系统角色名称（仅展示用）
+	RoleCode      string `gorm:"size:50;not null;index:idx_esi_title_mapping,unique" json:"role_code"`     // 系统职权编码
+	RoleName      string `gorm:"-"                                                   json:"role_name"`     // 系统职权名称（仅展示用）
 }
 
 func (EsiTitleMapping) TableName() string { return "esi_title_mapping" }
 
-// EveCharacterCorpRole 角色的 ESI 军团角色快照（去重后的完整列表）
+// EveCharacterCorpRole 人物的 ESI 军团职权快照（去重后的完整列表）
 type EveCharacterCorpRole struct {
 	ID          uint   `gorm:"primarykey"                                                    json:"id"`
 	CharacterID int64  `gorm:"not null;index:idx_char_corp_role,unique"                       json:"character_id"`
-	CorpRole    string `gorm:"size:100;not null;index:idx_char_corp_role,unique"               json:"corp_role"` // ESI 军团角色名
+	CorpRole    string `gorm:"size:100;not null;index:idx_char_corp_role,unique"               json:"corp_role"` // ESI 军团职权名
 }
 
 func (EveCharacterCorpRole) TableName() string { return "eve_character_corp_role" }
 
-// ─── ESI 军团角色名常量 ───
+// ─── ESI 军团职权名常量 ───
 
 var AllEsiCorpRoles = []string{
 	"Account_Take_1", "Account_Take_2", "Account_Take_3", "Account_Take_4",

@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: backend
-last_reviewed: 2026-03-22
+last_reviewed: 2026-03-29
 source_of_truth:
   - server/internal/handler/sde.go
   - server/internal/handler/sys_config.go
@@ -20,9 +20,9 @@ source_of_truth:
 - 批量查询 type 信息
 - 批量查询 ID 到名称映射
 - 模糊搜索物品 / 成员名称
-- 启动时和定时任务中检查最新 SDE 并导入 PostgreSQL
+- 管理员可通过系统设置页面配置 SDE 参数
 - 为 EVE 信息、舰队配置、SRP、自动 SRP 等模块提供名称与静态数据支撑
-- **管理员可通过系统设置页面配置 SDE 参数**（API Key、代理、下载地址）
+- **当前已禁用启动时与 cron 自动导入**，仅保留手动触发所需的配置与服务能力
 
 ## 入口
 
@@ -43,7 +43,7 @@ source_of_truth:
 ## 运行时行为
 
 - SDE 版本记录保存在 `sde_versions`
-- 启动时会异步执行一次检查更新，cron 也会周期性执行
+- 当前不会在启动时或 cron 中自动检查并导入 SDE
 - **配置来源**：
   - 优先从 `system_config` 表读取（键：`sde.api_key`、`sde.proxy`、`sde.download_url`）
   - 回退到 `config.yaml` 中的 `sde.*` 配置作为默认值
@@ -53,11 +53,12 @@ source_of_truth:
 - **代理配置**：
   - 若配置了代理但代理不可达，下载器会自动回退为直连
 - **导入目标**：当前业务 PostgreSQL，而非独立的只读 SDE 库
+- **自动任务状态**：`server/jobs/sde.go` 中的启动检查与定时任务注册当前均已禁用
 
 ## 权限边界
 
 - **SDE 查询接口**：公开访问，无需鉴权
-- **SDE 配置管理**：需要 `admin` 角色（`middleware.RequireRole(model.RoleAdmin)`）
+- **SDE 配置管理**：需要 `admin` 职权（`middleware.RequireRole(model.RoleAdmin)`）
 - 语言优先级由 body / header / cookie 决定，最终默认 `en`
 
 ## 验证
@@ -72,7 +73,7 @@ source_of_truth:
 - **配置缓存**：使用 SysConfigRepository 的 Redis 缓存机制
 - **公开访问**：SDE 查询接口无需鉴权，任何前端调用方都可以使用
 - **共享基础能力**：SDE 是共享基础能力，修改返回结构时要检查多个业务模块
-- **版本检查与导入**：是运行时基础设施问题，不要只从某个页面角度描述
+- **版本检查与导入**：当前不通过启动任务或 cron 自动执行；如恢复此能力，需要同步更新运行文档与运维预期
 - **英文名称回退**：英文名称缺失时，type/group/category/market group 查询会回退到 SDE 基础名称列
 - **`POST /api/v1/sde/names`**：返回 `flat` 与 `names` 两套映射
   - `names` 是按 namespace 分组的权威结果
@@ -101,4 +102,3 @@ source_of_truth:
 - `static/src/types/api/api.d.ts` - API 类型定义
 - `static/src/locales/langs/zh.json` - 中文国际化
 - `static/src/locales/langs/en.json` - 英文国际化
-

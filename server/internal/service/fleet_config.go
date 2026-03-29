@@ -273,13 +273,13 @@ func (s *FleetConfigService) DeleteFleetConfig(id uint, userID uint, userRoles [
 
 // ImportFromUserFitting 从用户的 ESI 装配导入为英文 EFT（供编辑表单预填充）
 func (s *FleetConfigService) ImportFromUserFitting(userID uint, req *ImportFittingRequest) (*ImportFittingResponse, error) {
-	// 验证角色属于当前用户
+	// 验证人物属于当前用户
 	char, err := s.charRepo.GetByCharacterID(req.CharacterID)
 	if err != nil {
-		return nil, errors.New("角色不存在")
+		return nil, errors.New("人物不存在")
 	}
 	if char.UserID != userID {
-		return nil, errors.New("该角色不属于当前用户")
+		return nil, errors.New("该人物不属于当前用户")
 	}
 
 	fittingRepo := repository.NewFittingsRepository()
@@ -339,16 +339,16 @@ func (s *FleetConfigService) ImportFromUserFitting(userID uint, req *ImportFitti
 
 // ExportToESI 将配置中的某个装配导出到 ESI（使用存储的 items，无需 EFT 解析）
 func (s *FleetConfigService) ExportToESI(userID uint, req *ExportToESIRequest) error {
-	// 验证角色属于当前用户
+	// 验证人物属于当前用户
 	char, err := s.charRepo.GetByCharacterID(req.CharacterID)
 	if err != nil {
-		return errors.New("角色不存在")
+		return errors.New("人物不存在")
 	}
 	if char.UserID != userID {
-		return errors.New("该角色不属于当前用户")
+		return errors.New("该人物不属于当前用户")
 	}
 	if char.AccessToken == "" || char.TokenInvalid {
-		return errors.New("角色 Token 不可用，请重新绑定")
+		return errors.New("人物 Token 不可用，请重新绑定")
 	}
 
 	// 获取目标装配

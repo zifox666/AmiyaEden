@@ -32,7 +32,7 @@ source_of_truth:
 | `server/internal/handler/` | HTTP 请求解析与响应返回 | `server/internal/service/`、`server/pkg/response/` |
 | `server/internal/service/` | 业务规则、权限判断、跨仓储编排、ESI/SSO 集成 | `server/internal/repository/`、对应 feature doc |
 | `server/internal/repository/` | 数据访问、查询拼接、结果映射 | `server/internal/model/`、`docs/standards/testing-and-verification.md` |
-| `server/internal/model/` | GORM 模型、菜单种子、角色常量 | `docs/architecture/routing-and-menus.md` |
+| `server/internal/model/` | GORM 模型、菜单种子、职权常量 | `docs/architecture/routing-and-menus.md` |
 | `server/jobs/` | 定时任务 | `server/bootstrap/`、`docs/architecture/runtime-and-startup.md` |
 | `server/pkg/eve/` | EVE SSO / ESI 基础能力 | `server/internal/service/`、`docs/guides/adding-esi-feature.md` |
 | `server/pkg/response/` | 统一响应封装 | `server/internal/handler/` |

@@ -5,7 +5,7 @@ import (
 	"amiya-eden/internal/model"
 )
 
-// ContractRepository 角色合同数据访问层
+// ContractRepository 人物合同数据访问层
 type ContractRepository struct{}
 
 func NewContractRepository() *ContractRepository { return &ContractRepository{} }
@@ -16,7 +16,7 @@ type ContractFilter struct {
 	Status string
 }
 
-// GetContractsByCharacterIDs 批量获取多个角色的合同，按 date_issued 倒序
+// GetContractsByCharacterIDs 批量获取多个人物的合同，按 date_issued 倒序
 func (r *ContractRepository) GetContractsByCharacterIDs(characterIDs []int64) ([]model.EveCharacterContract, error) {
 	var contracts []model.EveCharacterContract
 	err := global.DB.
@@ -51,7 +51,7 @@ func (r *ContractRepository) ListContracts(page, pageSize int, characterIDs []in
 	return contracts, total, err
 }
 
-// GetContractByCharacterAndID 按角色ID和合同ID查询单条合同
+// GetContractByCharacterAndID 按人物 ID 和合同 ID 查询单条合同
 func (r *ContractRepository) GetContractByCharacterAndID(characterID, contractID int64) (*model.EveCharacterContract, error) {
 	var contract model.EveCharacterContract
 	err := global.DB.

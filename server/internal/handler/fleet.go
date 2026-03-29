@@ -385,14 +385,14 @@ func (h *FleetHandler) JoinFleet(c *gin.Context) {
 }
 
 // ─────────────────────────────────────────────
-//  ESI 角色舰队信息
+//  ESI 人物舰队信息
 // ─────────────────────────────────────────────
 
-// GetCharacterFleetInfo 获取角色当前所在的 ESI 舰队
+// GetCharacterFleetInfo 获取人物当前所在的 ESI 舰队
 func (h *FleetHandler) GetCharacterFleetInfo(c *gin.Context) {
 	charID, err := strconv.ParseInt(c.Param("character_id"), 10, 64)
 	if err != nil {
-		response.Fail(c, response.CodeParamError, "无效的角色ID")
+		response.Fail(c, response.CodeParamError, "无效的人物 ID")
 		return
 	}
 	userID := middleware.GetUserID(c)

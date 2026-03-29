@@ -57,7 +57,7 @@
         { prop: 'user_id', label: '用户 ID', width: 100 },
         {
           prop: 'character_name',
-          label: '主角色',
+          label: '主人物',
           minWidth: 160,
           formatter: (row: Wallet) => h('span', {}, row.character_name || '-')
         },

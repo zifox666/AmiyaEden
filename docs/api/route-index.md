@@ -40,11 +40,11 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/sso/eve/characters` | 当前用户绑定角色 | JWT |
-| GET | `/sso/eve/bind` | 获取绑定新角色的 SSO 地址 | JWT |
-| PUT | `/sso/eve/primary/:character_id` | 设为主角色 | JWT |
-| DELETE | `/sso/eve/characters/:character_id` | 解绑角色 | JWT |
-| GET | `/me` | 当前用户、角色、权限、绑定角色 | JWT |
+| GET | `/sso/eve/characters` | 当前用户绑定人物 | JWT |
+| GET | `/sso/eve/bind` | 获取绑定新人物的 SSO 地址 | JWT |
+| PUT | `/sso/eve/primary/:character_id` | 设为主人物 | JWT |
+| DELETE | `/sso/eve/characters/:character_id` | 解绑人物 | JWT |
+| GET | `/me` | 当前用户、人物、权限、绑定人物 | JWT |
 | PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | JWT |
 | POST | `/dashboard` | Dashboard 聚合数据 | JWT |
 | POST | `/notification/list` | 通知列表 | JWT |
@@ -78,7 +78,7 @@ source_of_truth:
 | GET | `/operation/fleets/:id/invites` | 邀请列表 | `RequireRole(admin, fc, senior_fc)` |
 | DELETE | `/operation/fleets/invites/:invite_id` | 停用邀请 | `RequireRole(admin, fc, senior_fc)` |
 | POST | `/operation/fleets/join` | 加入舰队 | Login |
-| GET | `/operation/fleets/esi/:character_id` | 查询角色当前舰队 | Login |
+| GET | `/operation/fleets/esi/:character_id` | 查询人物当前舰队 | Login |
 | POST | `/operation/fleets/:id/ping` | 发送 Webhook Ping | `RequireRole(admin, fc, senior_fc)` |
 
 ### Fleet Configs
@@ -91,7 +91,7 @@ source_of_truth:
 | POST | `/operation/fleet-configs` | 创建配置 | `RequireRole(admin, senior_fc)` |
 | PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(admin, senior_fc)` |
 | DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(admin, senior_fc)` |
-| POST | `/operation/fleet-configs/import-fitting` | 从角色装配导入 | `RequireRole(admin, senior_fc)` |
+| POST | `/operation/fleet-configs/import-fitting` | 从人物装配导入 | `RequireRole(admin, senior_fc)` |
 | POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | Login |
 | GET | `/operation/fleet-configs/:id/fittings/:fitting_id/items` | 装配物品 | Login |
 | PUT | `/operation/fleet-configs/:id/fittings/:fitting_id/items/settings` | 更新物品设置 | `RequireRole(admin, senior_fc)` |
@@ -102,8 +102,8 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/skill-planning/skill-plans/check/selection` | 获取当前用户保存的完成度检查角色选择 | Login |
-| PUT | `/skill-planning/skill-plans/check/selection` | 保存当前用户的完成度检查角色选择 | Login |
+| GET | `/skill-planning/skill-plans/check/selection` | 获取当前用户保存的完成度检查人物选择 | Login |
+| PUT | `/skill-planning/skill-plans/check/selection` | 保存当前用户的完成度检查人物选择 | Login |
 | POST | `/skill-planning/skill-plans/check/run` | 执行技能规划完成度检查 | Login |
 | GET | `/skill-planning/skill-plans/check/plan-selection` | 获取当前用户保存的完成度检查规划选择 | Login |
 | PUT | `/skill-planning/skill-plans/check/plan-selection` | 保存当前用户的完成度检查规划选择 | Login |
@@ -214,7 +214,7 @@ source_of_truth:
 | GET | `/esi/refresh/statuses` | 状态汇总 | `RequireRole(admin)` |
 | POST | `/esi/refresh/run` | 执行队列调度 | `RequireRole(admin)` |
 | POST | `/esi/refresh/run-task` | 按名称执行任务 | `RequireRole(admin)` |
-| POST | `/esi/refresh/run-all` | 对角色执行全部任务 | `RequireRole(admin)` |
+| POST | `/esi/refresh/run-all` | 对人物执行全部任务 | `RequireRole(admin)` |
 
 ## System
 
@@ -256,13 +256,13 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/system/role/definitions` | 系统角色定义列表（只读） | `RequireRole(admin)` |
-| GET | `/system/user` | 用户列表；角色字段仅返回有序 `roles[]`，不再返回历史单值 `role` | `RequireRole(admin)` |
+| GET | `/system/role/definitions` | 系统职权定义列表（只读） | `RequireRole(admin)` |
+| GET | `/system/user` | 用户列表；默认按 `last_login_at` 倒序，关键字支持昵称 / QQ / 已绑定人物名；职权字段仅返回有序 `roles[]`，不再返回历史单值 `role`，并附带已绑定人物与每个人物的 `total_sp` 快照 | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
 | PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态；`admin` 不可编辑其他 `admin` | `RequireRole(admin)` |
 | DELETE | `/system/user/:id` | 删除用户；`super_admin` 用户不可删除；`admin` 不可删除其他 `admin` | `RequireRole(admin)` |
-| GET | `/system/user/:id/roles` | 获取用户角色 | `RequireRole(admin)` |
-| PUT | `/system/user/:id/roles` | 设置用户角色；`super_admin` 角色不可通过 API 分配或修改（仅通过配置文件管理）；仅 `super_admin` 可分配 `admin` | `RequireRole(admin)` |
+| GET | `/system/user/:id/roles` | 获取用户职权 | `RequireRole(admin)` |
+| PUT | `/system/user/:id/roles` | 设置用户职权；`super_admin` 职权不可通过 API 分配或修改（仅通过配置文件管理）；仅 `super_admin` 可分配 `admin` | `RequireRole(admin)` |
 | POST | `/system/user/:id/impersonate` | 模拟登录，需 `super_admin` | `RequireRole(admin)` + `super_admin` |
 
 ### System Wallet

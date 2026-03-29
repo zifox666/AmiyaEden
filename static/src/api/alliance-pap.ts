@@ -49,7 +49,7 @@ export interface AlliancePAPAllResult {
   list: AlliancePAPSummary[]
 }
 
-/** 获取我的联盟 PAP（当前用户主角色，默认当月） */
+/** 获取我的联盟 PAP（当前用户主人物，默认当月） */
 export function fetchMyAlliancePAP(params?: { year?: number; month?: number }) {
   return request.get<AlliancePAPResult>({
     url: '/api/v1/operation/fleets/pap/alliance',

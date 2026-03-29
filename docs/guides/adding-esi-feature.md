@@ -66,7 +66,7 @@ source_of_truth:
 
 - 使用现有队列体系
 - 明确任务名、scope、刷新频率
-- 考虑新角色首次全量刷新与后台周期调度
+- 考虑新人物首次全量刷新与后台周期调度
 - 不要在 handler 里直接调用 CCP API
 - **所有 ESI API 端点必须使用 `global.Config.EveSSO.ESIBaseURL` 和 `ESIAPIPrefix` 构建，禁止硬编码 EVE 官方 URL**
 - 如果需要直接在 service 层调用 ESI，必须使用 `global.Config.EveSSO.ESIBaseURL` 或通过 `pkg/eve/esi/client.go` 的配置化客户端

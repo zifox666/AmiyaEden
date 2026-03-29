@@ -1,6 +1,6 @@
 <template>
   <div class="info-skill-page art-full-height">
-    <!-- 角色切换器 -->
+    <!-- 人物切换器 -->
     <ElCard shadow="never" class="mb-2">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-4">

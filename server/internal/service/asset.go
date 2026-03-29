@@ -79,17 +79,17 @@ func NewAssetService() *AssetService {
 	}
 }
 
-// GetUserAssets 获取用户名下所有角色的资产汇总
+// GetUserAssets 获取用户名下所有人物的资产汇总
 func (s *AssetService) GetUserAssets(userID uint, req *InfoAssetsRequest) (*InfoAssetsResponse, error) {
 	lang := req.Language
 	if lang == "" {
 		lang = "zh"
 	}
 
-	// 1. 获取用户的所有角色
+	// 1. 获取用户的所有人物
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 	if len(chars) == 0 {
 		return &InfoAssetsResponse{Locations: []AssetLocationNode{}}, nil
@@ -102,7 +102,7 @@ func (s *AssetService) GetUserAssets(userID uint, req *InfoAssetsRequest) (*Info
 		charNameMap[c.CharacterID] = c.CharacterName
 	}
 
-	// 2. 获取所有角色的资产
+	// 2. 获取所有人物的资产
 	allAssets, err := s.assetRepo.GetAssetsByCharacterIDs(charIDs)
 	if err != nil {
 		return nil, errors.New("获取资产数据失败")
@@ -310,7 +310,7 @@ func (s *AssetService) resolveStructureName(chars []model.EveCharacter, structur
 		return structure.StructureName
 	}
 
-	// 尝试用任一角色的 token 从 ESI 获取
+	// 尝试用任一人物的 token 从 ESI 获取
 	for _, c := range chars {
 		accessToken, err := s.ssoSvc.GetValidToken(context.Background(), c.CharacterID)
 		if err != nil {

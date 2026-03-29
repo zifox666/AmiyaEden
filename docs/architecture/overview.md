@@ -15,12 +15,12 @@ source_of_truth:
 
 `AmiyaEden` 是一个面向 EVE Online 联盟 / 军团运营的全栈平台，当前活跃实现覆盖：
 
-- EVE SSO 登录与多角色绑定
-- RBAC 角色、菜单、按钮权限
+- EVE SSO 登录与多人物绑定
+- RBAC 职权、菜单、按钮权限
 - 动态菜单与动态路由
 - 舰队、PAP、舰队配置、自动 SRP 模式
 - 技能规划、军团技能计划与完成度检查
-- EVE 角色信息查询与 NPC 刷怪报表
+- EVE 人物信息查询与 NPC 刷怪报表
 - SRP 价格、申请、审核、发放
 - 军团福利系统
 - 系统钱包、商店
@@ -87,7 +87,7 @@ source_of_truth:
 
 - 当前产品认证主路径是 EVE SSO，不是用户名密码
 - `guest` 是已认证用户，但不是 `Login` 意义上的产品用户
-- 角色编码以 `server/internal/model/role.go` 为准
+- 职权编码以 `server/internal/model/role.go` 为准
 - `docs/ai/repo-rules.md` 与 `docs/` 是唯一维护中的文档源
 - 所有 EVE SSO / ESI API 端点必须通过 `server/config/config.go` 中的 `EveSSOConfig` 配置，禁止硬编码 URL
 - ESI 刷新队列通过接口注入方式避免循环依赖（`pkg/eve/esi/queue.go`）

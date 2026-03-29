@@ -53,14 +53,14 @@ export function deleteSkillPlan(id: number) {
   })
 }
 
-/** 获取技能完成度检查角色选择 */
+/** 获取技能完成度检查人物选择 */
 export function fetchSkillPlanCheckSelection() {
   return request.get<Api.SkillPlan.CheckSelection>({
     url: '/api/v1/skill-planning/skill-plans/check/selection'
   })
 }
 
-/** 保存技能完成度检查角色选择 */
+/** 保存技能完成度检查人物选择 */
 export function saveSkillPlanCheckSelection(data: Api.SkillPlan.CheckSelection) {
   return request.put<Api.SkillPlan.CheckSelection>({
     url: '/api/v1/skill-planning/skill-plans/check/selection',

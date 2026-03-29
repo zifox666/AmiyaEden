@@ -30,7 +30,7 @@ func (r *EveSkillRepository) GetSkillList(characterID int) ([]model.EveCharacter
 	return skills, nil
 }
 
-// GetSkillQueue 获取角色技能队列
+// GetSkillQueue 获取人物技能队列
 func (r *EveSkillRepository) GetSkillQueue(characterID int) ([]model.EveCharacterSkillQueue, error) {
 	var queue []model.EveCharacterSkillQueue
 	err := global.DB.Where("character_id = ?", characterID).
@@ -41,7 +41,7 @@ func (r *EveSkillRepository) GetSkillQueue(characterID int) ([]model.EveCharacte
 	return queue, nil
 }
 
-// SumTotalSPByCharacterIDs 汇总多个角色的总技能点
+// SumTotalSPByCharacterIDs 汇总多个人物的总技能点
 func (r *EveSkillRepository) SumTotalSPByCharacterIDs(characterIDs []int64) (int64, error) {
 	if len(characterIDs) == 0 {
 		return 0, nil

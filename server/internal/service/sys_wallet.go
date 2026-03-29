@@ -164,7 +164,7 @@ func (s *SysWalletService) AdminAdjust(operatorID uint, req *AdminAdjustRequest)
 	return wallet, nil
 }
 
-// AdminListWallets 管理员查询所有钱包（附带主角色名）
+// AdminListWallets 管理员查询所有钱包（附带主人物名）
 func (s *SysWalletService) AdminListWallets(page, pageSize int) ([]model.WalletWithCharacter, int64, error) {
 	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
@@ -176,14 +176,14 @@ func (s *SysWalletService) AdminGetWallet(userID uint) (*model.SystemWallet, err
 	return s.repo.GetOrCreateWallet(userID)
 }
 
-// AdminListTransactions 管理员查询流水（可按用户/类型筛选，附带角色名）
+// AdminListTransactions 管理员查询流水（可按用户/类型筛选，附带人物名）
 func (s *SysWalletService) AdminListTransactions(page, pageSize int, filter repository.WalletTransactionFilter) ([]model.TransactionWithCharacter, int64, error) {
 	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
 	return s.repo.ListTransactionsWithCharacter(page, pageSize, filter)
 }
 
-// AdminListLogs 管理员查询操作日志（附带角色名）
+// AdminListLogs 管理员查询操作日志（附带人物名）
 func (s *SysWalletService) AdminListLogs(page, pageSize int, filter repository.WalletLogFilter) ([]model.LogWithCharacter, int64, error) {
 	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)

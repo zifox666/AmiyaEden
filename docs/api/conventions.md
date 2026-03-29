@@ -78,14 +78,15 @@ source_of_truth:
 - `docs/api/route-index.md`: 当前已注册路由面
 - 更细的字段结构：以代码和类型文件为准
 
-`docs/api/route-index.md` 中的权限边界应尽量按路由显式写出，不要只依赖章节上下文让读者猜测是否需要登录或额外角色。
+`docs/api/route-index.md` 中的权限边界应尽量按路由显式写出，不要只依赖章节上下文让读者猜测是否需要登录或额外职权。
+
 
 ## 权限标注规则
 
 - `Public`: 无需登录
 - `JWT`: 任意持有有效 JWT 的已认证用户都可访问，包含 `guest`
 - `Login`: 任意已认证且非 `guest` 的产品用户都可访问
-- `RequireRole(...)`: 只有显式列出的角色边界可访问
+- `RequireRole(...)`: 只有显式列出的职权边界可访问
 - `RequirePermission(...)`: 只有显式列出的权限边界可访问
 
 说明：
@@ -93,7 +94,7 @@ source_of_truth:
 - 当真实边界是"只要 JWT 有效即可访问"时，统一写成 `JWT`
 - 不要用 `RequireRole(..., user)` 作为"任意登录用户"的文档缩写
 - 当真实含义是"所有非 guest 登录用户都能访问"时，统一写成 `Login`
-- 当真实边界是具体角色白名单时，继续写 `RequireRole(...)`
+- 当真实边界是具体职权白名单时，继续写 `RequireRole(...)`
 - guest onboarding / self-service 路由如 `/me`、`/sso/eve/characters` 应明确标注为 `JWT`
 
 ## 禁止事项

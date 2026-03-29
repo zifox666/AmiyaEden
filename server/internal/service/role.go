@@ -33,7 +33,7 @@ const (
 	cacheTTL             = 30 * time.Minute
 )
 
-// GetUserRoleNames 获取用户角色编码列表（带缓存）
+// GetUserRoleNames 获取用户职权编码列表（带缓存）
 func (s *RoleService) GetUserRoleNames(ctx context.Context, userID uint) ([]string, error) {
 	cacheKey := fmt.Sprintf("%s%d", userRolesCachePrefix, userID)
 	val, err := global.Redis.Get(ctx, cacheKey).Result()
@@ -58,7 +58,7 @@ func (s *RoleService) GetUserRoleNames(ctx context.Context, userID uint) ([]stri
 	return roles, nil
 }
 
-// InvalidateUserCache 清除用户角色缓存
+// InvalidateUserCache 清除用户职权缓存
 func (s *RoleService) InvalidateUserCache(ctx context.Context, userID uint) {
 	global.Redis.Del(ctx, fmt.Sprintf("%s%d", userRolesCachePrefix, userID))
 }
@@ -68,16 +68,16 @@ func (s *RoleService) InvalidateUserRolesCache(ctx context.Context, userID uint)
 	s.InvalidateUserCache(ctx, userID)
 }
 
-// ─── 角色定义查询 ───
+// ─── 职权定义查询 ───
 
-// ListRoleDefinitions 返回系统角色定义列表
+// ListRoleDefinitions 返回系统职权定义列表
 func (s *RoleService) ListRoleDefinitions() []model.RoleDefinition {
 	return model.SystemRoleDefinitions
 }
 
-// ─── 用户角色管理 ───
+// ─── 用户职权管理 ───
 
-// GetUserRoles 获取用户的角色定义列表
+// GetUserRoles 获取用户的职权定义列表
 func (s *RoleService) GetUserRoles(userID uint) ([]model.RoleDefinition, error) {
 	codes, err := s.repo.GetUserRoleCodes(userID)
 	if err != nil {
@@ -100,7 +100,7 @@ func (s *RoleService) SetUserRoles(ctx context.Context, operatorID uint, operato
 
 	for _, code := range roleCodes {
 		if !model.IsValidRoleCode(code) {
-			return fmt.Errorf("未知的角色编码: %s", code)
+			return fmt.Errorf("未知的职权编码: %s", code)
 		}
 	}
 
@@ -113,10 +113,10 @@ func (s *RoleService) SetUserRoles(ctx context.Context, operatorID uint, operato
 		}
 	} else {
 		if model.ContainsAnyRole(requestedCodes, model.RoleSuperAdmin) {
-			return errors.New("超级管理员角色仅通过配置文件管理，不可手动分配")
+			return errors.New("超级管理员职权仅通过配置文件管理，不可手动分配")
 		}
 		if model.ContainsAnyRole(currentCodes, model.RoleSuperAdmin) {
-			return errors.New("超级管理员角色仅通过配置文件管理，不可手动修改")
+			return errors.New("超级管理员职权仅通过配置文件管理，不可手动修改")
 		}
 	}
 
@@ -128,7 +128,7 @@ func (s *RoleService) SetUserRoles(ctx context.Context, operatorID uint, operato
 		return err
 	}
 
-	// 同步 User.Role 字段（取最高优先级角色）
+	// 同步 User.Role 字段（取最高优先级职权）
 	s.SyncUserPrimaryRole(userID)
 	s.InvalidateUserCache(ctx, userID)
 	return nil
@@ -144,7 +144,7 @@ func validateSetUserRolesPermission(operatorID, targetUserID uint, operatorRoles
 
 	if isAdmin {
 		if model.ContainsAnyRole(requestedCodes, model.RoleAdmin) && !model.ContainsRole(currentCodes, model.RoleAdmin) {
-			return errors.New("只有超级管理员可以分配管理员角色")
+			return errors.New("只有超级管理员可以分配管理员职权")
 		}
 		return nil
 	}
@@ -203,7 +203,7 @@ func (s *RoleService) SyncUserPrimaryRole(userID uint) {
 	_ = s.userRepo.UpdateRole(userID, codes[0])
 }
 
-// CheckCorpAccessAndAdjustRole 检查用户名下所有角色的军团归属是否在准入列表内
+// CheckCorpAccessAndAdjustRole 检查用户名下所有人物的军团归属是否在准入列表内
 func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID uint) error {
 	allowCorps := utils.GetAllowCorporations()
 	allowSet := make(map[int64]struct{}, len(allowCorps))
@@ -249,7 +249,7 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 		if len(rollCodes) == 1 && rollCodes[0] == model.RoleGuest {
 			return nil
 		}
-		// 清除所有角色，降级为 guest
+		// 清除所有职权，降级为 guest
 		if err := s.repo.SetUserRoles(userID, []string{model.RoleGuest}); err != nil {
 			return err
 		}
@@ -261,12 +261,12 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 	return nil
 }
 
-// EnsureUserHasRole 确保用户至少拥有指定角色（当用户还没有任何 user_role 记录时）
+// EnsureUserHasRole 确保用户至少拥有指定职权（当用户还没有任何 user_role 记录时）
 func (s *RoleService) EnsureUserHasRole(ctx context.Context, userID uint, roleCode string) {
 	codes, err := s.repo.GetUserRoleCodes(userID)
 	if err != nil || len(codes) == 0 {
 		if err := s.repo.AddUserRole(userID, roleCode); err != nil {
-			global.Logger.Error("分配角色失败", zap.Uint("userID", userID), zap.String("role", roleCode), zap.Error(err))
+			global.Logger.Error("分配职权失败", zap.Uint("userID", userID), zap.String("role", roleCode), zap.Error(err))
 		}
 		s.InvalidateUserCache(ctx, userID)
 	}
@@ -400,7 +400,7 @@ func (s *RoleService) MigrateEsiMappingsToCode() {
 func (s *RoleService) MigrateExistingUsers() {
 	var users []model.User
 	if err := global.DB.Find(&users).Error; err != nil {
-		global.Logger.Error("迁移用户角色失败：查询用户", zap.Error(err))
+		global.Logger.Error("迁移用户职权失败：查询用户", zap.Error(err))
 		return
 	}
 	for _, u := range users {
@@ -413,12 +413,12 @@ func (s *RoleService) MigrateExistingUsers() {
 			continue
 		}
 		if !model.IsValidRoleCode(roleName) {
-			global.Logger.Warn("迁移角色未找到", zap.String("role", roleName), zap.Uint("userID", u.ID))
+			global.Logger.Warn("迁移职权未找到", zap.String("role", roleName), zap.Uint("userID", u.ID))
 			continue
 		}
 		if err := s.repo.AddUserRole(u.ID, roleName); err != nil {
-			global.Logger.Error("迁移用户角色失败", zap.Uint("userID", u.ID), zap.Error(err))
+			global.Logger.Error("迁移用户职权失败", zap.Uint("userID", u.ID), zap.Error(err))
 		}
 	}
-	global.Logger.Info("现有用户角色迁移完成")
+	global.Logger.Info("现有用户职权迁移完成")
 }

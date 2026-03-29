@@ -20,7 +20,7 @@ export const systemRoutes: AppRouteRecord = {
         roles: ['super_admin', 'admin'],
         authList: [
           { title: '删除用户', authMark: 'delete_user' },
-          { title: '分配角色', authMark: 'assign_role' }
+          { title: '分配职权', authMark: 'assign_role' }
         ]
       }
     },

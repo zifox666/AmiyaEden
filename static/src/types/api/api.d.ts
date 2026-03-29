@@ -7,7 +7,7 @@
  *
  * - 通用类型（分页参数、响应结构等）
  * - 认证类型（登录、用户信息等）
- * - 系统管理类型（用户、角色等）
+ * - 系统管理类型（用户、职权等）
  * - 全局命名空间声明
  *
  * ## 使用场景
@@ -74,7 +74,7 @@ declare namespace Api {
       refreshToken: string
     }
 
-    /** EVE 角色信息 */
+    /** EVE 人物信息 */
     interface EveCharacter {
       id: number
       character_id: number
@@ -111,7 +111,7 @@ declare namespace Api {
         last_login_ip: string
       }
       characters: EveCharacter[]
-      /** 用户所有活跃角色编码列表 */
+      /** 用户所有活跃职权编码列表 */
       roles: string[]
       /** 用户所有权限标识列表 */
       permissions: string[]
@@ -140,6 +140,13 @@ declare namespace Api {
     /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
+    interface UserListCharacter {
+      character_id: number
+      character_name: string
+      portrait_url: string
+      total_sp: number
+    }
+
     /** 用户列表项（匹配后端 model.UserListItem） */
     interface UserListItem {
       id: number
@@ -149,6 +156,7 @@ declare namespace Api {
       avatar: string
       status: number // 1:正常 0:禁用
       roles: string[]
+      characters: UserListCharacter[]
       last_login_at: string | null
       last_login_ip: string
       created_at: string
@@ -175,10 +183,11 @@ declare namespace Api {
     type UserSearchParams = Partial<{
       keyword: string
       status: number
+      role: string
     }> &
       Partial<Api.Common.CommonSearchParams>
 
-    /** 系统角色定义（纯内存，匹配后端 model.RoleDefinition） */
+    /** 系统职权定义（纯内存，匹配后端 model.RoleDefinition） */
     interface RoleDefinition {
       code: string
       name: string
@@ -186,7 +195,7 @@ declare namespace Api {
       sort: number
     }
 
-    /** ESI 军团角色 → 系统角色映射 */
+    /** ESI 军团职权 → 系统职权映射 */
     interface EsiRoleMapping {
       id: number
       esi_role: string
@@ -195,7 +204,7 @@ declare namespace Api {
       created_at: string
     }
 
-    /** ESI 头衔 → 系统角色映射 */
+    /** ESI 头衔 → 系统职权映射 */
     interface EsiTitleMapping {
       id: number
       corporation_id: number
@@ -239,13 +248,13 @@ declare namespace Api {
       error?: string
     }
 
-    /** 手动触发任务请求参数（指定角色） */
+    /** 手动触发任务请求参数（指定人物） */
     interface RunTaskParams {
       task_name: string
       character_id: number
     }
 
-    /** 手动触发任务请求参数（所有角色） */
+    /** 手动触发任务请求参数（所有人物） */
     interface RunTaskByNameParams {
       task_name: string
     }
@@ -340,12 +349,12 @@ declare namespace Api {
       issued_at: string | null
     }
 
-    /** 手动按角色名添加舰队成员请求 */
+    /** 手动按人物名添加舰队成员请求 */
     interface ManualAddFleetMembersParams {
       character_names: string[]
     }
 
-    /** 手动按角色名添加舰队成员结果 */
+    /** 手动按人物名添加舰队成员结果 */
     interface ManualAddFleetMembersResult {
       added_character_names: string[]
       missing_character_names: string[]
@@ -449,7 +458,7 @@ declare namespace Api {
     /** 钱包流水分页 */
     type WalletTransactionList = Api.Common.PaginatedResponse<WalletTransaction>
 
-    /** ESI 角色舰队信息 */
+    /** ESI 人物舰队信息 */
     interface CharacterFleetInfo {
       fleet_id: number
       fleet_boss_id: number
@@ -697,7 +706,7 @@ declare namespace Api {
       skills_text?: string
     }
 
-    /** 技能完成度角色选择 */
+    /** 技能完成度人物选择 */
     interface CheckSelection {
       character_ids: number[]
     }
@@ -727,7 +736,7 @@ declare namespace Api {
       missing_skills: CompletionMissingSkill[]
     }
 
-    /** 单个角色完成度结果 */
+    /** 单个人物完成度结果 */
     interface CompletionCharacter {
       character_id: number
       character_name: string
@@ -875,7 +884,7 @@ declare namespace Api {
       updated_at: string
       /** 关联舰队标题（后端填充） */
       fleet_title?: string
-      /** 关联舰队 FC 角色名（后端填充） */
+      /** 关联舰队 FC 人物名（后端填充） */
       fleet_fc_name?: string
     }
 
@@ -897,6 +906,7 @@ declare namespace Api {
       review_status: string
       payout_status: string
       tab: string
+      keyword: string
     }> &
       Partial<Api.Common.CommonSearchParams>
 
@@ -1051,7 +1061,7 @@ declare namespace Api {
       name: string
     }>
 
-    /** 可申请角色 */
+    /** 可申请人物 */
     interface EligibleCharacter {
       character_id: number
       character_name: string
@@ -1132,6 +1142,7 @@ declare namespace Api {
       current: number
       size: number
       status: string
+      keyword: string
     }>
 
     /** 审批请求参数 */
@@ -1370,7 +1381,7 @@ declare namespace Api {
     }
   }
 
-  /** EVE 角色信息类型 */
+  /** EVE 人物信息类型 */
   namespace EveInfo {
     /** 钱包流水请求参数 */
     interface WalletRequest {
@@ -1727,7 +1738,7 @@ declare namespace Api {
       page_size?: number
     }
 
-    /** 个人刷怪报表请求（所有角色汇总） */
+    /** 个人刷怪报表请求（所有人物汇总） */
     interface NpcKillAllRequest {
       start_date?: string
       end_date?: string
@@ -2006,6 +2017,7 @@ declare namespace Api {
     type CaptainRewardSettlementsParams = Partial<{
       current: number
       size: number
+      keyword: string
     }>
 
     type AdminCaptainsParams = Partial<{
@@ -2055,6 +2067,7 @@ declare namespace Api {
     type AdminRewardSettlementsParams = Partial<{
       current: number
       size: number
+      keyword: string
     }>
 
     type AdminRewardSettlementsResponse = CaptainRewardSettlementsResponse

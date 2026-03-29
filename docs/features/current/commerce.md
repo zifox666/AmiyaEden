@@ -87,19 +87,19 @@ source_of_truth:
 
 下单时会从用户档案中快照以下信息，存入订单记录，后续不随用户资料变更而改变：
 
-- `main_character_name`：主角色名
+- `main_character_name`：主人物名
 - `nickname`：昵称
 - `qq`
 - `discord_id`
 
 ## 管理后台订单视图
 
-- **订单管理**（`shop/order-manage` → 订单管理 Tab）：仅展示 `requested` 状态订单，支持按商品名/主角色名/昵称关键字搜索，可执行发放或拒绝操作。
+- **订单管理**（`shop/order-manage` → 订单管理 Tab）：仅展示 `requested` 状态订单，支持按商品名/主人物名/昵称关键字搜索，可执行发放或拒绝操作。
 - **订单历史**（`shop/order-manage` → 订单历史 Tab）：展示 `delivered` + `rejected` 订单，支持相同关键字搜索，只读。
 
 `/shop/manage` 仍保留为管理员专用的商品管理入口。
 
-两个视图的表格列：订单号、主角色、昵称、联系方式（QQ/Discord）、商品、数量、总价。
+两个视图的表格列：订单号、主人物、昵称、联系方式（QQ/Discord）、商品、数量、总价。
 
 ## 关键不变量
 
@@ -107,7 +107,7 @@ source_of_truth:
 - 钱包流水与调整日志属于不同查询面
 - 用户侧钱包页面与其后端接口当前都归属 `Shop` 模块
 - 用户侧 `/shop/wallet` 交易流水，以及管理端钱包列表、钱包流水、钱包操作日志，都按 ledger 视图处理
-- 管理端钱包流水的用户筛选按 `/system/user` 一致语义执行，支持昵称或任意已绑定角色名搜索
+- 管理端钱包流水的用户筛选按 `/system/user` 一致语义执行，支持昵称或任意已绑定人物名搜索
 - 商店、兑换码虽然都在 `Shop` 目录下，但用户态与管理态接口是分开的
 - 商店商品图片上传当前通过 `/upload/image` 返回 base64 data URL，不写入项目文件夹；大小上限 2MB，仅支持 jpeg/png/webp
 - 钱包在下单时立即扣款；拒绝订单时通过 `CreditUser` 退款，流水类型为 `shop_refund`

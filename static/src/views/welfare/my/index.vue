@@ -9,6 +9,7 @@
             :loading="eligibleLoading"
             :data="eligibleRows"
             :columns="eligibleColumns"
+            :empty-text="t('welfareMy.noEligibleWelfares')"
             :row-class-name="eligibleRowClassName"
           />
         </ElTabPane>
@@ -19,13 +20,10 @@
             :loading="applicationsLoading"
             :data="applications"
             :columns="applicationColumns"
+            :empty-text="t('welfareMy.noApplications')"
             :pagination="applicationPagination"
             @pagination:size-change="handleApplicationSizeChange"
             @pagination:current-change="handleApplicationCurrentChange"
-          />
-          <ElEmpty
-            v-if="!applicationsLoading && applications.length === 0"
-            :description="t('welfareMy.noApplications')"
           />
         </ElTabPane>
       </ElTabs>
@@ -80,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElUpload, ElMessage, ElEmpty, ElTooltip } from 'element-plus'
+  import { ElTag, ElButton, ElUpload, ElMessage, ElTooltip } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import {
     getEligibleWelfares,
@@ -103,7 +101,7 @@
 
   // 将 eligible welfares 展平为表格行
   // per_user: 一条福利一行
-  // per_character: 每个可申请角色一行
+  // per_character: 每个可申请人物一行
   interface EligibleRow {
     welfareId: number
     welfareName: string

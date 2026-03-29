@@ -16,13 +16,13 @@ type SystemWallet struct {
 
 func (SystemWallet) TableName() string { return "system_wallet" }
 
-// WalletWithCharacter 钱包信息 + 用户主角色名（用于管理列表展示）
+// WalletWithCharacter 钱包信息 + 用户主人物名（用于管理列表展示）
 type WalletWithCharacter struct {
 	SystemWallet
 	CharacterName string `json:"character_name"`
 }
 
-// TransactionWithCharacter 钱包流水 + 用户主角色名
+// TransactionWithCharacter 钱包流水 + 用户主人物名
 type TransactionWithCharacter struct {
 	WalletTransaction
 	CharacterName string `json:"character_name"`
@@ -30,7 +30,7 @@ type TransactionWithCharacter struct {
 	OperatorName  string `json:"operator_name"`
 }
 
-// LogWithCharacter 钱包操作日志 + 操作人/目标用户角色名
+// LogWithCharacter 钱包操作日志 + 操作人/目标用户人物名
 type LogWithCharacter struct {
 	WalletLog
 	TargetCharacterName   string `json:"target_character_name"`

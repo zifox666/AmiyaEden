@@ -37,7 +37,7 @@ export function fetchImpersonateUser(id: number) {
   })
 }
 
-// ─── 用户角色分配 ───
+// ─── 用户职权分配 ───
 
 export function fetchGetUserRoles(userId: number) {
   return request.get<Api.SystemManage.RoleDefinition[]>({
@@ -52,7 +52,7 @@ export function fetchSetUserRoles(userId: number, roleCodes: string[]) {
   })
 }
 
-// ─── 角色定义 ───
+// ─── 职权定义 ───
 
 export function fetchGetRoleDefinitions() {
   return request.get<Api.SystemManage.RoleDefinition[]>({
@@ -62,21 +62,21 @@ export function fetchGetRoleDefinitions() {
 
 // ─── 自动权限映射 ───
 
-/** 获取所有 ESI 军团角色名列表 */
+/** 获取所有 ESI 军团职权名列表 */
 export function fetchGetAllEsiRoles() {
   return request.get<string[]>({
     url: '/api/v1/system/auto-role/esi-roles'
   })
 }
 
-/** 获取所有 ESI 军团角色映射 */
+/** 获取所有 ESI 军团职权映射 */
 export function fetchGetEsiRoleMappings() {
   return request.get<Api.SystemManage.EsiRoleMapping[]>({
     url: '/api/v1/system/auto-role/esi-role-mappings'
   })
 }
 
-/** 创建 ESI 军团角色映射 */
+/** 创建 ESI 军团职权映射 */
 export function fetchCreateEsiRoleMapping(data: { esi_role: string; role_code: string }) {
   return request.post<Api.SystemManage.EsiRoleMapping>({
     url: '/api/v1/system/auto-role/esi-role-mappings',
@@ -84,7 +84,7 @@ export function fetchCreateEsiRoleMapping(data: { esi_role: string; role_code: s
   })
 }
 
-/** 删除 ESI 军团角色映射 */
+/** 删除 ESI 军团职权映射 */
 export function fetchDeleteEsiRoleMapping(id: number) {
   return request.del({
     url: `/api/v1/system/auto-role/esi-role-mappings/${id}`

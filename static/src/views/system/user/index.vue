@@ -15,13 +15,19 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        :default-sort="{ prop: 'last_login_at', order: 'descending' }"
+        :expand-row-keys="expandedUserIds"
+        :row-class-name="userRowClassName"
+        :row-key="getUserRowKey"
         visual-variant="ledger"
+        @row-click="handleRowClick"
+        @expand-change="handleExpandChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
       >
       </ArtTable>
 
-      <!-- 角色分配弹窗 -->
+      <!-- 职权分配弹窗 -->
       <UserRoleDialog
         v-model:visible="dialogVisible"
         :user-data="currentUserData"
@@ -35,17 +41,14 @@
   import { useI18n } from 'vue-i18n'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import {
-    fetchGetUserList,
-    fetchDeleteUser,
-    fetchImpersonateUser,
-    fetchGetRoleDefinitions
-  } from '@/api/system-manage'
+  import { formatTime } from '@utils/common'
+  import { fetchGetUserList, fetchDeleteUser, fetchImpersonateUser } from '@/api/system-manage'
   import { fetchGetUserInfo } from '@/api/auth'
   import { useUserStore } from '@/store/modules/user'
   import UserSearch from './modules/user-search.vue'
   import UserRoleDialog from './modules/user-role-dialog.vue'
-  import { ElTag, ElMessage, ElMessageBox, ElAvatar } from 'element-plus'
+  import { ElTag, ElMessage, ElMessageBox, ElAvatar, ElEmpty } from 'element-plus'
+  import type { TableColumnCtx } from 'element-plus'
 
   defineOptions({ name: 'User' })
   const { t } = useI18n()
@@ -64,24 +67,13 @@
   // 搜索表单
   const searchForm = ref({
     keyword: undefined,
-    status: undefined
+    status: undefined,
+    role: undefined
   })
+  const expandedUserIds = ref<string[]>([])
+  const skillPointFormatter = new Intl.NumberFormat('en-US')
 
-  const DEFAULT_ROLE_PRIORITY: Record<string, number> = {
-    super_admin: 100,
-    admin: 90,
-    srp: 80,
-    senior_fc: 75,
-    fc: 70,
-    welfare: 50,
-    captain: 30,
-    user: 10,
-    guest: 0
-  }
-  const rolePriorityMap = ref<Record<string, number>>({ ...DEFAULT_ROLE_PRIORITY })
-  const rolePriorityLoaded = ref(false)
-  let roleHydrationVersion = 0
-  // 角色显示配置
+  // 职权显示配置
   const ROLE_CONFIG: Record<string, { type: string; text: string }> = {
     super_admin: { type: 'danger', text: t('userAdmin.roles.super_admin') },
     admin: { type: 'warning', text: t('userAdmin.roles.admin') },
@@ -103,16 +95,8 @@
   const getRoleConfig = (role: string) => ROLE_CONFIG[role] || { type: 'info', text: role }
   const getStatusConfig = (status: number) =>
     STATUS_CONFIG[status] || { type: 'info', text: t('userAdmin.status.unknown') }
-  const getRolePriority = (role: string) =>
-    rolePriorityMap.value[role] ?? DEFAULT_ROLE_PRIORITY[role] ?? -1
-  const sortRoles = (roles: string[]) =>
-    [...new Set(roles)].sort((a, b) => {
-      const diff = getRolePriority(b) - getRolePriority(a)
-      return diff !== 0 ? diff : a.localeCompare(b)
-    })
   const getDisplayRoles = (row: UserListItem) => {
-    const sortedRoles = sortRoles(row.roles ?? [])
-    return sortedRoles.length > 0 ? sortedRoles : ['guest']
+    return row.roles?.length ? row.roles : ['guest']
   }
   const getContactEntries = (row: UserListItem) => {
     const contacts = [
@@ -136,37 +120,78 @@
     getDisplayRoles(row).some((role) => ['super_admin', 'admin'].includes(role))
   const canEditUser = (row: UserListItem) => isSuperAdmin.value || !isProtectedUser(row)
   const canDeleteUser = (row: UserListItem) => isSuperAdmin.value || !isProtectedUser(row)
+  const formatSkillPoints = (value: number) => skillPointFormatter.format(value ?? 0)
+  const getUserRowKey = (row: Record<string, any>) => String(row.id)
+  const getUserCharacters = (row: UserListItem) => row.characters ?? []
+  const userRowClassName = () => 'user-row--expandable'
+  const getSeatUrl = (characterId: number) =>
+    `https://seat.winterco.space/character/view/sheet/${characterId}`
 
-  const ensureRolePriorityMap = async () => {
-    if (rolePriorityLoaded.value) return
-    try {
-      const defs = await fetchGetRoleDefinitions()
-      rolePriorityMap.value = defs.reduce<Record<string, number>>(
-        (acc, role) => {
-          acc[role.code] = role.sort
-          return acc
-        },
-        { ...DEFAULT_ROLE_PRIORITY }
-      )
-    } catch (error) {
-      console.error('Failed to load role priorities', error)
-      rolePriorityMap.value = { ...DEFAULT_ROLE_PRIORITY }
-    } finally {
-      rolePriorityLoaded.value = true
+  const renderUserCharacters = (row: UserListItem) => {
+    const characters = getUserCharacters(row)
+    if (characters.length === 0) {
+      return h('div', { class: 'user-characters-panel user-characters-panel--empty' }, [
+        h(ElEmpty, {
+          description: t('userAdmin.characters.empty'),
+          imageSize: 72
+        })
+      ])
     }
-  }
 
-  const syncDisplayRoles = async (rows: UserListItem[]) => {
-    if (rows.length === 0) return
-
-    const hydrationVersion = ++roleHydrationVersion
-    await ensureRolePriorityMap()
-
-    if (hydrationVersion !== roleHydrationVersion) return
-    data.value = rows.map((row) => ({
-      ...row,
-      roles: getDisplayRoles(row)
-    }))
+    return h('div', { class: 'user-characters-panel' }, [
+      h('div', { class: 'user-characters-panel__header' }, [
+        h('div', { class: 'user-characters-panel__avatar-spacer' }),
+        h(
+          'div',
+          { class: 'user-characters-panel__header-cell' },
+          t('userAdmin.characters.character')
+        ),
+        h(
+          'div',
+          { class: 'user-characters-panel__header-cell' },
+          t('userAdmin.characters.characterIdLabel')
+        ),
+        h('div', { class: 'user-characters-panel__header-cell' }, t('SeAT')),
+        h(
+          'div',
+          { class: 'user-characters-panel__header-cell' },
+          t('userAdmin.characters.totalSkillPointsLabel')
+        )
+      ]),
+      ...characters.map((character) =>
+        h('div', { key: character.character_id, class: 'user-characters-panel__row' }, [
+          h('div', { class: 'user-characters-panel__avatar-cell' }, [
+            h(ElAvatar, {
+              src: character.portrait_url,
+              size: 30,
+              class: 'user-character-avatar'
+            })
+          ]),
+          h('div', { class: 'user-characters-panel__cell user-characters-panel__cell--name' }, [
+            h('div', { class: 'user-character-name' }, character.character_name)
+          ]),
+          h('div', { class: 'user-characters-panel__cell' }, [
+            h('span', { class: 'user-character-badge' }, String(character.character_id))
+          ]),
+          h('div', { class: 'user-characters-panel__cell user-characters-panel__cell--seat' }, [
+            h(
+              'a',
+              {
+                class: 'user-character-link',
+                href: getSeatUrl(character.character_id),
+                target: '_blank',
+                rel: 'noreferrer noopener',
+                title: getSeatUrl(character.character_id)
+              },
+              getSeatUrl(character.character_id)
+            )
+          ]),
+          h('div', { class: 'user-characters-panel__cell user-characters-panel__cell--sp' }, [
+            h('span', { class: 'user-character-sp' }, formatSkillPoints(character.total_sp))
+          ])
+        ])
+      )
+    ])
   }
 
   const {
@@ -188,9 +213,15 @@
         current: 1,
         size: 200,
         keyword: searchForm.value.keyword,
-        status: searchForm.value.status
+        status: searchForm.value.status,
+        role: searchForm.value.role
       },
       columnsFactory: () => [
+        {
+          type: 'expand',
+          width: 52,
+          formatter: (row: UserListItem) => () => renderUserCharacters(row)
+        },
         { type: 'index', width: 60, label: '#' },
         {
           prop: 'userInfo',
@@ -259,7 +290,7 @@
           label: t('userAdmin.table.lastLogin'),
           width: 180,
           sortable: true,
-          formatter: (row) => row.last_login_at || '-'
+          formatter: (row) => formatTime(row.last_login_at)
         },
         {
           prop: 'last_login_ip',
@@ -271,7 +302,8 @@
           prop: 'created_at',
           label: t('userAdmin.table.registeredAt'),
           width: 180,
-          sortable: true
+          sortable: true,
+          formatter: (row) => formatTime(row.created_at)
         },
         {
           prop: 'operation',
@@ -279,7 +311,7 @@
           width: 160,
           fixed: 'right',
           formatter: (row) =>
-            h('div', { class: 'flex gap-2' }, [
+            h('div', { class: 'user-operations flex gap-2' }, [
               isSuperAdmin.value &&
                 h(ArtButtonTable, {
                   icon: 'ri:user-follow-line',
@@ -300,31 +332,53 @@
             ])
         }
       ]
-    },
-    transform: {
-      dataTransformer: (rows) =>
-        rows.map((row) => {
-          const roles = getDisplayRoles(row as UserListItem)
-          return {
-            ...row,
-            roles
-          }
-        })
-    },
-    hooks: {
-      onSuccess: (rows) => {
-        void syncDisplayRoles(rows as UserListItem[])
-      }
     }
   })
 
+  watch(
+    data,
+    (rows) => {
+      const visibleUserIds = new Set((rows as UserListItem[]).map((row) => String(row.id)))
+      expandedUserIds.value = expandedUserIds.value.filter((id) => visibleUserIds.has(id))
+    },
+    { immediate: true }
+  )
+
+  const handleExpandChange = (_row: UserListItem, expandedRows: UserListItem[]) => {
+    expandedUserIds.value = expandedRows.map((item) => String(item.id))
+  }
+
+  const handleRowClick = (
+    row: UserListItem,
+    column: TableColumnCtx<UserListItem>,
+    event: MouseEvent
+  ) => {
+    const target = event.target as HTMLElement | null
+    if (
+      column.type === 'expand' ||
+      column.property === 'operation' ||
+      target?.closest('.user-operations')
+    ) {
+      return
+    }
+
+    const rowKey = String(row.id)
+
+    if (expandedUserIds.value.includes(rowKey)) {
+      expandedUserIds.value = expandedUserIds.value.filter((id) => id !== rowKey)
+      return
+    }
+
+    expandedUserIds.value = [...expandedUserIds.value, rowKey]
+  }
+
   /** 搜索 */
   const handleSearch = (params: Record<string, any>) => {
-    Object.assign(searchParams, params)
+    Object.assign(searchParams, { current: 1 }, params)
     getData()
   }
 
-  /** 打开角色编辑弹窗 */
+  /** 打开职权编辑弹窗 */
   const showRoleDialog = (row: UserListItem): void => {
     if (!canEditUser(row)) {
       ElMessage.error(t('userAdmin.editProtectedDenied'))
@@ -390,3 +444,165 @@
       .catch(() => {})
   }
 </script>
+
+<style lang="scss">
+  .user-page {
+    .user-characters-panel {
+      width: 100%;
+      margin: 4px 0 8px 56px;
+      overflow: hidden;
+      border: 1px solid var(--el-border-color-lighter);
+      border-radius: 14px;
+      background: linear-gradient(180deg, var(--el-fill-color-extra-light), #fff);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    }
+
+    .user-characters-panel--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 96px;
+      padding: 12px;
+    }
+
+    .user-characters-panel__header,
+    .user-characters-panel__row {
+      width: 100%;
+      display: grid;
+      grid-template-columns:
+        56px minmax(0, 0.18fr) minmax(25px, 0.12fr) minmax(50px, 0.3fr)
+        minmax(86px, 0.58fr);
+      column-gap: 12px;
+      align-items: center;
+    }
+
+    .user-characters-panel__header {
+      padding: 8px 14px;
+      background: var(--el-fill-color-light);
+      border-bottom: 1px solid var(--el-border-color-lighter);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--el-text-color-secondary);
+    }
+
+    .user-characters-panel__avatar-spacer {
+      width: 100%;
+    }
+
+    .user-characters-panel__row {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+      transition:
+        background-color 0.18s ease,
+        transform 0.18s ease;
+    }
+
+    .user-characters-panel__row:last-child {
+      border-bottom: 0;
+    }
+
+    .user-characters-panel__row:hover {
+      background: rgba(64, 158, 255, 0.04);
+    }
+
+    .user-characters-panel__avatar-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-character-avatar {
+      border: 1px solid var(--el-border-color-lighter);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+
+    .user-characters-panel__cell {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--el-text-color-primary);
+    }
+
+    .user-characters-panel__cell--name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .user-character-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-character-badge,
+    .user-character-sp {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: var(--el-fill-color);
+      color: var(--el-text-color-secondary);
+      white-space: nowrap;
+    }
+
+    .user-character-sp {
+      background: rgba(103, 194, 58, 0.14);
+      color: var(--el-color-success);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .user-character-link {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      line-height: 1.2;
+      color: var(--el-color-primary);
+      text-decoration: none;
+    }
+
+    .user-character-link:hover {
+      text-decoration: underline;
+    }
+
+    .user-row--expandable > td {
+      cursor: pointer;
+    }
+
+    .user-row--expandable .user-operations,
+    .user-row--expandable .user-operations * {
+      cursor: default;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .user-page {
+      .user-characters-panel {
+        margin-left: 8px;
+      }
+
+      .user-characters-panel__header,
+      .user-characters-panel__row {
+        grid-template-columns: 56px minmax(0, 1fr);
+        row-gap: 8px;
+      }
+
+      .user-characters-panel__header-cell:nth-child(n + 3),
+      .user-characters-panel__row .user-characters-panel__cell:nth-child(n + 3) {
+        grid-column: 1 / -1;
+      }
+
+      .user-characters-panel__header-cell:nth-child(3),
+      .user-characters-panel__header-cell:nth-child(4),
+      .user-characters-panel__header-cell:nth-child(5) {
+        display: none;
+      }
+    }
+  }
+</style>

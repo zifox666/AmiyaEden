@@ -69,7 +69,7 @@ type ShopOrder struct {
 	BaseModel
 	OrderNo           string     `gorm:"size:50;uniqueIndex"             json:"order_no"`
 	UserID            uint       `gorm:"index;not null"                  json:"user_id"`
-	MainCharacterName string     `gorm:"size:128"                        json:"main_character_name"` // 主角色名快照
+	MainCharacterName string     `gorm:"size:128"                        json:"main_character_name"` // 主人物名快照
 	Nickname          string     `gorm:"size:128"                        json:"nickname"`            // 昵称快照
 	QQ                string     `gorm:"size:20"                         json:"qq"`
 	DiscordID         string     `gorm:"size:20"                         json:"discord_id"`

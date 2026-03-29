@@ -3,8 +3,8 @@ package service
 import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	internalsearch "amiya-eden/internal/search"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -209,29 +209,35 @@ func (s *NewbroReportService) ListCaptainRewardSettlements(
 	page,
 	pageSize int,
 ) (CaptainRewardSummary, []CaptainRewardSettlementItem, int64, error) {
-	return s.listRewardSettlements(&captainUserID, page, pageSize)
+	return s.listRewardSettlements(&captainUserID, page, pageSize, "")
 }
 
 func (s *NewbroReportService) ListAdminRewardSettlements(
 	page,
 	pageSize int,
+	keyword string,
 ) (CaptainRewardSummary, []CaptainRewardSettlementItem, int64, error) {
-	return s.listRewardSettlements(nil, page, pageSize)
+	return s.listRewardSettlements(nil, page, pageSize, keyword)
 }
 
 func (s *NewbroReportService) listRewardSettlements(
 	captainUserID *uint,
 	page,
 	pageSize int,
+	keyword string,
 ) (CaptainRewardSummary, []CaptainRewardSettlementItem, int64, error) {
 	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
+	filter := repository.CaptainRewardSettlementFilter{
+		CaptainUserID: captainUserID,
+		Keyword:       keyword,
+	}
 
-	settlementCount, totalCreditedValue, lastProcessedAt, err := s.settlementRepo.Summarize(captainUserID)
+	settlementCount, totalCreditedValue, lastProcessedAt, err := s.settlementRepo.Summarize(filter)
 	if err != nil {
 		return CaptainRewardSummary{}, nil, 0, err
 	}
-	rows, total, err := s.settlementRepo.List(captainUserID, page, pageSize)
+	rows, total, err := s.settlementRepo.List(filter, page, pageSize)
 	if err != nil {
 		return CaptainRewardSummary{}, nil, 0, err
 	}
@@ -254,9 +260,13 @@ func (s *NewbroReportService) listRewardSettlements(
 
 func (s *NewbroReportService) ListAllCaptainOverviews(page, pageSize int, keyword string) ([]CaptainOverview, int64, error) {
 	page = normalizePage(page)
-	pageSize = normalizeLedgerPageSize(pageSize)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 
 	userIDs, err := s.roleRepo.GetRoleUserIDs(model.RoleCaptain)
+	if err != nil {
+		return nil, 0, err
+	}
+	userIDs, err = s.filterCaptainUserIDsByKeyword(userIDs, keyword)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -265,9 +275,6 @@ func (s *NewbroReportService) ListAllCaptainOverviews(page, pageSize int, keywor
 		overview, err := s.GetCaptainOverview(userID)
 		if err != nil {
 			return nil, 0, err
-		}
-		if keyword != "" && !strings.Contains(strings.ToLower(overview.CaptainCharacterName), strings.ToLower(keyword)) {
-			continue
 		}
 		overviews = append(overviews, *overview)
 	}
@@ -287,6 +294,44 @@ func (s *NewbroReportService) ListAllCaptainOverviews(page, pageSize int, keywor
 		end = len(overviews)
 	}
 	return overviews[start:end], total, nil
+}
+
+func (s *NewbroReportService) filterCaptainUserIDsByKeyword(userIDs []uint, keyword string) ([]uint, error) {
+	if internalsearch.NormalizeKeyword(keyword) == "" || len(userIDs) == 0 {
+		return userIDs, nil
+	}
+
+	users, err := s.userRepo.ListByIDs(userIDs)
+	if err != nil {
+		return nil, err
+	}
+	chars, err := s.charRepo.ListByUserIDs(userIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	userByID := make(map[uint]model.User, len(users))
+	for _, user := range users {
+		userByID[user.ID] = user
+	}
+	characterNamesByUserID := make(map[uint][]string, len(chars))
+	for _, char := range chars {
+		characterNamesByUserID[char.UserID] = append(characterNamesByUserID[char.UserID], char.CharacterName)
+	}
+
+	matchedUserIDs := make([]uint, 0, len(userIDs))
+	for _, userID := range userIDs {
+		values := make([]string, 0, len(characterNamesByUserID[userID])+1)
+		if user, ok := userByID[userID]; ok {
+			values = append(values, user.Nickname)
+		}
+		values = append(values, characterNamesByUserID[userID]...)
+		if internalsearch.ContainsKeyword(keyword, values...) {
+			matchedUserIDs = append(matchedUserIDs, userID)
+		}
+	}
+
+	return matchedUserIDs, nil
 }
 
 func (s *NewbroReportService) GetAdminCaptainDetail(captainUserID uint) (*AdminCaptainDetail, error) {

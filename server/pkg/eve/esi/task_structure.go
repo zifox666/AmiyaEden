@@ -85,7 +85,7 @@ func (t *StructureTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("query corp roles: %w", err)
 	}
 	if !app_utils.ContainsAny(corpRoles, []string{"Director", "Station_Manager"}) {
-		global.Logger.Debug("[ESI] 角色没有足够的军团权限，跳过建筑信息刷新",
+		global.Logger.Debug("[ESI] 人物没有足够的军团职权，跳过建筑信息刷新",
 			zap.Int64("character_id", ctx.CharacterID),
 			zap.Strings("corp_roles", corpRoles))
 		return nil
@@ -99,13 +99,13 @@ func (t *StructureTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("query corporation id: %w", err)
 	}
 	if !isCorporationAllowed(corpID, utils.GetAllowCorporations()) {
-		global.Logger.Debug("[ESI] 角色所在军团不在 allow_corporations，跳过建筑信息刷新",
+		global.Logger.Debug("[ESI] 人物所在军团不在 allow_corporations，跳过建筑信息刷新",
 			zap.Int64("character_id", ctx.CharacterID),
 			zap.Int64("corporation_id", corpID))
 		return nil
 	}
 
-	// 1. 获取角色所在军团的建筑列表
+	// 1. 获取人物所在军团的建筑列表
 	var esiStructures []corpStructureESIResp
 	corpStructuresPath := fmt.Sprintf("/corporations/%d/structures/", corpID)
 	_, err = ctx.Client.GetPaginated(bgCtx, corpStructuresPath, ctx.AccessToken, &esiStructures)

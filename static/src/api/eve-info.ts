@@ -1,26 +1,26 @@
 import request from '@/utils/http'
 
-/** 获取角色钱包流水 */
+/** 获取人物钱包流水 */
 export function fetchInfoWallet(data: Api.EveInfo.WalletRequest) {
   return request.post<Api.EveInfo.WalletResponse>({ url: '/api/v1/info/wallet', data })
 }
 
-/** 获取角色技能列表与队列 */
+/** 获取人物技能列表与队列 */
 export function fetchInfoSkills(data: Api.EveInfo.SkillRequest) {
   return request.post<Api.EveInfo.SkillResponse>({ url: '/api/v1/info/skills', data })
 }
 
-/** 获取角色可用舰船列表 */
+/** 获取人物可用舰船列表 */
 export function fetchInfoShips(data: Api.EveInfo.ShipRequest) {
   return request.post<Api.EveInfo.ShipResponse>({ url: '/api/v1/info/ships', data })
 }
 
-/** 获取角色克隆体/植入体信息 */
+/** 获取人物克隆体/植入体信息 */
 export function fetchInfoImplants(data: Api.EveInfo.ImplantsRequest) {
   return request.post<Api.EveInfo.ImplantsResponse>({ url: '/api/v1/info/implants', data })
 }
 
-/** 获取用户所有角色的装配列表 */
+/** 获取用户所有人物的装配列表 */
 export function fetchInfoFittings(data: Api.EveInfo.FittingsRequest) {
   return request.post<Api.EveInfo.FittingsListResponse>({ url: '/api/v1/info/fittings', data })
 }
@@ -30,12 +30,12 @@ export function saveInfoFitting(data: Api.EveInfo.SaveFittingRequest) {
   return request.post<Api.EveInfo.FittingResponse>({ url: '/api/v1/info/fittings/save', data })
 }
 
-/** 获取用户所有角色的资产列表 */
+/** 获取用户所有人物的资产列表 */
 export function fetchInfoAssets(data: Api.EveInfo.AssetsRequest) {
   return request.post<Api.EveInfo.AssetsResponse>({ url: '/api/v1/info/assets', data })
 }
 
-/** 获取用户所有角色的合同列表（分页） */
+/** 获取用户所有人物的合同列表（分页） */
 export function fetchInfoContracts(data: Api.EveInfo.ContractsRequest) {
   return request.post<Api.Common.PaginatedResponse<Api.EveInfo.ContractItem>>({
     url: '/api/v1/info/contracts',

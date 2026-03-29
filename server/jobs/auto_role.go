@@ -20,7 +20,7 @@ func RegisterAutoRoleJobs(c *cron.Cron) {
 	global.Logger.Info("注册自动权限同步定时任务成功", zap.Int("entry_id", int(id)))
 }
 
-// autoRoleSyncTask 根据 ESI 军团角色 + 头衔映射，自动同步所有用户权限
+// autoRoleSyncTask 根据 ESI 军团职权 + 头衔映射，自动同步所有用户权限
 func autoRoleSyncTask() {
 	ctx := context.Background()
 	autoRoleSvc := service.NewAutoRoleService()

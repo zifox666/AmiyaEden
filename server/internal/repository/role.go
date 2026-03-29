@@ -13,7 +13,7 @@ func NewRoleRepository() *RoleRepository {
 
 // ─── UserRole (code-based) ───
 
-// GetUserRoleCodes 获取用户的角色编码列表（按优先级降序）
+// GetUserRoleCodes 获取用户的职权编码列表（按优先级降序）
 func (r *RoleRepository) GetUserRoleCodes(userID uint) ([]string, error) {
 	var codes []string
 	err := global.DB.Model(&model.UserRole{}).
@@ -26,7 +26,7 @@ func (r *RoleRepository) GetUserRoleCodes(userID uint) ([]string, error) {
 	return sortRoleCodesByPriority(codes), nil
 }
 
-// GetUserRoleCodesByUserIDs 批量获取多个用户的角色编码
+// GetUserRoleCodesByUserIDs 批量获取多个用户的职权编码
 func (r *RoleRepository) GetUserRoleCodesByUserIDs(userIDs []uint) (map[uint][]string, error) {
 	roleCodesByUserID := make(map[uint][]string, len(userIDs))
 	if len(userIDs) == 0 {
@@ -57,7 +57,7 @@ func (r *RoleRepository) GetUserRoleCodesByUserIDs(userIDs []uint) (map[uint][]s
 	return roleCodesByUserID, nil
 }
 
-// SetUserRoles 设置用户的角色（替换所有）
+// SetUserRoles 设置用户的职权（替换所有）
 func (r *RoleRepository) SetUserRoles(userID uint, roleCodes []string) error {
 	tx := global.DB.Begin()
 	if err := tx.Where("user_id = ?", userID).Delete(&model.UserRole{}).Error; err != nil {
@@ -73,17 +73,17 @@ func (r *RoleRepository) SetUserRoles(userID uint, roleCodes []string) error {
 	return tx.Commit().Error
 }
 
-// AddUserRole 为用户添加一个角色
+// AddUserRole 为用户添加一个职权
 func (r *RoleRepository) AddUserRole(userID uint, roleCode string) error {
 	return global.DB.Create(&model.UserRole{UserID: userID, RoleCode: roleCode}).Error
 }
 
-// RemoveUserRole 移除用户的一个角色
+// RemoveUserRole 移除用户的一个职权
 func (r *RoleRepository) RemoveUserRole(userID uint, roleCode string) error {
 	return global.DB.Where("user_id = ? AND role_code = ?", userID, roleCode).Delete(&model.UserRole{}).Error
 }
 
-// GetRoleUserIDs 获取拥有某角色的所有用户ID
+// GetRoleUserIDs 获取拥有某职权的所有用户ID
 func (r *RoleRepository) GetRoleUserIDs(roleCode string) ([]uint, error) {
 	var ids []uint
 	err := global.DB.Model(&model.UserRole{}).Where("role_code = ?", roleCode).Pluck("user_id", &ids).Error

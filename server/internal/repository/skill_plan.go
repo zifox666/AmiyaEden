@@ -153,7 +153,7 @@ func (r *SkillPlanRepository) ListSkillsByPlanIDs(planIDs []uint) ([]model.Skill
 	return skills, err
 }
 
-// ListCheckCharacterIDsByUserID 获取用户保存的技能检查角色
+// ListCheckCharacterIDsByUserID 获取用户保存的技能检查人物
 func (r *SkillPlanRepository) ListCheckCharacterIDsByUserID(userID uint) ([]int64, error) {
 	var rows []model.SkillPlanCheckCharacter
 	if err := global.DB.Where("user_id = ?", userID).Order("id ASC").Find(&rows).Error; err != nil {
@@ -207,7 +207,7 @@ func (r *SkillPlanRepository) ReplaceCheckPlans(userID uint, planIDs []uint) err
 	return tx.Commit().Error
 }
 
-// ReplaceCheckCharacters 替换用户保存的技能检查角色
+// ReplaceCheckCharacters 替换用户保存的技能检查人物
 func (r *SkillPlanRepository) ReplaceCheckCharacters(userID uint, characterIDs []int64) error {
 	tx := global.DB.Begin()
 

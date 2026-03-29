@@ -20,7 +20,7 @@ func NewAutoRoleHandler() *AutoRoleHandler {
 
 // ─── ESI Role Mapping ───
 
-// ListEsiRoleMappings 获取所有 ESI 角色映射
+// ListEsiRoleMappings 获取所有 ESI 职权映射
 func (h *AutoRoleHandler) ListEsiRoleMappings(c *gin.Context) {
 	mappings, err := h.svc.ListEsiRoleMappings()
 	if err != nil {
@@ -30,7 +30,7 @@ func (h *AutoRoleHandler) ListEsiRoleMappings(c *gin.Context) {
 	response.OK(c, mappings)
 }
 
-// GetAllEsiRoles 获取所有可用的 ESI 军团角色名列表
+// GetAllEsiRoles 获取所有可用的 ESI 军团职权名列表
 func (h *AutoRoleHandler) GetAllEsiRoles(c *gin.Context) {
 	response.OK(c, h.svc.GetAllEsiRoles())
 }
@@ -40,7 +40,7 @@ type createEsiRoleMappingRequest struct {
 	RoleCode string `json:"role_code"  binding:"required"`
 }
 
-// CreateEsiRoleMapping 创建 ESI 角色映射
+// CreateEsiRoleMapping 创建 ESI 职权映射
 func (h *AutoRoleHandler) CreateEsiRoleMapping(c *gin.Context) {
 	var req createEsiRoleMappingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -55,7 +55,7 @@ func (h *AutoRoleHandler) CreateEsiRoleMapping(c *gin.Context) {
 	response.OK(c, mapping)
 }
 
-// DeleteEsiRoleMapping 删除 ESI 角色映射
+// DeleteEsiRoleMapping 删除 ESI 职权映射
 func (h *AutoRoleHandler) DeleteEsiRoleMapping(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil || id > math.MaxUint32 {

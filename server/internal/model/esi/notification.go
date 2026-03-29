@@ -2,7 +2,7 @@ package esimodel
 
 import "time"
 
-// EveCharacterNotification 角色通知
+// EveCharacterNotification 人物通知
 type EveCharacterNotification struct {
 	ID             uint      `gorm:"primarykey"                                       json:"id"`
 	CharacterID    int64     `gorm:"not null;index:idx_char_notif,unique"             json:"character_id"`

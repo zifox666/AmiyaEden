@@ -171,7 +171,7 @@ func (s *WelfareService) AdminReorderWelfares(ids []uint) error {
 //  用户端 - 福利申请
 // ─────────────────────────────────────────────
 
-// EligibleCharacterResp 可申请角色
+// EligibleCharacterResp 可申请人物
 type EligibleCharacterResp struct {
 	CharacterID      int64  `json:"character_id"`
 	CharacterName    string `json:"character_name"`
@@ -215,10 +215,10 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 		return nil, errors.New("用户不存在")
 	}
 
-	// 2. 获取用户所有角色
+	// 2. 获取用户所有人物
 	characters, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 
 	// 3. 获取所有启用的福利
@@ -260,7 +260,7 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 		skillCheckCache, skillCheckReady = s.buildSkillCheckCache(characters, welfares)
 	}
 
-	// 5b. 预加载角色生日（仅当有角色年龄限制的福利时）
+	// 5b. 预加载人物生日（仅当有人物年龄限制的福利时）
 	needsAgeCheck := false
 	for _, w := range welfares {
 		if w.MaxCharAgeMonths != nil && *w.MaxCharAgeMonths > 0 {
@@ -388,7 +388,7 @@ func (s *WelfareService) buildEligibleWelfareResp(
 	return resp, true
 }
 
-// filterEligibleCharacters 过滤 per_character 福利中可见的角色
+// filterEligibleCharacters 过滤 per_character 福利中可见的人物
 func (s *WelfareService) filterEligibleCharacters(
 	characters []model.EveCharacter,
 	apps []model.WelfareApplication,
@@ -396,7 +396,7 @@ func (s *WelfareService) filterEligibleCharacters(
 	skillCheckCache map[int64]map[uint]bool,
 	minimumPapBlocked bool,
 ) []EligibleCharacterResp {
-	// 构建已申请的角色集合
+	// 构建已申请的人物集合
 	appliedCharIDs := make(map[int64]bool)
 	appliedCharNames := make(map[string]bool)
 	for _, app := range apps {
@@ -408,7 +408,7 @@ func (s *WelfareService) filterEligibleCharacters(
 
 	var eligible []EligibleCharacterResp
 	for _, char := range characters {
-		// 已申请过的角色跳过
+		// 已申请过的人物跳过
 		if appliedCharIDs[char.CharacterID] || appliedCharNames[strings.TrimSpace(char.CharacterName)] {
 			continue
 		}
@@ -430,7 +430,7 @@ func (s *WelfareService) filterEligibleCharacters(
 	return eligible
 }
 
-// buildSkillCheckCache 批量构建角色技能计划满足状态缓存
+// buildSkillCheckCache 批量构建人物技能计划满足状态缓存
 func (s *WelfareService) buildSkillCheckCache(
 	characters []model.EveCharacter,
 	welfares []model.Welfare,
@@ -459,7 +459,7 @@ func (s *WelfareService) buildSkillCheckCache(
 		planSkillsMap[skill.SkillPlanID] = append(planSkillsMap[skill.SkillPlanID], skill)
 	}
 
-	// 为每个角色检查每个计划
+	// 为每个人物检查每个计划
 	cache := make(map[int64]map[uint]bool)
 	for _, char := range characters {
 		skills, err := s.skillRepo.GetSkillList(int(char.CharacterID))
@@ -484,7 +484,7 @@ func (s *WelfareService) buildSkillCheckCache(
 	return cache, true
 }
 
-// anyCharacterSatisfiesSkillPlan 检查是否有任一角色满足任一技能计划
+// anyCharacterSatisfiesSkillPlan 检查是否有任一人物满足任一技能计划
 func (s *WelfareService) anyCharacterSatisfiesSkillPlan(
 	characters []model.EveCharacter,
 	planIDs []uint,
@@ -498,7 +498,7 @@ func (s *WelfareService) anyCharacterSatisfiesSkillPlan(
 	return false
 }
 
-// characterSatisfiesAnySkillPlan 检查角色是否满足任一技能计划
+// characterSatisfiesAnySkillPlan 检查人物是否满足任一技能计划
 func (s *WelfareService) characterSatisfiesAnySkillPlan(
 	characterID int64,
 	planIDs []uint,
@@ -551,10 +551,10 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 		}
 	}
 
-	// 获取用户角色
+	// 获取用户人物
 	characters, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 
 	// 获取该福利的所有申请记录
@@ -574,7 +574,7 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 		if s.isUserIneligible(user, apps) {
 			return nil, errors.New("您已申请过该福利")
 		}
-		// 找主角色或第一个角色
+		// 找主人物或第一个人物
 		for _, c := range characters {
 			if c.CharacterID == user.PrimaryCharacterID {
 				selectedChar = c
@@ -585,11 +585,11 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 			selectedChar = characters[0]
 		}
 	} else {
-		// per_character: 必须指定角色
+		// per_character: 必须指定人物
 		if req.CharacterID == 0 {
-			return nil, errors.New("按人物模式必须指定角色")
+			return nil, errors.New("按人物模式必须指定人物")
 		}
-		// 验证角色属于用户
+		// 验证人物属于用户
 		found := false
 		for _, c := range characters {
 			if c.CharacterID == req.CharacterID {
@@ -599,19 +599,19 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 			}
 		}
 		if !found {
-			return nil, errors.New("该角色不属于您")
+			return nil, errors.New("该人物不属于您")
 		}
-		// 检查角色是否已申请
+		// 检查人物是否已申请
 		for _, app := range apps {
 			if app.CharacterID == req.CharacterID || strings.TrimSpace(app.CharacterName) == strings.TrimSpace(selectedChar.CharacterName) {
-				return nil, errors.New("该角色已申请过该福利")
+				return nil, errors.New("该人物已申请过该福利")
 			}
 		}
 	}
 
-	// 角色年龄检查：任一角色超龄则该福利不可申请
+	// 人物年龄检查：任一人物超龄则该福利不可申请
 	if welfareAgeRestrictionFailed(characters, welfare.MaxCharAgeMonths, time.Now()) {
-		return nil, errors.New("您的角色年龄超过该福利限制")
+		return nil, errors.New("您的人物年龄超过该福利限制")
 	}
 
 	// PAP 检查：军团 PAP 总数必须严格大于最低要求
@@ -648,11 +648,11 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 
 			if welfare.DistMode == model.WelfareDistModePerUser {
 				if !s.anyCharacterSatisfiesSkillPlan(characters, welfare.SkillPlanIDs, cache) {
-					return nil, errors.New("您的角色不满足技能计划要求")
+					return nil, errors.New("您的人物不满足技能计划要求")
 				}
 			} else {
 				if !s.characterSatisfiesAnySkillPlan(selectedChar.CharacterID, welfare.SkillPlanIDs, cache) {
-					return nil, errors.New("该角色不满足技能计划要求")
+					return nil, errors.New("该人物不满足技能计划要求")
 				}
 			}
 		}
@@ -969,11 +969,11 @@ func (s *WelfareService) ImportWelfareRecords(req *ImportWelfareRecordsRequest) 
 }
 
 // ─────────────────────────────────────────────
-//  角色年龄检查
+//  人物年龄检查
 // ─────────────────────────────────────────────
 
-// characterAgeTooOld 检查角色年龄是否超过限制月数
-// 返回 true 表示角色太老（不符合资格）
+// characterAgeTooOld 检查人物年龄是否超过限制月数
+// 返回 true 表示人物太老（不符合资格）
 func characterAgeTooOld(birthday *time.Time, maxMonths int, now time.Time) bool {
 	if birthday == nil {
 		return false // 未知生日不限制
@@ -982,7 +982,7 @@ func characterAgeTooOld(birthday *time.Time, maxMonths int, now time.Time) bool 
 	return birthday.Before(cutoff)
 }
 
-// anyCharacterTooOld 检查用户是否拥有任何年龄超限的角色
+// anyCharacterTooOld 检查用户是否拥有任何年龄超限的人物
 func anyCharacterTooOld(characters []model.EveCharacter, maxMonths int, now time.Time) bool {
 	for _, c := range characters {
 		if characterAgeTooOld(c.Birthday, maxMonths, now) {
@@ -997,7 +997,7 @@ type esiCharacterPublicInfo struct {
 	Birthday string `json:"birthday"`
 }
 
-// ensureBirthdays 确保角色列表中的 Birthday 字段已填充，缺失的从 ESI 获取并持久化
+// ensureBirthdays 确保人物列表中的 Birthday 字段已填充，缺失的从 ESI 获取并持久化
 func (s *WelfareService) ensureBirthdays(characters []model.EveCharacter) {
 	for i := range characters {
 		if characters[i].Birthday != nil {
@@ -1016,7 +1016,7 @@ func (s *WelfareService) ensureBirthdays(characters []model.EveCharacter) {
 	}
 }
 
-// fetchBirthdayFromESI 从 ESI 公开接口获取角色生日
+// fetchBirthdayFromESI 从 ESI 公开接口获取人物生日
 func (s *WelfareService) fetchBirthdayFromESI(characterID int64) *time.Time {
 	url := fmt.Sprintf("https://esi.evetech.net/latest/characters/%d/?datasource=tranquility", characterID)
 	resp, err := http.Get(url) //nolint:gosec // ESI public endpoint, character ID is trusted internal data

@@ -51,7 +51,7 @@ func (r *AlliancePAPRepository) UpsertSummary(s *model.AlliancePAPSummary) error
 	return global.DB.Save(s).Error
 }
 
-// GetSummary 查询特定主角色某月汇总
+// GetSummary 查询特定主人物某月汇总
 func (r *AlliancePAPRepository) GetSummary(mainChar string, year, month int) (*model.AlliancePAPSummary, error) {
 	var s model.AlliancePAPSummary
 	err := global.DB.
@@ -60,7 +60,7 @@ func (r *AlliancePAPRepository) GetSummary(mainChar string, year, month int) (*m
 	return &s, err
 }
 
-// ListRecords 查询特定主角色某月的所有舰队明细
+// ListRecords 查询特定主人物某月的所有舰队明细
 func (r *AlliancePAPRepository) ListRecords(mainChar string, year, month int) ([]model.AlliancePAPRecord, error) {
 	var records []model.AlliancePAPRecord
 	err := global.DB.
@@ -102,7 +102,7 @@ func (r *AlliancePAPRepository) ListAllSummariesPaged(year, month, page, pageSiz
 	return list, total, err
 }
 
-// ListAllMainCharacters 查询数据库中所有已有记录的主角色名列表
+// ListAllMainCharacters 查询数据库中所有已有记录的主人物名列表
 func (r *AlliancePAPRepository) ListAllMainCharacters() ([]string, error) {
 	var names []string
 	err := global.DB.
@@ -126,7 +126,7 @@ func (r *AlliancePAPRepository) MarkArchived(year, month int) error {
 		Update("is_archived", true).Error
 }
 
-// ListSummariesByMainChar 查询指定主角色的月度汇总（最近 N 条）
+// ListSummariesByMainChar 查询指定主人物的月度汇总（最近 N 条）
 func (r *AlliancePAPRepository) ListSummariesByMainChar(mainChar string, limit int) ([]model.AlliancePAPSummary, error) {
 	var list []model.AlliancePAPSummary
 	err := global.DB.Where("main_character = ?", mainChar).
@@ -136,7 +136,7 @@ func (r *AlliancePAPRepository) ListSummariesByMainChar(mainChar string, limit i
 	return list, err
 }
 
-// ListRecentRecordsByMainChar 查询指定主角色最近的舰队参与记录
+// ListRecentRecordsByMainChar 查询指定主人物最近的舰队参与记录
 func (r *AlliancePAPRepository) ListRecentRecordsByMainChar(mainChar string, limit int) ([]model.AlliancePAPRecord, error) {
 	var records []model.AlliancePAPRecord
 	err := global.DB.Where("main_character = ?", mainChar).
@@ -146,7 +146,7 @@ func (r *AlliancePAPRepository) ListRecentRecordsByMainChar(mainChar string, lim
 	return records, err
 }
 
-// SumStrategicPapByMainCharacters 汇总多个主角色在给定时间范围内的战略联盟 PAP
+// SumStrategicPapByMainCharacters 汇总多个主人物在给定时间范围内的战略联盟 PAP
 // 当前将 CTA 与 Strat Op 一并视为战略 PAP
 func (r *AlliancePAPRepository) SumStrategicPapByMainCharacters(mainChars []string, startAt, endAt *time.Time) (map[string]float64, error) {
 	result := make(map[string]float64, len(mainChars))

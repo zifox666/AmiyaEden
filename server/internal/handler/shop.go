@@ -255,7 +255,7 @@ func (h *ShopHandler) AdminListProducts(c *gin.Context) {
 type adminOrderListRequest struct {
 	Current  int      `json:"current"`
 	Size     int      `json:"size"`
-	Keyword  string   `json:"keyword"`  // 商品名、主角色名或昵称
+	Keyword  string   `json:"keyword"`  // 商品名、主人物名或昵称
 	Statuses []string `json:"statuses"` // 多状态筛选（为空则用 status）
 	Status   string   `json:"status"`
 }

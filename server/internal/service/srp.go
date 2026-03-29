@@ -57,9 +57,9 @@ const (
 
 // resolveCharacterKillmail 确认 killmailID 与 characterID 有关联，并返回 EveKillmailList
 func (s *SrpService) resolveCharacterKillmail(killmailID int64, characterID int64) (*model.EveKillmailList, error) {
-	// 验证角色-KM 关联关系
+	// 验证人物-KM 关联关系
 	if _, err := s.kmRepo.GetCharacterKillmailLink(characterID, killmailID); err != nil {
-		return nil, errors.New("该 KM 不属于指定角色，或尚未被 ESI 刷新任务录入")
+		return nil, errors.New("该 KM 不属于指定人物，或尚未被 ESI 刷新任务录入")
 	}
 	// 加载 KM 详情
 	km, err := s.kmRepo.GetKillmailByID(killmailID)
@@ -121,7 +121,7 @@ func (s *SrpService) DeleteShipPrice(id uint) error {
 
 // SubmitApplicationRequest 提交补损申请请求
 type SubmitApplicationRequest struct {
-	CharacterID int64   `json:"character_id"  binding:"required"` // 受损角色 ID
+	CharacterID int64   `json:"character_id"  binding:"required"` // 受损人物 ID
 	KillmailID  int64   `json:"killmail_id"   binding:"required"` // zkillboard killmail id
 	FleetID     *string `json:"fleet_id"`                         // 关联舰队（可选）
 	Note        string  `json:"note"`                             // 备注（无舰队时必填）
@@ -129,10 +129,10 @@ type SubmitApplicationRequest struct {
 
 // SubmitApplication 提交补损申请
 func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationRequest) (*model.SrpApplication, error) {
-	// 1. 验证角色属于当前用户
+	// 1. 验证人物属于当前用户
 	char, err := s.charRepo.GetByCharacterID(req.CharacterID)
 	if err != nil || char.UserID != userID {
-		return nil, errors.New("角色不属于当前用户或不存在")
+		return nil, errors.New("人物不属于当前用户或不存在")
 	}
 
 	// 2. 无舰队时需要填写备注
@@ -145,15 +145,15 @@ func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationReques
 		return nil, errors.New("该 KM 已提交过补损申请，不能重复提交")
 	}
 
-	// 4. 获取 KM 详情（验证角色与 KM 关联）
+	// 4. 获取 KM 详情（验证人物与 KM 关联）
 	km, err := s.resolveCharacterKillmail(req.KillmailID, req.CharacterID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. 确认该 KM 的受害者确实是这个角色
+	// 5. 确认该 KM 的受害者确实是这个人物
 	if km.CharacterID != req.CharacterID {
-		return nil, errors.New("该 KM 的受害者不是指定角色，无法申请补损")
+		return nil, errors.New("该 KM 的受害者不是指定人物，无法申请补损")
 	}
 
 	// 6. 关联舰队时验证
@@ -166,7 +166,7 @@ func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationReques
 		if km.KillmailTime.Before(fleet.StartAt) || km.KillmailTime.After(fleet.EndAt) {
 			return nil, errors.New("KM 时间不在舰队活动时间范围内")
 		}
-		// 角色必须是舰队成员
+		// 人物必须是舰队成员
 		members, _ := s.fleetRepo.ListMembers(*req.FleetID)
 		isMember := false
 		for _, m := range members {
@@ -176,7 +176,7 @@ func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationReques
 			}
 		}
 		if !isMember {
-			return nil, errors.New("该角色不是该舰队的成员，无法申请补损")
+			return nil, errors.New("该人物不是该舰队的成员，无法申请补损")
 		}
 	}
 
@@ -334,7 +334,7 @@ func (s *SrpService) GetApplication(id uint) (*SrpApplicationResponse, error) {
 	return resp, nil
 }
 
-// enrichBatchPayoutSummaryRows 批量填充用户昵称和主角色名到汇总行
+// enrichBatchPayoutSummaryRows 批量填充用户昵称和主人物名到汇总行
 func (s *SrpService) enrichBatchPayoutSummaryRows(rows []repository.SrpBatchPayoutSummaryRow) ([]SrpBatchPayoutSummaryResponse, error) {
 	if len(rows) == 0 {
 		return []SrpBatchPayoutSummaryResponse{}, nil
@@ -796,20 +796,20 @@ func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSum
 //  ESI: Open Information Window
 // ─────────────────────────────────────────────
 
-// OpenInfoWindowRequest 打开角色信息窗口请求
+// OpenInfoWindowRequest 打开人物信息窗口请求
 type OpenInfoWindowRequest struct {
-	CharacterID int64 `json:"character_id" binding:"required"` // 操作者角色 ID（用于获取 token）
+	CharacterID int64 `json:"character_id" binding:"required"` // 操作者人物 ID（用于获取 token）
 	TargetID    int64 `json:"target_id"    binding:"required"` // 要打开信息窗口的目标 ID
 }
 
-// OpenInfoWindow 通过 ESI 在客户端打开角色信息窗口
+// OpenInfoWindow 通过 ESI 在客户端打开人物信息窗口
 // POST /ui/openwindow/information?target_id=xxx
 // 需要 scope: esi-ui.open_window.v1
 func (s *SrpService) OpenInfoWindow(userID uint, req *OpenInfoWindowRequest) error {
-	// 1. 验证角色属于当前用户
+	// 1. 验证人物属于当前用户
 	char, err := s.charRepo.GetByCharacterID(req.CharacterID)
 	if err != nil || char.UserID != userID {
-		return errors.New("角色不属于当前用户或不存在")
+		return errors.New("人物不属于当前用户或不存在")
 	}
 
 	// 2. 获取有效 token
@@ -858,8 +858,8 @@ type FleetKillmailItem struct {
 	VictimName    string    `json:"victim_name"`
 }
 
-// GetMyKillmails 获取当前用户所有角色作为受害者的 KM 列表（不限舰队，最近 200 条）
-// 若 characterID > 0，则只返回指定角色的 KM（需属于当前用户）
+// GetMyKillmails 获取当前用户所有人物作为受害者的 KM 列表（不限舰队，最近 200 条）
+// 若 characterID > 0，则只返回指定人物的 KM（需属于当前用户）
 func (s *SrpService) GetMyKillmails(userID uint, characterID int64) ([]FleetKillmailItem, error) {
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil || len(chars) == 0 {
@@ -915,7 +915,7 @@ func (s *SrpService) GetMyKillmails(userID uint, characterID int64) ([]FleetKill
 
 	result := make([]FleetKillmailItem, 0, len(kms))
 	for _, km := range kms {
-		// 只返回受害者是当前用户角色的 KM
+		// 只返回受害者是当前用户人物的 KM
 		if !charIDSet[km.CharacterID] {
 			continue
 		}
@@ -939,13 +939,13 @@ func (s *SrpService) GetFleetKillmails(userID uint, fleetID string) ([]FleetKill
 		return nil, errors.New("舰队不存在")
 	}
 
-	// 2. 获取当前用户绑定的角色
+	// 2. 获取当前用户绑定的人物
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil || len(chars) == 0 {
-		return nil, errors.New("当前用户未绑定角色")
+		return nil, errors.New("当前用户未绑定人物")
 	}
 
-	// 3. 筛选出参与过该舰队的角色 ID
+	// 3. 筛选出参与过该舰队的人物 ID
 	members, err := s.fleetRepo.ListMembers(fleetID)
 	if err != nil {
 		return nil, err
@@ -966,7 +966,7 @@ func (s *SrpService) GetFleetKillmails(userID uint, fleetID string) ([]FleetKill
 		return []FleetKillmailItem{}, nil
 	}
 
-	// 4. 查询这些角色在舰队时间段内的 KM
+	// 4. 查询这些人物在舰队时间段内的 KM
 	ckmList, err := s.kmRepo.ListCharacterKillmailsByCharacterIDs(validCharIDs)
 	if err != nil {
 		return nil, err
@@ -988,7 +988,7 @@ func (s *SrpService) GetFleetKillmails(userID uint, fleetID string) ([]FleetKill
 		return nil, err
 	}
 
-	// 5. 只返回受害角色是用户自己角色的 KM
+	// 5. 只返回受害人物是用户自己人物的 KM
 	result := make([]FleetKillmailItem, 0, len(kms))
 	for _, km := range kms {
 		if !memberSet[km.CharacterID] {
@@ -1123,7 +1123,7 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 	sysNameMap, _ := s.sdeRepo.GetNames(map[string][]int{"solar_system": {int(km.SolarSystemID)}}, lang)
 	solarSystemNames := sysNameMap["solar_system"]
 
-	// 6. 查角色名
+	// 6. 查人物名
 	charName := ""
 	if char, cerr := s.charRepo.GetByCharacterID(km.CharacterID); cerr == nil {
 		charName = char.CharacterName

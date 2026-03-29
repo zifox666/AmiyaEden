@@ -15,21 +15,21 @@ func NewAutoRoleRepository() *AutoRoleRepository {
 
 // ─── ESI Role Mapping ───
 
-// ListEsiRoleMappings 获取所有 ESI 角色映射
+// ListEsiRoleMappings 获取所有 ESI 职权映射
 func (r *AutoRoleRepository) ListEsiRoleMappings() ([]model.EsiRoleMapping, error) {
 	var mappings []model.EsiRoleMapping
 	err := global.DB.Order("esi_role ASC, role_code ASC").Find(&mappings).Error
 	return mappings, err
 }
 
-// GetEsiRoleMappingsByEsiRole 根据 ESI 角色名获取映射
+// GetEsiRoleMappingsByEsiRole 根据 ESI 职权名获取映射
 func (r *AutoRoleRepository) GetEsiRoleMappingsByEsiRole(esiRole string) ([]model.EsiRoleMapping, error) {
 	var mappings []model.EsiRoleMapping
 	err := global.DB.Where("esi_role = ?", esiRole).Find(&mappings).Error
 	return mappings, err
 }
 
-// GetEsiRoleMappingsByEsiRoles 根据多个 ESI 角色名获取映射
+// GetEsiRoleMappingsByEsiRoles 根据多个 ESI 职权名获取映射
 func (r *AutoRoleRepository) GetEsiRoleMappingsByEsiRoles(esiRoles []string) ([]model.EsiRoleMapping, error) {
 	var mappings []model.EsiRoleMapping
 	if len(esiRoles) == 0 {
@@ -39,17 +39,17 @@ func (r *AutoRoleRepository) GetEsiRoleMappingsByEsiRoles(esiRoles []string) ([]
 	return mappings, err
 }
 
-// CreateEsiRoleMapping 创建 ESI 角色映射
+// CreateEsiRoleMapping 创建 ESI 职权映射
 func (r *AutoRoleRepository) CreateEsiRoleMapping(mapping *model.EsiRoleMapping) error {
 	return global.DB.Create(mapping).Error
 }
 
-// DeleteEsiRoleMapping 删除 ESI 角色映射
+// DeleteEsiRoleMapping 删除 ESI 职权映射
 func (r *AutoRoleRepository) DeleteEsiRoleMapping(id uint) error {
 	return global.DB.Delete(&model.EsiRoleMapping{}, id).Error
 }
 
-// DeleteEsiRoleMappingsByEsiRole 删除指定 ESI 角色的所有映射
+// DeleteEsiRoleMappingsByEsiRole 删除指定 ESI 职权的所有映射
 func (r *AutoRoleRepository) DeleteEsiRoleMappingsByEsiRole(esiRole string) error {
 	return global.DB.Where("esi_role = ?", esiRole).Delete(&model.EsiRoleMapping{}).Error
 }
@@ -85,7 +85,7 @@ func (r *AutoRoleRepository) DeleteEsiTitleMapping(id uint) error {
 
 // ─── Character Corp Roles ───
 
-// ListCharacterCorpRoles 获取角色的所有 ESI 军团角色
+// ListCharacterCorpRoles 获取人物的所有 ESI 军团职权
 func (r *AutoRoleRepository) ListCharacterCorpRoles(characterID int64) ([]string, error) {
 	var roles []string
 	err := global.DB.Model(&model.EveCharacterCorpRole{}).
@@ -94,7 +94,7 @@ func (r *AutoRoleRepository) ListCharacterCorpRoles(characterID int64) ([]string
 	return roles, err
 }
 
-// SyncCharacterCorpRoles 同步角色的 ESI 军团角色（先删后插）
+// SyncCharacterCorpRoles 同步人物的 ESI 军团职权（先删后插）
 func (r *AutoRoleRepository) SyncCharacterCorpRoles(characterID int64, roles []string) error {
 	tx := global.DB.Begin()
 	if err := tx.Where("character_id = ?", characterID).Delete(&model.EveCharacterCorpRole{}).Error; err != nil {
@@ -117,7 +117,7 @@ func (r *AutoRoleRepository) SyncCharacterCorpRoles(characterID int64, roles []s
 	return tx.Commit().Error
 }
 
-// ListAllCharacterCorpRoles 获取所有角色的 ESI 军团角色（用于批量刷新）
+// ListAllCharacterCorpRoles 获取所有人物的 ESI 军团职权（用于批量刷新）
 func (r *AutoRoleRepository) ListAllCharacterCorpRoles() ([]model.EveCharacterCorpRole, error) {
 	var roles []model.EveCharacterCorpRole
 	err := global.DB.Find(&roles).Error

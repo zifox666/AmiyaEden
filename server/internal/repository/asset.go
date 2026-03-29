@@ -8,19 +8,19 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// AssetRepository 角色资产数据访问层
+// AssetRepository 人物资产数据访问层
 type AssetRepository struct{}
 
 func NewAssetRepository() *AssetRepository { return &AssetRepository{} }
 
-// GetAssetsByCharacterID 获取角色的所有资产
+// GetAssetsByCharacterID 获取人物的所有资产
 func (r *AssetRepository) GetAssetsByCharacterID(characterID int64) ([]model.EveCharacterAsset, error) {
 	var assets []model.EveCharacterAsset
 	err := global.DB.Where("character_id = ?", characterID).Find(&assets).Error
 	return assets, err
 }
 
-// GetAssetsByCharacterIDs 批量获取多个角色的资产
+// GetAssetsByCharacterIDs 批量获取多个人物的资产
 func (r *AssetRepository) GetAssetsByCharacterIDs(characterIDs []int64) ([]model.EveCharacterAsset, error) {
 	var assets []model.EveCharacterAsset
 	err := global.DB.Where("character_id IN ?", characterIDs).Find(&assets).Error

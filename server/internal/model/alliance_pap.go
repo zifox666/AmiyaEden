@@ -27,7 +27,7 @@ type AlliancePAPRecord struct {
 
 func (AlliancePAPRecord) TableName() string { return "alliance_pap_record" }
 
-// AlliancePAPSummary 联盟 PAP 月度汇总（主角色 + 年 + 月 唯一）
+// AlliancePAPSummary 联盟 PAP 月度汇总（主人物 + 年 + 月 唯一）
 type AlliancePAPSummary struct {
 	ID                uint      `gorm:"primarykey"                                                   json:"id"`
 	MainCharacter     string    `gorm:"size:128;not null;uniqueIndex:idx_aps_main_ym"              json:"main_character"`

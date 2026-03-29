@@ -157,7 +157,7 @@ func (r *SysWalletRepository) ListTransactions(page, pageSize int, filter Wallet
 	return txs, total, nil
 }
 
-// ListTransactionsWithCharacter 分页查询钱包流水（附带用户主角色名）
+// ListTransactionsWithCharacter 分页查询钱包流水（附带用户主人物名）
 func (r *SysWalletRepository) ListTransactionsWithCharacter(page, pageSize int, filter WalletTransactionFilter) ([]model.TransactionWithCharacter, int64, error) {
 	var results []model.TransactionWithCharacter
 	var total int64
@@ -234,7 +234,7 @@ func (r *SysWalletRepository) ListLogs(page, pageSize int, filter WalletLogFilte
 	return logs, total, nil
 }
 
-// ListLogsWithCharacter 分页查询操作日志（附带操作人和目标用户主角色名）
+// ListLogsWithCharacter 分页查询操作日志（附带操作人和目标用户主人物名）
 func (r *SysWalletRepository) ListLogsWithCharacter(page, pageSize int, filter WalletLogFilter) ([]model.LogWithCharacter, int64, error) {
 	var results []model.LogWithCharacter
 	var total int64
@@ -297,7 +297,7 @@ func (r *SysWalletRepository) ListWallets(page, pageSize int) ([]model.SystemWal
 	return wallets, total, nil
 }
 
-// ListWalletsWithCharacter 分页查询所有用户钱包（附带主角色名）
+// ListWalletsWithCharacter 分页查询所有用户钱包（附带主人物名）
 func (r *SysWalletRepository) ListWalletsWithCharacter(page, pageSize int) ([]model.WalletWithCharacter, int64, error) {
 	var results []model.WalletWithCharacter
 	var total int64

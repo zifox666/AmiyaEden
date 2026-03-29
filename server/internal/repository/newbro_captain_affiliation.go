@@ -239,7 +239,7 @@ func buildAdminAffiliationHistoryQuery(db *gorm.DB, filter AdminAffiliationHisto
 		pattern := "%" + strings.TrimSpace(filter.CaptainSearch) + "%"
 		query = query.
 			Joins(`LEFT JOIN "user" AS captain_user ON captain_user.id = newbro_captain_affiliation.captain_user_id`).
-			Joins(`LEFT JOIN eve_character AS captain_character ON captain_character.character_id = newbro_captain_affiliation.captain_primary_character_id_at_start`).
+			Joins(`LEFT JOIN eve_character AS captain_character ON captain_character.character_id = captain_user.primary_character_id`).
 			Where("(captain_user.nickname ILIKE ? OR captain_character.character_name ILIKE ?)", pattern, pattern)
 	}
 	if strings.TrimSpace(filter.PlayerSearch) != "" {

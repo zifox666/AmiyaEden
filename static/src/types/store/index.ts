@@ -107,7 +107,7 @@ export interface UserState {
   userInfo: Api.Auth.UserInfo | null
   /** 认证令牌 */
   token: string | null
-  /** 用户角色列表 */
+  /** 用户职权列表 */
   roles: string[]
   /** 用户权限列表 */
   permissions: string[]

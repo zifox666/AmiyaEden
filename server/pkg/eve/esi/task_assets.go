@@ -11,7 +11,7 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Assets 角色资产
+//  Character Assets 人物资产
 //  GET /characters/{character_id}/assets
 //  POST /characters/{character_id}/assets/names
 //  默认刷新间隔: 1 Day / 不活跃: 7 Days
@@ -40,11 +40,11 @@ func init() {
 	Register(&AssetsTask{})
 }
 
-// AssetsTask 角色资产刷新任务
+// AssetsTask 人物资产刷新任务
 type AssetsTask struct{}
 
 func (t *AssetsTask) Name() string        { return "character_assets" }
-func (t *AssetsTask) Description() string { return "角色资产（物品/位置/名称）" }
+func (t *AssetsTask) Description() string { return "人物资产（物品/位置/名称）" }
 func (t *AssetsTask) Priority() Priority  { return PriorityNormal }
 
 func (t *AssetsTask) Interval() RefreshInterval {
@@ -56,7 +56,7 @@ func (t *AssetsTask) Interval() RefreshInterval {
 
 func (t *AssetsTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-assets.read_assets.v1", Description: "读取角色资产"},
+		{Scope: "esi-assets.read_assets.v1", Description: "读取人物资产"},
 	}
 }
 
@@ -88,7 +88,7 @@ func (t *AssetsTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch assets: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色资产刷新完成",
+	global.Logger.Debug("[ESI] 人物资产刷新完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("asset_count", len(assets)),
 	)
@@ -148,7 +148,7 @@ func (t *AssetsTask) Execute(ctx *TaskContext) error {
 		zap.Int("named_items", len(nameMap)),
 	)
 
-	// 4. 入库：先删除该角色旧数据，再批量插入
+	// 4. 入库：先删除该人物旧数据，再批量插入
 	tx := global.DB.Begin()
 	if err := tx.Where("character_id = ?", ctx.CharacterID).Delete(&model.EveCharacterAsset{}).Error; err != nil {
 		tx.Rollback()
@@ -192,7 +192,7 @@ func (t *AssetsTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("commit assets: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色资产入库完成",
+	global.Logger.Debug("[ESI] 人物资产入库完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(assets)),
 	)

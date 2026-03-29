@@ -18,7 +18,7 @@ func NewNotificationHandler() *NotificationHandler {
 }
 
 // ListNotifications POST /notification/list
-// 获取当前用户所有角色的通知列表（分页）
+// 获取当前用户所有人物的通知列表（分页）
 func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 	var req service.ListNotificationsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -35,7 +35,7 @@ func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 }
 
 // GetUnreadCount POST /notification/unread-count
-// 获取当前用户所有角色的未读通知数量
+// 获取当前用户所有人物的未读通知数量
 func (h *NotificationHandler) GetUnreadCount(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	count, err := h.svc.GetUnreadCount(userID)
@@ -62,7 +62,7 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 }
 
 // MarkAllAsRead POST /notification/read-all
-// 将当前用户所有角色的通知标记为已读
+// 将当前用户所有人物的通知标记为已读
 func (h *NotificationHandler) MarkAllAsRead(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if err := h.svc.MarkAllAsRead(userID); err != nil {

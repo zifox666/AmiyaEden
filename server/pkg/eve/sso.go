@@ -21,13 +21,13 @@ const (
 
 // Client EVE SSO OAuth 客户端
 type Client struct {
-	ClientID        string
-	ClientSecret    string
-	CallbackURL     string
-	AuthorizeURL    string
-	TokenURL        string
-	ImagesBaseURL   string
-	HTTPClient      *http.Client
+	ClientID      string
+	ClientSecret  string
+	CallbackURL   string
+	AuthorizeURL  string
+	TokenURL      string
+	ImagesBaseURL string
+	HTTPClient    *http.Client
 }
 
 // NewClient 创建 EVE SSO 客户端
@@ -122,8 +122,8 @@ func (c *Client) PortraitURL(characterID int64) string {
 // JWTClaims EVE SSO v2 JWT access_token 解析后的载荷
 type JWTClaims struct {
 	Sub    string      `json:"sub"`   // "CHARACTER:EVE:12345678"
-	Name   string      `json:"name"`  // 角色名
-	Owner  string      `json:"owner"` // 角色所有者哈希
+	Name   string      `json:"name"`  // 人物名
+	Owner  string      `json:"owner"` // 人物所有者哈希
 	Scopes interface{} `json:"scp"`   // string 或 []interface{}
 	Exp    int64       `json:"exp"`
 	Iss    string      `json:"iss"`
@@ -162,7 +162,7 @@ func ParseAccessToken(accessToken string) (*JWTClaims, error) {
 	return &claims, nil
 }
 
-// GetCharacterID 从 sub 字段 "CHARACTER:EVE:12345678" 中提取角色 ID
+// GetCharacterID 从 sub 字段 "CHARACTER:EVE:12345678" 中提取人物 ID
 func (c *JWTClaims) GetCharacterID() (int64, error) {
 	parts := strings.Split(c.Sub, ":")
 	if len(parts) < 3 || parts[0] != "CHARACTER" {
@@ -195,7 +195,7 @@ func (c *JWTClaims) GetScopes() []string {
 	return nil
 }
 
-// PortraitURL 生成角色头像 URL
+// PortraitURL 生成人物头像 URL
 func PortraitURL(characterID int64) string {
 	return fmt.Sprintf("%s/characters/%d/portrait?size=128", config.DefaultEVEImagesBaseURL, characterID)
 }

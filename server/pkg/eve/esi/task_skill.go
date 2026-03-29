@@ -18,7 +18,7 @@ func init() {
 type SkillTask struct{}
 
 func (t *SkillTask) Name() string        { return "character_skill" }
-func (t *SkillTask) Description() string { return "角色技能信息" }
+func (t *SkillTask) Description() string { return "人物技能信息" }
 func (t *SkillTask) Priority() Priority  { return PriorityNormal }
 
 func (t *SkillTask) Interval() RefreshInterval {
@@ -30,8 +30,8 @@ func (t *SkillTask) Interval() RefreshInterval {
 
 func (t *SkillTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-skills.read_skills.v1", Description: "读取角色技能信息"},
-		{Scope: "esi-skills.read_skillqueue.v1", Description: "读取角色技能队列信息"},
+		{Scope: "esi-skills.read_skills.v1", Description: "读取人物技能信息"},
+		{Scope: "esi-skills.read_skillqueue.v1", Description: "读取人物技能队列信息"},
 	}
 }
 

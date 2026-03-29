@@ -11,7 +11,7 @@ func NewFittingsRepository() *FittingsRepository {
 	return &FittingsRepository{}
 }
 
-// ListByCharacterIDs 获取多个角色的装配列表
+// ListByCharacterIDs 获取多个人物的装配列表
 func (r *FittingsRepository) ListByCharacterIDs(characterIDs []int64) ([]model.EveCharacterFitting, error) {
 	var fittings []model.EveCharacterFitting
 	err := global.DB.Where("character_id IN ?", characterIDs).Find(&fittings).Error
@@ -25,7 +25,7 @@ func (r *FittingsRepository) GetItemsByFittingAndCharacter(fittingID, characterI
 	return items, err
 }
 
-// GetItemsByCharacterIDs 批量获取多个角色的所有装配物品
+// GetItemsByCharacterIDs 批量获取多个人物的所有装配物品
 func (r *FittingsRepository) GetItemsByCharacterIDs(characterIDs []int64) ([]model.EveCharacterFittingItem, error) {
 	var items []model.EveCharacterFittingItem
 	err := global.DB.Where("character_id IN ?", characterIDs).Find(&items).Error

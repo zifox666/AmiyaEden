@@ -99,7 +99,7 @@ type DashboardResult struct {
 func (s *DashboardService) GetDashboard(userID uint) (*DashboardResult, error) {
 	result := &DashboardResult{}
 
-	// 获取用户所有角色
+	// 获取用户所有人物
 	characters, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
 		characters = []model.EveCharacter{}
@@ -110,7 +110,7 @@ func (s *DashboardService) GetDashboard(userID uint) (*DashboardResult, error) {
 		characterIDs = append(characterIDs, c.CharacterID)
 	}
 
-	// 获取用户信息（用于主角色查询联盟 PAP）
+	// 获取用户信息（用于主人物查询联盟 PAP）
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, err

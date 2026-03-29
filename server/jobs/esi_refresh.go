@@ -69,7 +69,7 @@ func registerESIRefreshJob(c *cron.Cron) {
 		runSigninSecuritySync(characterID, userID)
 	}
 
-	// 注入新角色全量刷新钩子：SSO 回调完成后后台异步执行，跑全部 ESI 任务，完成后补一次军团准入检查 + 自动权限同步
+	// 注入新人物全量刷新钩子：SSO 回调完成后后台异步执行，跑全部 ESI 任务，完成后补一次军团准入检查 + 自动权限同步
 	service.OnNewCharacterFunc = func(characterID int64, userID uint) {
 		ctx := context.Background()
 		esiQueue.RunAllForCharacter(ctx, characterID)
@@ -84,7 +84,7 @@ func registerESIRefreshJob(c *cron.Cron) {
 		_ = autoRoleSvc.SyncUserAutoRoles(ctx, userID)
 	}
 
-	// 注入已有角色绑定/重登录同步钩子：JWT 生成前先刷新 affiliation / corp roles，再重算权限
+	// 注入已有人物绑定/重登录同步钩子：JWT 生成前先刷新 affiliation / corp roles，再重算权限
 	service.OnExistingCharacterSyncFunc = func(characterID int64, userID uint) {
 		runSigninSecuritySync(characterID, userID)
 	}

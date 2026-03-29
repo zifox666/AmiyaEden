@@ -103,13 +103,13 @@ func (h *ESIRefreshHandler) GetStatuses(c *gin.Context) {
 	response.OKWithPage(c, filtered[start:end], int64(total), page, pageSize)
 }
 
-// RunTaskRequest 手动触发单个任务的请求（指定角色）
+// RunTaskRequest 手动触发单个任务的请求（指定人物）
 type RunTaskRequest struct {
 	TaskName    string `json:"task_name" binding:"required"`
 	CharacterID int64  `json:"character_id" binding:"required"`
 }
 
-// RunTask 手动触发指定任务（指定角色）
+// RunTask 手动触发指定任务（指定人物）
 //
 // POST /api/v1/esi/refresh/run
 func (h *ESIRefreshHandler) RunTask(c *gin.Context) {
@@ -133,12 +133,12 @@ func (h *ESIRefreshHandler) RunTask(c *gin.Context) {
 	response.OK(c, gin.H{"message": "任务已触发"})
 }
 
-// RunTaskByNameRequest 按任务名称触发所有角色
+// RunTaskByNameRequest 按任务名称触发所有人物
 type RunTaskByNameRequest struct {
 	TaskName string `json:"task_name" binding:"required"`
 }
 
-// RunTaskByName 手动触发指定任务（所有角色）
+// RunTaskByName 手动触发指定任务（所有人物）
 //
 // POST /api/v1/esi/refresh/run-task
 func (h *ESIRefreshHandler) RunTaskByName(c *gin.Context) {
@@ -158,7 +158,7 @@ func (h *ESIRefreshHandler) RunTaskByName(c *gin.Context) {
 		_ = queue.RunTaskByName(req.TaskName)
 	}()
 
-	response.OK(c, gin.H{"message": fmt.Sprintf("任务 %s 已触发（所有角色）", req.TaskName)})
+	response.OK(c, gin.H{"message": fmt.Sprintf("任务 %s 已触发（所有人物）", req.TaskName)})
 }
 
 // RunAll 手动触发全量刷新

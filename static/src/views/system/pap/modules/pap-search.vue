@@ -216,7 +216,7 @@
       if (response.status == 200 && response.data.data) {
         for (const item of response.data.data) {
           const temp: Record<string, unknown> = {
-            主角色: item.character,
+            主人物: item.character,
             '月 PAP': item.pap_count,
             数据时间: item.logoff_date
           }

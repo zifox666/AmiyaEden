@@ -36,12 +36,12 @@ type NotificationSummary struct {
 	UnreadCount int64                            `json:"unread_count"`
 }
 
-// ListNotifications 获取当前用户所有角色的通知列表
+// ListNotifications 获取当前用户所有人物的通知列表
 func (s *NotificationService) ListNotifications(userID uint, req *ListNotificationsRequest) (*NotificationSummary, error) {
-	// 1. 获取用户绑定的所有角色
+	// 1. 获取用户绑定的所有人物
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return nil, errors.New("获取角色列表失败")
+		return nil, errors.New("获取人物列表失败")
 	}
 	if len(chars) == 0 {
 		return &NotificationSummary{
@@ -85,11 +85,11 @@ func (s *NotificationService) ListNotifications(userID uint, req *ListNotificati
 	}, nil
 }
 
-// GetUnreadCount 获取当前用户所有角色的未读通知数量
+// GetUnreadCount 获取当前用户所有人物的未读通知数量
 func (s *NotificationService) GetUnreadCount(userID uint) (int64, error) {
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return 0, errors.New("获取角色列表失败")
+		return 0, errors.New("获取人物列表失败")
 	}
 	if len(chars) == 0 {
 		return 0, nil
@@ -116,11 +116,11 @@ func (s *NotificationService) MarkAsRead(req *MarkAsReadRequest) error {
 	return s.repo.MarkAsRead(req.NotificationIDs)
 }
 
-// MarkAllAsRead 将当前用户所有角色的通知标记为已读
+// MarkAllAsRead 将当前用户所有人物的通知标记为已读
 func (s *NotificationService) MarkAllAsRead(userID uint) error {
 	chars, err := s.charRepo.ListByUserID(userID)
 	if err != nil {
-		return errors.New("获取角色列表失败")
+		return errors.New("获取人物列表失败")
 	}
 	if len(chars) == 0 {
 		return nil

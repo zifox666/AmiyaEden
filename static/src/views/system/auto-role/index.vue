@@ -131,7 +131,7 @@
       </ElTabPane>
     </ElTabs>
 
-    <!-- ─── 新增 ESI 角色映射对话框 ─── -->
+    <!-- ─── 新增 ESI 职权映射对话框 ─── -->
     <ElDialog
       v-model="esiRoleDialogVisible"
       :title="t('autoRolePage.createEsiRoleTitle')"
@@ -276,7 +276,7 @@
   // ─── Tab ───
   const activeTab = ref('esi-role')
 
-  // ─── 角色标签颜色 ───
+  // ─── 职权标签颜色 ───
   const CODE_TYPE: Record<string, string> = {
     super_admin: 'danger',
     admin: 'warning',
@@ -308,7 +308,7 @@
     allCorpTitles.value = corpTitles
   }
 
-  // ─── ESI 角色映射 ───
+  // ─── ESI 职权映射 ───
   const esiRoleMappings = ref<EsiRoleMapping[]>([])
   const esiRoleLoading = ref(false)
 
@@ -331,7 +331,7 @@
     }
   }
 
-  // ─── 新增 ESI 角色映射 ───
+  // ─── 新增 ESI 职权映射 ───
   const esiRoleDialogVisible = ref(false)
   const esiRoleSubmitting = ref(false)
   const esiRoleFormRef = ref<FormInstance>()

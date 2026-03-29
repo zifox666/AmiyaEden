@@ -627,6 +627,7 @@
     "noHistory": "No processed records yet",
     "searchBtn": "Search",
     "resetBtn": "Reset",
+    "historyKeywordPlaceholder": "Character, nickname, or QQ",
     "evidenceImage": "Evidence"
   },
   "shop": {
@@ -738,8 +739,9 @@
     },
     "search": {
       "keyword": "Search",
-      "keywordPlaceholder": "Nickname or character name",
-      "statusPlaceholder": "Select status"
+      "keywordPlaceholder": "Nickname, QQ, or character name",
+      "statusPlaceholder": "Select status",
+      "rolePlaceholder": "Select role"
     },
     "roles": {
       "super_admin": "Super Admin",
@@ -758,6 +760,14 @@
       "lastLogin": "Last Login",
       "loginIp": "Login IP",
       "registeredAt": "Registered At"
+    },
+    "characters": {
+      "empty": "No characters bound",
+      "character": "Character",
+      "characterIdLabel": "Character ID",
+      "characterId": "Character ID: {id}",
+      "totalSkillPoints": "Total Skill Points: {points}",
+      "totalSkillPointsLabel": "Total SP"
     },
     "unnamed": "Unnamed",
     "impersonate": "Impersonate",
@@ -848,7 +858,7 @@
       "performanceTab": "Captain Performance",
       "rewardHistoryTab": "Reward History",
       "affiliationHistoryTab": "Affiliation History",
-      "keyword": "Search captain name",
+      "keyword": "Search captain character or nickname",
       "runSync": "Run Attribution Sync",
       "runRewardProcessing": "Run Reward Processing",
       "captainPerformance": "Captain Performance",
@@ -1247,6 +1257,7 @@
       "title": "My SRP Applications",
       "formTitle": "Apply for SRP",
       "infoText": "Select the killmail and fleet operation you wish to submit. If you can't find the killmail, verify your account is properly linked and wait up to 1 hour for refresh. If you can't find the fleet, contact the FC to update the operation info or issue PAP.",
+      "seatLink": "Please note that the Fuxi System does not issue reimbursements for Alliance fleets; please click this link to apply for Alliance reimbursement.",
       "dialogTitle": "Submit SRP Application",
       "submitBtn": "Submit SRP Application",
       "submitBtnText": "Submit",
@@ -1311,6 +1322,7 @@
       "historyTab": "Delivery Records",
       "refresh": "Refresh",
       "selectFleet": "Filter by fleet",
+      "userKeywordFilter": "Search by character or nickname",
       "searchBtn": "Search",
       "resetBtn": "Reset",
       "payoutModeLabel": "Payout Mode",

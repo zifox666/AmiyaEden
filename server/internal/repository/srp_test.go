@@ -107,3 +107,21 @@ func TestBuildSrpApplicationListQueryAppliesHistoryTabScope(t *testing.T) {
 		t.Fatalf("expected history tab to include paid or rejected scope, got SQL: %s", sql)
 	}
 }
+
+func TestBuildSrpApplicationListQueryAppliesCharacterAndNicknameKeywordFilter(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return buildSrpApplicationListQuery(tx, SrpApplicationFilter{Keyword: "bee"}).Find(&[]model.SrpApplication{})
+	})
+
+	if !strings.Contains(sql, `FROM "user" AS applicant_user`) {
+		t.Fatalf("expected keyword filter to query current applicant nickname, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LOWER(applicant_user.nickname) LIKE`) {
+		t.Fatalf("expected applicant nickname keyword predicate, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LOWER(character_name) LIKE`) {
+		t.Fatalf("expected application character keyword predicate, got SQL: %s", sql)
+	}
+}

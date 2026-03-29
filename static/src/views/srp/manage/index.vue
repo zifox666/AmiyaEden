@@ -35,6 +35,15 @@
           >
             <ElOption v-for="f in fleets" :key="f.id" :label="formatFleetLabel(f)" :value="f.id" />
           </ElSelect>
+          <ElInput
+            v-if="activeTab === 'history'"
+            v-model="filter.keyword"
+            :placeholder="$t('srp.manage.userKeywordFilter')"
+            clearable
+            style="width: 220px"
+            @clear="handleSearch"
+            @keyup="handleKeywordSearchKeyup"
+          />
           <ElButton type="primary" @click="handleSearch">{{ $t('srp.manage.searchBtn') }}</ElButton>
           <ElButton @click="resetFilter">{{ $t('srp.manage.resetBtn') }}</ElButton>
           <div v-if="activeTab === 'pending' && canPayout" class="flex items-center gap-2">
@@ -156,7 +165,7 @@
     <!-- 发放弹窗 -->
     <ElDialog v-model="payoutDialogVisible" :title="$t('srp.manage.payoutDialog')" width="480px">
       <div class="payout-info-list" v-if="payoutTarget">
-        <!-- 角色（可复制） -->
+        <!-- 人物（可复制） -->
         <div class="payout-info-row">
           <span class="payout-label">{{ $t('srp.manage.payoutCharacter') }}</span>
           <span class="payout-value">
@@ -321,6 +330,7 @@
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
   import KmPreviewDialog from '@/components/business/KmPreviewDialog.vue'
   import { fetchFleetList } from '@/api/fleet'
+  import { useEnterSearch } from '@/hooks/core/useEnterSearch'
   import {
     fetchApplicationList,
     runFleetAutoApproval,
@@ -340,6 +350,7 @@
 
   const { t } = useI18n()
   const { getName, resolve: resolveNames } = useNameResolver()
+  const { createEnterSearchHandler } = useEnterSearch()
   const userStore = useUserStore()
 
   // fc can review, while srp/admin can also payout or trigger auto-approve
@@ -361,7 +372,7 @@
 
   const activeTab = ref('pending')
   const payoutMode = ref<Api.Srp.PayoutMode>('fuxi_coin')
-  const filter = reactive({ review_status: '', fleet_id: '' })
+  const filter = reactive({ review_status: '', fleet_id: '', keyword: '' })
 
   type SrpApp = Api.Srp.Application
   type BatchPayoutSummary = Api.Srp.BatchPayoutSummary
@@ -633,29 +644,39 @@
 
   const handleSearch = () => {
     Object.assign(searchParams, {
+      current: 1,
       tab: activeTab.value,
       review_status: filter.review_status || undefined,
-      fleet_id: filter.fleet_id || undefined
+      fleet_id: filter.fleet_id || undefined,
+      keyword: filter.keyword.trim() || undefined
     })
     getData()
   }
+  const handleKeywordSearchKeyup = createEnterSearchHandler(handleSearch)
+
   const resetFilter = () => {
     filter.review_status = ''
     filter.fleet_id = ''
+    filter.keyword = ''
     Object.assign(searchParams, {
+      current: 1,
       tab: activeTab.value,
       review_status: undefined,
-      fleet_id: undefined
+      fleet_id: undefined,
+      keyword: undefined
     })
     getData()
   }
   const handleTabChange = () => {
     filter.review_status = ''
     filter.fleet_id = ''
+    filter.keyword = ''
     Object.assign(searchParams, {
+      current: 1,
       tab: activeTab.value,
       review_status: undefined,
-      fleet_id: undefined
+      fleet_id: undefined,
+      keyword: undefined
     })
     getData()
   }
@@ -676,7 +697,7 @@
       : rt.fleet_title || rt.fleet_id
   })
 
-  /** 当前操作人的主角色名（用于默认文案替换） */
+  /** 当前操作人的主人物名（用于默认文案替换） */
   const primaryCharName = computed(() => {
     const info = userStore.getUserInfo
     if (!info.characters || !info.primaryCharacterId) return ''
@@ -1004,7 +1025,7 @@
 
   // ─── 导出 ───
   const manageExportHeaders = {
-    character_name: '角色',
+    character_name: '人物',
     ship_name: '舰船',
     solar_system: '星系',
     killmail_id: 'KillID',

@@ -7,8 +7,6 @@
     margin-top: 10px;
 
     &.art-table--ledger {
-      margin-top: 0;
-
       :deep(.el-table__header th.el-table__cell),
       :deep(.el-table__body td.el-table__cell) {
         border-right: none;

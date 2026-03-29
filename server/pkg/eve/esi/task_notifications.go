@@ -11,7 +11,7 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Notifications 角色通知
+//  Character Notifications 人物通知
 //  GET /characters/{character_id}/notifications
 //  默认刷新间隔: 1 Day / 不活跃: 7 Days
 // ─────────────────────────────────────────────
@@ -20,11 +20,11 @@ func init() {
 	Register(&NotificationsTask{})
 }
 
-// NotificationsTask 角色通知刷新任务
+// NotificationsTask 人物通知刷新任务
 type NotificationsTask struct{}
 
 func (t *NotificationsTask) Name() string        { return "character_notifications" }
-func (t *NotificationsTask) Description() string { return "角色通知消息" }
+func (t *NotificationsTask) Description() string { return "人物通知消息" }
 func (t *NotificationsTask) Priority() Priority  { return PriorityNormal }
 
 func (t *NotificationsTask) Interval() RefreshInterval {
@@ -36,7 +36,7 @@ func (t *NotificationsTask) Interval() RefreshInterval {
 
 func (t *NotificationsTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-characters.read_notifications.v1", Description: "读取角色通知"},
+		{Scope: "esi-characters.read_notifications.v1", Description: "读取人物通知"},
 	}
 }
 
@@ -60,7 +60,7 @@ func (t *NotificationsTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch notifications: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色通知刷新完成",
+	global.Logger.Debug("[ESI] 人物通知刷新完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int("count", len(notifications)),
 	)

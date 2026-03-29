@@ -13,7 +13,7 @@ import (
 )
 
 // ─────────────────────────────────────────────
-//  Character Corporation Roles 军团角色权限
+//  Character Corporation Roles 军团职权权限
 //  GET /characters/{character_id}/roles/
 //  默认刷新间隔: 2 Hours / 不活跃: 1 Day
 //  需要 scope: esi-characters.read_corporation_roles.v1
@@ -23,11 +23,11 @@ func init() {
 	Register(&CorpRolesTask{})
 }
 
-// CorpRolesTask 军团角色权限刷新任务
+// CorpRolesTask 军团职权权限刷新任务
 type CorpRolesTask struct{}
 
 func (t *CorpRolesTask) Name() string        { return "character_corp_roles" }
-func (t *CorpRolesTask) Description() string { return "角色军团权限" }
+func (t *CorpRolesTask) Description() string { return "人物军团职权" }
 func (t *CorpRolesTask) Priority() Priority  { return PriorityHigh }
 
 func (t *CorpRolesTask) Interval() RefreshInterval {
@@ -39,11 +39,11 @@ func (t *CorpRolesTask) Interval() RefreshInterval {
 
 func (t *CorpRolesTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
-		{Scope: "esi-characters.read_corporation_roles.v1", Description: "读取角色军团权限"},
+		{Scope: "esi-characters.read_corporation_roles.v1", Description: "读取人物军团职权"},
 	}
 }
 
-// corpRolesResponse ESI 返回的军团角色数据
+// corpRolesResponse ESI 返回的军团职权数据
 type corpRolesResponse struct {
 	Roles        []string `json:"roles"`
 	RolesAtBase  []string `json:"roles_at_base"`
@@ -60,7 +60,7 @@ func (t *CorpRolesTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch corporation roles: %w", err)
 	}
 
-	// 合并四个角色列表并去重
+	// 合并四个职权列表并去重
 	roleSet := make(map[string]struct{})
 	for _, r := range rolesResp.Roles {
 		roleSet[r] = struct{}{}
@@ -87,20 +87,20 @@ func (t *CorpRolesTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("query corporation id: %w", err)
 	}
 
-	global.Logger.Debug("[ESI] 角色军团权限刷新完成",
+	global.Logger.Debug("[ESI] 人物军团职权刷新完成",
 		zap.Int64("character_id", ctx.CharacterID),
 		zap.Int64("corporation_id", corpID),
 		zap.Int("count", len(roles)),
 		zap.Strings("roles", roles),
 	)
 
-	// 入库：同步角色的军团角色
+	// 入库：同步人物的军团职权
 	autoRoleRepo := repository.NewAutoRoleRepository()
 	if !isCorporationAllowed(corpID, utils.GetAllowCorporations()) {
 		if err := autoRoleRepo.SyncCharacterCorpRoles(ctx.CharacterID, nil); err != nil {
 			return fmt.Errorf("clear corp roles for disallowed corporation: %w", err)
 		}
-		global.Logger.Debug("[ESI] 角色所在军团不在 allow_corporations，已忽略军团权限信号",
+		global.Logger.Debug("[ESI] 人物所在军团不在 allow_corporations，已忽略军团职权信号",
 			zap.Int64("character_id", ctx.CharacterID),
 			zap.Int64("corporation_id", corpID))
 		return nil

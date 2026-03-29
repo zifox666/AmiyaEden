@@ -100,7 +100,7 @@
     ]
   }
 
-  // ---- 加载角色列表 ----
+  // ---- 加载人物列表 ----
   const loadCharacters = async () => {
     charLoading.value = true
     try {

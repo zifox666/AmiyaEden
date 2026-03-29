@@ -93,15 +93,15 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 
 由 `SrpService.SubmitApplication` 处理，验证顺序：
 
-1. **角色归属**：`character_id` 必须属于当前登录用户
+1. **人物归属**：`character_id` 必须属于当前登录用户
 2. **备注要求**：未关联舰队时，`note` 不能为空
 3. **重复检查**：同一 `killmail_id` + `character_id` 不能重复提交
-4. **KM 关联**：通过 `EveCharacterKillmail` 表验证角色与 KM 的关联关系，并加载 KM 详情
-5. **受害者确认**：KM 的 `character_id` 必须与申请角色一致
+4. **KM 关联**：通过 `EveCharacterKillmail` 表验证人物与 KM 的关联关系，并加载 KM 详情
+5. **受害者确认**：KM 的 `character_id` 必须与申请人物一致
 6. **舰队验证**（关联舰队时）：
    - 舰队必须存在
    - KM 时间必须在舰队 `start_at` ~ `end_at` 范围内
-   - 角色必须是该舰队的成员
+  - 人物必须是该舰队的成员
 7. **金额设定**：在提交申请时，系统自动根据上方推荐金额计算方法计算推荐金额和初始最终金额
 8. **创建申请**：初始状态 `review_status = submitted`，`payout_status = notpaid`
 
@@ -144,14 +144,15 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 ### 管理端列表
 
 - 申请列表支持按 tab 分组：`pending`（待处理：submitted/approved + notpaid）和 `history`（发放记录：paid 或 rejected）
+- `history` tab 额外支持按申请人物名或当前用户昵称搜索
 - 列表结果附带舰队标题、FC 名称、用户昵称等关联信息
-- 批量发放汇总按用户聚合，展示主角色名、昵称、总金额、申请数量
+- 批量发放汇总按用户聚合，展示主人物名、昵称、总金额、申请数量
 - 待处理 tab 的发放方式单选默认选中「伏羲币补损」；切到「手动打钱」后，顶部“批量发放”和行内“发放”恢复旧的人工打款面板流程
 
 ### KM 查询
 
-- **我的 KM**（`GetMyKillmails`）：返回当前用户所有角色作为受害者的最近 30 天 KM，限 200 条
-- **按舰队筛选 KM**（`GetFleetKillmails`）：返回当前用户在指定舰队时间范围内、且为舰队成员的角色的受害 KM
+- **我的 KM**（`GetMyKillmails`）：返回当前用户所有人物作为受害者的最近 30 天 KM，限 200 条
+- **按舰队筛选 KM**（`GetFleetKillmails`）：返回当前用户在指定舰队时间范围内、且为舰队成员的人物的受害 KM
 - **KM 详情**（`GetKillmailDetail`）：返回 KM 装配详情，按槽位类别分组并合并同类物品，支持中英文名称
 
 ## 自动 SRP（Auto-SRP）
@@ -191,7 +192,7 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 - `server/internal/service/srp.go` — 手动 SRP 业务逻辑（申请、审批、发放、KM 查询）
 - `server/internal/service/auto_srp.go` — 自动 SRP 处理与装配验证
 - `server/internal/repository/srp.go` — SRP 申请数据访问
-- `server/internal/repository/killmail.go` — 击杀邮件数据访问（KM 主记录、物品、角色关联）
+- `server/internal/repository/killmail.go` — 击杀邮件数据访问（KM 主记录、物品、人物关联）
 - `server/internal/router/router.go`
 - `static/src/api/srp.ts`
 - `static/src/views/srp`

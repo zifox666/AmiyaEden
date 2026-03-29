@@ -1,4 +1,4 @@
-<!-- EVE 角色管理页面 —— 绑定/解绑角色、切换主角色 -->
+<!-- EVE 人物管理页面 —— 绑定/解绑人物、切换主人物 -->
 <template>
   <div class="w-full h-full p-0 bg-transparent border-none shadow-none">
     <div class="art-card-sm p-6 mb-4">
@@ -85,7 +85,7 @@
         </ElButton>
       </div>
 
-      <!-- 角色列表 -->
+      <!-- 人物列表 -->
       <div v-loading="loading" class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="char in characters"
@@ -97,7 +97,7 @@
               : 'border-g-300 hover:border-g-400'
           "
         >
-          <!-- 主角色徽标 -->
+          <!-- 主人物徽标 -->
           <div
             v-if="isPrimary(char)"
             class="absolute -top-2 -right-2 flex items-center gap-0.5 px-2 py-0.5 text-xs font-medium text-white bg-primary rounded-full shadow"
@@ -263,7 +263,7 @@
     profileForm.discordId = userStore.getUserInfo.discordId ?? ''
   }
 
-  /** 判断是否为主角色 */
+  /** 判断是否为主人物 */
   const isPrimary = (char: Api.Auth.EveCharacter) => {
     return char.character_id === primaryCharacterId.value
   }
@@ -275,19 +275,19 @@
     return `${list.length} ${t('characters.scopeCount')}`
   }
 
-  /** 加载角色列表 */
+  /** 加载人物列表 */
   const loadCharacters = async () => {
     loading.value = true
     try {
       characters.value = await fetchMyCharacters()
-      // 同步主角色 ID
+      // 同步主人物 ID
       primaryCharacterId.value = userStore.getUserInfo.primaryCharacterId ?? 0
     } finally {
       loading.value = false
     }
   }
 
-  /** 刷新用户信息（切换主角色后头像/昵称变化） */
+  /** 刷新用户信息（切换主人物后头像/昵称变化） */
   const refreshUserInfo = async () => {
     const info = await fetchGetUserInfo()
     userStore.setUserInfo(info)
@@ -312,7 +312,7 @@
     }
   }
 
-  /** 绑定新角色 */
+  /** 绑定新人物 */
   const handleBind = async () => {
     bindLoading.value = true
     try {
@@ -324,7 +324,7 @@
     }
   }
 
-  /** 设置主角色 */
+  /** 设置主人物 */
   const handleSetPrimary = async (char: Api.Auth.EveCharacter) => {
     switchingId.value = char.character_id
     try {
@@ -339,7 +339,7 @@
     }
   }
 
-  /** 解绑角色 */
+  /** 解绑人物 */
   const handleUnbind = async (char: Api.Auth.EveCharacter) => {
     try {
       await ElMessageBox.confirm(

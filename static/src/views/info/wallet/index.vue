@@ -1,6 +1,6 @@
 <template>
   <div class="info-wallet-page art-full-height">
-    <!-- 角色切换器 + 余额展示（特殊上下文选择器，非标准搜索栏） -->
+    <!-- 人物切换器 + 余额展示（特殊上下文选择器，非标准搜索栏） -->
     <ElCard class="art-card" shadow="never">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-4 flex-wrap">
@@ -188,7 +188,7 @@
     }
   })
 
-  // ─── 角色列表 ───
+  // ─── 人物列表 ───
   const characters = ref<Api.Auth.EveCharacter[]>([])
   const selectedCharacterId = ref<number>()
   const selectedRefTypes = ref<string[]>([])

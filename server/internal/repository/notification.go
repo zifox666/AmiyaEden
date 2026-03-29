@@ -5,7 +5,7 @@ import (
 	"amiya-eden/internal/model"
 )
 
-// NotificationRepository 角色通知数据访问层
+// NotificationRepository 人物通知数据访问层
 type NotificationRepository struct{}
 
 func NewNotificationRepository() *NotificationRepository {
@@ -14,12 +14,12 @@ func NewNotificationRepository() *NotificationRepository {
 
 // NotificationFilter 通知查询筛选条件
 type NotificationFilter struct {
-	CharacterIDs []int64 // 角色 ID 列表
+	CharacterIDs []int64 // 人物 ID 列表
 	Type         string  // 通知类型（可选）
 	IsRead       *bool   // 已读状态（可选）
 }
 
-// ListByCharacterIDs 查询多个角色的通知（分页，按时间倒序）
+// ListByCharacterIDs 查询多个人物的通知（分页，按时间倒序）
 func (r *NotificationRepository) ListByCharacterIDs(page, pageSize int, filter NotificationFilter) ([]model.EveCharacterNotification, int64, error) {
 	var list []model.EveCharacterNotification
 	var total int64
@@ -65,7 +65,7 @@ func (r *NotificationRepository) MarkAsRead(notificationIDs []uint) error {
 		Update("is_read", isRead).Error
 }
 
-// MarkAllAsRead 将指定角色的所有通知标记为已读
+// MarkAllAsRead 将指定人物的所有通知标记为已读
 func (r *NotificationRepository) MarkAllAsRead(characterIDs []int64) error {
 	isRead := true
 	return global.DB.Model(&model.EveCharacterNotification{}).
