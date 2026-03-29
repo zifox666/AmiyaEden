@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-27
+last_reviewed: 2026-03-29
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/middleware/auth.go
@@ -52,18 +52,52 @@ source_of_truth:
 
 ## 当前系统角色
 
-`server/internal/model/role.go` 定义的 canonical 角色编码：
+`server/internal/model/role.go` 定义的 canonical 角色编码（按优先级降序）：
 
-- `super_admin`
-- `admin`
-- `srp`
-- `fc`
-- `captain`
-- `welfare`
-- `user`
-- `guest`
+| 编码 | 名称 | Sort |
+|---|---|---|
+| `super_admin` | 超级管理员 | 100 |
+| `admin` | 管理员 | 90 |
+| `senior_fc` | 高级FC | 85 |
+| `fc` | FC | 70 |
+| `srp` | SRP 官员 | 60 |
+| `welfare` | 福利官 | 50 |
+| `captain` | 新人队长 | 30 |
+| `user` | 认证用户 | 10 |
+| `guest` | 访客 | 0 |
 
 不要再使用旧文档里的 `Administrator` 之类别名。
+
+## 角色分配权限矩阵
+
+角色分配接口 `PUT /api/v1/system/user/:id/roles` 位于 `admin` 路由组下，仅 `super_admin` 和 `admin` 可访问。
+
+分配规则（`server/internal/service/role.go` → `SetUserRoles` + `validateSetUserRolesPermission`）：
+
+- `super_admin` 可为任何用户（包括自己）分配除 `super_admin` 以外的任意角色；请求中若包含 `super_admin` 会被后端静默剥离，目标用户已有的 `super_admin` 角色自动保留不被覆盖
+- `admin` 可管理自己的角色（包括移除自身 admin 角色），可为其他用户分配除 `admin` 以外的任意角色；`admin` 不可为非 admin 用户新增 `admin` 角色，但可为已有 admin 身份的用户保留/调整非 admin 角色
+- 非 admin 用户（包括 `senior_fc`、`fc`、`srp`、`welfare`、`captain`、`user`、`guest`）无权分配任何角色
+- `super_admin` 角色不可通过 API 分配或撤销，仅通过配置文件管理；`super_admin` 操作者提交的角色列表中的 `super_admin` 会被静默剥离而非报错
+- 非 `super_admin` 不可修改已有 `super_admin` 角色用户的任何角色
+
+### 矩阵（操作者 → 目标角色）
+
+| 操作者 \ 可分配目标角色 | super_admin | admin | senior_fc | fc | srp | welfare | captain | user | guest |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **super_admin**（操作他人） | ✗ 仅配置文件 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **super_admin**（操作自己） | 自动保留 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **admin** | ✗ | ⚠️ 仅已有admin可保留 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **其他所有角色** | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+
+### 用户管理权限
+
+`PUT/DELETE /api/v1/system/user/:id`（`server/internal/service/user.go` → `validateManageUserPermission`）：
+
+| 操作者 \ 目标用户 | super_admin | admin | 其他角色 |
+|---|:---:|:---:|:---:|
+| **super_admin** | ✅ | ✅ | ✅ |
+| **admin** | ✗ | ✗ | ✅ |
+| **其他所有角色** | ✗ | ✗ | ✗ |
 
 ## JWT 中间件行为
 
@@ -152,7 +186,7 @@ source_of_truth:
 - 配置位置：`config.yaml` 的 `app.super_admins`，值为 EVE character ID 列表
 - 授予时机：首次 SSO 登录创建用户时，若主角色 ID 在配置列表中则直接授予
 - 同步时机：每次 SSO 登录时，`SyncConfigSuperAdmins` 检查用户所有绑定角色 ID，任一命中配置则授予，全部未命中则移除
-- API 拦截：`SetUserRoles` 完全拒绝包含 `super_admin` 的授予或修改请求
+- API 拦截：`SetUserRoles` 对 `super_admin` 角色做静默剥离处理；非 `super_admin` 操作者提交包含 `super_admin` 的请求会被拒绝；`super_admin` 操作者的请求中 `super_admin` 被静默剥离，目标用户已有的 `super_admin` 角色自动保留
 - 删除保护：`DeleteUser` 拒绝删除拥有 `super_admin` 角色的用户
 - 前端禁用：角色分配对话框中 `super_admin` 复选框始终 disabled
 - ESI 自动映射：自动权限映射逻辑已排除 `super_admin`，不会被 ESI corp role / title 触发

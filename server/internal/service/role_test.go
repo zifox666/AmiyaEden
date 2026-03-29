@@ -148,6 +148,36 @@ func TestValidateSetUserRolesPermission(t *testing.T) {
 	})
 }
 
+func TestFilterOutRole(t *testing.T) {
+	t.Run("removes target role", func(t *testing.T) {
+		result := filterOutRole([]string{"super_admin", "admin", "fc"}, model.RoleSuperAdmin)
+		if len(result) != 2 || result[0] != "admin" || result[1] != "fc" {
+			t.Fatalf("expected [admin fc], got %v", result)
+		}
+	})
+
+	t.Run("no target present returns same elements", func(t *testing.T) {
+		result := filterOutRole([]string{"admin", "fc"}, model.RoleSuperAdmin)
+		if len(result) != 2 {
+			t.Fatalf("expected 2 elements, got %v", result)
+		}
+	})
+
+	t.Run("empty input returns empty", func(t *testing.T) {
+		result := filterOutRole([]string{}, model.RoleSuperAdmin)
+		if len(result) != 0 {
+			t.Fatalf("expected empty, got %v", result)
+		}
+	})
+
+	t.Run("all elements are target returns empty", func(t *testing.T) {
+		result := filterOutRole([]string{"super_admin", "super_admin"}, model.RoleSuperAdmin)
+		if len(result) != 0 {
+			t.Fatalf("expected empty, got %v", result)
+		}
+	})
+}
+
 func TestNormalizeAssignedRoleCodes(t *testing.T) {
 	t.Run("keeps guest when it is the only role", func(t *testing.T) {
 		codes := normalizeAssignedRoleCodes([]string{model.RoleGuest})

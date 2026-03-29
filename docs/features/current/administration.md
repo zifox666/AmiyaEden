@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-27
+last_reviewed: 2026-03-29
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/role.go
@@ -66,7 +66,8 @@ source_of_truth:
 - 管理员侧用户资料维护走 `/api/v1/system/user/:id`，当前支持昵称、QQ、Discord ID、状态
 - 管理员侧用户列表 `/api/v1/system/user` 的角色列只以有序 `roles[]` 为准，不再暴露历史单值 `role`
 - `/api/v1/system/user/:id` 更新与删除都受后端保护：`admin` 不可编辑或删除其他 `admin`
-- `/api/v1/system/user/:id/roles` 仅 `super_admin` 可分配 `admin`；`super_admin` 角色不可通过 API 分配或修改，仅通过配置文件管理
+- `/api/v1/system/user/:id/roles` 角色分配规则：`super_admin` 可为任何用户（包括自己）分配除 `super_admin` 以外的任意角色，请求中包含的 `super_admin` 被静默剥离，目标用户已有的 `super_admin` 角色自动保留；`admin` 可管理自己的角色（包括移除自身 admin 角色），可为其他用户分配除 `admin` 以外的任意角色，但不可为非 admin 用户新增 `admin` 角色；非 admin 用户无权分配任何角色
+- `super_admin` 角色不可通过 API 分配或撤销，仅通过配置文件管理；`super_admin` 操作者提交的角色列表中的 `super_admin` 会被静默剥离而非报错；非 `super_admin` 不可修改已有 `super_admin` 用户的任何角色
 - `super_admin` 角色由 `config.yaml` 的 `app.super_admins` 配置驱动，每次 SSO 登录时自动同步，不可通过任何 API 或 UI 授予、修改或撤销
 - `super_admin` 用户不可通过 API 删除
 - 自动权限映射已经是当前功能，不是纯想法
