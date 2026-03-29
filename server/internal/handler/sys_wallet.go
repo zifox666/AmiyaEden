@@ -5,7 +5,6 @@ import (
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -206,14 +205,16 @@ func (h *SysWalletHandler) GetWallet(c *gin.Context) {
 // GetWalletTransactions 兼容旧的 GET /operation/wallet/transactions
 func (h *SysWalletHandler) GetWalletTransactions(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizeLedgerPagination(page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 
-	records, total, err := h.svc.GetMyTransactions(userID, page, size)
+	records, total, err := h.svc.GetMyTransactions(userID, page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, records, total, page, size)
+	response.OKWithPage(c, records, total, page, pageSize)
 }

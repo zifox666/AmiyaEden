@@ -45,9 +45,11 @@ func (h *FleetHandler) CreateFleet(c *gin.Context) {
 
 // ListFleets 分页查询舰队列表
 func (h *FleetHandler) ListFleets(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizePagination(page, size, 10, 100)
+	page, pageSize, err := parsePaginationQuery(c, 20, 100)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 
 	filter := repository.FleetFilter{
 		Importance: c.Query("importance"),
@@ -59,12 +61,12 @@ func (h *FleetHandler) ListFleets(c *gin.Context) {
 		}
 	}
 
-	records, total, err := h.svc.ListFleets(page, size, filter)
+	records, total, err := h.svc.ListFleets(page, pageSize, filter)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, records, total, page, size)
+	response.OKWithPage(c, records, total, page, pageSize)
 }
 
 // GetMyFleets 获取当前用户参与过的舰队列表
@@ -178,16 +180,18 @@ func (h *FleetHandler) GetMembersWithPap(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "缺少舰队ID")
 		return
 	}
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "260"))
-	page, size = normalizePagination(page, size, 260, 260)
+	page, pageSize, err := parsePaginationQuery(c, 260, 260)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 
-	list, total, err := h.svc.ListMembersWithPap(fleetID, page, size)
+	list, total, err := h.svc.ListMembersWithPap(fleetID, page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, list, total, page, size)
+	response.OKWithPage(c, list, total, page, pageSize)
 }
 
 // ManualAddMembers 手动添加舰队成员
@@ -281,8 +285,11 @@ func (h *FleetHandler) GetMyPapLogs(c *gin.Context) {
 
 // GetCorporationPapSummary 获取军团 PAP 汇总
 func (h *FleetHandler) GetCorporationPapSummary(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "200"))
+	page, pageSize, err := parseLedgerPaginationQuery(c, 200)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 	year, _ := strconv.Atoi(c.Query("year"))
 	period := c.DefaultQuery("period", service.CorporationPapPeriodLastMonth)
 	corpTickerParam := c.Query("corp_tickers")
@@ -292,7 +299,7 @@ func (h *FleetHandler) GetCorporationPapSummary(c *gin.Context) {
 		corpTickers = strings.Split(corpTickerParam, ",")
 	}
 
-	result, err := h.svc.GetCorporationPapSummary(page, size, period, year, corpTickers)
+	result, err := h.svc.GetCorporationPapSummary(page, pageSize, period, year, corpTickers)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

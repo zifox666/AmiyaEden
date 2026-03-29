@@ -264,13 +264,13 @@ func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpAppli
 	for fleetID := range fleetIDSet {
 		fleetIDs = append(fleetIDs, fleetID)
 	}
-	fleetMap := make(map[string]*model.Fleet)
+	fleetMap := make(map[string]model.Fleet)
 	if len(fleetIDs) > 0 {
 		fleets, err := s.fleetRepo.ListByIDs(fleetIDs)
 		if err == nil {
 			for index := range fleets {
 				fleet := fleets[index]
-				fleetMap[fleet.ID] = &fleet
+				fleetMap[fleet.ID] = fleet
 			}
 		}
 	}

@@ -22,9 +22,11 @@ func NewUserHandler() *UserHandler {
 }
 
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizeLedgerPagination(page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 
 	filter := repository.UserFilter{
 		Keyword: c.Query("keyword"),
@@ -40,12 +42,12 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		filter.AllowCorporations = utils.GetAllowCorporations()
 	}
 
-	users, total, err := h.svc.ListUsers(page, size, filter)
+	users, total, err := h.svc.ListUsers(page, pageSize, filter)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, users, total, page, size)
+	response.OKWithPage(c, users, total, page, pageSize)
 }
 
 func (h *UserHandler) GetUser(c *gin.Context) {

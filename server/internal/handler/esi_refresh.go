@@ -6,7 +6,6 @@ import (
 	"amiya-eden/pkg/response"
 	"fmt"
 	"sort"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -86,25 +85,22 @@ func (h *ESIRefreshHandler) GetStatuses(c *gin.Context) {
 	total := len(filtered)
 
 	// 分页
-	current, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	if current < 1 {
-		current = 1
-	}
-	if size < 1 {
-		size = 20
+	page, pageSize, err := parseUnboundedPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
 	}
 
-	start := (current - 1) * size
+	start := (page - 1) * pageSize
 	if start > total {
 		start = total
 	}
-	end := start + size
+	end := start + pageSize
 	if end > total {
 		end = total
 	}
 
-	response.OKWithPage(c, filtered[start:end], int64(total), current, size)
+	response.OKWithPage(c, filtered[start:end], int64(total), page, pageSize)
 }
 
 // RunTaskRequest 手动触发单个任务的请求（指定角色）

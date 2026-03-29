@@ -88,17 +88,19 @@ func (h *SrpHandler) SubmitApplication(c *gin.Context) {
 
 // ListMyApplications GET /srp/applications/my
 func (h *SrpHandler) ListMyApplications(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizePagination(page, size, 20, 100)
+	page, pageSize, err := parsePaginationQuery(c, 20, 100)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 	userID := middleware.GetUserID(c)
 
-	list, total, err := h.svc.ListMyApplications(userID, page, size)
+	list, total, err := h.svc.ListMyApplications(userID, page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, list, total, page, size)
+	response.OKWithPage(c, list, total, page, pageSize)
 }
 
 // GetMyKillmails GET /srp/my-killmails?character_id=xxx
@@ -140,9 +142,11 @@ func (h *SrpHandler) GetFleetKillmails(c *gin.Context) {
 
 // ListApplications GET /srp/manage/applications
 func (h *SrpHandler) ListApplications(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizeLedgerPagination(page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 
 	filter := repository.SrpApplicationFilter{
 		Tab:          repository.SrpTabType(c.Query("tab")),
@@ -158,12 +162,12 @@ func (h *SrpHandler) ListApplications(c *gin.Context) {
 		}
 	}
 
-	list, total, err := h.svc.ListApplications(page, size, filter)
+	list, total, err := h.svc.ListApplications(page, pageSize, filter)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, list, total, page, size)
+	response.OKWithPage(c, list, total, page, pageSize)
 }
 
 // ListBatchPayoutSummary GET /srp/applications/batch-payout-summary

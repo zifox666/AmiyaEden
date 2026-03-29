@@ -42,18 +42,20 @@ func (h *SkillPlanHandler) CreateSkillPlan(c *gin.Context) {
 
 // ListSkillPlans 获取技能计划列表
 func (h *SkillPlanHandler) ListSkillPlans(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "50"))
-	page, size = normalizePagination(page, size, 50, 100)
+	page, pageSize, err := parsePaginationQuery(c, 50, 100)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 	keyword := c.Query("keyword")
 
-	records, total, err := h.svc.ListSkillPlans(page, size, keyword)
+	records, total, err := h.svc.ListSkillPlans(page, pageSize, keyword)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
 
-	response.OKWithPage(c, records, total, page, size)
+	response.OKWithPage(c, records, total, page, pageSize)
 }
 
 // GetSkillPlan 获取技能计划详情

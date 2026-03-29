@@ -84,9 +84,11 @@ func (h *AlliancePAPHandler) GetAllAlliancePAP(c *gin.Context) {
 	now := time.Now()
 	year := now.Year()
 	month := int(now.Month())
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizeLedgerPagination(page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 
 	if y := c.Query("year"); y != "" {
 		if v, err := strconv.Atoi(y); err == nil {
@@ -99,12 +101,12 @@ func (h *AlliancePAPHandler) GetAllAlliancePAP(c *gin.Context) {
 		}
 	}
 
-	list, total, err := h.svc.GetAllPAPPaged(year, month, page, size, getAllowCorpFilter(c))
+	list, total, err := h.svc.GetAllPAPPaged(year, month, page, pageSize, getAllowCorpFilter(c))
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, list, total, page, size)
+	response.OKWithPage(c, list, total, page, pageSize)
 }
 
 // TriggerFetch  POST /system/pap/fetch

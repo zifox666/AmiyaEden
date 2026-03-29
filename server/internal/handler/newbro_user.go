@@ -4,7 +4,6 @@ import (
 	"amiya-eden/internal/middleware"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,15 +38,17 @@ func (h *NewbroUserHandler) GetMyAffiliation(c *gin.Context) {
 
 func (h *NewbroUserHandler) ListMyAffiliationHistory(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "200"))
-	page, size = normalizeLedgerPagination(page, size)
-	result, total, err := h.affSvc.ListMyAffiliationHistory(userID, page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 200)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
+	result, total, err := h.affSvc.ListMyAffiliationHistory(userID, page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, result, total, page, size)
+	response.OKWithPage(c, result, total, page, pageSize)
 }
 
 type selectCaptainRequest struct {

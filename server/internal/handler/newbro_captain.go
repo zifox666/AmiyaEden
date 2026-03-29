@@ -36,23 +36,27 @@ func (h *NewbroCaptainHandler) GetOverview(c *gin.Context) {
 
 func (h *NewbroCaptainHandler) GetPlayers(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizePagination(page, size, 20, 100)
+	page, pageSize, err := parsePaginationQuery(c, 20, 100)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 	status := c.DefaultQuery("status", "all")
-	result, total, err := h.reportSvc.ListCaptainPlayers(userID, status, page, size)
+	result, total, err := h.reportSvc.ListCaptainPlayers(userID, status, page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, result, total, page, size)
+	response.OKWithPage(c, result, total, page, pageSize)
 }
 
 func (h *NewbroCaptainHandler) GetAttributions(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizePagination(page, size, 20, 100)
+	page, pageSize, err := parsePaginationQuery(c, 20, 100)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 	playerUserID, err := parseOptionalUintQueryParam("player_user_id", c.Query("player_user_id"))
 	if err != nil {
 		response.Fail(c, response.CodeParamError, err.Error())
@@ -70,7 +74,7 @@ func (h *NewbroCaptainHandler) GetAttributions(c *gin.Context) {
 	}
 	summary, result, total, err := h.reportSvc.ListCaptainAttributions(userID, service.CaptainAttributionListRequest{
 		Page:         page,
-		PageSize:     size,
+		PageSize:     pageSize,
 		PlayerUserID: playerUserID,
 		RefType:      c.Query("ref_type"),
 		StartDate:    startDate,
@@ -85,7 +89,7 @@ func (h *NewbroCaptainHandler) GetAttributions(c *gin.Context) {
 		"list":      result,
 		"total":     total,
 		"page":      page,
-		"page_size": size,
+		"page_size": pageSize,
 	})
 }
 
@@ -103,10 +107,12 @@ func parseOptionalUintQueryParam(field, raw string) (*uint, error) {
 
 func (h *NewbroCaptainHandler) GetRewardSettlements(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizeLedgerPagination(page, size)
-	summary, result, total, err := h.reportSvc.ListCaptainRewardSettlements(userID, page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
+	summary, result, total, err := h.reportSvc.ListCaptainRewardSettlements(userID, page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -116,22 +122,24 @@ func (h *NewbroCaptainHandler) GetRewardSettlements(c *gin.Context) {
 		"list":      result,
 		"total":     total,
 		"page":      page,
-		"page_size": size,
+		"page_size": pageSize,
 	})
 }
 
 func (h *NewbroCaptainHandler) ListEligiblePlayers(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizePagination(page, size, 20, 100)
+	page, pageSize, err := parsePaginationQuery(c, 20, 100)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 
-	result, total, err := h.affSvc.ListCaptainEligiblePlayers(userID, c.Query("keyword"), page, size)
+	result, total, err := h.affSvc.ListCaptainEligiblePlayers(userID, c.Query("keyword"), page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, result, total, page, size)
+	response.OKWithPage(c, result, total, page, pageSize)
 }
 
 type captainEnrollPlayerRequest struct {

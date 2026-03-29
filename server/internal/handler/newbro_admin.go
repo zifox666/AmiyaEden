@@ -27,15 +27,17 @@ func NewNewbroAdminHandler() *NewbroAdminHandler {
 }
 
 func (h *NewbroAdminHandler) ListCaptains(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizeLedgerPagination(page, size)
-	result, total, err := h.reportSvc.ListAllCaptainOverviews(page, size, c.Query("keyword"))
+	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
+	result, total, err := h.reportSvc.ListAllCaptainOverviews(page, pageSize, c.Query("keyword"))
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, result, total, page, size)
+	response.OKWithPage(c, result, total, page, pageSize)
 }
 
 func (h *NewbroAdminHandler) GetCaptainDetail(c *gin.Context) {
@@ -105,9 +107,11 @@ func (h *NewbroAdminHandler) UpdateSettings(c *gin.Context) {
 }
 
 func (h *NewbroAdminHandler) ListAffiliationHistory(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	page, size = normalizeLedgerPagination(page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 20)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
 	changeStartDate, err := parseOptionalNewbroDate(c.Query("change_start_date"), false)
 	if err != nil {
 		response.Fail(c, response.CodeParamError, err.Error())
@@ -121,7 +125,7 @@ func (h *NewbroAdminHandler) ListAffiliationHistory(c *gin.Context) {
 
 	result, total, err := h.reportSvc.ListAdminAffiliationHistory(service.AdminAffiliationHistoryListRequest{
 		Page:            page,
-		PageSize:        size,
+		PageSize:        pageSize,
 		CaptainSearch:   c.Query("captain_search"),
 		PlayerSearch:    c.Query("player_search"),
 		ChangeStartDate: changeStartDate,
@@ -131,14 +135,16 @@ func (h *NewbroAdminHandler) ListAffiliationHistory(c *gin.Context) {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OKWithPage(c, result, total, page, size)
+	response.OKWithPage(c, result, total, page, pageSize)
 }
 
 func (h *NewbroAdminHandler) ListRewardSettlements(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "200"))
-	page, size = normalizeLedgerPagination(page, size)
-	summary, result, total, err := h.reportSvc.ListAdminRewardSettlements(page, size)
+	page, pageSize, err := parseLedgerPaginationQuery(c, 200)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
+	summary, result, total, err := h.reportSvc.ListAdminRewardSettlements(page, pageSize)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -148,6 +154,6 @@ func (h *NewbroAdminHandler) ListRewardSettlements(c *gin.Context) {
 		"list":      result,
 		"total":     total,
 		"page":      page,
-		"page_size": size,
+		"page_size": pageSize,
 	})
 }

@@ -730,13 +730,13 @@ func (s *WelfareService) AdminListApplications(page, pageSize int, filter reposi
 	for wid := range welfareIDSet {
 		welfareIDs = append(welfareIDs, wid)
 	}
-	welfareMap := make(map[uint]*model.Welfare)
+	welfareMap := make(map[uint]model.Welfare)
 	if len(welfareIDs) > 0 {
 		welfares, err := s.repo.ListWelfaresByIDs(welfareIDs)
 		if err == nil {
 			for index := range welfares {
 				welfare := welfares[index]
-				welfareMap[welfare.ID] = &welfare
+				welfareMap[welfare.ID] = welfare
 			}
 		}
 	}
@@ -771,9 +771,9 @@ func (s *WelfareService) AdminListApplications(page, pageSize int, filter reposi
 			CreatedAt:     app.CreatedAt,
 			ReviewedAt:    app.ReviewedAt,
 		}
-		if w, ok := welfareMap[app.WelfareID]; ok {
-			resp.WelfareName = w.Name
-			resp.WelfareDesc = w.Description
+		if welfare, ok := welfareMap[app.WelfareID]; ok {
+			resp.WelfareName = welfare.Name
+			resp.WelfareDesc = welfare.Description
 		}
 		if app.UserID != nil {
 			resp.ApplicantNickname = nicknameMap[*app.UserID]
