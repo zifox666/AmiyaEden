@@ -1505,6 +1505,16 @@ declare namespace Api {
 
   /** SDE 数据查询类型 */
   namespace Sde {
+    /** SDE 版本信息 */
+    interface SdeVersion {
+      id: number
+      version: string
+      build_hash: string
+      note: string
+      created_at: string
+      updated_at: string
+    }
+
     /** 模糊搜索请求 */
     interface FuzzySearchRequest {
       keyword: string

@@ -339,7 +339,8 @@
       "npcKills": "刷怪报表",
       "autoRole": "自动权限",
       "webhook": "Webhook 通知",
-      "basicConfig": "基础配置"
+      "basicConfig": "基础配置",
+      "sdeManage": "SDE 数据管理"
     },
     "corpManage": {
       "title": "军团管理",
@@ -1629,6 +1630,16 @@
     }
   },
   "system": {
+    "sdeManage": {
+      "title": "SDE 数据管理",
+      "currentVersion": "当前版本",
+      "note": "备注",
+      "importedAt": "导入时间",
+      "noVersion": "尚未导入",
+      "triggerUpdate": "手动更新",
+      "tip": "手动更新将强制从 GitHub 拉取最新版本 SDE 并重新导入，过程可能耗时较长。",
+      "updateSuccess": "SDE 更新成功，版本: {version}"
+    },
     "basicConfig": {
       "title": "基础配置",
       "corpId": "军团ID",

@@ -295,6 +295,7 @@
       "autoRole": "Auto Roles",
       "webhook": "Webhook Notifications",
       "basicConfig": "Basic Config",
+      "sdeManage": "SDE Data",
       "skillPlan": "Skill Plans",
       "skillPlanCheck": "Skill Check"
     },
@@ -1628,6 +1629,16 @@
     }
   },
   "system": {
+    "sdeManage": {
+      "title": "SDE Data Management",
+      "currentVersion": "Current Version",
+      "note": "Note",
+      "importedAt": "Imported At",
+      "noVersion": "Not imported",
+      "triggerUpdate": "Manual Update",
+      "tip": "Manual update will force-pull the latest SDE from GitHub and re-import it. This may take a while.",
+      "updateSuccess": "SDE updated successfully, version: {version}"
+    },
     "basicConfig": {
       "title": "Basic Config",
       "corpId": "Corporation ID",

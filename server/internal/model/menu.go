@@ -176,6 +176,8 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", Sort: 60, IsHide: true, KeepAlive: true, IsHideTab: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "WebhookSettings", Path: "webhook", Component: "/system/webhook", Title: "menus.system.webhook", Sort: 59, KeepAlive: true, Status: 1}},
 		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "BasicConfig", Path: "basic-config", Component: "/system/basic-config", Title: "menus.system.basicConfig", Sort: 58, KeepAlive: true, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "SdeManage", Path: "sde", Component: "/system/sde", Title: "menus.system.sdeManage", Sort: 57, KeepAlive: true, Status: 1}},
+		{ParentName: "SdeManage", Menu: Menu{Type: MenuTypeButton, Name: "SdeUpdate", Permission: "system:sde:update", Title: "手动更新", Sort: 100, Status: 1}},
 
 		// ── Result ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", Sort: 10, IsHide: true, Status: 1}},
@@ -195,7 +197,7 @@ func DefaultRoleMenuMap() map[string][]string {
 			"CorpManage", "SkillPlanManage", "SkillPlanCheck", "Structures",
 			"ShopRoot", "Shop", "Wallet",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
-			"System", "User", "RoleManage", "Menus", "ESIRefresh", "SystemWallet", "AlliancePAP", "CorpNpcKillReport", "AutoRole", "UserCenter", "WebhookSettings", "BasicConfig",
+			"System", "User", "RoleManage", "Menus", "ESIRefresh", "SystemWallet", "AlliancePAP", "CorpNpcKillReport", "AutoRole", "UserCenter", "WebhookSettings", "BasicConfig", "SdeManage", "SdeUpdate",
 			"Result", "ResultSuccess", "ResultFail",
 		},
 		RoleFC: {

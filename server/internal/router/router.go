@@ -389,4 +389,11 @@ func RegisterRoutes(r *gin.Engine) {
 		adminWebhook.PUT("/config", webhookH.SetConfig)
 		adminWebhook.POST("/test", webhookH.TestWebhook)
 	}
+
+	// SDE 数据管理（管理员）
+	adminSde := admin.Group("/sde")
+	{
+		adminSde.GET("/version", sdeH.GetVersion)
+		adminSde.POST("/update", sdeH.TriggerUpdate)
+	}
 }

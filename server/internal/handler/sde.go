@@ -159,6 +159,18 @@ type FuzzySearchRequest struct {
 	SearchMember       bool   `json:"search_member"`
 }
 
+// TriggerUpdate godoc
+// POST /api/v1/system/sde/update
+// 手动触发 SDE 更新（Admin 专用）
+func (h *SdeHandler) TriggerUpdate(c *gin.Context) {
+	version, err := h.svc.TriggerManualUpdate()
+	if err != nil {
+		response.Fail(c, response.CodeBizError, "SDE 更新失败: "+err.Error())
+		return
+	}
+	response.OK(c, gin.H{"version": version})
+}
+
 func (h *SdeHandler) FuzzySearch(c *gin.Context) {
 	var req FuzzySearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
