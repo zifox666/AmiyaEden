@@ -109,7 +109,7 @@ func (r *SdeRepository) getShipsByCategoryIDWithLayout(languageID string, camelC
 			sdeTranslationCategoryIDs["group"], languageID).
 		Joins(fmt.Sprintf(`LEFT JOIN %s ON %s = ? AND %s = %s AND %s = ?`, naming.table("trnTranslations", "mg_name"), naming.col("mg_name", "tcID"), naming.col("mg_name", "keyID"), naming.col("mg", "marketGroupID"), naming.col("mg_name", "languageID")),
 			sdeTranslationCategoryIDs["market_group"], languageID).
-		Where(fmt.Sprintf(`%s = ? AND %s = ?`, categoryIDCol, publishedCol), shipCategoryID, true).
+		Where(fmt.Sprintf(`%s = ? AND %s = ?`, categoryIDCol, publishedCol), shipCategoryID, 1).
 		Scan(&result).Error
 	return result, err
 }
