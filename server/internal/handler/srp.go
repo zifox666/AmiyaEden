@@ -90,6 +90,7 @@ func (h *SrpHandler) SubmitApplication(c *gin.Context) {
 func (h *SrpHandler) ListMyApplications(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	page, size = normalizePagination(page, size, 20, 100)
 	userID := middleware.GetUserID(c)
 
 	list, total, err := h.svc.ListMyApplications(userID, page, size)
@@ -141,6 +142,7 @@ func (h *SrpHandler) GetFleetKillmails(c *gin.Context) {
 func (h *SrpHandler) ListApplications(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	page, size = normalizeLedgerPagination(page, size)
 
 	filter := repository.SrpApplicationFilter{
 		Tab:          repository.SrpTabType(c.Query("tab")),

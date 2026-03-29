@@ -333,12 +333,8 @@ func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRoles 
 
 // ListFleets 分页查询舰队列表
 func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFilter) ([]model.FleetListItem, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 10, 100)
 	return s.repo.List(page, pageSize, filter)
 }
 
@@ -780,12 +776,8 @@ func (s *FleetService) triggerNewMembersKMRefresh(fleetID string) {
 
 // ListMembersWithPap 分页查询舰队成员（含 PAP 信息）
 func (s *FleetService) ListMembersWithPap(fleetID string, page, pageSize int) ([]repository.MemberWithPap, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 260, 260)
 	return s.repo.ListMembersWithPap(fleetID, page, pageSize)
 }
 
@@ -842,9 +834,7 @@ func (s *FleetService) GetUserPapLogs(userID uint) ([]repository.PapLogDetail, e
 
 // GetCorporationPapSummary 获取军团维度 PAP 汇总
 func (s *FleetService) GetCorporationPapSummary(page, pageSize int, period string, year int, corpTickers []string) (*CorporationPapSummaryResponse, error) {
-	if page < 1 {
-		page = 1
-	}
+	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
 
 	now := time.Now()

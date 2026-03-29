@@ -39,6 +39,7 @@ func (h *ShopHandler) ListProducts(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizePagination(req.Current, req.Size, 20, 100)
 
 	list, total, err := h.svc.ListOnSaleProducts(req.Current, req.Size, req.Type)
 	if err != nil {
@@ -96,6 +97,7 @@ func (h *ShopHandler) GetMyOrders(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizePagination(req.Current, req.Size, 20, 100)
 
 	userID := middleware.GetUserID(c)
 	list, total, err := h.svc.GetMyOrders(userID, req.Current, req.Size, req.Status)
@@ -114,6 +116,7 @@ func (h *ShopHandler) GetMyRedeemCodes(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizePagination(req.Current, req.Size, 20, 100)
 
 	userID := middleware.GetUserID(c)
 	list, total, err := h.svc.GetMyRedeemCodes(userID, req.Current, req.Size)
@@ -134,7 +137,7 @@ type adminProductCreateRequest struct {
 	Description string  `json:"description"`
 	Image       string  `json:"image"`
 	Price       float64 `json:"price" binding:"required,gt=0"`
-	Stock       int     `json:"stock"`       // -1=无限，>=0 有限
+	Stock       int     `json:"stock"`        // -1=无限，>=0 有限
 	MaxPerUser  int     `json:"max_per_user"` // 0=不限购
 	LimitPeriod string  `json:"limit_period"` // forever / daily / weekly / monthly
 	Type        string  `json:"type" binding:"required,oneof=normal redeem"`
@@ -232,6 +235,7 @@ func (h *ShopHandler) AdminListProducts(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizePagination(req.Current, req.Size, 20, 100)
 
 	filter := repository.ProductFilter{
 		Status: req.Status,
@@ -251,8 +255,8 @@ func (h *ShopHandler) AdminListProducts(c *gin.Context) {
 type adminOrderListRequest struct {
 	Current  int      `json:"current"`
 	Size     int      `json:"size"`
-	Keyword  string   `json:"keyword"`   // 商品名、主角色名或昵称
-	Statuses []string `json:"statuses"`  // 多状态筛选（为空则用 status）
+	Keyword  string   `json:"keyword"`  // 商品名、主角色名或昵称
+	Statuses []string `json:"statuses"` // 多状态筛选（为空则用 status）
 	Status   string   `json:"status"`
 }
 
@@ -264,6 +268,7 @@ func (h *ShopHandler) AdminListOrders(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizeLedgerPagination(req.Current, req.Size)
 
 	filter := repository.OrderFilter{
 		Keyword:  req.Keyword,
@@ -337,6 +342,7 @@ func (h *ShopHandler) AdminListRedeemCodes(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizePagination(req.Current, req.Size, 20, 100)
 
 	list, total, err := h.svc.AdminListRedeemCodes(req.Current, req.Size, req.ProductID, req.Status)
 	if err != nil {

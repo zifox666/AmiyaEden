@@ -42,6 +42,13 @@ func OK(c *gin.Context, data interface{}) {
 
 // OKWithPage 分页成功响应
 func OKWithPage(c *gin.Context, list interface{}, total int64, page, pageSize int) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 1
+	}
+
 	OK(c, PageData{
 		List:     list,
 		Total:    total,

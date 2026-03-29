@@ -150,12 +150,8 @@ func (s *WelfareService) AdminDeleteWelfare(id uint) error {
 
 // AdminListWelfares 查询福利列表
 func (s *WelfareService) AdminListWelfares(page, pageSize int, filter repository.WelfareFilter) ([]model.Welfare, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 	return s.repo.ListWelfares(page, pageSize, filter)
 }
 
@@ -705,9 +701,7 @@ type AdminApplicationResp struct {
 
 // AdminListApplications 管理端查询福利申请列表
 func (s *WelfareService) AdminListApplications(page, pageSize int, filter repository.WelfareApplicationFilter) ([]AdminApplicationResp, int64, error) {
-	if page < 1 {
-		page = 1
-	}
+	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
 
 	apps, total, err := s.repo.ListApplicationsPaginated(page, pageSize, filter)
@@ -849,12 +843,8 @@ type MyApplicationResp struct {
 
 // ListMyApplications 查询用户的福利申请列表
 func (s *WelfareService) ListMyApplications(userID uint, page, pageSize int, status string) ([]MyApplicationResp, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 10, 100)
 
 	apps, total, err := s.repo.ListApplicationsByUserIDPaginated(userID, page, pageSize, status)
 	if err != nil {

@@ -99,12 +99,8 @@ func (s *NewbroReportService) GetCaptainOverview(captainUserID uint) (*CaptainOv
 }
 
 func (s *NewbroReportService) ListCaptainPlayers(captainUserID uint, status string, page, pageSize int) ([]CaptainPlayerListItem, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 	rows, total, err := s.affRepo.ListByCaptainUserID(captainUserID, status, page, pageSize)
 	if err != nil {
 		return nil, 0, err
@@ -145,12 +141,8 @@ func (s *NewbroReportService) ListCaptainPlayers(captainUserID uint, status stri
 }
 
 func (s *NewbroReportService) ListCaptainAttributions(captainUserID uint, req CaptainAttributionListRequest) (CaptainAttributionSummary, []CaptainAttributionListItem, int64, error) {
-	if req.Page < 1 {
-		req.Page = 1
-	}
-	if req.PageSize < 1 || req.PageSize > 100 {
-		req.PageSize = 20
-	}
+	req.Page = normalizePage(req.Page)
+	req.PageSize = normalizePageSize(req.PageSize, 20, 100)
 	bountyTotal, recordCount, err := s.attrRepo.SummarizeByCaptainUserIDFiltered(
 		captainUserID,
 		req.PlayerUserID,
@@ -232,9 +224,7 @@ func (s *NewbroReportService) listRewardSettlements(
 	page,
 	pageSize int,
 ) (CaptainRewardSummary, []CaptainRewardSettlementItem, int64, error) {
-	if page < 1 {
-		page = 1
-	}
+	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
 
 	settlementCount, totalCreditedValue, lastProcessedAt, err := s.settlementRepo.Summarize(captainUserID)
@@ -263,9 +253,7 @@ func (s *NewbroReportService) listRewardSettlements(
 }
 
 func (s *NewbroReportService) ListAllCaptainOverviews(page, pageSize int, keyword string) ([]CaptainOverview, int64, error) {
-	if page < 1 {
-		page = 1
-	}
+	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
 
 	userIDs, err := s.roleRepo.GetRoleUserIDs(model.RoleCaptain)
@@ -325,9 +313,7 @@ func (s *NewbroReportService) GetAdminCaptainDetail(captainUserID uint) (*AdminC
 }
 
 func (s *NewbroReportService) ListAdminAffiliationHistory(req AdminAffiliationHistoryListRequest) ([]AdminAffiliationHistoryItem, int64, error) {
-	if req.Page < 1 {
-		req.Page = 1
-	}
+	req.Page = normalizePage(req.Page)
 	req.PageSize = normalizeLedgerPageSize(req.PageSize)
 
 	rows, total, err := s.affRepo.ListAdminAffiliationHistory(repository.AdminAffiliationHistoryFilter{

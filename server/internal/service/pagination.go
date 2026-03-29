@@ -1,16 +1,15 @@
 package service
 
-const (
-	ledgerDefaultPageSize = 200
-	ledgerMaxPageSize     = 1000
-)
+import internalutils "amiya-eden/internal/utils"
+
+func normalizePage(page int) int {
+	return internalutils.NormalizePage(page)
+}
+
+func normalizePageSize(pageSize, defaultPageSize, maxPageSize int) int {
+	return internalutils.NormalizePageSize(pageSize, defaultPageSize, maxPageSize)
+}
 
 func normalizeLedgerPageSize(pageSize int) int {
-	if pageSize < 1 {
-		return ledgerDefaultPageSize
-	}
-	if pageSize > ledgerMaxPageSize {
-		return ledgerMaxPageSize
-	}
-	return pageSize
+	return internalutils.NormalizeLedgerPageSize(pageSize)
 }

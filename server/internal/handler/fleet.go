@@ -47,6 +47,7 @@ func (h *FleetHandler) CreateFleet(c *gin.Context) {
 func (h *FleetHandler) ListFleets(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	page, size = normalizePagination(page, size, 10, 100)
 
 	filter := repository.FleetFilter{
 		Importance: c.Query("importance"),
@@ -63,12 +64,7 @@ func (h *FleetHandler) ListFleets(c *gin.Context) {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OK(c, gin.H{
-		"list":     records,
-		"page":     page,
-		"pageSize": size,
-		"total":    total,
-	})
+	response.OKWithPage(c, records, total, page, size)
 }
 
 // GetMyFleets 获取当前用户参与过的舰队列表
@@ -183,19 +179,15 @@ func (h *FleetHandler) GetMembersWithPap(c *gin.Context) {
 		return
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "260"))
+	page, size = normalizePagination(page, size, 260, 260)
 
 	list, total, err := h.svc.ListMembersWithPap(fleetID, page, size)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OK(c, gin.H{
-		"list":     list,
-		"page":     page,
-		"pageSize": size,
-		"total":    total,
-	})
+	response.OKWithPage(c, list, total, page, size)
 }
 
 // ManualAddMembers 手动添加舰队成员

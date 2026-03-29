@@ -44,6 +44,7 @@ func (h *SkillPlanHandler) CreateSkillPlan(c *gin.Context) {
 func (h *SkillPlanHandler) ListSkillPlans(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "50"))
+	page, size = normalizePagination(page, size, 50, 100)
 	keyword := c.Query("keyword")
 
 	records, total, err := h.svc.ListSkillPlans(page, size, keyword)
@@ -52,12 +53,7 @@ func (h *SkillPlanHandler) ListSkillPlans(c *gin.Context) {
 		return
 	}
 
-	response.OK(c, gin.H{
-		"list":     records,
-		"page":     page,
-		"pageSize": size,
-		"total":    total,
-	})
+	response.OKWithPage(c, records, total, page, size)
 }
 
 // GetSkillPlan 获取技能计划详情

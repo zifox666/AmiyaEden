@@ -41,6 +41,7 @@ func (h *NewbroUserHandler) ListMyAffiliationHistory(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "200"))
+	page, size = normalizeLedgerPagination(page, size)
 	result, total, err := h.affSvc.ListMyAffiliationHistory(userID, page, size)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())

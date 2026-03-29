@@ -142,6 +142,7 @@ func (h *WelfareHandler) AdminListWelfares(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizePagination(req.Current, req.Size, 20, 100)
 
 	filter := repository.WelfareFilter{
 		Status: req.Status,
@@ -222,6 +223,7 @@ func (h *WelfareHandler) AdminListApplications(c *gin.Context) {
 		req.Current = 1
 		req.Size = 50
 	}
+	req.Current, req.Size = normalizeLedgerPagination(req.Current, req.Size)
 
 	var filter repository.WelfareApplicationFilter
 	if strings.Contains(req.Status, ",") {
@@ -317,12 +319,7 @@ type myApplicationsRequest struct {
 func (h *WelfareHandler) ListMyApplications(c *gin.Context) {
 	var req myApplicationsRequest
 	_ = c.ShouldBindJSON(&req) // current/size/status are optional
-	if req.Current < 1 {
-		req.Current = 1
-	}
-	if req.Size < 1 || req.Size > 100 {
-		req.Size = 10
-	}
+	req.Current, req.Size = normalizePagination(req.Current, req.Size, 10, 100)
 
 	userID := middleware.GetUserID(c)
 	result, total, err := h.svc.ListMyApplications(userID, req.Current, req.Size, req.Status)

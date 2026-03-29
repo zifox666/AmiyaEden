@@ -180,12 +180,8 @@ func (s *SkillPlanService) CreateSkillPlan(userID uint, req *CreateSkillPlanRequ
 
 // ListSkillPlans 获取技能计划列表
 func (s *SkillPlanService) ListSkillPlans(page, pageSize int, keyword string) ([]SkillPlanListItemResp, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 50
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 50, 100)
 
 	plans, total, err := s.repo.List(page, pageSize, strings.TrimSpace(keyword))
 	if err != nil {

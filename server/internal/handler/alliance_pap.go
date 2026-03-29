@@ -86,6 +86,7 @@ func (h *AlliancePAPHandler) GetAllAlliancePAP(c *gin.Context) {
 	month := int(now.Month())
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	page, size = normalizeLedgerPagination(page, size)
 
 	if y := c.Query("year"); y != "" {
 		if v, err := strconv.Atoi(y); err == nil {

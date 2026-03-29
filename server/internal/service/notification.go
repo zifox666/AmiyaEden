@@ -58,14 +58,8 @@ func (s *NotificationService) ListNotifications(userID uint, req *ListNotificati
 	}
 
 	// 2. 构建筛选条件
-	page := req.Page
-	if page <= 0 {
-		page = 1
-	}
-	pageSize := req.PageSize
-	if pageSize <= 0 {
-		pageSize = 20
-	}
+	page := normalizePage(req.Page)
+	pageSize := normalizePageSize(req.PageSize, 20, 100)
 
 	filter := repository.NotificationFilter{
 		CharacterIDs: charIDs,

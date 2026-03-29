@@ -49,6 +49,7 @@ func (h *SysWalletHandler) GetMyTransactions(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizeLedgerPagination(req.Current, req.Size)
 	userID := middleware.GetUserID(c)
 
 	records, total, err := h.svc.GetMyTransactions(userID, req.Current, req.Size)
@@ -71,6 +72,7 @@ func (h *SysWalletHandler) AdminListWallets(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizeLedgerPagination(req.Current, req.Size)
 
 	wallets, total, err := h.svc.AdminListWallets(req.Current, req.Size)
 	if err != nil {
@@ -137,6 +139,7 @@ func (h *SysWalletHandler) AdminListTransactions(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizeLedgerPagination(req.Current, req.Size)
 
 	filter := repository.WalletTransactionFilter{
 		UserID:      req.UserID,
@@ -169,6 +172,7 @@ func (h *SysWalletHandler) AdminListLogs(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizeLedgerPagination(req.Current, req.Size)
 
 	filter := repository.WalletLogFilter{
 		OperatorID: req.OperatorID,
@@ -204,6 +208,7 @@ func (h *SysWalletHandler) GetWalletTransactions(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	page, size = normalizeLedgerPagination(page, size)
 
 	records, total, err := h.svc.GetMyTransactions(userID, page, size)
 	if err != nil {

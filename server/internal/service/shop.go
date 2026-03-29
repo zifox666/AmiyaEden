@@ -34,12 +34,8 @@ func NewShopService() *ShopService {
 
 // ListOnSaleProducts 获取上架商品列表
 func (s *ShopService) ListOnSaleProducts(page, pageSize int, productType string) ([]model.ShopProduct, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 	status := model.ProductStatusOnSale
 	filter := repository.ProductFilter{Status: &status, Type: productType}
 	return s.repo.ListProducts(page, pageSize, filter)
@@ -201,24 +197,16 @@ func (s *ShopService) getUserSnapshot(userID uint) (mainCharName, nickname, qq, 
 
 // GetMyOrders 获取我的订单
 func (s *ShopService) GetMyOrders(userID uint, page, pageSize int, status string) ([]model.ShopOrder, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 	filter := repository.OrderFilter{UserID: &userID, Status: status}
 	return s.repo.ListOrders(page, pageSize, filter)
 }
 
 // GetMyRedeemCodes 获取我的兑换码
 func (s *ShopService) GetMyRedeemCodes(userID uint, page, pageSize int) ([]model.ShopRedeemCode, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 	return s.repo.ListRedeemCodesByUser(userID, page, pageSize)
 }
 
@@ -296,20 +284,14 @@ func (s *ShopService) AdminDeleteProduct(id uint) error {
 
 // AdminListProducts 管理员查询商品（包含下架）
 func (s *ShopService) AdminListProducts(page, pageSize int, filter repository.ProductFilter) ([]model.ShopProduct, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 	return s.repo.ListProducts(page, pageSize, filter)
 }
 
 // AdminListOrders 管理员查询订单
 func (s *ShopService) AdminListOrders(page, pageSize int, filter repository.OrderFilter) ([]model.ShopOrder, int64, error) {
-	if page < 1 {
-		page = 1
-	}
+	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
 	return s.repo.ListOrders(page, pageSize, filter)
 }
@@ -392,12 +374,8 @@ func (s *ShopService) AdminRejectOrder(orderID uint, operatorID uint, remark str
 
 // AdminListRedeemCodes 管理员查询兑换码
 func (s *ShopService) AdminListRedeemCodes(page, pageSize int, productID *uint, status string) ([]model.ShopRedeemCode, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = normalizePage(page)
+	pageSize = normalizePageSize(pageSize, 20, 100)
 	return s.repo.AdminListRedeemCodes(page, pageSize, productID, status)
 }
 

@@ -277,7 +277,7 @@
   const memberPageSize = 260
 
   const apiFn = (params: { current: number; size: number }) =>
-    fetchMembersWithPap(fleetId.value, { current: params.current, size: memberPageSize })
+    fetchMembersWithPap(fleetId.value, { current: params.current, size: params.size })
 
   const {
     columns,

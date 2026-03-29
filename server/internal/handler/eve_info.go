@@ -130,6 +130,7 @@ func (h *EveInfoHandler) GetContracts(c *gin.Context) {
 		req.Current = 1
 		req.Size = 20
 	}
+	req.Current, req.Size = normalizeLedgerPagination(req.Current, req.Size)
 
 	list, total, err := h.contractSvc.GetUserContracts(userID, &req)
 	if err != nil {

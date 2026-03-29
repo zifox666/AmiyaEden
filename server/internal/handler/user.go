@@ -24,6 +24,7 @@ func NewUserHandler() *UserHandler {
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("current", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	page, size = normalizeLedgerPagination(page, size)
 
 	filter := repository.UserFilter{
 		Keyword: c.Query("keyword"),
