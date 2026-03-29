@@ -35,6 +35,25 @@ model → repository → service → handler → router/middleware
 | `middleware` | `model` (for role constants), `pkg/*`, `service` (for auth) | `handler`, `repository` directly |
 | `pkg/*` | standard library, external packages | `internal/*` |
 
+### Handler Input Parsing
+
+- Handlers own request parsing and type conversion for path params, query params, and request bodies.
+- When converting request-sourced numeric IDs from `uint64` to `uint`, handlers must reject values larger than `math.MaxUint32` before the cast.
+- Do not write direct `uint(strconv.ParseUint(...))` style conversions without an explicit upper-bound check.
+- Keep this validation in handlers rather than pushing request parsing into services.
+
+Preferred pattern:
+
+```go
+id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+if err != nil || id > math.MaxUint32 {
+    response.Fail(c, response.CodeParamError, "invalid id")
+    return
+}
+
+typedID := uint(id)
+```
+
 ### Common Violations
 
 **Handler importing repository:**

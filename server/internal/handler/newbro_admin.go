@@ -3,6 +3,7 @@ package handler
 import (
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
+	"math"
 	"strconv"
 	"time"
 
@@ -38,7 +39,7 @@ func (h *NewbroAdminHandler) ListCaptains(c *gin.Context) {
 
 func (h *NewbroAdminHandler) GetCaptainDetail(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("user_id"), 10, 64)
-	if err != nil {
+	if err != nil || id > math.MaxUint32 {
 		response.Fail(c, response.CodeParamError, "invalid user_id")
 		return
 	}

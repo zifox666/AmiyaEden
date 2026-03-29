@@ -5,6 +5,7 @@ import (
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 
@@ -91,7 +92,7 @@ func parseOptionalUintQueryParam(field, raw string) (*uint, error) {
 		return nil, nil
 	}
 	parsed, err := strconv.ParseUint(raw, 10, 64)
-	if err != nil {
+	if err != nil || parsed > math.MaxUint32 {
 		return nil, fmt.Errorf("invalid parameter %s", field)
 	}
 	value := uint(parsed)

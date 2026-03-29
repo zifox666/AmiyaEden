@@ -2,8 +2,10 @@ package handler
 
 import (
 	"bytes"
+	"math"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -38,6 +40,13 @@ func TestParseOptionalNewbroDateRejectsInvalidDate(t *testing.T) {
 func TestParseOptionalUintQueryParamRejectsInvalidInput(t *testing.T) {
 	if _, err := parseOptionalUintQueryParam("player_user_id", "not-a-number"); err == nil {
 		t.Fatal("expected invalid player_user_id to return an error")
+	}
+}
+
+func TestParseOptionalUintQueryParamRejectsOverflow(t *testing.T) {
+	overflow := strconv.FormatUint(uint64(math.MaxUint32)+1, 10)
+	if _, err := parseOptionalUintQueryParam("player_user_id", overflow); err == nil {
+		t.Fatal("expected overflow player_user_id to return an error")
 	}
 }
 
