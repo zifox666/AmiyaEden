@@ -39,8 +39,7 @@
     fetchGetUserList,
     fetchDeleteUser,
     fetchImpersonateUser,
-    fetchGetRoleDefinitions,
-    fetchGetUserRoles
+    fetchGetRoleDefinitions
   } from '@/api/system-manage'
   import { fetchGetUserInfo } from '@/api/auth'
   import { useUserStore } from '@/store/modules/user'
@@ -81,8 +80,6 @@
   }
   const rolePriorityMap = ref<Record<string, number>>({ ...DEFAULT_ROLE_PRIORITY })
   const rolePriorityLoaded = ref(false)
-  let roleHydrationVersion = 0
-
   // 角色显示配置
   const ROLE_CONFIG: Record<string, { type: string; text: string }> = {
     super_admin: { type: 'danger', text: t('userAdmin.roles.super_admin') },
@@ -158,35 +155,7 @@
     }
   }
 
-  const hydrateUserRoles = async (rows: UserListItem[]) => {
-    if (rows.length === 0) return
 
-    const hydrationVersion = ++roleHydrationVersion
-    await ensureRolePriorityMap()
-
-    const hydratedRows = await Promise.all(
-      rows.map(async (row) => {
-        try {
-          const userRoles = await fetchGetUserRoles(row.id)
-          const roles = sortRoles(userRoles.map((role) => role.code))
-          return {
-            ...row,
-            roles: roles.length > 0 ? roles : ['guest']
-          }
-        } catch (error) {
-          const roles = getDisplayRoles(row)
-          console.error(`Failed to load roles for user ${row.id}`, error)
-          return {
-            ...row,
-            roles
-          }
-        }
-      })
-    )
-
-    if (hydrationVersion !== roleHydrationVersion) return
-    data.value = hydratedRows
-  }
 
   const {
     columns,
@@ -331,8 +300,8 @@
         })
     },
     hooks: {
-      onSuccess: (rows) => {
-        void hydrateUserRoles(rows as UserListItem[])
+      onSuccess: () => {
+        void ensureRolePriorityMap()
       }
     }
   })

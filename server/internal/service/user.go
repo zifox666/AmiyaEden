@@ -45,8 +45,8 @@ func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter
 	if page < 1 {
 		page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
+	if pageSize < 1 || pageSize > 200 {
+		pageSize = 200
 	}
 	users, total, err := s.repo.List(page, pageSize, filter)
 	if err != nil {
