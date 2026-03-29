@@ -80,6 +80,7 @@
   }
   const rolePriorityMap = ref<Record<string, number>>({ ...DEFAULT_ROLE_PRIORITY })
   const rolePriorityLoaded = ref(false)
+  let roleHydrationVersion = 0
   // 角色显示配置
   const ROLE_CONFIG: Record<string, { type: string; text: string }> = {
     super_admin: { type: 'danger', text: t('userAdmin.roles.super_admin') },
