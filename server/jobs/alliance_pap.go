@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"amiya-eden/global"
-	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 //   - 每月第一天 01:00 补拉上月数据并归档
 func registerAlliancePAPJob(c *cron.Cron) {
 	svc := service.NewAlliancePAPService()
-	papRepo := repository.NewAlliancePAPRepository()
 
 	// ── 每小时整点刷新当月 ──
 	hourlyID, err := c.AddFunc("0 0 * * * *", func() {
@@ -38,13 +36,25 @@ func registerAlliancePAPJob(c *cron.Cron) {
 		month := int(lastMonth.Month())
 
 		global.Logger.Info("开始联盟 PAP 月度归档", zap.Int("year", year), zap.Int("month", month))
+
+		// 先拉取最终数据
 		svc.FetchAllUsers(year, month)
 
-		// 标记归档
-		if err := papRepo.MarkArchived(year, month); err != nil {
-			global.Logger.Error("联盟 PAP 归档标记失败", zap.Error(err))
+		// 统一调用 SettleMonth 完成归档 + 兑换 + 差额补偿
+		// operatorID=0 表示系统自动操作，corporationIDs 为空即处理所有军团
+		result, err := svc.SettleMonth(year, month, true, 0, nil)
+		if err != nil {
+			global.Logger.Error("联盟 PAP 月度结算失败", zap.Int("year", year), zap.Int("month", month), zap.Error(err))
 		} else {
-			global.Logger.Info("联盟 PAP 月度归档完成", zap.Int("year", year), zap.Int("month", month))
+			global.Logger.Info("联盟 PAP 月度结算完成",
+				zap.Int("year", year),
+				zap.Int("month", month),
+				zap.Int("settled_users", result.TotalUsers),
+				zap.Int("skipped_users", result.SkippedUsers),
+				zap.Float64("total_wallet", result.TotalWallet),
+				zap.Int("adjusted_users", result.AdjustedUsers),
+				zap.Float64("total_adjusted", result.TotalAdjusted),
+			)
 		}
 	})
 	if err != nil {

@@ -69,6 +69,7 @@ func (WalletLog) TableName() string { return "wallet_log" }
 const (
 	WalletRefPapReward   = "pap_reward"    // PAP 奖励
 	WalletRefPapConvert  = "pap_convert"   // 联盟 PAP 月度兑换
+	WalletRefPapAdjust   = "pap_adjust"    // 联盟 PAP 兑换差额补偿
 	WalletRefManual      = "manual"        // 手动操作
 	WalletRefRedeem      = "redeem"        // 兑换消费
 	WalletRefAdminAdjust = "admin_adjust"  // 管理员调整

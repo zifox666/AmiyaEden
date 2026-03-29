@@ -66,6 +66,14 @@
               t('alliancePap.settle.resultWallet', { amount: settleResult.total_wallet.toFixed(2) })
             }}
           </div>
+          <div v-if="form.wallet_convert && settleResult.adjusted_users > 0">
+            {{
+              t('alliancePap.settle.resultAdjusted', {
+                count: settleResult.adjusted_users,
+                amount: settleResult.total_adjusted.toFixed(2)
+              })
+            }}
+          </div>
         </div>
       </template>
     </ElAlert>

@@ -97,6 +97,8 @@ export interface SettleMonthResult {
   total_users: number
   skipped_users: number
   total_wallet: number
+  adjusted_users: number
+  total_adjusted: number
 }
 
 /** 管理员：获取 PAP 兑换配置 */

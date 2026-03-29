@@ -53,7 +53,9 @@
     "search": "Search",
     "reset": "Reset",
     "createSuccess": "Created successfully",
-    "updateSuccess": "Updated successfully"
+    "updateSuccess": "Updated successfully",
+    "reason": "Reason",
+    "type"  : "Type"
   },
   "search": {
     "placeholder": "Search page",
@@ -1195,7 +1197,8 @@
       "resultTitle": "Settlement Result",
       "resultUsers": "{count} users settled",
       "resultSkipped": "{count} users skipped",
-      "resultWallet": "Total wallet issued: {amount}"
+      "resultWallet": "Total wallet issued: {amount}",
+      "resultAdjusted": "Adjustment applied to {count} users, total {amount} (positive = added, negative = deducted)"
     }
   },
   "resultPage": {

@@ -376,11 +376,13 @@ func (s *AlliancePAPService) SetExchangeConfig(req *SetExchangeConfigRequest) (*
 
 // SettleMonthResult 月度结算结果
 type SettleMonthResult struct {
-	Year         int     `json:"year"`
-	Month        int     `json:"month"`
-	TotalUsers   int     `json:"total_users"`   // 本次参与结算的用户数
-	SkippedUsers int     `json:"skipped_users"` // 跳过（已兑换或找不到用户）
-	TotalWallet  float64 `json:"total_wallet"`  // 本次共发放系统钱包数量
+	Year          int     `json:"year"`
+	Month         int     `json:"month"`
+	TotalUsers    int     `json:"total_users"`    // 本次参与结算的用户数
+	SkippedUsers  int     `json:"skipped_users"`  // 跳过（已兑换或找不到用户）
+	TotalWallet   float64 `json:"total_wallet"`   // 本次共发放系统钱包数量
+	AdjustedUsers int     `json:"adjusted_users"` // 差额补偿涉及的用户数
+	TotalAdjusted float64 `json:"total_adjusted"` // 差额补偿合计（正=补发，负=扣回）
 }
 
 // SettleMonth 归档某月并将 PAP 批量兑换为系统钱包
@@ -499,6 +501,93 @@ func (s *AlliancePAPService) SettleMonth(year, month int, walletConvert bool, op
 
 		result.TotalUsers++
 		result.TotalWallet += walletAmount
+	}
+
+	// ─── 5. 差额补偿：已兑换但 PAP 数据事后被更新的记录 ───
+	redeemedSummaries, err := s.repo.ListRedeemedSummaries(year, month, corporationIDs)
+	if err != nil {
+		global.Logger.Warn("PAP 结算：查询已兑换汇总失败", zap.Error(err))
+		return result, nil
+	}
+
+	const epsilon = 0.005 // 小于 0.5 分的误差忽略
+	for _, summary := range redeemedSummaries {
+		expectedWallet := summary.TotalPap * walletPerPAP
+		delta := expectedWallet - summary.WalletIssued
+		if delta < epsilon && delta > -epsilon {
+			continue // 无差异，跳过
+		}
+
+		// 用 expected 值作为 refID 的一部分，保证同一目标值只补一次
+		refID := fmt.Sprintf("pap-adj:%d:%d:%s:%.2f", year, month, summary.MainCharacter, expectedWallet)
+		if exists, _ := s.walletRepo.ExistsTransactionByRefID(refID); exists {
+			continue
+		}
+
+		char, err := s.charRepo.GetByCharacterName(summary.MainCharacter)
+		if err != nil || char.CharacterID == 0 {
+			global.Logger.Warn("PAP 差额补偿：找不到角色",
+				zap.String("main_char", summary.MainCharacter))
+			continue
+		}
+		user, err := s.userRepo.GetByPrimaryCharacterID(char.CharacterID)
+		if err != nil || user == nil {
+			global.Logger.Warn("PAP 差额补偿：找不到对应用户",
+				zap.String("main_char", summary.MainCharacter))
+			continue
+		}
+
+		wallet, err := s.walletRepo.GetOrCreateWallet(user.ID)
+		if err != nil {
+			global.Logger.Warn("PAP 差额补偿：获取钱包失败",
+				zap.Uint("user_id", user.ID), zap.Error(err))
+			continue
+		}
+
+		newBalance := wallet.Balance + delta
+		tx := global.DB.Begin()
+
+		if err := s.walletRepo.UpdateBalanceTx(tx, user.ID, newBalance); err != nil {
+			tx.Rollback()
+			global.Logger.Warn("PAP 差额补偿：更新余额失败",
+				zap.Uint("user_id", user.ID), zap.Error(err))
+			continue
+		}
+
+		action := "补发"
+		if delta < 0 {
+			action = "扣回"
+		}
+		walletTx := &model.WalletTransaction{
+			UserID:       user.ID,
+			Amount:       delta,
+			Reason:       fmt.Sprintf("%d年%d月联盟PAP兑换差额%s（原%.2f→新%.2f，差%.2f）", year, month, action, summary.WalletIssued, expectedWallet, delta),
+			RefType:      model.WalletRefPapAdjust,
+			RefID:        refID,
+			BalanceAfter: newBalance,
+			OperatorID:   operatorID,
+		}
+		if err := s.walletRepo.CreateTransactionTx(tx, walletTx); err != nil {
+			tx.Rollback()
+			global.Logger.Warn("PAP 差额补偿：写入流水失败",
+				zap.Uint("user_id", user.ID), zap.Error(err))
+			continue
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			global.Logger.Warn("PAP 差额补偿：提交事务失败",
+				zap.Uint("user_id", user.ID), zap.Error(err))
+			continue
+		}
+
+		// 更新 wallet_issued 为新值
+		if err := s.repo.MarkSummaryRedeemed(summary.ID, expectedWallet); err != nil {
+			global.Logger.Warn("PAP 差额补偿：更新 wallet_issued 失败",
+				zap.Uint("summary_id", summary.ID), zap.Error(err))
+		}
+
+		result.AdjustedUsers++
+		result.TotalAdjusted += delta
 	}
 
 	return result, nil

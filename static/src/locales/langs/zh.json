@@ -53,7 +53,9 @@
     "search": "搜索",
     "reset": "重置",
     "createSuccess": "创建成功",
-    "updateSuccess": "更新成功"
+    "updateSuccess": "更新成功",
+    "reason": "原因",
+    "type"  : "类型"
   },
   "search": {
     "placeholder": "搜索页面",
@@ -1196,7 +1198,8 @@
       "resultTitle": "结算结果",
       "resultUsers": "实际展开结算 {count} 人",
       "resultSkipped": "跳过 {count} 人（无对应用户/已兑换）",
-      "resultWallet": "共发放系统钱包 {amount}"
+      "resultWallet": "共发放系统钱包 {amount}",
+      "resultAdjusted": "差额补偿 {count} 人，合计 {amount}（正=补发，负=扣回）"
     }
   },
   "resultPage": {

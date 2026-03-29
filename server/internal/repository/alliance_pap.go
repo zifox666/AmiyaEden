@@ -175,3 +175,20 @@ func (r *AlliancePAPRepository) MarkSummaryRedeemed(id uint, walletIssued float6
 			"wallet_issued": walletIssued,
 		}).Error
 }
+
+// ListRedeemedSummaries 查询某月已兑换的汇总列表，用于差额补偿
+// corporationIDs 非空时只返回这些军团的数据
+func (r *AlliancePAPRepository) ListRedeemedSummaries(year, month int, corporationIDs []int64) ([]model.AlliancePAPSummary, error) {
+	var list []model.AlliancePAPSummary
+	db := global.DB.
+		Where("year = ? AND month = ? AND is_redeemed = true AND total_pap > 0", year, month)
+	if len(corporationIDs) > 0 {
+		strIDs := make([]string, len(corporationIDs))
+		for i, id := range corporationIDs {
+			strIDs[i] = fmt.Sprintf("%d", id)
+		}
+		db = db.Where("corporation_id IN ?", strIDs)
+	}
+	err := db.Find(&list).Error
+	return list, err
+}
