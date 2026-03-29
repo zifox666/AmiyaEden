@@ -426,21 +426,29 @@ func (s *RoleService) seedDefaultRoleMenus(nameToID map[string]uint) {
 	global.Logger.Info("默认角色菜单映射完成")
 }
 
-// CheckCorpAccessAndAdjustRole 检查用户名下所有角色的军团归属是否在准入列表内
+// CheckCorpAccessAndAdjustRole 检查用户名下所有角色的军团/联盟归属是否在准入列表内
 // 规则：
-//   - AllowCorporations 为空 → 不限制，直接返回
+//   - basic_access 名单为空 → 不限制，直接返回
 //   - admin / super_admin → 不受影响
-//   - 至少有一个角色的 CorporationID 在允许列表内 → 确保拥有 user 角色（从 guest 升级）
+//   - 至少有一个角色的 CorporationID 或 AllianceID 在允许列表内 → 确保拥有 user 角色（从 guest 升级）
 //   - 没有符合条件的角色 → 降级为 guest（清除所有非高级角色）
 func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID uint) error {
-	allowCorps := global.Config.App.AllowCorporations
-	if len(allowCorps) == 0 {
+	allowRepo := repository.NewAllowedEntityRepository()
+	allowCorpIDs, allowAllianceIDs, err := allowRepo.GetAllIDs(model.AllowListBasicAccess)
+	if err != nil {
+		return err
+	}
+	if len(allowCorpIDs)+len(allowAllianceIDs) == 0 {
 		return nil
 	}
 
-	allowSet := make(map[int64]struct{}, len(allowCorps))
-	for _, id := range allowCorps {
-		allowSet[id] = struct{}{}
+	allowCorpSet := make(map[int64]struct{}, len(allowCorpIDs))
+	for _, id := range allowCorpIDs {
+		allowCorpSet[id] = struct{}{}
+	}
+	allowAllianceSet := make(map[int64]struct{}, len(allowAllianceIDs))
+	for _, id := range allowAllianceIDs {
+		allowAllianceSet[id] = struct{}{}
 	}
 
 	// 查询该用户绑定的所有 EVE 角色
@@ -450,11 +458,17 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 		return err
 	}
 
-	// 检查是否有角色属于允许军团
+	// 检查是否有角色属于允许军团或允许联盟
 	hasAccess := false
 	for _, c := range chars {
 		if c.CorporationID != 0 {
-			if _, ok := allowSet[c.CorporationID]; ok {
+			if _, ok := allowCorpSet[c.CorporationID]; ok {
+				hasAccess = true
+				break
+			}
+		}
+		if c.AllianceID != nil && *c.AllianceID != 0 {
+			if _, ok := allowAllianceSet[*c.AllianceID]; ok {
 				hasAccess = true
 				break
 			}
@@ -491,6 +505,8 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 		s.InvalidateUserCache(ctx, userID)
 		global.Logger.Info("[CorpCheck] 用户升级为 user",
 			zap.Uint("user_id", userID))
+		// 写入同步日志
+		s.writeBasicAccessLog(userID, userRole.ID, userRole.Name, model.RoleUser, "add")
 	} else {
 		// 已经是纯 guest 则无需变更
 		if len(rollCodes) == 1 && rollCodes[0] == model.RoleGuest {
@@ -511,6 +527,10 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 		s.InvalidateUserCache(ctx, userID)
 		global.Logger.Info("[CorpCheck] 用户降级为 guest",
 			zap.Uint("user_id", userID))
+		// 写入同步日志（记录 user 角色被移除）
+		if userRole, err := s.repo.GetByCode(model.RoleUser); err == nil {
+			s.writeBasicAccessLog(userID, userRole.ID, userRole.Name, model.RoleUser, "remove")
+		}
 	}
 	return nil
 }
@@ -528,6 +548,26 @@ func (s *RoleService) EnsureUserHasDefaultRole(ctx context.Context, userID uint)
 			global.Logger.Error("分配默认角色失败", zap.Uint("userID", userID), zap.Error(err))
 		}
 		s.InvalidateUserCache(ctx, userID)
+	}
+}
+
+// writeBasicAccessLog 写入基础访问权限变更日志（失败仅打 warn，不影响主流程）
+func (s *RoleService) writeBasicAccessLog(userID uint, roleID uint, roleName, roleCode, action string) {
+	username := ""
+	if u, err := s.userRepo.GetByID(userID); err == nil {
+		username = u.Nickname
+	}
+	logEntry := &model.AutoRoleLog{
+		UserID:   userID,
+		Username: username,
+		RoleID:   roleID,
+		RoleName: roleName,
+		RoleCode: roleCode,
+		Action:   action,
+		Reason:   "basic_access",
+	}
+	if err := repository.NewAutoRoleRepository().CreateAutoRoleLog(logEntry); err != nil {
+		global.Logger.Warn("[CorpCheck] 写入日志失败", zap.Error(err))
 	}
 }
 

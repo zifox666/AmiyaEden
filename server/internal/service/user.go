@@ -24,14 +24,47 @@ func (s *UserService) GetUserByID(id uint) (*model.User, error) {
 	return s.repo.GetByID(id)
 }
 
-func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter) ([]model.User, int64, error) {
+func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter) ([]model.UserListItemDTO, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 10
 	}
-	return s.repo.List(page, pageSize, filter)
+	users, total, err := s.repo.List(page, pageSize, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 批量查询每个用户在 user_role 中的角色 code
+	ids := make([]uint, len(users))
+	for i, u := range users {
+		ids[i] = u.ID
+	}
+	roleMap, _ := s.repo.GetRoleCodesByUserIDs(ids) // 查询失败时退化为空 map
+
+	dtos := make([]model.UserListItemDTO, len(users))
+	for i, u := range users {
+		roles := roleMap[u.ID]
+		if len(roles) == 0 && u.Role != "" {
+			// user_role 尚无记录时，降级使用 user.role 历史字段
+			roles = []string{u.Role}
+		}
+		dtos[i] = model.UserListItemDTO{
+			ID:                 u.ID,
+			Nickname:           u.Nickname,
+			Avatar:             u.Avatar,
+			Status:             u.Status,
+			Role:               u.Role,
+			Roles:              roles,
+			PrimaryCharacterID: u.PrimaryCharacterID,
+			LastLoginAt:        u.LastLoginAt,
+			LastLoginIP:        u.LastLoginIP,
+			CreatedAt:          u.CreatedAt,
+			UpdatedAt:          u.UpdatedAt,
+		}
+	}
+	return dtos, total, nil
 }
 
 func (s *UserService) UpdateUser(user *model.User) error {

@@ -216,3 +216,36 @@ export function fetchGetAutoRoleLogs(params: { current: number; size: number }) 
     params
   })
 }
+
+/** 获取准入名单 */
+export function fetchGetAllowedEntities(listType: 'auto_role' | 'basic_access') {
+  return request.get<Api.SystemManage.AllowedEntity[]>({
+    url: `/api/v1/system/auto-role/allow-list/${listType}`
+  })
+}
+
+/** 添加实体到准入名单 */
+export function fetchAddAllowedEntity(
+  listType: 'auto_role' | 'basic_access',
+  data: { entity_id: number; entity_type: 'alliance' | 'corporation'; entity_name: string }
+) {
+  return request.post<Api.SystemManage.AllowedEntity>({
+    url: `/api/v1/system/auto-role/allow-list/${listType}`,
+    data
+  })
+}
+
+/** 从准入名单中删除实体 */
+export function fetchRemoveAllowedEntity(listType: 'auto_role' | 'basic_access', id: number) {
+  return request.del<null>({
+    url: `/api/v1/system/auto-role/allow-list/${listType}/${id}`
+  })
+}
+
+/** 通过 zkillboard 搜索 EVE 联盟/军团 */
+export function fetchSearchEveEntities(q: string) {
+  return request.get<Api.SystemManage.ZkbSearchResult[]>({
+    url: '/api/v1/system/auto-role/eve-search',
+    params: { q }
+  })
+}

@@ -17,3 +17,18 @@ type User struct {
 func (User) TableName() string {
 	return "user"
 }
+
+// UserListItemDTO 用户列表返回 DTO（含多角色）
+type UserListItemDTO struct {
+	ID                 uint       `json:"id"`
+	Nickname           string     `json:"nickname"`
+	Avatar             string     `json:"avatar"`
+	Status             int8       `json:"status"`
+	Role               string     `json:"role"` // 向后兼容字段
+	Roles              []string   `json:"roles"`
+	PrimaryCharacterID int64      `json:"primary_character_id"`
+	LastLoginAt        *time.Time `json:"last_login_at"`
+	LastLoginIP        string     `json:"last_login_ip"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
+}

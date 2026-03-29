@@ -40,9 +40,6 @@ sde:
   proxy: "http://127.0.0.1:7890"    # 下载 SDE 时使用的代理，例如 http://127.0.0.1:7890 或 socks5://127.0.0.1:1080，留空不使用
   download_url: "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"  # SDE 数据下载 URL，默认为 GitHub API 获取最新 release 信息
 
-app:
-  allow_corporations: [] # 允许访问的公司 ID 列表，空表示不限制
-
 alliance_pap:
   base_url: "http://jp.newdoublex.space:25220"  # 联盟 PAP API 地址
   api_key: ""                                    # 联盟 PAP API Key

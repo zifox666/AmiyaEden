@@ -52,10 +52,12 @@
     "logOutTips": "Do you want to log out?",
     "search": "Search",
     "reset": "Reset",
+    "loading": "Loading...",
     "createSuccess": "Created successfully",
     "updateSuccess": "Updated successfully",
     "reason": "Reason",
-    "type"  : "Type"
+    "type"  : "Type",
+    "actions": "Actions"
   },
   "search": {
     "placeholder": "Search page",
@@ -1251,7 +1253,8 @@
     "tabs": {
       "esiRole": "Corporation Role Mappings",
       "title": "Corporation Title Mappings",
-      "log": "Sync Logs"
+      "log": "Sync Logs",
+      "allowList": "Access Config"
     },
     "descriptions": {
       "esiRole": "Configure the mapping between EVE corporation roles and system roles.",
@@ -1297,7 +1300,35 @@
     "mappingCreated": "Mapping created",
     "createFailed": "Failed to create mapping",
     "deleteSuccess": "Deleted",
-    "deleteFailed": "Failed to delete"
+    "deleteFailed": "Failed to delete",
+    "allowList": {
+      "autoRoleTitle": "Auto Role Access List",
+      "autoRoleDesc": "Only members of listed alliances/corporations will have auto role sync applied. Empty means no restriction.",
+      "basicAccessTitle": "Basic Access List",
+      "basicAccessDesc": "Only members of listed alliances/corporations can receive the basic user role. Empty means no restriction.",
+      "addEntity": "Add Alliance/Corporation",
+      "searchPlaceholder": "Search by name",
+      "columns": {
+        "entityType": "Type",
+        "entityName": "Name",
+        "entityId": "ID",
+        "type": "Type",
+        "name": "Name",
+        "createdAt": "Created At"
+      },
+      "entityTypes": {
+        "alliance": "Alliance",
+        "corporation": "Corporation"
+      },
+      "deleteConfirm": "Remove from list?",
+      "removeConfirm": "Remove from list?",
+      "addSuccess": "Added to list",
+      "addFailed": "Failed to add",
+      "removeSuccess": "Removed from list",
+      "removeFailed": "Failed to remove",
+      "searchFailed": "Search failed",
+      "noResults": "No alliances or corporations found"
+    }
   },
   "shopAdmin": {
     "tabs": {

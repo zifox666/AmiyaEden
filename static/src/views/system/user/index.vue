@@ -122,18 +122,25 @@
           }
         },
         {
-          prop: 'role',
+          prop: 'roles',
           label: t('common.role'),
-          width: 140,
+          width: 200,
           formatter: (row) => {
-            const cfg = getRoleConfig(row.role)
-            return h(ElTag, { type: cfg.type as any, size: 'small' }, () => cfg.text)
+            const roles: string[] = row.roles?.length ? row.roles : [row.role].filter(Boolean)
+            return h(
+              'div',
+              { class: 'flex flex-wrap gap-1' },
+              roles.map((r) => {
+                const cfg = getRoleConfig(r)
+                return h(ElTag, { type: cfg.type as any, size: 'small' }, () => cfg.text)
+              })
+            )
           }
         },
         {
           prop: 'status',
           label: t('common.status'),
-          width: 100,
+          minWidth: 100,
           formatter: (row) => {
             const cfg = getStatusConfig(row.status)
             return h(ElTag, { type: cfg.type as any, size: 'small' }, () => cfg.text)
@@ -142,26 +149,26 @@
         {
           prop: 'last_login_at',
           label: t('userAdmin.table.lastLogin'),
-          width: 180,
+          minWidth: 180,
           sortable: true,
           formatter: (row) => row.last_login_at || '-'
         },
         {
           prop: 'last_login_ip',
           label: t('userAdmin.table.loginIp'),
-          width: 140,
+          minWidth: 140,
           formatter: (row) => row.last_login_ip || '-'
         },
         {
           prop: 'created_at',
           label: t('userAdmin.table.registeredAt'),
-          width: 180,
+          minWidth: 180,
           sortable: true
         },
         {
           prop: 'operation',
           label: t('common.operation'),
-          width: 160,
+          minWidth: 160,
           fixed: 'right',
           formatter: (row) =>
             h('div', [

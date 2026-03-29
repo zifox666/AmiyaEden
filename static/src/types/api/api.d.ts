@@ -132,13 +132,14 @@ declare namespace Api {
     /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
-    /** 用户列表项（匹配后端 model.User） */
+    /** 用户列表项（匹配后端 model.UserListItemDTO） */
     interface UserListItem {
       id: number
       nickname: string
       avatar: string
       status: number // 1:正常 0:禁用
-      role: string // 历史兼容字段
+      role: string // 向后兼容字段
+      roles: string[] // 来自 user_role 表的全部角色 code
       last_login_at: string | null
       last_login_ip: string
       created_at: string
@@ -307,6 +308,24 @@ declare namespace Api {
 
     /** 自动权限操作日志列表 */
     type AutoRoleLogList = Api.Common.PaginatedResponse<AutoRoleLog>
+
+    /** 准入名单实体 */
+    interface AllowedEntity {
+      id: number
+      list_type: 'auto_role' | 'basic_access'
+      entity_id: number
+      entity_type: 'alliance' | 'corporation'
+      entity_name: string
+      created_at: string
+    }
+
+    /** zkillboard 搜索结果 */
+    interface ZkbSearchResult {
+      id: number
+      name: string
+      type: 'alliance' | 'corporation'
+      image: string
+    }
   }
 
   /** ESI 刷新队列类型 */

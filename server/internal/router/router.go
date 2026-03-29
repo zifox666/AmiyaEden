@@ -371,6 +371,14 @@ func RegisterRoutes(r *gin.Engine) {
 
 		// 操作日志
 		adminAutoRole.GET("/logs", autoRoleH.ListAutoRoleLogs)
+
+		// 准入名单管理
+		adminAutoRole.GET("/allow-list/:type", autoRoleH.ListAllowedEntities)
+		adminAutoRole.POST("/allow-list/:type", autoRoleH.AddAllowedEntity)
+		adminAutoRole.DELETE("/allow-list/:type/:id", autoRoleH.RemoveAllowedEntity)
+
+		// EVE 实体模糊搜索（zkillboard autocomplete 代理）
+		adminAutoRole.GET("/eve-search", autoRoleH.SearchEveEntities)
 	}
 
 	// Webhook 配置（管理员）

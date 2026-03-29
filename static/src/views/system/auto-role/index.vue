@@ -131,7 +131,12 @@
         <ElTable v-loading="logLoading" :data="logs" border stripe>
           <ElTableColumn :label="t('autoRolePage.columns.index')" type="index" width="60" />
           <ElTableColumn :label="t('autoRolePage.columns.userId')" prop="user_id" width="100" />
-          <ElTableColumn :label="t('autoRolePage.columns.username')" prop="username" min-width="140" show-overflow-tooltip />
+          <ElTableColumn
+            :label="t('autoRolePage.columns.username')"
+            prop="username"
+            min-width="140"
+            show-overflow-tooltip
+          />
           <ElTableColumn :label="t('autoRolePage.columns.roleName')" min-width="160">
             <template #default="{ row }">
               <ElTag size="small" :type="getRoleTagType(row.role_code)" effect="dark">
@@ -142,7 +147,11 @@
           </ElTableColumn>
           <ElTableColumn :label="t('autoRolePage.columns.action')" width="100">
             <template #default="{ row }">
-              <ElTag size="small" :type="row.action === 'add' ? 'success' : 'danger'" effect="plain">
+              <ElTag
+                size="small"
+                :type="row.action === 'add' ? 'success' : 'danger'"
+                effect="plain"
+              >
                 {{ t(`autoRolePage.actions.${row.action}`) }}
               </ElTag>
             </template>
@@ -164,9 +173,164 @@
           />
         </div>
       </ElTabPane>
+
+      <!-- Tab 4: 准入配置 -->
+      <ElTabPane :label="t('autoRolePage.tabs.allowList')" name="allow-list">
+        <!-- auto_role 列表 -->
+        <ElCard class="mb-4" shadow="never">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">{{ t('autoRolePage.allowList.autoRoleTitle') }}</span>
+              <ElButton type="primary" :icon="Plus" @click="openAllowDialog('auto_role')">
+                {{ t('autoRolePage.allowList.addEntity') }}
+              </ElButton>
+            </div>
+          </template>
+          <p class="text-sm text-gray-400 mb-3">{{ t('autoRolePage.allowList.autoRoleDesc') }}</p>
+          <ElTable :data="autoRoleEntities" v-loading="autoRoleLoading" border>
+            <ElTableColumn :label="t('autoRolePage.allowList.columns.type')" width="110">
+              <template #default="{ row }">
+                <ElTag :type="row.entity_type === 'alliance' ? 'warning' : undefined">
+                  {{ t(`autoRolePage.allowList.entityTypes.${row.entity_type}`) }}
+                </ElTag>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn :label="t('autoRolePage.allowList.columns.name')" prop="entity_name" />
+            <ElTableColumn
+              :label="t('autoRolePage.allowList.columns.entityId')"
+              prop="entity_id"
+              width="130"
+            />
+            <ElTableColumn
+              :label="t('autoRolePage.allowList.columns.createdAt')"
+              prop="created_at"
+              width="160"
+            >
+              <template #default="{ row }">{{
+                row.created_at?.slice(0, 19).replace('T', ' ')
+              }}</template>
+            </ElTableColumn>
+            <ElTableColumn :label="t('common.actions')" width="90" align="center">
+              <template #default="{ row }">
+                <ElPopconfirm
+                  :title="t('autoRolePage.allowList.removeConfirm')"
+                  @confirm="handleRemoveAllowedEntity(row.id, 'auto_role')"
+                >
+                  <template #reference>
+                    <ElButton type="danger" link size="small">{{ t('common.delete') }}</ElButton>
+                  </template>
+                </ElPopconfirm>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElCard>
+
+        <!-- basic_access 列表 -->
+        <ElCard shadow="never">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">{{ t('autoRolePage.allowList.basicAccessTitle') }}</span>
+              <ElButton type="primary" :icon="Plus" @click="openAllowDialog('basic_access')">
+                {{ t('autoRolePage.allowList.addEntity') }}
+              </ElButton>
+            </div>
+          </template>
+          <p class="text-sm text-gray-400 mb-3">{{
+            t('autoRolePage.allowList.basicAccessDesc')
+          }}</p>
+          <ElTable :data="basicAccessEntities" v-loading="basicAccessLoading" border>
+            <ElTableColumn :label="t('autoRolePage.allowList.columns.type')" width="110">
+              <template #default="{ row }">
+                <ElTag :type="row.entity_type === 'alliance' ? 'warning' : undefined">
+                  {{ t(`autoRolePage.allowList.entityTypes.${row.entity_type}`) }}
+                </ElTag>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn :label="t('autoRolePage.allowList.columns.name')" prop="entity_name" />
+            <ElTableColumn
+              :label="t('autoRolePage.allowList.columns.entityId')"
+              prop="entity_id"
+              width="130"
+            />
+            <ElTableColumn
+              :label="t('autoRolePage.allowList.columns.createdAt')"
+              prop="created_at"
+              width="160"
+            >
+              <template #default="{ row }">{{
+                row.created_at?.slice(0, 19).replace('T', ' ')
+              }}</template>
+            </ElTableColumn>
+            <ElTableColumn :label="t('common.actions')" width="90" align="center">
+              <template #default="{ row }">
+                <ElPopconfirm
+                  :title="t('autoRolePage.allowList.removeConfirm')"
+                  @confirm="handleRemoveAllowedEntity(row.id, 'basic_access')"
+                >
+                  <template #reference>
+                    <ElButton type="danger" link size="small">{{ t('common.delete') }}</ElButton>
+                  </template>
+                </ElPopconfirm>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElCard>
+      </ElTabPane>
     </ElTabs>
 
-    <!-- ─── 新增 ESI 角色映射对话框 ─── -->
+    <!-- ─── 新增 EVE 实体对话框（准入名单） ─── -->
+    <ElDialog
+      v-model="allowDialogVisible"
+      :title="t('autoRolePage.allowList.addEntity')"
+      width="520px"
+      destroy-on-close
+    >
+      <ElInput
+        v-model="allowSearchQuery"
+        :placeholder="t('autoRolePage.allowList.searchPlaceholder')"
+        clearable
+        @input="onAllowSearch"
+      />
+      <div class="mt-3" style="max-height: 320px; overflow-y: auto">
+        <div v-if="allowSearchLoading" class="text-center text-gray-400 py-4">
+          {{ t('common.loading') }}
+        </div>
+        <div
+          v-else-if="allowSearchResults.length === 0 && allowSearchQuery"
+          class="text-center text-gray-400 py-4"
+        >
+          {{ t('autoRolePage.allowList.noResults') }}
+        </div>
+        <div
+          v-for="item in allowSearchResults"
+          :key="item.id"
+          class="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+          :class="{ 'ring-2 ring-primary': allowSelected?.id === item.id }"
+          @click="allowSelected = item"
+        >
+          <img :src="item.image" class="w-8 h-8 rounded" alt="" />
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">{{ item.name }}</div>
+            <div class="text-xs text-gray-400">{{ item.id }}</div>
+          </div>
+          <ElTag size="small" :type="item.type === 'alliance' ? 'warning' : undefined">
+            {{ t(`autoRolePage.allowList.entityTypes.${item.type}`) }}
+          </ElTag>
+        </div>
+      </div>
+      <template #footer>
+        <ElButton @click="allowDialogVisible = false">{{ t('common.cancel') }}</ElButton>
+        <ElButton
+          type="primary"
+          :disabled="!allowSelected"
+          :loading="allowAdding"
+          @click="handleAddAllowedEntity"
+        >
+          {{ t('common.confirm') }}
+        </ElButton>
+      </template>
+    </ElDialog>
+
     <ElDialog
       v-model="esiRoleDialogVisible"
       :title="t('autoRolePage.createEsiRoleTitle')"
@@ -294,7 +458,11 @@
     fetchGetCorpTitles,
     fetchGetAllRoles,
     fetchTriggerAutoRoleSync,
-    fetchGetAutoRoleLogs
+    fetchGetAutoRoleLogs,
+    fetchGetAllowedEntities,
+    fetchAddAllowedEntity,
+    fetchRemoveAllowedEntity,
+    fetchSearchEveEntities
   } from '@/api/system-manage'
 
   defineOptions({ name: 'AutoRole' })
@@ -305,6 +473,8 @@
   type RoleItem = Api.SystemManage.RoleItem
   type CorpTitleInfo = Api.SystemManage.CorpTitleInfo
   type AutoRoleLog = Api.SystemManage.AutoRoleLog
+  type AllowedEntity = Api.SystemManage.AllowedEntity
+  type ZkbSearchResult = Api.SystemManage.ZkbSearchResult
 
   // ─── Tab ───
   const activeTab = ref('esi-role')
@@ -528,8 +698,109 @@
     loadLogs()
   }
 
+  // ─── 准入名单 ───
+  const autoRoleEntities = ref<AllowedEntity[]>([])
+  const basicAccessEntities = ref<AllowedEntity[]>([])
+  const autoRoleLoading = ref(false)
+  const basicAccessLoading = ref(false)
+
+  // 搜索对话框
+  const allowDialogVisible = ref(false)
+  const allowDialogListType = ref<'auto_role' | 'basic_access'>('auto_role')
+  const allowSearchQuery = ref('')
+  const allowSearchResults = ref<ZkbSearchResult[]>([])
+  const allowSearchLoading = ref(false)
+  const allowSelected = ref<ZkbSearchResult | null>(null)
+  const allowAdding = ref(false)
+
+  let allowSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+  async function loadAutoRoleEntities() {
+    autoRoleLoading.value = true
+    try {
+      const res = await fetchGetAllowedEntities('auto_role')
+      autoRoleEntities.value = res ?? []
+    } finally {
+      autoRoleLoading.value = false
+    }
+  }
+
+  async function loadBasicAccessEntities() {
+    basicAccessLoading.value = true
+    try {
+      const res = await fetchGetAllowedEntities('basic_access')
+      basicAccessEntities.value = res ?? []
+    } finally {
+      basicAccessLoading.value = false
+    }
+  }
+
+  async function handleRemoveAllowedEntity(id: number, listType: 'auto_role' | 'basic_access') {
+    try {
+      await fetchRemoveAllowedEntity(listType, id)
+      ElMessage.success(t('autoRolePage.allowList.removeSuccess'))
+      if (listType === 'auto_role') loadAutoRoleEntities()
+      else loadBasicAccessEntities()
+    } catch {
+      ElMessage.error(t('autoRolePage.allowList.removeFailed'))
+    }
+  }
+
+  function openAllowDialog(listType: 'auto_role' | 'basic_access') {
+    allowDialogListType.value = listType
+    allowDialogVisible.value = true
+    allowSearchQuery.value = ''
+    allowSearchResults.value = []
+    allowSelected.value = null
+  }
+
+  function onAllowSearch() {
+    if (allowSearchTimer) clearTimeout(allowSearchTimer)
+    allowSearchTimer = setTimeout(async () => {
+      const q = allowSearchQuery.value.trim()
+      if (!q) {
+        allowSearchResults.value = []
+        return
+      }
+      allowSearchLoading.value = true
+      try {
+        const res = await fetchSearchEveEntities(q)
+        allowSearchResults.value = res ?? []
+      } finally {
+        allowSearchLoading.value = false
+      }
+    }, 400)
+  }
+
+  async function handleAddAllowedEntity() {
+    if (!allowSelected.value) return
+    allowAdding.value = true
+    try {
+      await fetchAddAllowedEntity(allowDialogListType.value, {
+        entity_id: allowSelected.value.id,
+        entity_type: allowSelected.value.type,
+        entity_name: allowSelected.value.name
+      })
+      ElMessage.success(t('autoRolePage.allowList.addSuccess'))
+      allowDialogVisible.value = false
+      if (allowDialogListType.value === 'auto_role') loadAutoRoleEntities()
+      else loadBasicAccessEntities()
+    } catch {
+      ElMessage.error(t('autoRolePage.allowList.addFailed'))
+    } finally {
+      allowAdding.value = false
+    }
+  }
+
   // ─── 初始化 ───
   onMounted(() => {
-    Promise.all([loadBaseData(), loadEsiRoleMappings(), loadTitleMappings(), loadLogs()])
+    Promise.all([
+      loadBaseData(),
+      loadEsiRoleMappings(),
+      loadTitleMappings(),
+      loadLogs(),
+      loadAutoRoleEntities(),
+      loadBasicAccessEntities()
+    ])
   })
 </script>

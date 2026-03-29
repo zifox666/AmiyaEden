@@ -52,6 +52,7 @@ type UserFilter struct {
 	Status            *int
 	Role              string
 	AllowCorporations []int64 // 非空时只返回拥有这些军团角色的用户
+	AllowAlliances    []int64 // 非空时同时允许这些联盟的成员（与 AllowCorporations 取并集）
 }
 
 // GetByPrimaryCharacterID 根据主角色 ID 查询用户
@@ -81,8 +82,18 @@ func (r *UserRepository) List(page, pageSize int, filter UserFilter) ([]model.Us
 	if filter.Role != "" {
 		db = db.Where("role = ?", filter.Role)
 	}
-	if len(filter.AllowCorporations) > 0 {
-		db = db.Where("id IN (SELECT DISTINCT user_id FROM eve_character WHERE corporation_id IN ?)", filter.AllowCorporations)
+	if len(filter.AllowCorporations) > 0 || len(filter.AllowAlliances) > 0 {
+		switch {
+		case len(filter.AllowCorporations) > 0 && len(filter.AllowAlliances) > 0:
+			db = db.Where(
+				"id IN (SELECT DISTINCT user_id FROM eve_character WHERE corporation_id IN ? OR alliance_id IN ?)",
+				filter.AllowCorporations, filter.AllowAlliances,
+			)
+		case len(filter.AllowCorporations) > 0:
+			db = db.Where("id IN (SELECT DISTINCT user_id FROM eve_character WHERE corporation_id IN ?)", filter.AllowCorporations)
+		default:
+			db = db.Where("id IN (SELECT DISTINCT user_id FROM eve_character WHERE alliance_id IN ?)", filter.AllowAlliances)
+		}
 	}
 
 	if err := db.Count(&total).Error; err != nil {
@@ -92,4 +103,31 @@ func (r *UserRepository) List(page, pageSize int, filter UserFilter) ([]model.Us
 		return nil, 0, err
 	}
 	return users, total, nil
+}
+
+// userRoleRow 是 GetRoleCodesByUserIDs 的内部扫描目标
+type userRoleRow struct {
+	UserID uint
+	Code   string
+}
+
+// GetRoleCodesByUserIDs 批量查询一组用户的所有角色 code，返回 map[userID][]code
+func (r *UserRepository) GetRoleCodesByUserIDs(userIDs []uint) (map[uint][]string, error) {
+	if len(userIDs) == 0 {
+		return map[uint][]string{}, nil
+	}
+	var rows []userRoleRow
+	err := global.DB.Table("user_role").
+		Select("user_role.user_id, role.code").
+		Joins("JOIN role ON role.id = user_role.role_id").
+		Where("user_role.user_id IN ?", userIDs).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint][]string, len(userIDs))
+	for _, row := range rows {
+		result[row.UserID] = append(result[row.UserID], row.Code)
+	}
+	return result, nil
 }

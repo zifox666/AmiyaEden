@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"amiya-eden/global"
+	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
 	"context"
@@ -19,10 +20,12 @@ func RegisterRoleJobs(c *cron.Cron) {
 	global.Logger.Info("注册角色检查定时任务成功", zap.Int("entry_id", int(id)))
 }
 
-// roleCheckTask 遍历所有用户，根据军团准入列表调整用户权限
+// roleCheckTask 遍历所有用户，根据军团/联盟准入列表调整用户权限
 func roleCheckTask() {
-	// 未配置允许军团列表时跳过
-	if len(global.Config.App.AllowCorporations) == 0 {
+	// 未配置基础访问准入名单时跳过
+	allowRepo := repository.NewAllowedEntityRepository()
+	nonEmpty, _ := allowRepo.IsNonEmpty(model.AllowListBasicAccess)
+	if !nonEmpty {
 		return
 	}
 

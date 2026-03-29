@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"amiya-eden/internal/model"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
+	"context"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -130,7 +132,10 @@ func (h *AutoRoleHandler) DeleteEsiTitleMapping(c *gin.Context) {
 
 // TriggerSync 手动触发自动权限同步
 func (h *AutoRoleHandler) TriggerSync(c *gin.Context) {
-	go h.svc.SyncAllUsersAutoRoles(c.Request.Context())
+	go func(ctx context.Context) {
+		h.svc.SyncAllUsersBasicAccess(ctx)
+		h.svc.SyncAllUsersAutoRoles(ctx)
+	}(c.Request.Context())
 	response.OK(c, "同步任务已触发")
 }
 
@@ -152,4 +157,75 @@ func (h *AutoRoleHandler) ListAutoRoleLogs(c *gin.Context) {
 		return
 	}
 	response.OKWithPage(c, logs, total, page, size)
+}
+
+// ─── 准入名单管理 ───
+
+// ListAllowedEntities 获取指定名单类型的所有实体
+// GET /auto-role/allow-list/:type
+func (h *AutoRoleHandler) ListAllowedEntities(c *gin.Context) {
+	listType := c.Param("type")
+	entities, err := h.svc.ListAllowedEntities(listType)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, entities)
+}
+
+type addAllowedEntityRequest struct {
+	EntityID   int64  `json:"entity_id"   binding:"required"`
+	EntityType string `json:"entity_type" binding:"required"`
+	EntityName string `json:"entity_name" binding:"required"`
+}
+
+// AddAllowedEntity 添加实体到名单
+// POST /auto-role/allow-list/:type
+func (h *AutoRoleHandler) AddAllowedEntity(c *gin.Context) {
+	listType := c.Param("type")
+	var req addAllowedEntityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+	e := &model.AllowedEntity{
+		ListType:   listType,
+		EntityID:   req.EntityID,
+		EntityType: req.EntityType,
+		EntityName: req.EntityName,
+	}
+	if err := h.svc.AddAllowedEntity(e); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, e)
+}
+
+// RemoveAllowedEntity 从名单中删除实体
+// DELETE /auto-role/allow-list/:type/:id
+func (h *AutoRoleHandler) RemoveAllowedEntity(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, "无效的ID")
+		return
+	}
+	if err := h.svc.RemoveAllowedEntity(uint(id)); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, nil)
+}
+
+// ─── EVE 实体搜索 ───
+
+// SearchEveEntities 通过 zkillboard 模糊搜索 EVE 联盟/军团
+// GET /auto-role/eve-search?q=...
+func (h *AutoRoleHandler) SearchEveEntities(c *gin.Context) {
+	q := c.Query("q")
+	results, err := h.svc.SearchEveEntities(q)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, results)
 }

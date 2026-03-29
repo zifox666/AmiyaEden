@@ -2,6 +2,30 @@ package model
 
 import "time"
 
+// ─── 准入名单 ───
+
+const (
+	AllowListAutoRole    = "auto_role"    // 允许自动权限的联盟/军团
+	AllowListBasicAccess = "basic_access" // 允许基础 user 授权的联盟/军团
+)
+
+const (
+	AllowEntityTypeAlliance    = "alliance"
+	AllowEntityTypeCorporation = "corporation"
+)
+
+// AllowedEntity 准入名单实体（联盟或军团）
+type AllowedEntity struct {
+	ID         uint      `gorm:"primarykey"                                         json:"id"`
+	ListType   string    `gorm:"size:32;not null;uniqueIndex:idx_allowed_entity"    json:"list_type"`
+	EntityID   int64     `gorm:"not null;uniqueIndex:idx_allowed_entity"            json:"entity_id"`
+	EntityType string    `gorm:"size:16;not null"                                   json:"entity_type"` // "alliance" | "corporation"
+	EntityName string    `gorm:"size:256;not null"                                  json:"entity_name"`
+	CreatedAt  time.Time `gorm:"autoCreateTime"                                     json:"created_at"`
+}
+
+func (AllowedEntity) TableName() string { return "allowed_entity" }
+
 // SystemConfig 系统配置（key/value 键值对）
 type SystemConfig struct {
 	Key       string    `gorm:"primarykey;size:128"    json:"key"`

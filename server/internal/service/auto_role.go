@@ -5,7 +5,12 @@ import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -13,6 +18,7 @@ import (
 // AutoRoleService ESI 自动权限映射服务
 type AutoRoleService struct {
 	autoRoleRepo *repository.AutoRoleRepository
+	allowRepo    *repository.AllowedEntityRepository
 	roleRepo     *repository.RoleRepository
 	charRepo     *repository.EveCharacterRepository
 	userRepo     *repository.UserRepository
@@ -22,6 +28,7 @@ type AutoRoleService struct {
 func NewAutoRoleService() *AutoRoleService {
 	return &AutoRoleService{
 		autoRoleRepo: repository.NewAutoRoleRepository(),
+		allowRepo:    repository.NewAllowedEntityRepository(),
 		roleRepo:     repository.NewRoleRepository(),
 		charRepo:     repository.NewEveCharacterRepository(),
 		userRepo:     repository.NewUserRepository(),
@@ -92,9 +99,92 @@ func (s *AutoRoleService) ListEsiTitleMappings() ([]model.EsiTitleMapping, error
 }
 
 // ListCorpTitles 获取数据库中所有去重的军团头衔（用于前端下拉选择）
-// 只返回在 allow_corporations 白名单内的头衔（白名单为空时不限制）
+// 只返回在 auto_role 准入名单内的军团头衔（名单为空时不限制）
 func (s *AutoRoleService) ListCorpTitles() ([]repository.CorpTitleInfo, error) {
-	return s.autoRoleRepo.ListDistinctCorpTitles(global.Config.App.AllowCorporations)
+	allowCorpIDs, err := s.allowRepo.GetCorporationIDs(model.AllowListAutoRole)
+	if err != nil {
+		return nil, err
+	}
+	return s.autoRoleRepo.ListDistinctCorpTitles(allowCorpIDs)
+}
+
+// ─── 准入名单管理 ───
+
+// ListAllowedEntities 获取指定名单的所有实体
+func (s *AutoRoleService) ListAllowedEntities(listType string) ([]model.AllowedEntity, error) {
+	return s.allowRepo.List(listType)
+}
+
+// AddAllowedEntity 添加实体到名单
+func (s *AutoRoleService) AddAllowedEntity(e *model.AllowedEntity) error {
+	if e.ListType != model.AllowListAutoRole && e.ListType != model.AllowListBasicAccess {
+		return errors.New("无效的名单类型")
+	}
+	if e.EntityType != model.AllowEntityTypeAlliance && e.EntityType != model.AllowEntityTypeCorporation {
+		return errors.New("无效的实体类型")
+	}
+	if e.EntityID <= 0 {
+		return errors.New("实体ID无效")
+	}
+	if e.EntityName == "" {
+		return errors.New("实体名称不能为空")
+	}
+	return s.allowRepo.Add(e)
+}
+
+// RemoveAllowedEntity 从名单中删除实体
+func (s *AutoRoleService) RemoveAllowedEntity(id uint) error {
+	return s.allowRepo.Remove(id)
+}
+
+// ─── zkillboard 实体搜索 ───
+
+// ZkbSearchResult zkillboard 自动补全结果项
+type ZkbSearchResult struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Image string `json:"image"`
+}
+
+// SearchEveEntities 通过 zkillboard 模糊搜索 EVE 联盟/军团
+func (s *AutoRoleService) SearchEveEntities(query string) ([]ZkbSearchResult, error) {
+	if query == "" {
+		return nil, errors.New("搜索词不能为空")
+	}
+
+	url := fmt.Sprintf("https://zkillboard.com/autocomplete/%s/", query)
+	client := &http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "AmiyaEden/1.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("zkillboard 搜索失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+	if err != nil {
+		return nil, err
+	}
+
+	var all []ZkbSearchResult
+	if err := json.Unmarshal(body, &all); err != nil {
+		return nil, fmt.Errorf("解析搜索结果失败: %w", err)
+	}
+
+	// 只保留联盟和军团
+	var filtered []ZkbSearchResult
+	for _, item := range all {
+		if item.Type == "alliance" || item.Type == "corporation" {
+			filtered = append(filtered, item)
+		}
+	}
+	return filtered, nil
 }
 
 // CreateEsiTitleMapping 创建 ESI 头衔映射
@@ -156,21 +246,38 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		return nil
 	}
 
-	// 构建允许军团白名单（为空表示不限制）
-	allowCorps := global.Config.App.AllowCorporations
-	allowCorpSet := make(map[int64]struct{}, len(allowCorps))
-	for _, id := range allowCorps {
+	// 从 DB 读取 auto_role 准入名单
+	allowCorpIDs, allowAllianceIDs, err := s.allowRepo.GetAllIDs(model.AllowListAutoRole)
+	if err != nil {
+		global.Logger.Warn("[AutoRole] 读取准入名单失败", zap.Error(err))
+	}
+	allowCorpSet := make(map[int64]struct{}, len(allowCorpIDs))
+	for _, id := range allowCorpIDs {
 		allowCorpSet[id] = struct{}{}
 	}
+	allowAllianceSet := make(map[int64]struct{}, len(allowAllianceIDs))
+	for _, id := range allowAllianceIDs {
+		allowAllianceSet[id] = struct{}{}
+	}
+	allowFiltered := len(allowCorpSet)+len(allowAllianceSet) > 0
 
-	// 收集所有角色的 ESI 军团角色（仅限允许军团）
+	// 收集所有角色的 ESI 军团角色（仅限允许军团/联盟）
 	allEsiRoles := make(map[string]struct{})
 	hasDirector := false
 
 	for _, char := range chars {
-		// 跳过不在允许军团中的角色
-		if len(allowCorpSet) > 0 {
-			if _, ok := allowCorpSet[char.CorporationID]; !ok {
+		// 跳过不在允许名单中的角色
+		if allowFiltered {
+			inCorpList := false
+			if _, ok := allowCorpSet[char.CorporationID]; ok {
+				inCorpList = true
+			}
+			if !inCorpList && char.AllianceID != nil {
+				if _, ok := allowAllianceSet[*char.AllianceID]; ok {
+					inCorpList = true
+				}
+			}
+			if !inCorpList {
 				continue
 			}
 		}
@@ -217,14 +324,23 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 	}
 
-	// 查找 ESI 头衔映射（仅限允许军团）
+	// 查找 ESI 头衔映射（仅限允许军团/联盟）
 	for _, char := range chars {
 		if char.CorporationID == 0 {
 			continue
 		}
-		// 跳过不在允许军团中的角色
-		if len(allowCorpSet) > 0 {
-			if _, ok := allowCorpSet[char.CorporationID]; !ok {
+		// 跳过不在允许名单中的角色
+		if allowFiltered {
+			inList := false
+			if _, ok := allowCorpSet[char.CorporationID]; ok {
+				inList = true
+			}
+			if !inList && char.AllianceID != nil {
+				if _, ok := allowAllianceSet[*char.AllianceID]; ok {
+					inList = true
+				}
+			}
+			if !inList {
 				continue
 			}
 		}
@@ -347,6 +463,31 @@ func (s *AutoRoleService) SyncAllUsersAutoRoles(ctx context.Context) {
 		}
 	}
 	global.Logger.Info("[AutoRole] 自动权限同步完成")
+}
+
+// SyncAllUsersBasicAccess 同步所有用户的基础准入权限（basic_access 名单）
+// 与 roleCheckTask 逻辑相同，供手动触发调用
+func (s *AutoRoleService) SyncAllUsersBasicAccess(ctx context.Context) {
+	nonEmpty, _ := s.allowRepo.IsNonEmpty(model.AllowListBasicAccess)
+	if !nonEmpty {
+		return
+	}
+
+	ids, err := s.userRepo.ListAllIDs()
+	if err != nil {
+		global.Logger.Error("[AutoRole] 查询用户 ID 列表失败（basic_access 同步）", zap.Error(err))
+		return
+	}
+
+	global.Logger.Info("[AutoRole] 开始基础准入同步", zap.Int("users", len(ids)))
+	for _, uid := range ids {
+		if err := s.roleSvc.CheckCorpAccessAndAdjustRole(ctx, uid); err != nil {
+			global.Logger.Warn("[AutoRole] basic_access 同步失败",
+				zap.Uint("user_id", uid),
+				zap.Error(err))
+		}
+	}
+	global.Logger.Info("[AutoRole] 基础准入同步完成")
 }
 
 // ─── 内部辅助 ───
