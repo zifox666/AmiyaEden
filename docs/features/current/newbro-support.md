@@ -96,9 +96,9 @@ source_of_truth:
 - 按 `captain_user_id` 分组汇总未处理归因金额
 - 奖励换算公式为：`sum(amount) / 1,000,000 * (bonus_rate / 100)`
 - `bonus_rate` 以百分比配置，默认值为 `20`
-- 奖励金额四舍五入保留 `2` 位小数后，发放到系统钱包积分
+- 奖励金额四舍五入保留 `2` 位小数后，发放到伏羲币积分
 - 每次处理会写入一条 `captain_reward_settlement`，并把参与结算的归因记录统一回写同一个 `processed_at`
-- 队长奖励流水使用系统钱包 `ref_type = newbro_captain_reward`
+- 队长奖励流水使用伏羲币 `ref_type = newbro_captain_reward`
 
 ## 入口
 

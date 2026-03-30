@@ -126,7 +126,7 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 - 发放时可以最终覆盖 `final_amount`
 - 记录 `paid_by`、`paid_at`
 - 当模式为 `manual_transfer`（手动打钱）时，仅将申请标记为已发放，保留当前人工线下打款流程
-- 当模式为 `fuxi_coin`（伏羲币补损）时，将 `final_amount` 按 `1,000,000 ISK : 1 伏羲币` 换算，四舍五入保留 `2` 位小数，写入系统钱包 `ref_type = srp_payout` 流水，并将申请结案
+- 当模式为 `fuxi_coin`（伏羲币补损）时，将 `final_amount` 按 `1,000,000 ISK : 1 伏羲币` 换算，四舍五入保留 `2` 位小数，写入伏羲币 `ref_type = srp_payout` 流水，并将申请结案
 - 伏羲币流水 `reason` 包含 SRP 申请 ID、舰船名，以及存在时的舰队标题
 
 **按用户批量发放**（`SrpService.BatchPayoutByUser`）：
@@ -138,7 +138,7 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 **伏羲币批量发放**（`SrpService.BatchPayoutAsFuxiCoin`）：
 
 - 处理全部“已批准且未发放”的申请，不再按用户逐个确认
-- 对每条申请分别换算伏羲币金额、写系统钱包流水、再标记 SRP 为已发放
+- 对每条申请分别换算伏羲币金额、写伏羲币流水、再标记 SRP 为已发放
 - 整体使用数据库事务，任一申请发放失败则整批回滚
 
 ### 管理端列表

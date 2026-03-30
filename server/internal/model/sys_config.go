@@ -15,7 +15,7 @@ func (SystemConfig) TableName() string { return "system_config" }
 // ─── 已知配置 Key ───
 
 const (
-	SysConfigPAPWalletPerPAP    = "pap.wallet_per_pap"   // 每 1 PAP 兑换多少系统钱包（float）
+	SysConfigPAPWalletPerPAP    = "pap.wallet_per_pap"   // 每 1 PAP 兑换多少伏羲币（float）
 	SysConfigPAPExchangeEnabled = "pap.exchange_enabled" // PAP 兑换是否开启（bool）
 	SysConfigPAPFCSalary        = "pap.fc_salary"        // FC 工资（float）
 	SysConfigPAPFCSalaryLimit   = "pap.fc_salary_limit"  // FC 工资每月上限次数（int）

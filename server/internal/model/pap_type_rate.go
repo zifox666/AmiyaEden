@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// PAPTypeRate PAP 类型兑换汇率（每种 PAP 类型对应的系统钱包兑换比率）
+// PAPTypeRate PAP 类型兑换汇率（每种 PAP 类型对应的伏羲币兑换比率）
 type PAPTypeRate struct {
 	PapType     string    `gorm:"primarykey;size:64"                    json:"pap_type"`
 	DisplayName string    `gorm:"size:128;not null"                     json:"display_name"`

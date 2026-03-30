@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SysWalletHandler 系统钱包 HTTP 处理器
+// SysWalletHandler 伏羲币 HTTP 处理器
 type SysWalletHandler struct {
 	svc *service.SysWalletService
 }

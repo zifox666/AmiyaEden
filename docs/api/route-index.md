@@ -265,7 +265,7 @@ source_of_truth:
 | PUT | `/system/user/:id/roles` | 设置用户职权；`super_admin` 职权不可通过 API 分配或修改（仅通过配置文件管理）；仅 `super_admin` 可分配 `admin` | `RequireRole(admin)` |
 | POST | `/system/user/:id/impersonate` | 模拟登录，需 `super_admin` | `RequireRole(admin)` + `super_admin` |
 
-### System Wallet
+### Fuxi Coin
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |

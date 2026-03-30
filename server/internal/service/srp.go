@@ -751,7 +751,7 @@ func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayo
 	return &enriched[0], nil
 }
 
-// BatchPayoutAsFuxiCoin 将全部已批准未发放的申请换算为伏羲币并发放到系统钱包
+// BatchPayoutAsFuxiCoin 将全部已批准未发放的申请换算为伏羲币并发放到伏羲币账户
 func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, error) {
 	summary := &SrpBatchFuxiPayoutSummary{}
 	userIDs := make(map[uint]struct{})

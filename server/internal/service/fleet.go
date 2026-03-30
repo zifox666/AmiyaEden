@@ -703,7 +703,7 @@ func calculateFCSalaryAmount(fcInMembers bool, existingSalaryAmount float64, mon
 	return currentSalary
 }
 
-// papImportanceToWalletRate 将舰队重要性映射到对应的 PAP 兑换汇率（系统钱包 / 1 PAP）
+// papImportanceToWalletRate 将舰队重要性映射到对应的 PAP 兑换汇率（伏羲币 / 1 PAP）
 func papImportanceToWalletRate(importance string, rateMap map[string]float64) float64 {
 	var papType string
 	switch importance {

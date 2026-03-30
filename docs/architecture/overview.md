@@ -23,7 +23,7 @@ source_of_truth:
 - EVE 人物信息查询与 NPC 刷怪报表
 - SRP 价格、申请、审核、发放
 - 军团福利系统
-- 系统钱包、商店
+- 伏羲币、商店
 - 联盟 PAP、自动权限映射、Webhook、ESI 刷新队列
 - SDE 查询接口
 

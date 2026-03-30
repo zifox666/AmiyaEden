@@ -3,10 +3,10 @@ package model
 import "time"
 
 // ─────────────────────────────────────────────
-//  系统钱包（与 EVE Wallet 无关，独立系统）
+//  伏羲币（与 EVE Wallet 无关，独立系统）
 // ─────────────────────────────────────────────
 
-// SystemWallet 用户系统钱包（用于发放/兑换奖励）
+// SystemWallet 用户伏羲币（用于发放/兑换奖励）
 type SystemWallet struct {
 	ID        uint      `gorm:"primarykey"                 json:"id"`
 	UserID    uint      `gorm:"uniqueIndex;not null"       json:"user_id"`

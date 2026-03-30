@@ -339,7 +339,7 @@ func RegisterRoutes(r *gin.Engine) {
 		adminNewbro.POST("/reward/process", newbroAdminH.RunRewardProcessing)
 	}
 
-	// 系统钱包管理（管理员）
+	// 伏羲币管理（管理员）
 	adminWalletH := handler.NewSysWalletHandler()
 	adminWallet := admin.Group("/wallet")
 	{

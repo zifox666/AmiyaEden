@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// SysWalletRepository 系统钱包数据访问层
+// SysWalletRepository 伏羲币数据访问层
 type SysWalletRepository struct{}
 
 func NewSysWalletRepository() *SysWalletRepository {

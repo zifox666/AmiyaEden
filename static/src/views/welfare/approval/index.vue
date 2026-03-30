@@ -181,7 +181,7 @@
     {
       prop: 'character_name',
       label: t('welfareApproval.characterName'),
-      minWidth: 160,
+      width: 240,
       formatter: (row: AppRow) =>
         h('div', { class: 'flex items-center gap-1' }, [
           h('span', {}, row.character_name),

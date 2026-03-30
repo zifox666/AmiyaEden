@@ -339,8 +339,8 @@ ESI 头衔到系统职权的映射表。
 说明：
 
 - `bonus_rate` 按百分比保存，便于历史回溯时准确重建当次计算口径
-- `credited_value` 是最终发放到系统钱包的积分，保留两位小数
-- `wallet_ref_id` 对应系统钱包流水引用，当前使用 `newbro_captain_reward` 类型
+- `credited_value` 是最终发放到伏羲币的积分，保留两位小数
+- `wallet_ref_id` 对应伏羲币流水引用，当前使用 `newbro_captain_reward` 类型
 
 ### `captain_bounty_sync_state`
 

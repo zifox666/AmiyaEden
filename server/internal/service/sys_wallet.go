@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// SysWalletService 系统钱包业务逻辑层
+// SysWalletService 伏羲币业务逻辑层
 type SysWalletService struct {
 	repo *repository.SysWalletRepository
 }

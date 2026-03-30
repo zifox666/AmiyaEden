@@ -1,4 +1,4 @@
-<!-- 系统钱包管理页面 -->
+<!-- 伏羲币管理页面 -->
 <template>
   <div class="wallet-admin-page art-full-height">
     <ElCard class="art-table-card" shadow="never">

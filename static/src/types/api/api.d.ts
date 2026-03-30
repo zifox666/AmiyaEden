@@ -759,7 +759,7 @@ declare namespace Api {
     }
   }
 
-  /** 系统钱包类型（独立于 EVE Wallet） */
+  /** 伏羲币类型（独立于 EVE Wallet） */
   namespace SysWallet {
     /** 钱包信息 */
     interface Wallet {

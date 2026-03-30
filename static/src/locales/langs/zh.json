@@ -1762,7 +1762,7 @@
     "cards": {
       "eveWalletBalance": "EVE 钱包余额",
       "eveSkillPoints": "EVE 技能点",
-      "systemWallet": "系统钱包",
+      "systemWallet": "伏羲币",
       "currentAlliancePap": "当月联盟 PAP"
     },
     "papChart": {
