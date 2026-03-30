@@ -37,7 +37,7 @@ export const welfareRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.welfare.settings',
         keepAlive: true,
-        roles: ['super_admin', 'admin']
+        roles: ['super_admin', 'admin', 'welfare']
       }
     }
   ]

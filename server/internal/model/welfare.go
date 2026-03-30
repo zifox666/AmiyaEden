@@ -38,7 +38,8 @@ type Welfare struct {
 	CreatedBy        uint   `gorm:"not null"                    json:"created_by"`
 
 	// 虚拟字段，不存库，由业务层填充
-	SkillPlanIDs []uint `gorm:"-" json:"skill_plan_ids"`
+	SkillPlanIDs   []uint   `gorm:"-" json:"skill_plan_ids"`
+	SkillPlanNames []string `gorm:"-" json:"skill_plan_names"`
 }
 
 // WelfareSkillPlan 福利-技能计划关联表

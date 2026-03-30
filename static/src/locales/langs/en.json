@@ -569,6 +569,7 @@
     "eligibility": "Eligibility",
     "appliedAt": "Applied At",
     "reviewedAt": "Reviewed At",
+    "reviewerName": "Welfare Officer",
     "statusRequested": "Requested",
     "statusDelivered": "Delivered",
     "statusRejected": "Rejected",
@@ -582,13 +583,17 @@
     "distModePerCharacter": "Per Character",
     "eligibilityNow": "Available Now",
     "eligibilityFuture": "Future Option",
+    "skillPlanJoiner": " or ",
     "ineligibleReasonPap": "Alliance PAP insufficient",
     "ineligibleReasonSkill": "Skill requirements not met",
     "ineligibleReasonPapSkill": "Skill requirements not met, Alliance PAP insufficient",
+    "ineligibleReasonSkillPlan": "Skill plan {plans} not completed",
+    "ineligibleReasonPapSkillPlan": "Skill plan {plans} not completed, Alliance PAP insufficient",
     "evidenceDialogTitle": "Upload Evidence",
     "evidenceDialogHint": "This welfare requires you to upload an image as evidence before applying.",
     "exampleEvidenceLabel": "Example (provided by admin):",
-    "uploadEvidenceBtn": "Choose Image"
+    "uploadEvidenceBtn": "Choose Image",
+    "skillPlanningAlertPrefix": "Go to "
   },
   "welfareApproval": {
     "pendingTab": "Pending Delivery",
@@ -618,7 +623,11 @@
     "searchBtn": "Search",
     "resetBtn": "Reset",
     "historyKeywordPlaceholder": "Character, nickname, or QQ",
-    "evidenceImage": "Evidence"
+    "evidenceImage": "Evidence",
+    "deleteHistoryBtn": "Delete",
+    "deleteHistoryConfirm": "Delete the application record for {name}? This cannot be undone.",
+    "deleteHistorySuccess": "Application record deleted",
+    "deleteHistoryFailed": "Delete failed"
   },
   "shop": {
     "currency": "Fuxi Coin",

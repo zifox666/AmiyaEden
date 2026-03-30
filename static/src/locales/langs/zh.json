@@ -570,6 +570,7 @@
     "eligibility": "可申请状态",
     "appliedAt": "申请时间",
     "reviewedAt": "审批时间",
+    "reviewerName": "福利官",
     "statusRequested": "待发放",
     "statusDelivered": "已发放",
     "statusRejected": "已拒绝",
@@ -583,13 +584,17 @@
     "distModePerCharacter": "按人物",
     "eligibilityNow": "当前可申请",
     "eligibilityFuture": "未达到条件",
+    "skillPlanJoiner": "或",
     "ineligibleReasonPap": "军团PAP数不足",
     "ineligibleReasonSkill": "技能未达标",
     "ineligibleReasonPapSkill": "技能未达标，军团PAP数不足",
+    "ineligibleReasonSkillPlan": "技能规划{plans}未达成",
+    "ineligibleReasonPapSkillPlan": "技能规划{plans}未达成，军团PAP数不足",
     "evidenceDialogTitle": "上传证明图片",
     "evidenceDialogHint": "该福利需要您上传一张证明图片才能申请。",
     "exampleEvidenceLabel": "示例图片（管理员提供）：",
-    "uploadEvidenceBtn": "选择图片"
+    "uploadEvidenceBtn": "选择图片",
+    "skillPlanningAlertPrefix": "如有技能不达标，可前往"
   },
   "welfareApproval": {
     "pendingTab": "待发放",
@@ -619,7 +624,11 @@
     "searchBtn": "搜索",
     "resetBtn": "重置",
     "historyKeywordPlaceholder": "人物名、昵称或 QQ",
-    "evidenceImage": "证明图片"
+    "evidenceImage": "证明图片",
+    "deleteHistoryBtn": "删除",
+    "deleteHistoryConfirm": "确定删除 {name} 的申请记录？此操作不可撤销。",
+    "deleteHistorySuccess": "申请记录已删除",
+    "deleteHistoryFailed": "删除失败"
   },
   "shop": {
     "currency": "伏羲币",

@@ -242,6 +242,25 @@ func (h *WelfareHandler) AdminListApplications(c *gin.Context) {
 	response.OKWithPage(c, list, total, req.Current, req.Size)
 }
 
+// adminDeleteApplicationRequest 删除申请记录请求
+type adminDeleteApplicationRequest struct {
+	ID uint `json:"id" binding:"required"`
+}
+
+// AdminDeleteApplication POST /system/welfare/applications/delete
+func (h *WelfareHandler) AdminDeleteApplication(c *gin.Context) {
+	var req adminDeleteApplicationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+	if err := h.svc.AdminDeleteApplication(req.ID); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, nil)
+}
+
 // adminReviewApplicationRequest 审批请求
 type adminReviewApplicationRequest struct {
 	ID     uint   `json:"id" binding:"required"`

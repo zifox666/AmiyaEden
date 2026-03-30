@@ -74,6 +74,14 @@ export function adminReviewApplication(data: Api.Welfare.ReviewParams) {
   })
 }
 
+/** 管理端删除福利申请记录（仅 admin） */
+export function adminDeleteApplication(id: number) {
+  return request.post({
+    url: '/api/v1/system/welfare/applications/delete',
+    data: { id }
+  })
+}
+
 // ─── 用户端福利 ───
 
 /** 获取可申请的福利列表 */

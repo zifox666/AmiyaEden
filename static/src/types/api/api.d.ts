@@ -1075,6 +1075,7 @@ declare namespace Api {
       name: string
       description: string
       dist_mode: 'per_user' | 'per_character'
+      skill_plan_names: string[]
       require_evidence: boolean
       example_evidence: string
       can_apply_now: boolean
@@ -1089,6 +1090,7 @@ declare namespace Api {
       welfare_name: string
       character_name: string
       status: 'requested' | 'delivered' | 'rejected'
+      reviewer_name: string
       created_at: string
       reviewed_at: string | null
     }

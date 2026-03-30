@@ -23,8 +23,11 @@ source_of_truth:
 - 用户自助申请福利，系统自动判断资格
 - 我的福利页会把当前可申请的福利和“未达到条件”的技能门槛福利一起展示；未达到条件项会灰显，只有当人物年龄符合限制时才会出现
 - 若福利要求证明图片，申请时弹窗提示上传；弹窗内同步展示管理员上传的示例图片
+- 若福利因技能规划未满足而暂不可申请，前端提示会列出对应的技能规划名称
+- 我的福利页面顶部提供前往技能规划完成度检查页的提醒链接
 - 申请状态流转：requested → delivered / rejected
-- 福利审批页面：福利官/管理员浏览待发放申请，执行发放或拒绝操作；审批列表展示申请人上传的证明图片缩略图
+- 我的福利页面"已领取福利" tab 展示审批福利官昵称
+- 福利审批页面：福利官/管理员浏览待发放申请，执行发放或拒绝操作；审批列表展示申请人上传的证明图片缩略图，并支持原页预览，行悬停时展示福利描述
 - 管理员可导入历史已发放记录，按行粘贴人物名和 QQ 号生成 delivered 记录
 - 福利存在申请记录时禁止删除
 
@@ -71,6 +74,7 @@ source_of_truth:
 - `POST /api/v1/system/welfare/delete`
 - `POST /api/v1/system/welfare/import` — 导入历史福利记录
 - `POST /api/v1/system/welfare/applications` — 福利申请列表（审批端，支持按状态与人物名/昵称/QQ 关键词筛选）
+- `POST /api/v1/system/welfare/applications/delete` — 删除单条申请记录（仅 admin）
 - `POST /api/v1/system/welfare/review` — 审批福利申请（发放/拒绝）
 
 用户端：
@@ -84,8 +88,9 @@ source_of_truth:
 
 - 军团福利导航栏要求 `Login`（guest 不可见）
 - 我的福利页面及用户端 `/welfare/*` 接口要求 `Login`
-- 福利审批页面要求 `welfare` 或 `admin`
-- 福利设置页面及后端 `/system/welfare/*` 接口要求 `admin`
+- 福利审批页面要求 `welfare` 或 `admin`；历史记录删除按钮及对应接口仅 `admin`
+- 福利设置页面及后端 `/system/welfare/list` 接口要求 `welfare` 或 `admin`
+- 福利设置页面写操作（创建、编辑、删除、导入、排序）及对应后端接口要求 `admin`
 - `welfare` 职权（福利官）为系统默认职权，优先级 50
 
 ## 关键不变量

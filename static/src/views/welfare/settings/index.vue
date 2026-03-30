@@ -5,7 +5,7 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <div class="flex items-center gap-2">
-            <ElButton type="success" :icon="Plus" @click="openCreateDialog">{{
+            <ElButton v-if="canManage" type="success" :icon="Plus" @click="openCreateDialog">{{
               t('welfareSettings.create')
             }}</ElButton>
             <ElTag v-if="reorderSaving" type="info" size="small">{{
@@ -215,6 +215,7 @@
     ElMessage,
     ElMessageBox
   } from 'element-plus'
+  import { useUserStore } from '@/store/modules/user'
   import type { FormInstance, FormRules, UploadRawFile } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import { useDraggable } from 'vue-draggable-plus'
@@ -235,6 +236,12 @@
 
   defineOptions({ name: 'WelfareSettings' })
   const { t } = useI18n()
+
+  const userStore = useUserStore()
+  const canManage = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((role) => ['super_admin', 'admin'].includes(role))
+  })
 
   type WelfareItem = Api.Welfare.WelfareItem
 
@@ -276,20 +283,24 @@
       apiFn: adminListWelfares,
       apiParams: { current: 1, size: 50 },
       columnsFactory: () => [
-        {
-          prop: 'drag',
-          label: '',
-          width: 40,
-          formatter: () =>
-            h(
-              'span',
+        ...(canManage.value
+          ? [
               {
-                class: 'drag-handle cursor-grab text-gray-400 hover:text-gray-600 select-none',
-                title: t('welfareSettings.dragHint')
-              },
-              '⠿'
-            )
-        },
+                prop: 'drag',
+                label: '',
+                width: 40,
+                formatter: () =>
+                  h(
+                    'span',
+                    {
+                      class: 'drag-handle cursor-grab text-gray-400 hover:text-gray-600 select-none',
+                      title: t('welfareSettings.dragHint')
+                    },
+                    '⠿'
+                  )
+              }
+            ]
+          : []),
         { type: 'index', width: 60, label: '#' },
         {
           prop: 'name',
@@ -357,23 +368,27 @@
           width: 180,
           formatter: (row: WelfareItem) => formatTime(row.created_at)
         },
-        {
-          prop: 'actions',
-          label: t('common.operation'),
-          width: 180,
-          fixed: 'right',
-          formatter: (row: WelfareItem) =>
-            h('div', { class: 'flex gap-1' }, [
-              h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
-              h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) }),
-              h(ArtButtonTable, {
-                icon: 'ri:upload-2-line',
-                elType: 'warning',
-                label: t('welfareSettings.importBtn'),
-                onClick: () => openImportDialog(row)
-              })
-            ])
-        }
+        ...(canManage.value
+          ? [
+              {
+                prop: 'actions',
+                label: t('common.operation'),
+                width: 180,
+                fixed: 'right',
+                formatter: (row: WelfareItem) =>
+                  h('div', { class: 'flex gap-1' }, [
+                    h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
+                    h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) }),
+                    h(ArtButtonTable, {
+                      icon: 'ri:upload-2-line',
+                      elType: 'warning',
+                      label: t('welfareSettings.importBtn'),
+                      onClick: () => openImportDialog(row)
+                    })
+                  ])
+              }
+            ]
+          : [])
       ]
     }
   })
@@ -606,6 +621,7 @@
   })
 
   onMounted(() => {
+    if (!canManage.value) return
     nextTick(() => {
       const tbody = tableRef.value?.$el?.querySelector(
         '.el-table__body tbody'
