@@ -67,6 +67,7 @@
   import { ElCard, ElTag, ElButton, ElMessageBox, ElSelect, ElOption } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
+  import { formatTime } from '@utils/common'
   import {
     fetchESIRefreshTasks,
     fetchESIRefreshStatuses,
@@ -216,13 +217,13 @@
           prop: 'last_run',
           label: '上次运行',
           width: 180,
-          formatter: (row: TaskStatus) => h('span', {}, row.last_run ?? '-')
+          formatter: (row: TaskStatus) => h('span', {}, formatTime(row.last_run))
         },
         {
           prop: 'next_run',
           label: '下次运行',
           width: 180,
-          formatter: (row: TaskStatus) => h('span', {}, row.next_run ?? '-')
+          formatter: (row: TaskStatus) => h('span', {}, formatTime(row.next_run))
         },
         {
           prop: 'error',
