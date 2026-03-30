@@ -57,11 +57,18 @@
       <ElCard class="art-table-card mt-4" shadow="never">
         <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
           <template #left>
-            <ElButton type="primary" size="small" :loading="syncLoading" @click="handleSyncESI">
+            <ElButton
+              v-roles="['super_admin', 'admin', 'fc']"
+              type="primary"
+              size="small"
+              :loading="syncLoading"
+              @click="handleSyncESI"
+            >
               <el-icon class="mr-1"><Refresh /></el-icon>
               {{ $t('fleet.members.syncESI') }}
             </ElButton>
             <ElButton
+              v-roles="['super_admin', 'admin', 'fc']"
               type="success"
               size="small"
               :loading="papIssueLoading"
@@ -69,7 +76,13 @@
             >
               {{ $t('fleet.pap.issue') }}
             </ElButton>
-            <ElButton type="warning" size="small" :loading="pingLoading" @click="handlePing">
+            <ElButton
+              v-roles="['super_admin', 'admin', 'fc']"
+              type="warning"
+              size="small"
+              :loading="pingLoading"
+              @click="handlePing"
+            >
               {{ $t('fleet.ping.send') }}
             </ElButton>
           </template>
@@ -85,8 +98,8 @@
         />
       </ElCard>
 
-      <!-- 邀请链接 -->
-      <ElCard class="mt-4" shadow="never">
+      <!-- 邀请链接：仅 FC / 管理员可见 -->
+      <ElCard v-roles="['super_admin', 'admin', 'fc']" class="mt-4" shadow="never">
         <template #header>
           <div class="flex items-center justify-between">
             <span class="card-title">{{ $t('fleet.invite.title') }}</span>

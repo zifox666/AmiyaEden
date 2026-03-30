@@ -278,8 +278,8 @@ func (s *FleetService) RefreshESIFleetID(fleetID string, userID uint, userRole s
 	return fleet, nil
 }
 
-// ListFleets 分页查询舰队列表
-func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFilter) ([]model.Fleet, int64, error) {
+// ListFleets 分页查询舰队列表（含 is_joined 字段）
+func (s *FleetService) ListFleets(page, pageSize int, filter repository.FleetFilter) ([]repository.FleetWithJoined, int64, error) {
 	if page < 1 {
 		page = 1
 	}

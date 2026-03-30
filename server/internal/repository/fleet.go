@@ -44,11 +44,18 @@ func (r *FleetRepository) SoftDelete(id string) error {
 type FleetFilter struct {
 	Importance string
 	FCUserID   *uint
+	UserID     uint // 用于注入 is_joined 字段
 }
 
-// List 分页查询舰队列表
-func (r *FleetRepository) List(page, pageSize int, filter FleetFilter) ([]model.Fleet, int64, error) {
-	var fleets []model.Fleet
+// FleetWithJoined 舰队列表项（含当前用户是否参与）
+type FleetWithJoined struct {
+	model.Fleet
+	IsJoined bool `json:"is_joined"`
+}
+
+// List 分页查询舰队列表（含 is_joined 字段）
+func (r *FleetRepository) List(page, pageSize int, filter FleetFilter) ([]FleetWithJoined, int64, error) {
+	var results []FleetWithJoined
 	var total int64
 
 	offset := (page - 1) * pageSize
@@ -64,10 +71,15 @@ func (r *FleetRepository) List(page, pageSize int, filter FleetFilter) ([]model.
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	if err := db.Order("start_at DESC").Offset(offset).Limit(pageSize).Find(&fleets).Error; err != nil {
+
+	subquery := "EXISTS (SELECT 1 FROM fleet_member WHERE fleet_member.fleet_id = fleet.id AND fleet_member.user_id = ?)"
+	err := db.Order("start_at DESC").Offset(offset).Limit(pageSize).
+		Select("fleet.*, ("+subquery+") AS is_joined", filter.UserID).
+		Scan(&results).Error
+	if err != nil {
 		return nil, 0, err
 	}
-	return fleets, total, nil
+	return results, total, nil
 }
 
 // ─────────────────────────────────────────────

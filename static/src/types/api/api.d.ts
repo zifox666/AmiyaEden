@@ -393,6 +393,7 @@ declare namespace Api {
       auto_srp_mode: 'disabled' | 'submit_only' | 'auto_approve'
       created_at: string
       updated_at: string
+      is_joined: boolean
     }
 
     /** 舰队列表（分页） */

@@ -765,6 +765,7 @@
       "startAt": "Start Time",
       "endAt": "End Time",
       "createdAt": "Created At",
+      "participated": "Joined",
       "fc": "Fleet Commander",
       "fcPlaceholder": "Select a character as FC",
       "description": "Description",

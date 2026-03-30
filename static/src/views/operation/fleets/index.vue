@@ -7,7 +7,12 @@
     <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
-          <ElButton type="primary" :icon="Plus" @click="openCreateDialog">
+          <ElButton
+            v-roles="['super_admin', 'admin', 'fc']"
+            type="primary"
+            :icon="Plus"
+            @click="openCreateDialog"
+          >
             {{ $t('fleet.create') }}
           </ElButton>
         </template>
@@ -117,15 +122,17 @@
   import { fetchFleetList, createFleet, updateFleet, deleteFleet } from '@/api/fleet'
   import { fetchFleetConfigList } from '@/api/fleet-config'
   import { fetchMyCharacters } from '@/api/auth'
+  import { useUserStore } from '@/store/modules/user'
   import {
     ElTag,
     ElButton,
+    ElIcon,
     ElMessageBox,
     ElSwitch,
     type FormInstance,
     type FormRules
   } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Plus, Check, Close } from '@element-plus/icons-vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
 
@@ -135,6 +142,15 @@
 
   const { t } = useI18n()
   const router = useRouter()
+  const userStore = useUserStore()
+
+  // 检查当前用户是否可管理某行舰队（超级管理员/管理员可管理所有，FC 只能管理自己的）
+  const canManageFleet = (row: FleetItem): boolean => {
+    const roles = userStore.getUserInfo.roles ?? []
+    if (roles.includes('super_admin') || roles.includes('admin')) return true
+    if (roles.includes('fc') && row.fc_user_id === userStore.getUserInfo.userId) return true
+    return false
+  }
 
   // ─── 重要度颜色映射 ───
   const IMPORTANCE_MAP: Record<string, string> = {
@@ -181,7 +197,16 @@
       apiFn: fetchFleetList,
       apiParams: { current: 1, size: 20 },
       columnsFactory: () => [
-        { type: 'index', width: 60, label: '#' },
+        {
+          prop: 'is_joined',
+          label: ' ',
+          maxWidth: 15,
+          align: 'center' as const,
+          formatter: (row: FleetItem) =>
+            row.is_joined
+              ? h(ElIcon, { type: 'edit' }, () => h(Check))
+              : h(ElIcon, { type: 'delete' }, () => h(Close))
+        },
         {
           prop: 'title',
           label: t('fleet.fields.title'),
@@ -243,11 +268,17 @@
           width: 200,
           fixed: 'right',
           formatter: (row: FleetItem) =>
-            h('div', { class: 'flex gap-1' }, [
-              h(ArtButtonTable, { type: 'view', onClick: () => goDetail(row) }),
-              h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
-              h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) })
-            ])
+            h(
+              'div',
+              { class: 'flex gap-1' },
+              [
+                h(ArtButtonTable, { type: 'view', onClick: () => goDetail(row) }),
+                canManageFleet(row) &&
+                  h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
+                canManageFleet(row) &&
+                  h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) })
+              ].filter(Boolean)
+            )
         }
       ]
     }

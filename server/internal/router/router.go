@@ -73,39 +73,35 @@ func RegisterRoutes(r *gin.Engine) {
 	operation := auth.Group("/operation")
 	fleet := operation.Group("/fleets")
 	{
-		fleet.POST("", fleetH.CreateFleet)
+		// ─── 所有已认证用户可访问 ───
 		fleet.GET("", fleetH.ListFleets)
 		fleet.GET("/me", fleetH.GetMyFleets)
+		fleet.GET("/pap/me", fleetH.GetMyPapLogs)
 		fleet.GET("/:id", fleetH.GetFleet)
-		fleet.PUT("/:id", fleetH.UpdateFleet)
-		fleet.DELETE("/:id", fleetH.DeleteFleet)
-		fleet.POST("/:id/refresh-esi", fleetH.RefreshFleetESI)
-
-		// 成员
 		fleet.GET("/:id/members", fleetH.GetMembers)
 		fleet.GET("/:id/members-pap", fleetH.GetMembersWithPap)
-		fleet.POST("/:id/members/sync", fleetH.SyncESIMembers)
-
-		// ――― PAP
-		fleet.POST("/:id/pap", fleetH.IssuePap)
 		fleet.GET("/:id/pap", fleetH.GetPapLogs)
-		fleet.GET("/pap/me", fleetH.GetMyPapLogs)
+		fleet.POST("/join", fleetH.JoinFleet)
+		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
 
-		// ――― 联盟 PAP
+		// ――― 联盟 PAP（所有用户可查）
 		alliancePAPH := handler.NewAlliancePAPHandler()
 		fleet.GET("/pap/alliance", alliancePAPH.GetMyAlliancePAP)
 
-		// 邀请
-		fleet.POST("/:id/invites", fleetH.CreateInvite)
-		fleet.GET("/:id/invites", fleetH.GetInvites)
-		fleet.DELETE("/invites/:invite_id", fleetH.DeactivateInvite)
-		fleet.POST("/join", fleetH.JoinFleet)
-
-		// 查角色所在舰队
-		fleet.GET("/esi/:character_id", fleetH.GetCharacterFleetInfo)
-
-		// Webhook Ping（FC 或管理员手动触发）
-		fleet.POST("/:id/ping", fleetH.PingFleet)
+		// ─── 仅 FC / 管理员可操作 ───
+		fleetFC := fleet.Group("", middleware.RequireRole(model.RoleFC, model.RoleAdmin))
+		{
+			fleetFC.POST("", fleetH.CreateFleet)
+			fleetFC.PUT("/:id", fleetH.UpdateFleet)
+			fleetFC.DELETE("/:id", fleetH.DeleteFleet)
+			fleetFC.POST("/:id/refresh-esi", fleetH.RefreshFleetESI)
+			fleetFC.POST("/:id/members/sync", fleetH.SyncESIMembers)
+			fleetFC.POST("/:id/pap", fleetH.IssuePap)
+			fleetFC.POST("/:id/invites", fleetH.CreateInvite)
+			fleetFC.GET("/:id/invites", fleetH.GetInvites)
+			fleetFC.DELETE("/invites/:invite_id", fleetH.DeactivateInvite)
+			fleetFC.POST("/:id/ping", fleetH.PingFleet)
+		}
 	}
 
 	// ─── 舰队配置 ───

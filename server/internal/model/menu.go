@@ -220,7 +220,7 @@ func DefaultRoleMenuMap() map[string][]string {
 		RoleUser: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
-			"Operation", "MyPap", "Wallet", "JoinFleet", "FleetConfigs", "UserSkillPlan",
+			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet", "FleetConfigs", "UserSkillPlan",
 			"ShopRoot", "Shop",
 			"SRP", "SrpApply",
 			"Result", "ResultSuccess", "ResultFail",

@@ -48,6 +48,7 @@ func (h *FleetHandler) ListFleets(c *gin.Context) {
 
 	filter := repository.FleetFilter{
 		Importance: c.Query("importance"),
+		UserID:     middleware.GetUserID(c),
 	}
 	if fcStr := c.Query("fc_user_id"); fcStr != "" {
 		if id, err := strconv.ParseUint(fcStr, 10, 64); err == nil {

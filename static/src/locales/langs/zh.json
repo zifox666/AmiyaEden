@@ -766,6 +766,7 @@
       "startAt": "开始时间",
       "endAt": "结束时间",
       "createdAt": "创建时间",
+      "participated": "参与",
       "fc": "舰队指挥",
       "fcPlaceholder": "选择一个角色作为舰队指挥",
       "description": "详细信息",
