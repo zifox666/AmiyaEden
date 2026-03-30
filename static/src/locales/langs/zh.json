@@ -1885,6 +1885,7 @@
       "saveSuccess": "帮扶设置已保存",
       "eligibilityTitle": "新人资格判定",
       "eligibilityHint": "当前规则会基于用户全部绑定人物的技能点快照进行判定。",
+      "maxCharacterSP": "单人物技能点上限",
       "maxCharacterSPPlaceholder": "达到该技能点即不再属于新人",
       "multiCharacterSP": "多人物技能点阈值",
       "multiCharacterSPPlaceholder": "用于统计达到阈值的人物数量",

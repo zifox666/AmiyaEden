@@ -3,7 +3,7 @@
 <!-- 扩展功能：分页组件、渲染自定义列、loading、表格全局边框、斑马纹、表格尺寸、表头背景配置 -->
 <!-- 获取 ref：默认暴露了 elTableRef 外部通过 ref.value.elTableRef 可以调用 el-table 方法 -->
 <template>
-  <div class="art-table" :class="{ 'is-empty': isEmpty }" :style="containerHeight">
+  <div ref="artTableContainerRef" class="art-table" :class="{ 'is-empty': isEmpty }" :style="containerHeight">
     <ElTable
       ref="elTableRef"
       v-loading="!!loading"
@@ -94,6 +94,7 @@
 
   const { width } = useWindowSize()
   const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
+  const artTableContainerRef = ref<HTMLElement>()
   const paginationRef = ref<HTMLElement>()
   const tableHeaderRef = ref<HTMLElement>()
   const tableStore = useTableStore()
@@ -219,7 +220,9 @@
   })
 
   // 分页器与表格之间的间距常量（计算属性，响应 showTableHeader 变化）
-  const PAGINATION_SPACING = computed(() => (props.showTableHeader ? 6 : 15))
+  // 值需与 style.scss 中 .el-table { margin-top: 10px } 和 .pagination { margin-top: 13px } 匹配
+  // TABLE_HEADER_SPACING(12) + paginationSpacing(11) = 23 = el-table margin-top(10) + pagination margin-top(13)
+  const PAGINATION_SPACING = computed(() => (props.showTableHeader ? 11 : 15))
 
   // 使用表格高度计算 Hook
   const { containerHeight } = useTableHeight({
@@ -296,18 +299,18 @@
     (e: 'pagination:current-change', val: number): void
   }>()
 
-  // 查找并绑定表格头部元素 - 使用 VueUse 优化
+  // 查找并绑定表格头部元素 - 在父元素内查找，避免多实例时 ID 冲突
   const findTableHeader = () => {
     if (!props.showTableHeader) {
       tableHeaderRef.value = undefined
       return
     }
 
-    const tableHeader = document.getElementById('art-table-header')
+    const parent = artTableContainerRef.value?.parentElement
+    const tableHeader = parent?.querySelector<HTMLElement>('#art-table-header') ?? null
     if (tableHeader) {
       tableHeaderRef.value = tableHeader
     } else {
-      // 如果找不到表格头部，设置为 undefined，useElementSize 会返回 0
       tableHeaderRef.value = undefined
     }
   }
