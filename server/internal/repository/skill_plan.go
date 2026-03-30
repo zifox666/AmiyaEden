@@ -41,6 +41,16 @@ func (r *SkillPlanRepository) GetByID(id uint) (*model.SkillPlan, error) {
 	return &plan, err
 }
 
+// ListByIDs 根据 ID 列表获取技能计划
+func (r *SkillPlanRepository) ListByIDs(ids []uint) ([]model.SkillPlan, error) {
+	var plans []model.SkillPlan
+	if len(ids) == 0 {
+		return plans, nil
+	}
+	err := global.DB.Where("id IN ?", ids).Find(&plans).Error
+	return plans, err
+}
+
 // List 分页获取技能计划
 func (r *SkillPlanRepository) List(page, pageSize int, keyword string) ([]model.SkillPlan, int64, error) {
 	var plans []model.SkillPlan

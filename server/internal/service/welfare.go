@@ -185,6 +185,7 @@ type EligibleWelfareResp struct {
 	Name               string                  `json:"name"`
 	Description        string                  `json:"description"`
 	DistMode           string                  `json:"dist_mode"`
+	SkillPlanNames     []string                `json:"skill_plan_names"`
 	RequireEvidence    bool                    `json:"require_evidence"`
 	ExampleEvidence    string                  `json:"example_evidence"`
 	CanApplyNow        bool                    `json:"can_apply_now"`
@@ -205,6 +206,61 @@ func buildIneligibleReason(papBlocked bool, skillBlocked bool) string {
 		return "skill"
 	}
 	return ""
+}
+
+func skillPlanNamesForWelfare(planIDs []uint, planNamesByID map[uint]string) []string {
+	names := make([]string, 0, len(planIDs))
+	for _, planID := range planIDs {
+		name := strings.TrimSpace(planNamesByID[planID])
+		if name == "" {
+			continue
+		}
+		names = append(names, name)
+	}
+	return names
+}
+
+func (s *WelfareService) fillWelfareSkillPlanNames(welfares []model.Welfare) error {
+	planIDSet := make(map[uint]struct{})
+	for _, welfare := range welfares {
+		for _, planID := range welfare.SkillPlanIDs {
+			planIDSet[planID] = struct{}{}
+		}
+	}
+
+	if len(planIDSet) == 0 {
+		for index := range welfares {
+			welfares[index].SkillPlanNames = []string{}
+		}
+		return nil
+	}
+
+	planIDs := make([]uint, 0, len(planIDSet))
+	for planID := range planIDSet {
+		planIDs = append(planIDs, planID)
+	}
+
+	plans, err := s.planRepo.ListByIDs(planIDs)
+	if err != nil {
+		return err
+	}
+
+	planNamesByID := make(map[uint]string, len(plans))
+	for _, plan := range plans {
+		planNamesByID[plan.ID] = strings.TrimSpace(plan.Title)
+	}
+
+	for index := range welfares {
+		welfares[index].SkillPlanNames = skillPlanNamesForWelfare(
+			welfares[index].SkillPlanIDs,
+			planNamesByID,
+		)
+		if welfares[index].SkillPlanNames == nil {
+			welfares[index].SkillPlanNames = []string{}
+		}
+	}
+
+	return nil
 }
 
 // GetEligibleWelfares 获取用户可申请的福利列表
@@ -228,6 +284,9 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 	}
 	if len(welfares) == 0 {
 		return []EligibleWelfareResp{}, nil
+	}
+	if err := s.fillWelfareSkillPlanNames(welfares); err != nil {
+		return nil, errors.New("获取技能计划失败")
 	}
 
 	// 4. 获取这些福利的所有申请记录
@@ -353,11 +412,17 @@ func (s *WelfareService) buildEligibleWelfareResp(
 	skillCheckCache map[int64]map[uint]bool,
 	minimumPapBlocked bool,
 ) (EligibleWelfareResp, bool) {
+	skillPlanNames := append([]string(nil), w.SkillPlanNames...)
+	if skillPlanNames == nil {
+		skillPlanNames = []string{}
+	}
+
 	resp := EligibleWelfareResp{
 		ID:              w.ID,
 		Name:            w.Name,
 		Description:     w.Description,
 		DistMode:        w.DistMode,
+		SkillPlanNames:  skillPlanNames,
 		RequireEvidence: w.RequireEvidence,
 		ExampleEvidence: w.ExampleEvidence,
 	}
@@ -811,6 +876,14 @@ func validateReviewTransition(currentStatus, action string) (string, error) {
 }
 
 // AdminReviewApplication 管理端审批福利申请
+// AdminDeleteApplication 删除单条福利申请记录
+func (s *WelfareService) AdminDeleteApplication(id uint) error {
+	if _, err := s.repo.GetApplicationByID(id); err != nil {
+		return errors.New("申请记录不存在")
+	}
+	return s.repo.DeleteApplication(id)
+}
+
 func (s *WelfareService) AdminReviewApplication(appID uint, reviewerID uint, req *AdminReviewApplicationRequest) error {
 	app, err := s.repo.GetApplicationByID(appID)
 	if err != nil {
@@ -837,8 +910,34 @@ type MyApplicationResp struct {
 	WelfareName   string     `json:"welfare_name"`
 	CharacterName string     `json:"character_name"`
 	Status        string     `json:"status"`
+	ReviewerName  string     `json:"reviewer_name"`
 	CreatedAt     time.Time  `json:"created_at"`
 	ReviewedAt    *time.Time `json:"reviewed_at"`
+}
+
+func buildMyApplicationResponses(
+	apps []model.WelfareApplication,
+	welfareNames map[uint]string,
+	reviewerNames map[uint]string,
+) []MyApplicationResp {
+	result := make([]MyApplicationResp, 0, len(apps))
+	for _, app := range apps {
+		reviewerName := ""
+		if app.ReviewedBy > 0 {
+			reviewerName = reviewerNames[app.ReviewedBy]
+		}
+		result = append(result, MyApplicationResp{
+			ID:            app.ID,
+			WelfareID:     app.WelfareID,
+			WelfareName:   welfareNames[app.WelfareID],
+			CharacterName: app.CharacterName,
+			Status:        app.Status,
+			ReviewerName:  reviewerName,
+			CreatedAt:     app.CreatedAt,
+			ReviewedAt:    app.ReviewedAt,
+		})
+	}
+	return result
 }
 
 // ListMyApplications 查询用户的福利申请列表
@@ -855,38 +954,46 @@ func (s *WelfareService) ListMyApplications(userID uint, page, pageSize int, sta
 		return []MyApplicationResp{}, total, nil
 	}
 
-	// 批量获取福利名称
-	welfareIDs := make([]uint, 0)
-	seen := make(map[uint]bool)
+	welfareIDSet := make(map[uint]struct{})
+	reviewerIDSet := make(map[uint]struct{})
 	for _, app := range apps {
-		if !seen[app.WelfareID] {
-			welfareIDs = append(welfareIDs, app.WelfareID)
-			seen[app.WelfareID] = true
+		welfareIDSet[app.WelfareID] = struct{}{}
+		if app.ReviewedBy > 0 {
+			reviewerIDSet[app.ReviewedBy] = struct{}{}
 		}
+	}
+
+	welfareIDs := make([]uint, 0, len(welfareIDSet))
+	for welfareID := range welfareIDSet {
+		welfareIDs = append(welfareIDs, welfareID)
 	}
 
 	welfareNames := make(map[uint]string)
-	for _, wid := range welfareIDs {
-		w, err := s.repo.GetWelfareByID(wid)
+	if len(welfareIDs) > 0 {
+		welfares, err := s.repo.ListWelfaresByIDs(welfareIDs)
 		if err == nil {
-			welfareNames[wid] = w.Name
+			for _, welfare := range welfares {
+				welfareNames[welfare.ID] = welfare.Name
+			}
 		}
 	}
 
-	result := make([]MyApplicationResp, 0, len(apps))
-	for _, app := range apps {
-		result = append(result, MyApplicationResp{
-			ID:            app.ID,
-			WelfareID:     app.WelfareID,
-			WelfareName:   welfareNames[app.WelfareID],
-			CharacterName: app.CharacterName,
-			Status:        app.Status,
-			CreatedAt:     app.CreatedAt,
-			ReviewedAt:    app.ReviewedAt,
-		})
+	reviewerIDs := make([]uint, 0, len(reviewerIDSet))
+	for reviewerID := range reviewerIDSet {
+		reviewerIDs = append(reviewerIDs, reviewerID)
 	}
 
-	return result, total, nil
+	reviewerNames := make(map[uint]string)
+	if len(reviewerIDs) > 0 {
+		users, err := s.userRepo.ListByIDs(reviewerIDs)
+		if err == nil {
+			for _, user := range users {
+				reviewerNames[user.ID] = user.Nickname
+			}
+		}
+	}
+
+	return buildMyApplicationResponses(apps, welfareNames, reviewerNames), total, nil
 }
 
 // ─────────────────────────────────────────────

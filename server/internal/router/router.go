@@ -372,14 +372,17 @@ func RegisterRoutes(r *gin.Engine) {
 		shopOrder.POST("/reject", adminShopH.AdminRejectOrder)
 	}
 
-	// 福利管理（管理员）
+	// 福利管理（列表：admin + welfare 可读；写操作仅 admin）
+	welfareListGroup := login.Group("/system/welfare", middleware.RequireRole(model.RoleAdmin, model.RoleWelfare))
+	welfareListGroup.POST("/list", welfareH.AdminListWelfares)
+
 	adminWelfare := admin.Group("/welfare")
 	{
-		adminWelfare.POST("/list", welfareH.AdminListWelfares)
 		adminWelfare.POST("/add", welfareH.AdminCreateWelfare)
 		adminWelfare.POST("/edit", welfareH.AdminUpdateWelfare)
 		adminWelfare.POST("/delete", welfareH.AdminDeleteWelfare)
 		adminWelfare.POST("/applications", welfareH.AdminListApplications)
+		adminWelfare.POST("/applications/delete", welfareH.AdminDeleteApplication)
 		adminWelfare.POST("/review", welfareH.AdminReviewApplication)
 		adminWelfare.POST("/import", welfareH.AdminImportRecords)
 		adminWelfare.POST("/reorder", welfareH.AdminReorderWelfares)

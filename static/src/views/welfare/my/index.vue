@@ -2,15 +2,27 @@
 <template>
   <div class="welfare-my-page art-full-height">
     <ElCard class="art-table-card" shadow="never">
+      <ElAlert type="success" :closable="false" class="mb-4" show-icon>
+        <p class="break-all">
+          {{ t('welfareMy.skillPlanningAlertPrefix') }}
+          <RouterLink class="text-theme font-medium" :to="{ name: 'SkillPlanCompletionCheck' }">
+            {{ '技能规划-检查完成度' }}
+          </RouterLink>
+        </p>
+      </ElAlert>
+
       <ElTabs v-model="activeTab" @tab-change="handleTabChange">
         <!-- 申请福利 -->
         <ElTabPane :label="t('welfareMy.applyTab')" name="apply">
           <ArtTable
             :loading="eligibleLoading"
-            :data="eligibleRows"
+            :data="pagedEligibleRows"
             :columns="eligibleColumns"
             :empty-text="t('welfareMy.noEligibleWelfares')"
             :row-class-name="eligibleRowClassName"
+            :pagination="eligiblePagination"
+            @pagination:size-change="handleEligibleSizeChange"
+            @pagination:current-change="handleEligibleCurrentChange"
           />
         </ElTabPane>
 
@@ -80,6 +92,7 @@
 <script setup lang="ts">
   import { ElTag, ElButton, ElUpload, ElMessage, ElTooltip } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
+  import { formatTime } from '@utils/common'
   import {
     getEligibleWelfares,
     applyForWelfare,
@@ -87,6 +100,7 @@
     uploadWelfareEvidence
   } from '@/api/welfare'
   import { sortEligibleRows } from './eligibleRows'
+  import { formatWelfareIneligibleReason } from './ineligibleReason'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'WelfareMy' })
@@ -96,8 +110,6 @@
   const activeTab = ref('apply')
 
   // ─── 申请福利 Tab ───
-  const eligibleLoading = ref(false)
-  const eligibleWelfares = ref<Api.Welfare.EligibleWelfare[]>([])
 
   // 将 eligible welfares 展平为表格行
   // per_user: 一条福利一行
@@ -106,32 +118,34 @@
     welfareId: number
     welfareName: string
     description: string
+    skillPlanNames: string[]
     distMode: string
     canApplyNow: boolean
     ineligibleReason?: 'pap' | 'skill' | 'pap_skill'
     characterId?: number
     characterName?: string
+    requireEvidence: boolean
+    exampleEvidence: string
   }
 
-  const eligibleRows = computed<EligibleRow[]>(() => {
+  function flattenEligibleWelfares(welfares: Api.Welfare.EligibleWelfare[]): EligibleRow[] {
     const rows: EligibleRow[] = []
-    for (const w of eligibleWelfares.value) {
+    for (const w of welfares) {
+      const shared = {
+        welfareId: w.id,
+        welfareName: w.name,
+        description: w.description,
+        skillPlanNames: w.skill_plan_names ?? [],
+        distMode: w.dist_mode,
+        requireEvidence: w.require_evidence,
+        exampleEvidence: w.example_evidence
+      }
       if (w.dist_mode === 'per_user') {
-        rows.push({
-          welfareId: w.id,
-          welfareName: w.name,
-          description: w.description,
-          distMode: w.dist_mode,
-          canApplyNow: w.can_apply_now,
-          ineligibleReason: w.ineligible_reason
-        })
+        rows.push({ ...shared, canApplyNow: w.can_apply_now, ineligibleReason: w.ineligible_reason })
       } else {
         for (const char of w.eligible_characters) {
           rows.push({
-            welfareId: w.id,
-            welfareName: w.name,
-            description: w.description,
-            distMode: w.dist_mode,
+            ...shared,
             canApplyNow: char.can_apply_now,
             ineligibleReason: char.ineligible_reason,
             characterId: char.character_id,
@@ -141,6 +155,30 @@
       }
     }
     return sortEligibleRows(rows)
+  }
+
+  async function getEligibleWelfaresPage(
+    params: Api.Common.CommonSearchParams
+  ): Promise<Api.Common.PaginatedResponse<EligibleRow>> {
+    const welfares = await getEligibleWelfares()
+    const rows = flattenEligibleWelfares(welfares ?? [])
+    const { current, size } = params
+    return { list: rows.slice((current - 1) * size, current * size), total: rows.length, page: current, pageSize: size }
+  }
+
+  const {
+    data: pagedEligibleRows,
+    loading: eligibleLoading,
+    pagination: eligiblePagination,
+    handleSizeChange: handleEligibleSizeChange,
+    handleCurrentChange: handleEligibleCurrentChange,
+    getData: loadEligibleWelfares
+  } = useTable({
+    core: {
+      apiFn: getEligibleWelfaresPage,
+      apiParams: { current: 1, size: 10 },
+      immediate: false
+    }
   })
 
   const DIST_MODE_CONFIG = computed(
@@ -151,11 +189,28 @@
       }) as Record<string, { label: string; type: string }>
   )
 
+  const reasonMessages = computed(() => ({
+    pap: t('welfareMy.ineligibleReasonPap'),
+    skill: t('welfareMy.ineligibleReasonSkill'),
+    papSkill: t('welfareMy.ineligibleReasonPapSkill'),
+    skillPlan: (plans: string) => t('welfareMy.ineligibleReasonSkillPlan', { plans } ),
+    papSkillPlan: (plans: string) => t('welfareMy.ineligibleReasonPapSkillPlan', { plans }),
+    planSeparator: t('welfareMy.skillPlanJoiner')
+  }))
+
+  function getIneligibleReasonContent(row: EligibleRow) {
+    return formatWelfareIneligibleReason(
+      row.ineligibleReason,
+      row.skillPlanNames,
+      reasonMessages.value
+    )
+  }
+
   const eligibleColumns = computed(() => [
     {
       prop: 'welfareName',
       label: t('welfareMy.welfareName'),
-      minWidth: 160,
+      minWidth: 80,
       showOverflowTooltip: true
     },
     {
@@ -192,13 +247,11 @@
           () => (row.canApplyNow ? t('welfareMy.eligibilityNow') : t('welfareMy.eligibilityFuture'))
         )
         if (row.canApplyNow || !row.ineligibleReason) return tag
-        const reasonKey =
-          row.ineligibleReason === 'pap_skill'
-            ? 'welfareMy.ineligibleReasonPapSkill'
-            : row.ineligibleReason === 'pap'
-              ? 'welfareMy.ineligibleReasonPap'
-              : 'welfareMy.ineligibleReasonSkill'
-        return h(ElTooltip, { content: t(reasonKey), placement: 'top' }, () => tag)
+        return h(
+          ElTooltip,
+          { content: getIneligibleReasonContent(row), placement: 'top' },
+          () => tag
+        )
       }
     },
     {
@@ -227,37 +280,20 @@
     }
   ])
 
-  function getEligibleRowClassName({ row }: { row: EligibleRow }) {
-    return row.canApplyNow ? '' : 'welfare-future-row'
-  }
-
   function eligibleRowClassName({ row }: { row: Record<string, any>; rowIndex: number }) {
-    return getEligibleRowClassName({ row: row as EligibleRow })
-  }
-
-  async function loadEligibleWelfares() {
-    eligibleLoading.value = true
-    try {
-      const res = await getEligibleWelfares()
-      eligibleWelfares.value = res ?? []
-    } catch {
-      eligibleWelfares.value = []
-    } finally {
-      eligibleLoading.value = false
-    }
+    return (row as EligibleRow).canApplyNow ? '' : 'welfare-future-row'
   }
 
   // ─── 证明图片对话框 ───
   const evidenceDialogVisible = ref(false)
-  const pendingApplyRow = ref<(EligibleRow & { exampleEvidence: string }) | null>(null)
+  const pendingApplyRow = ref<EligibleRow | null>(null)
   const evidenceImageUrl = ref('')
   const evidenceUploading = ref(false)
   const applyLoading = ref(false)
 
   function handleApply(row: EligibleRow) {
-    const welfare = eligibleWelfares.value.find((w) => w.id === row.welfareId)
-    if (welfare?.require_evidence) {
-      pendingApplyRow.value = { ...row, exampleEvidence: welfare.example_evidence ?? '' }
+    if (row.requireEvidence) {
+      pendingApplyRow.value = row
       evidenceImageUrl.value = ''
       evidenceDialogVisible.value = true
     } else {
@@ -333,13 +369,13 @@
     {
       prop: 'welfare_name',
       label: t('welfareMy.welfareName'),
-      minWidth: 160,
+      minWidth: 70,
       showOverflowTooltip: true
     },
     {
       prop: 'character_name',
       label: t('welfareMy.characterName'),
-      width: 160
+      minWidth: 90
     },
     {
       prop: 'status',
@@ -354,15 +390,23 @@
       }
     },
     {
+      prop: 'reviewer_name',
+      label: t('welfareMy.reviewerName'),
+      width: 130,
+      showOverflowTooltip: true,
+      formatter: (row: Api.Welfare.MyApplication) => row.reviewer_name || '-'
+    },
+    {
       prop: 'created_at',
       label: t('welfareMy.appliedAt'),
-      width: 170
+      width: 170,
+      formatter: (row: Api.Welfare.MyApplication) => formatTime(row.created_at)
     },
     {
       prop: 'reviewed_at',
       label: t('welfareMy.reviewedAt'),
       width: 170,
-      formatter: (row: Api.Welfare.MyApplication) => row.reviewed_at || '-'
+      formatter: (row: Api.Welfare.MyApplication) => formatTime(row.reviewed_at)
     }
   ])
 

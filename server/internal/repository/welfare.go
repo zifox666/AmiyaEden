@@ -296,6 +296,11 @@ func (r *WelfareRepository) UpdateApplication(app *model.WelfareApplication) err
 	return global.DB.Save(app).Error
 }
 
+// DeleteApplication 删除福利申请记录
+func (r *WelfareRepository) DeleteApplication(id uint) error {
+	return global.DB.Delete(&model.WelfareApplication{}, id).Error
+}
+
 // ListActiveWelfares 查询所有启用的福利
 func (r *WelfareRepository) ListActiveWelfares() ([]model.Welfare, error) {
 	var list []model.Welfare

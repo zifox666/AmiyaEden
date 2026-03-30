@@ -43,7 +43,7 @@
                   ]"
                 >
                   <span class="font-medium">{{ message.sender }}</span>
-                  <span class="text-g-600">{{ message.time }}</span>
+                  <span class="text-g-600">{{ formatTime(message.time) }}</span>
                 </div>
                 <div
                   :class="[
@@ -91,6 +91,7 @@
 <script setup lang="ts">
   import { Picture, Paperclip, Close } from '@element-plus/icons-vue'
   import { mittBus } from '@/utils/sys'
+  import { formatTime } from '@utils/common'
   import meAvatar from '@/assets/images/avatar/avatar5.webp'
   import aiAvatar from '@/assets/images/avatar/avatar10.webp'
 
@@ -111,6 +112,7 @@
   const SCROLL_DELAY = 100
   const BOT_NAME = 'Art Bot'
   const USER_NAME = 'Ricky'
+  const MOCK_CHAT_BASE_TIME = new Date('2026-03-30T10:00:00').getTime()
 
   // 响应式布局
   const { width } = useWindowSize()
@@ -125,13 +127,16 @@
   const messageId = ref(10)
   const messageContainer = ref<HTMLElement | null>(null)
 
+  const buildMockTime = (minuteOffset: number) =>
+    new Date(MOCK_CHAT_BASE_TIME + minuteOffset * 60_000).toISOString()
+
   // 初始化聊天消息数据
   const initializeMessages = (): ChatMessage[] => [
     {
       id: 1,
       sender: BOT_NAME,
       content: '你好！我是你的AI助手，有什么我可以帮你的吗？',
-      time: '10:00',
+      time: buildMockTime(0),
       isMe: false,
       avatar: aiAvatar
     },
@@ -139,7 +144,7 @@
       id: 2,
       sender: USER_NAME,
       content: '我想了解一下系统的使用方法。',
-      time: '10:01',
+      time: buildMockTime(1),
       isMe: true,
       avatar: meAvatar
     },
@@ -147,7 +152,7 @@
       id: 3,
       sender: BOT_NAME,
       content: '好的，我来为您介绍系统的主要功能。首先，您可以通过左侧菜单访问不同的功能模块...',
-      time: '10:02',
+      time: buildMockTime(2),
       isMe: false,
       avatar: aiAvatar
     },
@@ -155,7 +160,7 @@
       id: 4,
       sender: USER_NAME,
       content: '听起来很不错，能具体讲讲数据分析部分吗？',
-      time: '10:05',
+      time: buildMockTime(5),
       isMe: true,
       avatar: meAvatar
     },
@@ -163,7 +168,7 @@
       id: 5,
       sender: BOT_NAME,
       content: '当然可以。数据分析模块可以帮助您实时监控关键指标，并生成详细的报表...',
-      time: '10:06',
+      time: buildMockTime(6),
       isMe: false,
       avatar: aiAvatar
     },
@@ -171,7 +176,7 @@
       id: 6,
       sender: USER_NAME,
       content: '太好了，那我如何开始使用呢？',
-      time: '10:08',
+      time: buildMockTime(8),
       isMe: true,
       avatar: meAvatar
     },
@@ -179,7 +184,7 @@
       id: 7,
       sender: BOT_NAME,
       content: '您可以先创建一个项目，然后在项目中添加相关的数据源，系统会自动进行分析。',
-      time: '10:09',
+      time: buildMockTime(9),
       isMe: false,
       avatar: aiAvatar
     },
@@ -187,7 +192,7 @@
       id: 8,
       sender: USER_NAME,
       content: '明白了，谢谢你的帮助！',
-      time: '10:10',
+      time: buildMockTime(10),
       isMe: true,
       avatar: meAvatar
     },
@@ -195,7 +200,7 @@
       id: 9,
       sender: BOT_NAME,
       content: '不客气，有任何问题随时联系我。',
-      time: '10:11',
+      time: buildMockTime(11),
       isMe: false,
       avatar: aiAvatar
     }
@@ -205,10 +210,7 @@
 
   // 工具函数
   const formatCurrentTime = (): string => {
-    return new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    return new Date().toISOString()
   }
 
   const scrollToBottom = (): void => {

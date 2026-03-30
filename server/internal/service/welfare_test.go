@@ -372,6 +372,7 @@ func TestBuildEligibleWelfareRespIncludesFutureSkillOptions(t *testing.T) {
 			DistMode:         model.WelfareDistModePerUser,
 			RequireSkillPlan: true,
 			SkillPlanIDs:     []uint{7},
+			SkillPlanNames:   []string{"Alpha Plan"},
 		}
 		skillCache := map[int64]map[uint]bool{
 			1001: {7: false},
@@ -384,6 +385,9 @@ func TestBuildEligibleWelfareRespIncludesFutureSkillOptions(t *testing.T) {
 		}
 		if got.CanApplyNow {
 			t.Fatal("expected per-user welfare to be disabled when no character satisfies the skill plan yet")
+		}
+		if len(got.SkillPlanNames) != 1 || got.SkillPlanNames[0] != "Alpha Plan" {
+			t.Fatalf("expected skill plan names to be propagated, got %+v", got.SkillPlanNames)
 		}
 		if len(got.EligibleCharacters) != 0 {
 			t.Fatalf("expected no character rows for per-user welfare, got %d", len(got.EligibleCharacters))
@@ -417,6 +421,63 @@ func TestBuildEligibleWelfareRespIncludesFutureSkillOptions(t *testing.T) {
 			t.Fatal("expected the second character to be future-only")
 		}
 	})
+}
+
+func TestSkillPlanNamesForWelfarePreservesConfiguredOrder(t *testing.T) {
+	got := skillPlanNamesForWelfare([]uint{7, 3, 9}, map[uint]string{
+		3: "Shield Plan",
+		7: "Armor Plan",
+		9: "",
+	})
+
+	want := []string{"Armor Plan", "Shield Plan"}
+	if len(got) != len(want) {
+		t.Fatalf("expected %d plan names, got %d (%+v)", len(want), len(got), got)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("got[%d] = %q, want %q", index, got[index], want[index])
+		}
+	}
+}
+
+func TestBuildMyApplicationResponsesIncludesReviewerNickname(t *testing.T) {
+	createdAt := time.Date(2026, 3, 30, 8, 0, 0, 0, time.UTC)
+	reviewedAt := time.Date(2026, 3, 30, 9, 30, 0, 0, time.UTC)
+
+	apps := []model.WelfareApplication{
+		{
+			BaseModel:     model.BaseModel{ID: 1, CreatedAt: createdAt},
+			WelfareID:     10,
+			CharacterName: "Alpha",
+			Status:        model.WelfareAppStatusDelivered,
+			ReviewedBy:    77,
+			ReviewedAt:    &reviewedAt,
+		},
+		{
+			BaseModel:     model.BaseModel{ID: 2, CreatedAt: createdAt},
+			WelfareID:     11,
+			CharacterName: "Beta",
+			Status:        model.WelfareAppStatusRequested,
+		},
+	}
+
+	got := buildMyApplicationResponses(apps, map[uint]string{
+		10: "Starter Pack",
+		11: "Advanced Pack",
+	}, map[uint]string{
+		77: "Officer Fox",
+	})
+
+	if len(got) != 2 {
+		t.Fatalf("expected 2 responses, got %d", len(got))
+	}
+	if got[0].ReviewerName != "Officer Fox" {
+		t.Fatalf("expected reviewer nickname to be included, got %q", got[0].ReviewerName)
+	}
+	if got[1].ReviewerName != "" {
+		t.Fatalf("expected empty reviewer nickname for unreviewed applications, got %q", got[1].ReviewerName)
+	}
 }
 
 func TestParseImportedWelfareApplicationsSupportsCommaAndTabSeparatedRows(t *testing.T) {

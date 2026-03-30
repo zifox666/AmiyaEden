@@ -1,6 +1,16 @@
 <!-- 福利审批页面 -->
 <template>
   <div class="welfare-approval-page art-full-height">
+    <ElTooltip
+      v-model:visible="tooltipVisible"
+      virtual-triggering
+      :virtual-ref="hoveredRowEl ?? undefined"
+      :content="hoveredDescription"
+      placement="top"
+      effect="dark"
+      :show-after="0"
+      :teleported="true"
+    />
     <ElCard class="art-table-card" shadow="never">
       <ElTabs v-model="activeTab" @tab-change="handleTabChange">
         <!-- 待发放 -->
@@ -22,6 +32,8 @@
             :pagination-options="{ pageSizes: [50, 100, 200] }"
             @pagination:size-change="pendingHandleSizeChange"
             @pagination:current-change="pendingHandleCurrentChange"
+            @cell-mouse-enter="handleCellMouseEnter"
+            @cell-mouse-leave="handleCellMouseLeave"
           />
           <ElEmpty
             v-if="!pendingLoading && pendingData.length === 0"
@@ -61,6 +73,8 @@
             visual-variant="ledger"
             @pagination:size-change="historyHandleSizeChange"
             @pagination:current-change="historyHandleCurrentChange"
+            @cell-mouse-enter="handleCellMouseEnter"
+            @cell-mouse-leave="handleCellMouseLeave"
           />
           <ElEmpty
             v-if="!historyLoading && historyData.length === 0"
@@ -73,18 +87,25 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElInput, ElMessage, ElMessageBox, ElEmpty } from 'element-plus'
+  import { ElTag, ElButton, ElInput, ElMessage, ElMessageBox, ElEmpty, ElImage } from 'element-plus'
   import { CopyDocument } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
   import { formatTime } from '@utils/common'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useEnterSearch } from '@/hooks/core/useEnterSearch'
   import { useTable } from '@/hooks/core/useTable'
-  import { adminListApplications, adminReviewApplication } from '@/api/welfare'
+  import { adminListApplications, adminReviewApplication, adminDeleteApplication } from '@/api/welfare'
+  import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'WelfareApproval' })
   const { t } = useI18n()
   const { createEnterSearchHandler } = useEnterSearch()
+
+  const userStore = useUserStore()
+  const canDelete = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((role) => ['super_admin', 'admin'].includes(role))
+  })
 
   // ─── Tab state ───
   const activeTab = ref('pending')
@@ -109,6 +130,34 @@
     } catch {
       ElMessage.warning(t('welfareApproval.copyFailed'))
     }
+  }
+
+  // ─── Row description tooltip ───
+  const tooltipVisible = ref(false)
+  const hoveredRowEl = shallowRef<HTMLElement | null>(null)
+  const hoveredDescription = ref('')
+  let leaveTimer: ReturnType<typeof setTimeout> | null = null
+
+  function handleCellMouseEnter(row: AppRow, _col: unknown, cell: HTMLElement) {
+    if (leaveTimer) {
+      clearTimeout(leaveTimer)
+      leaveTimer = null
+    }
+    const desc = row.welfare_description?.trim()
+    if (!desc) {
+      tooltipVisible.value = false
+      return
+    }
+    hoveredRowEl.value = cell.closest('tr') ?? cell
+    hoveredDescription.value = desc
+    tooltipVisible.value = true
+  }
+
+  function handleCellMouseLeave() {
+    leaveTimer = setTimeout(() => {
+      tooltipVisible.value = false
+      leaveTimer = null
+    }, 80)
   }
 
   // ─── Shared column builders ───
@@ -187,13 +236,14 @@
       width: 100,
       formatter: (row: AppRow) => {
         if (!row.evidence_image) return h('span', { class: 'text-gray-400' }, '-')
-        return h('a', { href: row.evidence_image, target: '_blank', rel: 'noopener noreferrer' }, [
-          h('img', {
-            src: row.evidence_image,
-            style: 'height:40px;max-width:80px;object-fit:contain;cursor:pointer',
-            class: 'rounded border'
-          })
-        ])
+        return h(ElImage, {
+          src: row.evidence_image,
+          previewSrcList: [row.evidence_image],
+          previewTeleported: true,
+          fit: 'contain',
+          style: 'height:40px;max-width:80px;object-fit:contain;cursor:pointer',
+          class: 'rounded border'
+        })
       }
     }
   ]
@@ -268,7 +318,19 @@
               () => cfg.label
             )
           }
-        }
+        },
+        ...(canDelete.value
+          ? [
+              {
+                prop: 'actions',
+                label: '',
+                width: 80,
+                fixed: 'right' as const,
+                formatter: (row: AppRow) =>
+                  h(ArtButtonTable, { type: 'delete', onClick: () => handleDeleteHistory(row) })
+              }
+            ]
+          : [])
       ]
     }
   })
@@ -337,6 +399,24 @@
     }
   }
 
+  async function handleDeleteHistory(row: AppRow) {
+    try {
+      await ElMessageBox.confirm(
+        t('welfareApproval.deleteHistoryConfirm', { name: row.character_name }),
+        { type: 'warning' }
+      )
+    } catch {
+      return
+    }
+    try {
+      await adminDeleteApplication(row.id)
+      ElMessage.success(t('welfareApproval.deleteHistorySuccess'))
+      loadHistory()
+    } catch {
+      /* handled by interceptor */
+    }
+  }
+
   // ─── Tab switch ───
   function handleTabChange(tab: string | number) {
     if (tab === 'history' && !historyLoaded.value) {
@@ -344,6 +424,4 @@
       loadHistory()
     }
   }
-
-  // ─── Helpers ───
 </script>
