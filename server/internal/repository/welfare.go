@@ -14,6 +14,17 @@ func NewWelfareRepository() *WelfareRepository {
 	return &WelfareRepository{}
 }
 
+func buildPendingBadgeWelfareApplicationCountQuery(db *gorm.DB) *gorm.DB {
+	return db.Model(&model.WelfareApplication{}).
+		Where("status = ?", model.WelfareAppStatusRequested)
+}
+
+func (r *WelfareRepository) CountPendingBadgeApplications() (int64, error) {
+	var count int64
+	err := buildPendingBadgeWelfareApplicationCountQuery(global.DB).Count(&count).Error
+	return count, err
+}
+
 // ─────────────────────────────────────────────
 //  福利定义
 // ─────────────────────────────────────────────

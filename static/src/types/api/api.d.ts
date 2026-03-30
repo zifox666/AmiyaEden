@@ -135,6 +135,16 @@ declare namespace Api {
     }
   }
 
+  /** 导航徽章类型 */
+  namespace Badge {
+    interface BadgeCounts {
+      welfare_eligible?: number
+      srp_pending?: number
+      welfare_pending?: number
+      order_pending?: number
+    }
+  }
+
   /** 系统管理类型 */
   namespace SystemManage {
     /** 用户列表 */

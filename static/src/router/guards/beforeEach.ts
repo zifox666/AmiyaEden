@@ -40,6 +40,7 @@ import { nextTick } from 'vue'
 import NProgress from 'nprogress'
 import { useSettingStore } from '@/store/modules/setting'
 import { useUserStore } from '@/store/modules/user'
+import { useBadgeStore } from '@/store/modules/badge'
 import { useMenuStore } from '@/store/modules/menu'
 import { setWorktab } from '@/utils/navigation'
 import { setPageTitle } from '@/utils/router'
@@ -52,6 +53,7 @@ import { fetchGetUserInfo, isUserProfileComplete } from '@/api/auth'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
+import { loadBadgeCounts } from './badge'
 
 const PROFILE_SETUP_PATH = '/dashboard/characters'
 
@@ -288,6 +290,9 @@ async function handleDynamicRoutes(
     menuStore.setMenuList(menuList)
     menuStore.addRemoveRouteFns(routeRegistry?.getRemoveRouteFns() || [])
 
+    const badgeStore = useBadgeStore()
+    await loadBadgeCounts(badgeStore)
+
     // 6. 保存 iframe 路由
     IframeRouteManager.getInstance().save()
 
@@ -404,6 +409,9 @@ export function resetRouterState(delay: number): void {
     const menuStore = useMenuStore()
     menuStore.removeAllDynamicRoutes()
     menuStore.setMenuList([])
+
+    const badgeStore = useBadgeStore()
+    badgeStore.clearBadgeCounts()
 
     // 重置路由初始化状态，允许重新登录后再次初始化
     resetRouteInitState()

@@ -93,3 +93,18 @@ func TestListApplicationsPaginatedQualifiesStatusAndOrderColumnsWhenJoined(t *te
 		t.Fatalf("expected joined welfare query to qualify order column, got SQL: %s", sql)
 	}
 }
+
+func TestBuildPendingBadgeWelfareApplicationCountQueryUsesRequestedStatus(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return buildPendingBadgeWelfareApplicationCountQuery(tx).Count(new(int64))
+	})
+
+	if !strings.Contains(sql, `FROM "welfare_application"`) {
+		t.Fatalf("expected welfare_application count query, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `status =`) {
+		t.Fatalf("expected requested status filter on welfare badge count query, got SQL: %s", sql)
+	}
+}

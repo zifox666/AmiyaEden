@@ -64,6 +64,8 @@ func RegisterRoutes(r *gin.Engine) {
 
 	dashboardH := handler.NewDashboardHandler()
 	auth.POST("/dashboard", dashboardH.GetDashboard)
+	badgeH := handler.NewBadgeHandler()
+	login.GET("/badge-counts", badgeH.GetBadgeCounts)
 
 	// ─── 通知 ───
 	notifH := handler.NewNotificationHandler()

@@ -15,6 +15,17 @@ func NewShopRepository() *ShopRepository {
 	return &ShopRepository{}
 }
 
+func buildPendingBadgeShopOrderCountQuery(db *gorm.DB) *gorm.DB {
+	return db.Model(&model.ShopOrder{}).
+		Where("status = ?", model.OrderStatusRequested)
+}
+
+func (r *ShopRepository) CountPendingOrders() (int64, error) {
+	var count int64
+	err := buildPendingBadgeShopOrderCountQuery(global.DB).Count(&count).Error
+	return count, err
+}
+
 // ─────────────────────────────────────────────
 //  商品
 // ─────────────────────────────────────────────
