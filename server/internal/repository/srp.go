@@ -22,6 +22,18 @@ func NewSrpRepository() *SrpRepository {
 	return &SrpRepository{}
 }
 
+func buildPendingBadgeSrpCountQuery(db *gorm.DB) *gorm.DB {
+	return db.Model(&model.SrpApplication{}).
+		Where("review_status IN ?", []string{model.SrpReviewSubmitted, model.SrpReviewApproved}).
+		Where("payout_status = ?", model.SrpPayoutNotPaid)
+}
+
+func (r *SrpRepository) CountPendingBadgeApplications() (int64, error) {
+	var count int64
+	err := buildPendingBadgeSrpCountQuery(global.DB).Count(&count).Error
+	return count, err
+}
+
 // ─────────────────────────────────────────────
 //  SrpShipPrice CRUD
 // ─────────────────────────────────────────────

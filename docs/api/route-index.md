@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-28
+last_reviewed: 2026-03-31
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -47,6 +47,7 @@ source_of_truth:
 | GET | `/me` | 当前用户、人物、权限、绑定人物 | JWT |
 | PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | JWT |
 | POST | `/dashboard` | Dashboard 聚合数据 | JWT |
+| GET | `/badge-counts` | 导航徽章计数；仅返回当前登录用户可见且非零的计数字段 | Login |
 | POST | `/notification/list` | 通知列表 | JWT |
 | POST | `/notification/unread-count` | 未读数 | JWT |
 | POST | `/notification/read` | 标记已读 | Login |

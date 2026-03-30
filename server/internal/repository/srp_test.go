@@ -31,6 +31,24 @@ func TestBuildApprovedUnpaidBatchPayoutApplicationsQueryUsesUserScopedLocking(t 
 	}
 }
 
+func TestBuildPendingBadgeSrpCountQueryUsesPendingApprovalStatuses(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return buildPendingBadgeSrpCountQuery(tx).Count(new(int64))
+	})
+
+	if !strings.Contains(sql, `FROM "srp_application"`) {
+		t.Fatalf("expected srp_application count query, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `review_status IN (`) {
+		t.Fatalf("expected pending review scope on badge count query, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `payout_status =`) {
+		t.Fatalf("expected unpaid scope on badge count query, got SQL: %s", sql)
+	}
+}
+
 func TestBuildBatchPayoutApplicationsUpdateTargetsSelectedApplicationIDs(t *testing.T) {
 	db := newDryRunPostgresDB(t)
 	paidAt := time.Unix(1_700_000_000, 0).UTC()
