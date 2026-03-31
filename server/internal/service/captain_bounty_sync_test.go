@@ -48,7 +48,7 @@ func TestSelectCaptainWalletJournalMatch(t *testing.T) {
 		}
 	})
 
-	t.Run("ignores candidates whose reason content does not agree", func(t *testing.T) {
+	t.Run("matches candidates with different reason as long as ref_type matches", func(t *testing.T) {
 		candidates := []model.EVECharacterWalletJournal{
 			{ID: 1, Date: base.Add(-1 * time.Minute), ContextID: 30000142, RefType: "bounty_prizes", Reason: "999:1"},
 			{ID: 2, Date: base.Add(-3 * time.Minute), ContextID: 30000142, RefType: "bounty_prizes", Reason: "456:1,123:1,456:1"},
@@ -56,19 +56,19 @@ func TestSelectCaptainWalletJournalMatch(t *testing.T) {
 		}
 
 		got := selectCaptainWalletJournalMatch(playerJournal, candidates)
-		if got == nil || got.ID != 2 {
-			t.Fatalf("expected normalized reason match id=2, got %+v", got)
+		if got == nil || got.ID != 1 {
+			t.Fatalf("expected closest time match id=1, got %+v", got)
 		}
 	})
 
-	t.Run("returns nil when no candidate has matching reason content", func(t *testing.T) {
+	t.Run("returns nil when no candidate has matching ref_type", func(t *testing.T) {
 		candidates := []model.EVECharacterWalletJournal{
-			{ID: 1, Date: base.Add(-1 * time.Minute), ContextID: 30000142, RefType: "bounty_prizes", Reason: "999:1"},
+			{ID: 1, Date: base.Add(-1 * time.Minute), ContextID: 30000142, RefType: "ess_escrow_transfer"},
 			{ID: 2, Date: base.Add(-2 * time.Minute), ContextID: 30000142, RefType: "ess_escrow_transfer"},
 		}
 
 		if got := selectCaptainWalletJournalMatch(playerJournal, candidates); got != nil {
-			t.Fatalf("expected nil when reasons do not agree, got %+v", got)
+			t.Fatalf("expected nil when ref_types do not match, got %+v", got)
 		}
 	})
 }

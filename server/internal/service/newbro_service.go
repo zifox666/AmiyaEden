@@ -13,7 +13,7 @@ import (
 
 const (
 	newbroAttributionLookbackDays    = 30
-	newbroAttributionWindow          = 15 * time.Minute
+	newbroAttributionWindow          = 5 * time.Minute
 	captainAttributionSyncKey        = "default"
 	captainAttributionSyncFetchLimit = 500
 )
@@ -709,6 +709,11 @@ func (s *CaptainBountySyncService) RunSync(now time.Time) (*CaptainAttributionSy
 	refTypes := supportedPlayerAttributionRefTypeList()
 	userStateCache := make(map[uint]*model.NewbroPlayerState)
 	captainPrimaryCache := make(map[uint]int64)
+
+	// Reset cursor so previously-skipped journals are re-evaluated each run.
+	// The LEFT JOIN in the query already excludes already-attributed journals.
+	state.LastWalletJournalID = 0
+	state.LastJournalAt = nil
 
 	for {
 		journals, err := s.attrRepo.ListUnattributedPlayerJournalsFromLookback(

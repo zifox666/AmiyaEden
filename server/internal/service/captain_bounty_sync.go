@@ -86,27 +86,7 @@ func captainJournalCandidateMatches(
 	if !refTypeSupportsPlayerAttribution(playerJournal.RefType) {
 		return false
 	}
-	if candidate.RefType != playerJournal.RefType {
-		return false
-	}
-	return bountyReasonsAgree(playerJournal.Reason, candidate.Reason)
-}
-
-func bountyReasonsAgree(playerReason, candidateReason string) bool {
-	playerNPCs := parseReason(playerReason)
-	candidateNPCs := parseReason(candidateReason)
-	if len(playerNPCs) == 0 || len(candidateNPCs) == 0 {
-		return false
-	}
-	if len(playerNPCs) != len(candidateNPCs) {
-		return false
-	}
-	for npcID, count := range playerNPCs {
-		if candidateNPCs[npcID] != count {
-			return false
-		}
-	}
-	return true
+	return candidate.RefType == playerJournal.RefType
 }
 
 func absDuration(v time.Duration) time.Duration {
