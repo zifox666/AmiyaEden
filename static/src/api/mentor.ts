@@ -66,6 +66,19 @@ export function revokeMentorRelationship(data: Api.Mentor.RelationshipActionPara
   })
 }
 
+export function fetchMentorSettings() {
+  return request.get<Api.Mentor.Settings>({
+    url: '/api/v1/system/mentor/settings'
+  })
+}
+
+export function updateMentorSettings(data: Api.Mentor.UpdateSettingsParams) {
+  return request.put<Api.Mentor.Settings>({
+    url: '/api/v1/system/mentor/settings',
+    data
+  })
+}
+
 export function fetchMentorRewardStages() {
   return request.get<Api.Mentor.RewardStage[]>({
     url: '/api/v1/system/mentor/reward-stages'

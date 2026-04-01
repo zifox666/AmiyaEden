@@ -234,6 +234,14 @@ func (r *MentorRewardDistributionRepository) ExistsByRelationshipAndStageOrder(r
 	return count > 0, err
 }
 
+func (r *MentorRewardDistributionRepository) ExistsByRelationshipAndStageOrderTx(tx *gorm.DB, relationshipID uint, stageOrder int) (bool, error) {
+	var count int64
+	err := tx.Model(&model.MentorRewardDistribution{}).
+		Where("relationship_id = ? AND stage_order = ?", relationshipID, stageOrder).
+		Count(&count).Error
+	return count > 0, err
+}
+
 func (r *MentorRewardDistributionRepository) ListDistributedStageOrdersByRelationshipIDs(relationshipIDs []uint) (map[uint][]int, error) {
 	result := make(map[uint][]int, len(relationshipIDs))
 	if len(relationshipIDs) == 0 {

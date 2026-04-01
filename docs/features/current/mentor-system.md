@@ -2,12 +2,13 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-31
+last_reviewed: 2026-04-01
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/mentor_service.go
   - server/internal/service/mentor_reward.go
   - server/internal/service/mentor_eligibility.go
+  - server/internal/service/mentor_settings.go
   - server/internal/handler/mentor_mentee.go
   - server/internal/handler/mentor_mentor.go
   - server/internal/handler/mentor_admin.go
@@ -33,7 +34,7 @@ source_of_truth:
 - 导师可在 `我是导师` 页面查看当前生效的只读 `导师奖励阶段` 配置，便于理解学员奖励进度
 - 当导师存在待处理学员申请时，`新人帮扶` 一级菜单与 `我是导师` 菜单会显示相同的待处理数量徽标
 - 管理员可在 `导师管理` 页面查看全部导师关系；对 `pending` 状态可取消学员申请，对 `active` 状态可撤销导师关系
-- 管理员可在 `导师奖励阶段` 页面配置阶段化奖励规则，并手动执行一次奖励处理
+- 管理员可在 `导师奖励阶段` 页面配置阶段化奖励规则、学员资格阈值，并手动执行一次奖励处理
 - 每日定时任务会自动扫描进行中的导师关系，按阶段顺序发放伏羲币奖励；当全部阶段都已发放后，关系会被标记为 `graduated`
 
 ## 学员资格判定
@@ -47,6 +48,7 @@ source_of_truth:
 
 - 资格判定读取用户全部已绑定人物的技能点快照
 - 当前数据模型没有持久化“加入允许军团的时间”，因此导师系统当前使用 `user.created_at` 作为账号年龄窗口，而不是 corp join timestamp
+- 管理员可在 `导师奖励阶段` 页面修改上述两个阈值；保存后会立即作用于菜单资格快照、候选导师列表与申请校验
 - 候选导师列表与申请接口虽然挂在 `Login` 路由组下，但服务层会再次校验学员资格
 - 如果用户没有任何可评估人物，资格判定结果会返回 `no_characters`
 
@@ -91,6 +93,8 @@ source_of_truth:
 
 - `GET /api/v1/system/mentor/relationships`
 - `POST /api/v1/system/mentor/revoke`
+- `GET /api/v1/system/mentor/settings`
+- `PUT /api/v1/system/mentor/settings`
 - `GET /api/v1/system/mentor/reward-stages`
 - `PUT /api/v1/system/mentor/reward-stages`
 - `POST /api/v1/system/mentor/reward/process`
@@ -124,6 +128,7 @@ source_of_truth:
 - `server/internal/model/mentor.go`
 - `server/internal/repository/mentor.go`
 - `server/internal/service/mentor_eligibility.go`
+- `server/internal/service/mentor_settings.go`
 - `server/internal/service/mentor_service.go`
 - `server/internal/service/mentor_reward.go`
 - `server/internal/handler/mentor_mentee.go`

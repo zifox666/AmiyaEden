@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-31
+last_reviewed: 2026-04-01
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -280,6 +280,8 @@ source_of_truth:
 | --- | --- | --- | --- |
 | GET | `/system/mentor/relationships` | 全量导师关系列表 | `RequireRole(admin)` |
 | POST | `/system/mentor/revoke` | 撤销指定导师关系 | `RequireRole(admin)` |
+| GET | `/system/mentor/settings` | 导师学员资格阈值配置 | `RequireRole(admin)` |
+| PUT | `/system/mentor/settings` | 更新导师学员资格阈值配置 | `RequireRole(admin)` |
 | GET | `/system/mentor/reward-stages` | 导师奖励阶段配置 | `RequireRole(admin)` |
 | PUT | `/system/mentor/reward-stages` | 更新导师奖励阶段配置 | `RequireRole(admin)` |
 | POST | `/system/mentor/reward/process` | 手动执行导师奖励处理 | `RequireRole(admin)` |

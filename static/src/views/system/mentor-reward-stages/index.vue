@@ -28,6 +28,47 @@
       class="mb-4"
     />
 
+    <ElCard shadow="never" class="mb-4" v-loading="settingsLoading">
+      <template #header>
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div class="text-base font-semibold">{{
+              t('system.mentorRewardStages.eligibilityTitle')
+            }}</div>
+            <div class="text-sm text-gray-500 mt-1">{{
+              t('system.mentorRewardStages.eligibilityDescription')
+            }}</div>
+          </div>
+          <ElButton type="primary" :loading="settingsSaving" @click="handleSaveEligibility">
+            {{ t('system.mentorRewardStages.saveEligibility') }}
+          </ElButton>
+        </div>
+      </template>
+
+      <ElForm label-width="220px" label-position="left" class="max-w-2xl">
+        <ElFormItem :label="t('system.mentorRewardStages.maxCharacterSP')">
+          <ElInputNumber
+            v-model="mentorSettings.max_character_sp"
+            :min="1"
+            :step="1000000"
+            :controls="false"
+            step-strictly
+            style="width: 100%"
+          />
+        </ElFormItem>
+        <ElFormItem :label="t('system.mentorRewardStages.maxAccountAgeDays')">
+          <ElInputNumber
+            v-model="mentorSettings.max_account_age_days"
+            :min="1"
+            :step="1"
+            :controls="false"
+            step-strictly
+            style="width: 100%"
+          />
+        </ElFormItem>
+      </ElForm>
+    </ElCard>
+
     <ElCard shadow="never" v-loading="loading">
       <ElEmpty
         v-if="!stages.length && !loading"
@@ -105,8 +146,10 @@
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import {
+	  fetchMentorSettings,
     fetchMentorRewardStages,
     runMentorRewardProcessing,
+	  updateMentorSettings,
     updateMentorRewardStages
   } from '@/api/mentor'
 
@@ -122,7 +165,13 @@
   const loading = ref(false)
   const saving = ref(false)
   const processing = ref(false)
+  const settingsLoading = ref(false)
+  const settingsSaving = ref(false)
   const stages = ref<StageRow[]>([])
+  const mentorSettings = reactive<Api.Mentor.Settings>({
+    max_character_sp: 4_000_000,
+    max_account_age_days: 7
+  })
   let nextLocalId = 1
 
   const conditionOptions = computed(() => [
@@ -162,6 +211,20 @@
       ElMessage.error((error as Error)?.message || t('httpMsg.requestFailed'))
     } finally {
       loading.value = false
+    }
+  }
+
+  async function loadMentorSettings() {
+    settingsLoading.value = true
+    try {
+      const data = await fetchMentorSettings()
+      mentorSettings.max_character_sp = data.max_character_sp
+      mentorSettings.max_account_age_days = data.max_account_age_days
+    } catch (error) {
+      console.error('Failed to load mentor settings', error)
+      ElMessage.error((error as Error)?.message || t('httpMsg.requestFailed'))
+    } finally {
+      settingsLoading.value = false
     }
   }
 
@@ -207,6 +270,40 @@
       }
     }
     return ''
+  }
+
+  function validateMentorSettings(settings: Api.Mentor.Settings) {
+    if (!Number.isInteger(settings.max_character_sp) || settings.max_character_sp <= 0) {
+      return t('system.mentorRewardStages.validation.maxCharacterSP')
+    }
+    if (!Number.isInteger(settings.max_account_age_days) || settings.max_account_age_days <= 0) {
+      return t('system.mentorRewardStages.validation.maxAccountAgeDays')
+    }
+    return ''
+  }
+
+  async function handleSaveEligibility() {
+    const validationMessage = validateMentorSettings(mentorSettings)
+    if (validationMessage) {
+      ElMessage.warning(validationMessage)
+      return
+    }
+
+    settingsSaving.value = true
+    try {
+      const data = await updateMentorSettings({
+        max_character_sp: mentorSettings.max_character_sp,
+        max_account_age_days: mentorSettings.max_account_age_days
+      })
+      mentorSettings.max_character_sp = data.max_character_sp
+      mentorSettings.max_account_age_days = data.max_account_age_days
+      ElMessage.success(t('system.mentorRewardStages.saveEligibilitySuccess'))
+    } catch (error) {
+      console.error('Failed to save mentor settings', error)
+      ElMessage.error((error as Error)?.message || t('httpMsg.requestFailed'))
+    } finally {
+      settingsSaving.value = false
+    }
   }
 
   async function handleSave() {
@@ -262,5 +359,6 @@
 
   onMounted(() => {
     loadStages()
+    loadMentorSettings()
   })
 </script>

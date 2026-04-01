@@ -10,6 +10,7 @@ const horizontalSubmenuSource = readFileSync(
   new URL('./art-horizontal-menu/widget/HorizontalSubmenu.vue', import.meta.url),
   'utf8'
 )
+const mixedMenuSource = readFileSync(new URL('./art-mixed-menu/index.vue', import.meta.url), 'utf8')
 const appStylesSource = readFileSync(
   new URL('../../../../assets/styles/core/app.scss', import.meta.url),
   'utf8'
@@ -22,6 +23,10 @@ test('submenu titles render numeric badges using the submenu badge slot', () => 
   )
   assert.match(
     horizontalSubmenuSource,
+    /v-if="item\.meta\.showTextBadge"[\s\S]*class="art-text-badge art-text-badge-submenu"/
+  )
+  assert.match(
+    mixedMenuSource,
     /v-if="item\.meta\.showTextBadge"[\s\S]*class="art-text-badge art-text-badge-submenu"/
   )
 })

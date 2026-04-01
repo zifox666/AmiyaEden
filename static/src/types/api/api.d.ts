@@ -2229,6 +2229,16 @@ declare namespace Api {
 
     type AdminRelationshipsResponse = Api.Common.PaginatedResponse<RelationshipView>
 
+    interface Settings {
+      max_character_sp: number
+      max_account_age_days: number
+    }
+
+    interface UpdateSettingsParams {
+      max_character_sp: number
+      max_account_age_days: number
+    }
+
     type RewardConditionType = 'skill_points' | 'pap_count' | 'days_active'
 
     interface RewardStage {
