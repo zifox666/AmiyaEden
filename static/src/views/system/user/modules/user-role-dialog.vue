@@ -20,7 +20,8 @@
             :key="role.code"
             :label="role.code"
             :disabled="
-              role.code === 'super_admin' || (['admin'].includes(role.code) && !isSuperAdmin)
+              role.code === 'super_admin' ||
+              (role.code === 'admin' && !(isSuperAdmin || isEditingSelf))
             "
           >
             {{ role.name }}
@@ -64,6 +65,10 @@
 
   const userStore = useUserStore()
   const isSuperAdmin = computed(() => userStore.info?.roles?.includes('super_admin'))
+  const currentUserId = computed(() => userStore.info?.userId)
+  const isEditingSelf = computed(
+    () => props.userData?.id != null && currentUserId.value === props.userData.id
+  )
 
   const dialogVisible = computed({
     get: () => props.visible,

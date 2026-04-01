@@ -59,6 +59,7 @@
 
   // 是否超级管理员（仅超管可使用模拟登录）
   const isSuperAdmin = computed(() => userStore.info?.roles?.includes('super_admin'))
+  const currentUserId = computed(() => userStore.info?.userId)
 
   // 弹窗相关
   const dialogVisible = ref(false)
@@ -117,9 +118,26 @@
 
     return contacts.filter((entry): entry is { label: string; value: string } => entry !== null)
   }
+  const isSuperAdminUser = (row: UserListItem) => getDisplayRoles(row).includes('super_admin')
+  const isSelfUser = (row: UserListItem) =>
+    currentUserId.value != null && row.id === currentUserId.value
   const isProtectedUser = (row: UserListItem) =>
     getDisplayRoles(row).some((role) => ['super_admin', 'admin'].includes(role))
-  const canEditUser = (row: UserListItem) => isSuperAdmin.value || !isProtectedUser(row)
+  const canEditRoles = (row: UserListItem) => {
+    if (isSuperAdmin.value) {
+      return true
+    }
+
+    if (isSuperAdminUser(row)) {
+      return false
+    }
+
+    if (isSelfUser(row)) {
+      return true
+    }
+
+    return true
+  }
   const canDeleteUser = (row: UserListItem) => isSuperAdmin.value || !isProtectedUser(row)
   const formatSkillPoints = (value: number) => skillPointFormatter.format(value ?? 0)
   const getUserRowKey = (row: Record<string, any>) => String(row.id)
@@ -320,7 +338,7 @@
                   title: t('userAdmin.impersonate'),
                   onClick: () => impersonateUser(row)
                 }),
-              canEditUser(row) &&
+              canEditRoles(row) &&
                 h(ArtButtonTable, {
                   type: 'edit',
                   onClick: () => showRoleDialog(row)
@@ -381,7 +399,7 @@
 
   /** 打开职权编辑弹窗 */
   const showRoleDialog = (row: UserListItem): void => {
-    if (!canEditUser(row)) {
+    if (!canEditRoles(row)) {
       ElMessage.error(t('userAdmin.editProtectedDenied'))
       return
     }
