@@ -13,6 +13,12 @@
           {{ formatMenuTitle(item.meta.title) }}
         </span>
         <div v-if="item.meta.showBadge" class="art-badge" style="right: 10px" />
+        <div
+          v-if="item.meta.showTextBadge && (level > 0 || menuOpen)"
+          class="art-text-badge art-text-badge-submenu"
+        >
+          {{ item.meta.showTextBadge }}
+        </div>
       </template>
 
       <SidebarSubmenu

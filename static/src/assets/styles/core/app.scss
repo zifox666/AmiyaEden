@@ -244,6 +244,15 @@
   text-align: center;
   background: #fd4e4e;
   border-radius: 4px;
+
+  &.art-text-badge-submenu {
+    position: static;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
 }
 
 @keyframes breathe {

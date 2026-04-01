@@ -4,7 +4,7 @@
       <ArtSvgIcon :icon="item.meta.icon" :color="theme?.iconColor" class="mr-1 text-lg" />
       <span class="text-md">{{ formatMenuTitle(item.meta.title) }}</span>
       <div v-if="item.meta.showBadge" class="art-badge art-badge-horizontal" />
-      <div v-if="item.meta.showTextBadge" class="art-text-badge">
+      <div v-if="item.meta.showTextBadge" class="art-text-badge art-text-badge-submenu">
         {{ item.meta.showTextBadge }}
       </div>
     </template>
