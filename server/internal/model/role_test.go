@@ -66,3 +66,19 @@ func TestSystemRoleDefinitionsIncludeSeniorFC(t *testing.T) {
 
 	t.Fatal("expected senior_fc to be present in system role seeds")
 }
+
+func TestSystemRoleDefinitionsIncludeMentor(t *testing.T) {
+	for _, role := range SystemRoleDefinitions {
+		if role.Code == RoleMentor {
+			if role.Name == "" {
+				t.Fatal("expected mentor seed to have a name")
+			}
+			if role.Description == "" {
+				t.Fatal("expected mentor seed to have a description")
+			}
+			return
+		}
+	}
+
+	t.Fatal("expected mentor to be present in system role seeds")
+}

@@ -9,6 +9,7 @@ const (
 	RoleFC         = "fc"
 	RoleSeniorFC   = "senior_fc"
 	RoleCaptain    = "captain"
+	RoleMentor     = "mentor"
 	RoleWelfare    = "welfare"
 	RoleUser       = "user"
 	RoleGuest      = "guest"
@@ -44,6 +45,7 @@ var SystemRoleDefinitions = []RoleDefinition{
 	{Code: RoleSRP, Name: "SRP Officer", I18nKey: "roles.srp", Description: "SRP approval and ship price management", Sort: 60},
 	{Code: RoleWelfare, Name: "Welfare Officer", I18nKey: "roles.welfare", Description: "Corporation welfare approval and management", Sort: 50},
 	{Code: RoleCaptain, Name: "Captain", I18nKey: "roles.captain", Description: "Newbro mentor captain view permissions", Sort: 30},
+	{Code: RoleMentor, Name: "Mentor", I18nKey: "roles.mentor", Description: "Mentor support view permissions", Sort: 25},
 	{Code: RoleUser, Name: "Verified User", I18nKey: "roles.user", Description: "Authenticated user with basic access", Sort: 10},
 	{Code: RoleGuest, Name: "Guest", I18nKey: "roles.guest", Description: "Guest, read-only access to public information", Sort: 0},
 }

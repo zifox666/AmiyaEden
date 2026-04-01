@@ -27,6 +27,7 @@ source_of_truth:
 - 职权列表
 - 按钮权限列表
 - 当前新人资格快照 `is_currently_newbro`
+- 当前导师学员资格快照 `is_mentor_mentee_eligible`
 
 `guest` 职权当前仍是已认证用户，但不是 `RequireLoginUser` 意义上的产品用户。
 因此需要把 guest onboarding / self-service 能力单独挂在仅需 `JWTAuth()` 的路由上，而不是 `RequireLoginUser()`。
@@ -63,6 +64,7 @@ source_of_truth:
 | `srp` | SRP 官员 | 60 |
 | `welfare` | 福利官 | 50 |
 | `captain` | 新人队长 | 30 |
+| `mentor` | 导师 | 25 |
 | `user` | 认证用户 | 10 |
 | `guest` | 访客 | 0 |
 
@@ -76,18 +78,18 @@ source_of_truth:
 
 - `super_admin` 可为任何用户（包括自己）分配除 `super_admin` 以外的任意职权；请求中若包含 `super_admin` 会被后端静默剥离，目标用户已有的 `super_admin` 职权自动保留不被覆盖
 - `admin` 可管理自己的职权（包括移除自身 admin 职权），可为其他用户分配除 `admin` 以外的任意职权；`admin` 不可为非 admin 用户新增 `admin` 职权，但可为已有 admin 身份的用户保留/调整非 admin 职权
-- 非 admin 用户（包括 `senior_fc`、`fc`、`srp`、`welfare`、`captain`、`user`、`guest`）无权分配任何职权
+- 非 admin 用户（包括 `senior_fc`、`fc`、`srp`、`welfare`、`captain`、`mentor`、`user`、`guest`）无权分配任何职权
 - `super_admin` 职权不可通过 API 分配或撤销，仅通过配置文件管理；`super_admin` 操作者提交的职权列表中的 `super_admin` 会被静默剥离而非报错
 - 非 `super_admin` 不可修改已有 `super_admin` 职权用户的任何职权
 
 ### 矩阵（操作者 → 目标职权）
 
-| 操作者 \ 可分配目标职权 | super_admin | admin | senior_fc | fc | srp | welfare | captain | user | guest |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **super_admin**（操作他人） | ✗ 仅配置文件 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **super_admin**（操作自己） | 自动保留 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **admin** | ✗ | ⚠️ 仅已有admin可保留 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **其他所有职权** | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| 操作者 \ 可分配目标职权 | super_admin | admin | senior_fc | fc | srp | welfare | captain | mentor | user | guest |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **super_admin**（操作他人） | ✗ 仅配置文件 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **super_admin**（操作自己） | 自动保留 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **admin** | ✗ | ⚠️ 仅已有admin可保留 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **其他所有职权** | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
 ### 用户管理权限
 
@@ -167,6 +169,7 @@ source_of_truth:
 - `meta.login = true` 表示任意非 `guest` 已登录产品用户可访问
 - `meta.roles` 只用于真实的显式职权白名单
 - `meta.requiresNewbro = true` 表示该页面还要求当前用户的新人资格快照为 true
+- `meta.requiresMentorMenteeEligibility = true` 表示该页面还要求当前用户的导师学员资格快照为 true
 - 不要用 `meta.roles: ['admin', 'fc', 'user']` 之类写法冒充 `Login`
 - `skill-planning/skill-plans` 当前使用 `meta.login = true` 提供只读访问，创建 / 编辑 / 删除 / 排序仍依赖页面内 `canManage` 与后端 `RequireRole(admin, senior_fc)` 双层限制
 
@@ -176,10 +179,14 @@ source_of_truth:
 - 前端路由元数据
 - 按钮权限使用点
 
-`新人帮扶` 模块还有两条额外边界：
+`新人帮扶 / 导师系统` 模块还有几条额外边界：
 
 - `新人选队长` 不是纯职权权限，而是 `Login + 当前新人资格`
+- `新人选导师` 不是纯职权权限，而是 `Login + 当前导师学员资格`
+- `新人选导师` 页面入口依赖 `/api/v1/me` 返回的 `is_mentor_mentee_eligible` 做路由与菜单过滤；页面加载后仍会读取 `/api/v1/mentor/me` 做二次 UX 校验，后端服务层也会再次校验
 - `队长帮扶` 需要真实系统职权 `captain`；普通 `admin` 应使用 `帮扶管理` 页面，而不是把 `admin` 当作 captain 的别名
+- `导师帮扶` 需要真实系统职权 `mentor`；普通 `admin` 不能访问导师 dashboard 接口
+- `导师管理` 与 `导师奖励阶段` 仍属于 `admin` 管理面，不是 mentor 的延伸权限
 
 ## Super Admin 配置驱动机制
 

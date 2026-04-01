@@ -91,6 +91,16 @@ func TestBadgeServiceGetBadgeCountsReturnsOnlyPermittedNonZeroFields(t *testing.
 		t.Fatalf("create shop order: %v", err)
 	}
 
+	if err := db.Create(&model.MentorMenteeRelationship{
+		MenteeUserID:                    user.ID + 100,
+		MenteePrimaryCharacterIDAtStart: 7002,
+		MentorUserID:                    user.ID,
+		Status:                          model.MentorRelationStatusPending,
+		AppliedAt:                       time.Unix(1_700_000_300, 0).UTC(),
+	}).Error; err != nil {
+		t.Fatalf("create mentor relationship: %v", err)
+	}
+
 	svc := NewBadgeService()
 	tests := []struct {
 		name  string
@@ -129,6 +139,14 @@ func TestBadgeServiceGetBadgeCountsReturnsOnlyPermittedNonZeroFields(t *testing.
 				BadgeCountSrpPending:      2,
 				BadgeCountWelfarePending:  1,
 				BadgeCountOrderPending:    1,
+			},
+		},
+		{
+			name:  "mentor sees pending mentee application count",
+			roles: []string{model.RoleMentor},
+			want: BadgeCounts{
+				BadgeCountWelfareEligible:           1,
+				BadgeCountMentorPendingApplications: 1,
 			},
 		},
 	}
@@ -207,6 +225,63 @@ func TestBadgeServiceGetBadgeCountsOmitsZeroCounts(t *testing.T) {
 	}
 }
 
+func TestBadgeServiceGetBadgeCountsCountsPendingMentorApplicationsForCurrentMentor(t *testing.T) {
+	db := newBadgeServiceTestDB(t)
+	originalDB := global.DB
+	global.DB = db
+	defer func() { global.DB = originalDB }()
+
+	mentor := model.User{Nickname: "Mentor One", QQ: "12345"}
+	otherMentor := model.User{Nickname: "Mentor Two", QQ: "67890"}
+	mentee := model.User{Nickname: "Mentee One", QQ: "00000"}
+	if err := db.Create(&mentor).Error; err != nil {
+		t.Fatalf("create mentor: %v", err)
+	}
+	if err := db.Create(&otherMentor).Error; err != nil {
+		t.Fatalf("create other mentor: %v", err)
+	}
+	if err := db.Create(&mentee).Error; err != nil {
+		t.Fatalf("create mentee: %v", err)
+	}
+
+	rows := []model.MentorMenteeRelationship{
+		{
+			MenteeUserID:                    mentee.ID,
+			MenteePrimaryCharacterIDAtStart: 7001,
+			MentorUserID:                    mentor.ID,
+			Status:                          model.MentorRelationStatusPending,
+			AppliedAt:                       time.Unix(1_700_000_000, 0).UTC(),
+		},
+		{
+			MenteeUserID:                    mentee.ID + 1,
+			MenteePrimaryCharacterIDAtStart: 7002,
+			MentorUserID:                    mentor.ID,
+			Status:                          model.MentorRelationStatusActive,
+			AppliedAt:                       time.Unix(1_700_000_100, 0).UTC(),
+		},
+		{
+			MenteeUserID:                    mentee.ID + 2,
+			MenteePrimaryCharacterIDAtStart: 7003,
+			MentorUserID:                    otherMentor.ID,
+			Status:                          model.MentorRelationStatusPending,
+			AppliedAt:                       time.Unix(1_700_000_200, 0).UTC(),
+		},
+	}
+	if err := db.Create(&rows).Error; err != nil {
+		t.Fatalf("create mentor relationships: %v", err)
+	}
+
+	svc := NewBadgeService()
+	got, err := svc.GetBadgeCounts(mentor.ID, []string{model.RoleMentor})
+	if err != nil {
+		t.Fatalf("GetBadgeCounts() error = %v", err)
+	}
+
+	if got[BadgeCountMentorPendingApplications] != 1 {
+		t.Fatalf("expected mentor pending applications badge count to be 1, got %#v", got)
+	}
+}
+
 func newBadgeServiceTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -218,6 +293,7 @@ func newBadgeServiceTestDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(
 		&model.User{},
 		&model.EveCharacter{},
+		&model.MentorMenteeRelationship{},
 		&model.Welfare{},
 		&model.WelfareSkillPlan{},
 		&model.WelfareApplication{},

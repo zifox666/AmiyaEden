@@ -7,10 +7,11 @@ import (
 )
 
 const (
-	BadgeCountWelfareEligible = "welfare_eligible"
-	BadgeCountSrpPending      = "srp_pending"
-	BadgeCountWelfarePending  = "welfare_pending"
-	BadgeCountOrderPending    = "order_pending"
+	BadgeCountWelfareEligible           = "welfare_eligible"
+	BadgeCountSrpPending                = "srp_pending"
+	BadgeCountWelfarePending            = "welfare_pending"
+	BadgeCountOrderPending              = "order_pending"
+	BadgeCountMentorPendingApplications = "mentor_pending_applications"
 )
 
 type BadgeCounts map[string]int64
@@ -20,6 +21,7 @@ type BadgeService struct {
 	srpRepo     *repository.SrpRepository
 	welfareRepo *repository.WelfareRepository
 	shopRepo    *repository.ShopRepository
+	mentorRepo  *repository.MentorRelationshipRepository
 }
 
 func NewBadgeService() *BadgeService {
@@ -28,6 +30,7 @@ func NewBadgeService() *BadgeService {
 		srpRepo:     repository.NewSrpRepository(),
 		welfareRepo: repository.NewWelfareRepository(),
 		shopRepo:    repository.NewShopRepository(),
+		mentorRepo:  repository.NewMentorRelationshipRepository(),
 	}
 }
 
@@ -69,6 +72,16 @@ func (s *BadgeService) GetBadgeCounts(userID uint, userRoles []string) (BadgeCou
 		}
 		if pending > 0 {
 			counts[BadgeCountOrderPending] = pending
+		}
+	}
+
+	if model.ContainsAnyRole(userRoles, model.RoleMentor) {
+		pending, err := s.mentorRepo.CountPendingByMentorUserID(userID)
+		if err != nil {
+			return nil, errors.New("获取导师待处理申请数量失败")
+		}
+		if pending > 0 {
+			counts[BadgeCountMentorPendingApplications] = pending
 		}
 	}
 

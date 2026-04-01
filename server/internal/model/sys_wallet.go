@@ -80,6 +80,7 @@ const (
 	WalletRefShopBuy             = "shop_purchase"         // 商城购买
 	WalletRefShopRefund          = "shop_refund"           // 商城退款（拒绝订单）
 	WalletRefNewbroCaptainReward = "newbro_captain_reward" // 队长帮扶奖励
+	WalletRefMentorReward        = "mentor_reward"         // 导师帮扶奖励
 )
 
 // 钱包操作日志动作

@@ -30,6 +30,7 @@
           :label="$t('walletAdmin.refTypes.newbro_captain_reward')"
           value="newbro_captain_reward"
         />
+        <ElOption :label="$t('walletAdmin.refTypes.mentor_reward')" value="mentor_reward" />
       </ElSelect>
       <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
     </template>
@@ -70,6 +71,10 @@
     shop_refund: { label: t('walletAdmin.refTypes.shop_refund'), tag: 'warning' },
     newbro_captain_reward: {
       label: t('walletAdmin.refTypes.newbro_captain_reward'),
+      tag: 'success'
+    },
+    mentor_reward: {
+      label: t('walletAdmin.refTypes.mentor_reward'),
       tag: 'success'
     }
   }

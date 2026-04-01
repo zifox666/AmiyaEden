@@ -11,18 +11,20 @@ import (
 )
 
 type MeHandler struct {
-	userSvc        *service.UserService
-	roleSvc        *service.RoleService
-	charRepo       *repository.EveCharacterRepository
-	eligibilitySvc *service.NewbroEligibilityService
+	userSvc               *service.UserService
+	roleSvc               *service.RoleService
+	charRepo              *repository.EveCharacterRepository
+	eligibilitySvc        *service.NewbroEligibilityService
+	mentorEligibilitySvc  *service.MentorEligibilityService
 }
 
 func NewMeHandler() *MeHandler {
 	return &MeHandler{
-		userSvc:        service.NewUserService(),
-		roleSvc:        service.NewRoleService(),
-		charRepo:       repository.NewEveCharacterRepository(),
-		eligibilitySvc: service.NewNewbroEligibilityService(),
+		userSvc:              service.NewUserService(),
+		roleSvc:              service.NewRoleService(),
+		charRepo:             repository.NewEveCharacterRepository(),
+		eligibilitySvc:       service.NewNewbroEligibilityService(),
+		mentorEligibilitySvc: service.NewMentorEligibilityService(),
 	}
 }
 
@@ -50,13 +52,19 @@ func (h *MeHandler) GetMe(c *gin.Context) {
 		value := state.IsCurrentlyNewbro
 		isCurrentlyNewbro = &value
 	}
+	var isMentorMenteeEligible *bool
+	if result, err := h.mentorEligibilitySvc.EvaluateEligibility(userID); err == nil && result != nil {
+		value := result.IsEligible
+		isMentorMenteeEligible = &value
+	}
 
 	response.OK(c, gin.H{
-		"user":                user,
-		"characters":          characters,
-		"roles":               roles,
-		"profile_complete":    user.ProfileComplete(),
-		"is_currently_newbro": isCurrentlyNewbro,
+		"user":                        user,
+		"characters":                  characters,
+		"roles":                       roles,
+		"profile_complete":            user.ProfileComplete(),
+		"is_currently_newbro":         isCurrentlyNewbro,
+		"is_mentor_mentee_eligible":   isMentorMenteeEligible,
 	})
 }
 

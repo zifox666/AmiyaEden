@@ -75,6 +75,23 @@ func TestBadgeHandlerGetBadgeCountsIncludesOrderPendingForWelfareRole(t *testing
 	}
 }
 
+func TestBadgeHandlerGetBadgeCountsIncludesMentorPendingApplicationsForMentorRole(t *testing.T) {
+	db := newBadgeHandlerTestDB(t)
+	userID := seedBadgeHandlerTestData(t, db)
+
+	originalDB := global.DB
+	global.DB = db
+	defer func() { global.DB = originalDB }()
+
+	response := performBadgeHandlerRequest(t, userID, []string{model.RoleMentor})
+	if response.Code != 200 {
+		t.Fatalf("expected success code, got %d", response.Code)
+	}
+	if response.Data["mentor_pending_applications"] != 1 {
+		t.Fatalf("expected mentor role to receive mentor pending applications badge, got %#v", response.Data)
+	}
+}
+
 func TestBadgeHandlerGetBadgeCountsReturnsSafeErrorMessage(t *testing.T) {
 	db := newBadgeHandlerTestDB(t)
 	sqlDB, err := db.DB()
@@ -188,6 +205,16 @@ func seedBadgeHandlerTestData(t *testing.T, db *gorm.DB) uint {
 		t.Fatalf("create shop order: %v", err)
 	}
 
+	if err := db.Create(&model.MentorMenteeRelationship{
+		MenteeUserID:                    user.ID + 100,
+		MenteePrimaryCharacterIDAtStart: 7002,
+		MentorUserID:                    user.ID,
+		Status:                          model.MentorRelationStatusPending,
+		AppliedAt:                       time.Unix(1_700_000_300, 0).UTC(),
+	}).Error; err != nil {
+		t.Fatalf("create mentor relationship: %v", err)
+	}
+
 	return user.ID
 }
 
@@ -202,6 +229,7 @@ func newBadgeHandlerTestDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(
 		&model.User{},
 		&model.EveCharacter{},
+		&model.MentorMenteeRelationship{},
 		&model.Welfare{},
 		&model.WelfareSkillPlan{},
 		&model.WelfareApplication{},

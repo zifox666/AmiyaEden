@@ -169,6 +169,26 @@ source_of_truth:
 | POST | `/newbro/captain/enroll` | 手动加入新人到帮扶 | `RequireRole(captain)` |
 | POST | `/newbro/captain/affiliation/end` | 解除指定新人与当前队长的关系 | `RequireRole(captain)` |
 
+## Mentor System
+
+### Mentee Side
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/mentor/mentors` | 当前符合资格学员可申请的导师列表 | `Login` + 当前学员资格（服务层） |
+| GET | `/mentor/me` | 当前用户的学员资格与导师关系快照 | Login |
+| POST | `/mentor/apply` | 向指定导师提交申请 | `Login` + 当前学员资格（服务层） |
+
+### Mentor Side
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/mentor/dashboard/applications` | 当前导师待处理申请列表 | `RequireRole(mentor)` |
+| GET | `/mentor/dashboard/mentees` | 当前导师的学员列表 | `RequireRole(mentor)` |
+| GET | `/mentor/dashboard/reward-stages` | 当前导师可见的只读奖励阶段配置 | `RequireRole(mentor)` |
+| POST | `/mentor/dashboard/accept` | 接受学员申请 | `RequireRole(mentor)` |
+| POST | `/mentor/dashboard/reject` | 拒绝学员申请 | `RequireRole(mentor)` |
+
 ## Welfare
 
 ### Welfare User Side
@@ -253,6 +273,16 @@ source_of_truth:
 | --- | --- | --- | --- |
 | GET | `/system/pap-exchange/rates` | 获取 PAP 类型兑换汇率列表 | `RequireRole(admin)` |
 | PUT | `/system/pap-exchange/rates` | 更新 PAP 类型兑换汇率 | `RequireRole(admin)` |
+
+### Mentor Admin
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/system/mentor/relationships` | 全量导师关系列表 | `RequireRole(admin)` |
+| POST | `/system/mentor/revoke` | 撤销指定导师关系 | `RequireRole(admin)` |
+| GET | `/system/mentor/reward-stages` | 导师奖励阶段配置 | `RequireRole(admin)` |
+| PUT | `/system/mentor/reward-stages` | 更新导师奖励阶段配置 | `RequireRole(admin)` |
+| POST | `/system/mentor/reward/process` | 手动执行导师奖励处理 | `RequireRole(admin)` |
 
 ### Role / User
 

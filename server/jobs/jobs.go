@@ -13,6 +13,7 @@ func RegisterAll(c *cron.Cron) {
 	registerAlliancePAPJob(c)
 	RegisterRoleJobs(c)
 	RegisterAutoRoleJobs(c)
+	registerMentorRewardJob(c)
 	// registerCleanupJob(c)
 	// registerReportJob(c)
 }

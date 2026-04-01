@@ -1,9 +1,14 @@
 package service
 
 import (
+	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"fmt"
 	"testing"
 	"time"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func TestBuildCaptainPlayerListItemsUsesCurrentPrimaryCharacterAndNickname(t *testing.T) {
@@ -167,4 +172,98 @@ func TestBuildAdminAffiliationHistoryItemsUsesCurrentCaptainAndHistoricalPlayerC
 	if item.EndedAt == nil || !item.EndedAt.Equal(endedAt) {
 		t.Fatalf("expected ended_at %v, got %v", endedAt, item.EndedAt)
 	}
+}
+
+func TestNewbroReportServiceListAllCaptainOverviewsIgnoresDeletedCaptains(t *testing.T) {
+	db := newNewbroReportTestDB(
+		t,
+		&model.User{},
+		&model.UserRole{},
+		&model.EveCharacter{},
+		&model.NewbroCaptainAffiliation{},
+		&model.CaptainBountyAttribution{},
+	)
+	useNewbroReportTestDB(t, db)
+
+	deletedCaptain := model.User{
+		BaseModel:          model.BaseModel{ID: 14},
+		Nickname:           "Deleted Captain",
+		Role:               model.RoleCaptain,
+		PrimaryCharacterID: 900001,
+	}
+	activeCaptain := model.User{
+		BaseModel:          model.BaseModel{ID: 15},
+		Nickname:           "Active Captain",
+		Role:               model.RoleCaptain,
+		PrimaryCharacterID: 900002,
+	}
+	if err := db.Create(&deletedCaptain).Error; err != nil {
+		t.Fatalf("create deleted captain: %v", err)
+	}
+	if err := db.Create(&activeCaptain).Error; err != nil {
+		t.Fatalf("create active captain: %v", err)
+	}
+	if err := db.Delete(&deletedCaptain).Error; err != nil {
+		t.Fatalf("soft delete deleted captain: %v", err)
+	}
+
+	characters := []model.EveCharacter{
+		{CharacterID: 900001, CharacterName: "Deleted Main", UserID: deletedCaptain.ID},
+		{CharacterID: 900002, CharacterName: "Active Main", UserID: activeCaptain.ID},
+	}
+	if err := db.Create(&characters).Error; err != nil {
+		t.Fatalf("create characters: %v", err)
+	}
+
+	userRoles := []model.UserRole{
+		{UserID: deletedCaptain.ID, RoleCode: model.RoleCaptain},
+		{UserID: activeCaptain.ID, RoleCode: model.RoleCaptain},
+	}
+	if err := db.Create(&userRoles).Error; err != nil {
+		t.Fatalf("create captain roles: %v", err)
+	}
+
+	svc := NewNewbroReportService()
+	got, total, err := svc.ListAllCaptainOverviews(1, 20, "")
+	if err != nil {
+		t.Fatalf("ListAllCaptainOverviews() error = %v", err)
+	}
+	if total != 1 {
+		t.Fatalf("ListAllCaptainOverviews() total = %d, want 1", total)
+	}
+	if len(got) != 1 {
+		t.Fatalf("ListAllCaptainOverviews() len = %d, want 1", len(got))
+	}
+	if got[0].CaptainUserID != activeCaptain.ID {
+		t.Fatalf("ListAllCaptainOverviews() captain_user_id = %d, want %d", got[0].CaptainUserID, activeCaptain.ID)
+	}
+	if got[0].CaptainCharacterName != "Active Main" {
+		t.Fatalf("ListAllCaptainOverviews() captain_character_name = %q, want %q", got[0].CaptainCharacterName, "Active Main")
+	}
+}
+
+func newNewbroReportTestDB(t *testing.T, models ...interface{}) *gorm.DB {
+	t.Helper()
+
+	dsn := fmt.Sprintf("file:newbro_report_test_%d?mode=memory&cache=shared", time.Now().UnixNano())
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	if len(models) > 0 {
+		if err := db.AutoMigrate(models...); err != nil {
+			t.Fatalf("auto migrate: %v", err)
+		}
+	}
+	return db
+}
+
+func useNewbroReportTestDB(t *testing.T, db *gorm.DB) {
+	t.Helper()
+
+	oldDB := global.DB
+	global.DB = db
+	t.Cleanup(func() {
+		global.DB = oldDB
+	})
 }

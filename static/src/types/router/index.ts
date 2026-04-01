@@ -58,6 +58,8 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   login?: boolean
   /** 仅当前仍符合新人资格的用户可访问 */
   requiresNewbro?: boolean
+  /** 仅当前仍符合导师学员资格的用户可访问 */
+  requiresMentorMenteeEligibility?: boolean
   /** 是否固定标签页 */
   fixedTab?: boolean
   /** 激活菜单路径 */

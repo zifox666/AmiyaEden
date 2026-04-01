@@ -127,6 +127,9 @@ func autoMigrate(db *gorm.DB) {
 		&model.CaptainBountyAttribution{},
 		&model.CaptainBountySyncState{},
 		&model.CaptainRewardSettlement{},
+		&model.MentorMenteeRelationship{},
+		&model.MentorRewardStage{},
+		&model.MentorRewardDistribution{},
 		// 联盟 PAP 相关表
 		&model.AlliancePAPRecord{},
 		&model.AlliancePAPSummary{},
@@ -205,6 +208,7 @@ func dropObsoleteSchema(db *gorm.DB) {
 func newbroCustomIndexStatements() []string {
 	return []string{
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_newbro_captain_affiliation_active_player_user_id ON newbro_captain_affiliation (player_user_id) WHERE ended_at IS NULL AND deleted_at IS NULL`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_mentor_rel_active_mentee ON mentor_mentee_relationship (mentee_user_id) WHERE status IN ('pending', 'active') AND deleted_at IS NULL`,
 	}
 }
 

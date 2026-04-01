@@ -152,7 +152,7 @@
           label: t('info.journalType'),
           width: 180,
           formatter: (row: WalletJournal) =>
-            h(ElTag, { size: 'small', effect: 'plain' }, () => row.ref_type)
+            h(ElTag, { size: 'small', effect: 'plain' }, () => formatJournalTypeLabel(row.ref_type))
         },
         {
           prop: 'amount',
@@ -198,6 +198,10 @@
     const npcKey = `npcKill.refTypes.${value}`
     const npcTranslated = t(npcKey)
     if (npcTranslated !== npcKey) return npcTranslated
+
+    const walletAdminKey = `walletAdmin.refTypes.${value}`
+    const walletAdminTranslated = t(walletAdminKey)
+    if (walletAdminTranslated !== walletAdminKey) return walletAdminTranslated
 
     const key = `info.wallet.refTypes.${value}`
     const translated = t(key)

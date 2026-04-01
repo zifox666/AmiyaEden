@@ -41,6 +41,9 @@ const (
 	SysConfigNewbroRefreshIntervalDays     = "newbro.refresh_interval_days"
 	SysConfigNewbroBonusRate               = "newbro.bonus_rate"
 
+	SysConfigMenteeMaxCharacterSP    = "mentor.mentee_max_character_sp"
+	SysConfigMenteeMaxAccountAgeDays = "mentor.mentee_max_account_age_days"
+
 	SysConfigDefaultSDEAPIKey      = "modify_your_api_key"
 	SysConfigDefaultSDEProxy       = ""
 	SysConfigDefaultSDEDownloadURL = "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"
@@ -50,6 +53,8 @@ const (
 	SysConfigDefaultNewbroMultiCharacterThreshold         = 3
 	SysConfigDefaultNewbroRefreshIntervalDays             = 7
 	SysConfigDefaultNewbroBonusRate               float64 = 20
+	SysConfigDefaultMenteeMaxCharacterSP          int64   = 4_000_000
+	SysConfigDefaultMenteeMaxAccountAgeDays               = 7
 	SysConfigDefaultPAPFCSalary                   float64 = 400
 	SysConfigDefaultPAPFCSalaryLimit              int     = 5
 )

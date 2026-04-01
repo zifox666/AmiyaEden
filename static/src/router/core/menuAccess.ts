@@ -8,16 +8,21 @@ export function hasNonGuestRole(roles: string[]): boolean {
 export function applyMenuAccessFilter(
   menu: AppRouteRecord[],
   roles: string[],
-  isCurrentlyNewbro?: boolean
+  isCurrentlyNewbro?: boolean,
+  isMentorMenteeEligible?: boolean
 ): AppRouteRecord[] {
   return menu.reduce((acc: AppRouteRecord[], item) => {
     const itemRoles = item.meta?.roles
     const requiresLogin = item.meta?.login === true
     const requiresNewbro = item.meta?.requiresNewbro === true
+    const requiresMentorMenteeEligibility = item.meta?.requiresMentorMenteeEligibility === true
     const hasRolePermission = !itemRoles || itemRoles.some((role) => roles.includes(role))
     const hasLoginPermission = !requiresLogin || hasNonGuestRole(roles)
     const hasNewbroPermission = !requiresNewbro || isCurrentlyNewbro === true
-    const hasPermission = hasRolePermission && hasLoginPermission && hasNewbroPermission
+    const hasMentorMenteePermission =
+      !requiresMentorMenteeEligibility || isMentorMenteeEligible === true
+    const hasPermission =
+      hasRolePermission && hasLoginPermission && hasNewbroPermission && hasMentorMenteePermission
 
     if (!hasPermission) {
       return acc
@@ -25,7 +30,12 @@ export function applyMenuAccessFilter(
 
     const filteredItem = { ...item }
     if (filteredItem.children?.length) {
-      filteredItem.children = applyMenuAccessFilter(filteredItem.children, roles, isCurrentlyNewbro)
+      filteredItem.children = applyMenuAccessFilter(
+        filteredItem.children,
+        roles,
+        isCurrentlyNewbro,
+        isMentorMenteeEligible
+      )
     }
 
     acc.push(filteredItem)

@@ -71,6 +71,16 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'mentor-reward-stages',
+      name: 'MentorRewardStages',
+      component: '/system/mentor-reward-stages',
+      meta: {
+        title: 'menus.system.mentorRewardStages',
+        keepAlive: true,
+        roles: ['super_admin', 'admin']
+      }
+    },
+    {
       path: 'pap',
       name: 'AlliancePAP',
       component: '/system/pap',

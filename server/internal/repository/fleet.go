@@ -214,6 +214,32 @@ func (r *FleetRepository) SumPapByUserTotal(userID uint) (float64, error) {
 	return total, err
 }
 
+func (r *FleetRepository) SumPapTotalsByUserIDs(userIDs []uint) (map[uint]float64, error) {
+	result := make(map[uint]float64, len(userIDs))
+	if len(userIDs) == 0 {
+		return result, nil
+	}
+
+	type row struct {
+		UserID uint
+		Total  float64
+	}
+
+	var rows []row
+	err := global.DB.Model(&model.FleetPapLog{}).
+		Select("user_id, COALESCE(SUM(pap_count), 0) AS total").
+		Where("user_id IN ?", userIDs).
+		Group("user_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.UserID] = row.Total
+	}
+	return result, nil
+}
+
 // PapLogDetail PAP 记录（含人物名、FC 名称、舰队信息）
 type PapLogDetail struct {
 	model.FleetPapLog

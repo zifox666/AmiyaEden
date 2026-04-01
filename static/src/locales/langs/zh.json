@@ -55,20 +55,11 @@
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": [
-        "垂直",
-        "水平",
-        "混合",
-        "双列"
-      ]
+      "list": ["垂直", "水平", "混合", "双列"]
     },
     "theme": {
       "title": "主题风格",
-      "list": [
-        "浅色",
-        "深色",
-        "系统"
-      ]
+      "list": ["浅色", "深色", "系统"]
     },
     "menu": {
       "title": "菜单风格"
@@ -78,17 +69,11 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": [
-        "边框",
-        "阴影"
-      ]
+      "list": ["边框", "阴影"]
     },
     "container": {
       "title": "容器宽度",
-      "list": [
-        "铺满",
-        "定宽"
-      ]
+      "list": ["铺满", "定宽"]
     },
     "basics": {
       "title": "基础配置",
@@ -134,12 +119,8 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": [
-      "通知"
-    ],
-    "text": [
-      "暂无"
-    ],
+    "bar": ["通知"],
+    "text": ["暂无"],
     "viewAll": "查看全部"
   },
   "console": {
@@ -273,8 +254,11 @@
     "newbro": {
       "title": "新人帮扶",
       "selectCaptain": "新人选队长",
+      "selectMentor": "新人选导师",
       "captain": "我是队长",
-      "manage": "帮扶管理"
+      "mentor": "我是导师",
+      "manage": "帮扶管理",
+      "mentorManage": "导师管理"
     },
     "role": {
       "title": "权限组",
@@ -314,7 +298,8 @@
       "autoRole": "自动权限",
       "webhook": "Webhook 通知",
       "basicConfig": "基础配置",
-      "newbroSettings": "帮扶设置"
+      "newbroSettings": "帮扶设置",
+      "mentorRewardStages": "导师奖励阶段"
     }
   },
   "info": {
@@ -715,6 +700,7 @@
       "fc": "FC",
       "senior_fc": "资深FC",
       "captain": "队长",
+      "mentor": "导师",
       "welfare": "福利官",
       "user": "已认证用户",
       "guest": "访客"
@@ -748,6 +734,8 @@
   "newbro": {
     "common": {
       "player": "玩家",
+      "mentor": "导师",
+      "mentee": "学员",
       "mainCharacter": "当前主人物",
       "nickname": "昵称",
       "captain": "队长",
@@ -758,6 +746,18 @@
       "amount": "金额",
       "journalAt": "流水时间",
       "processedAt": "处理时间"
+    },
+    "mentorStatus": {
+      "pending": "待确认",
+      "active": "进行中",
+      "rejected": "已拒绝",
+      "revoked": "已撤销",
+      "graduated": "已毕业"
+    },
+    "mentorConditionTypes": {
+      "skill_points": "总技能点",
+      "pap_count": "军团 PAP 总数",
+      "days_active": "活跃天数"
     },
     "select": {
       "title": "新人选队长",
@@ -782,6 +782,28 @@
       "recentHistory": "最近关系历史",
       "endAffiliationButton": "解除关联",
       "endAffiliationSuccess": "已结束当前帮扶关系"
+    },
+    "selectMentor": {
+      "title": "新人选导师",
+      "subtitle": "符合资格的学员可以在这里查看导师名单并提交申请。",
+      "statusTitle": "我的学员状态",
+      "eligible": "当前符合学员资格",
+      "ineligible": "当前不符合学员资格",
+      "disqualifiedReason": "当前不符合学员资格：{reason}",
+      "currentRelationship": "当前导师关系",
+      "noCurrentRelationship": "当前没有待处理或生效中的导师关系",
+      "mentorList": "可选导师",
+      "noMentors": "当前没有可申请的导师",
+      "nicknameLabel": "昵称",
+      "activeMentees": "当前学员数",
+      "lastOnline": "最近在线",
+      "apply": "申请导师",
+      "applied": "已申请",
+      "activeRelationship": "关系进行中",
+      "applySuccess": "导师申请已提交",
+      "ineligibleBecauseAccountTooOld": "账号注册时间超过学员资格窗口",
+      "ineligibleBecauseSkillPointsTooHigh": "总技能点已超过学员资格上限",
+      "ineligibleBecauseNoCharacters": "当前没有可评估的人物"
     },
     "captain": {
       "title": "我是队长",
@@ -816,6 +838,37 @@
       "rewardAttributedTotal": "归因赏金总额",
       "rewardBonusRate": "奖励比例",
       "rewardCreditedValue": "发放积分"
+    },
+    "mentor": {
+      "title": "我是导师",
+      "subtitle": "查看待处理申请和当前学员进度，并处理导师申请。",
+      "applicationsTab": "待处理申请",
+      "menteesTab": "学员列表",
+      "rewardStagesTab": "奖励阶段配置",
+      "applicationsTitle": "待处理申请",
+      "menteesTitle": "学员列表",
+      "rewardStagesTitle": "当前奖励阶段配置",
+      "rewardStagesDescription": "仅供查看，实际配置与奖励执行仍由管理员在导师奖励阶段页面维护。",
+      "rewardStagesEmpty": "当前未配置奖励阶段",
+      "statusFilter": "状态筛选",
+      "allStatuses": "全部",
+      "pendingApplicationsEmpty": "当前没有待处理申请",
+      "menteesEmpty": "当前没有学员记录",
+      "appliedAt": "申请时间",
+      "respondedAt": "处理时间",
+      "graduatedAt": "毕业时间",
+      "qq": "QQ",
+      "discordId": "Discord",
+      "totalSP": "总技能点",
+      "totalPap": "军团 PAP",
+      "daysActive": "活跃天数",
+      "distributedStages": "已发奖励阶段",
+      "distributedRewardAmount": "累计已发伏羲币",
+      "noDistributedStages": "暂无",
+      "accept": "接受",
+      "reject": "拒绝",
+      "acceptSuccess": "申请已接受",
+      "rejectSuccess": "申请已拒绝"
     },
     "manage": {
       "title": "帮扶管理",
@@ -856,6 +909,26 @@
       "rewardBonusRate": "奖励比例",
       "rewardCreditedValue": "发放积分",
       "rewardProcessSuccess": "奖励处理完成，覆盖 {captains} 名队长、{attributions} 条归因记录，共发放 {credited} 积分"
+    },
+    "mentorManage": {
+      "title": "导师管理",
+      "subtitle": "管理员可以查看全部导师关系，并在必要时取消待处理申请或撤销已生效关系。",
+      "keyword": "搜索导师或学员人物名 / 昵称",
+      "status": "关系状态",
+      "allStatuses": "全部",
+      "relationshipList": "导师关系列表",
+      "mentorColumn": "导师",
+      "menteeColumn": "学员",
+      "mentorNickname": "导师昵称",
+      "menteeNickname": "学员昵称",
+      "appliedAt": "申请时间",
+      "respondedAt": "处理时间",
+      "revokedAt": "撤销时间",
+      "graduatedAt": "毕业时间",
+      "cancelPending": "取消申请",
+      "cancelPendingSuccess": "待处理导师申请已取消",
+      "revoke": "撤销关系",
+      "revokeSuccess": "导师关系已撤销"
     }
   },
   "fleet": {
@@ -1731,7 +1804,8 @@
       "welfare_payout": "福利发放",
       "shop_purchase": "商城购买",
       "shop_refund": "商城退款",
-      "newbro_captain_reward": "队长帮扶奖励"
+      "newbro_captain_reward": "队长帮扶奖励",
+      "mentor_reward": "导师帮扶奖励"
     },
     "validation": {
       "targetUserId": "请输入目标用户 ID",
@@ -1907,6 +1981,31 @@
       "validation": {
         "mustBeGreaterThanZero": "必须大于 0",
         "mustBeZeroOrGreater": "必须大于或等于 0"
+      }
+    },
+    "mentorRewardStages": {
+      "title": "导师奖励阶段",
+      "subtitle": "配置导师奖励里程碑，并可手动执行一次奖励处理。",
+      "description": "系统会按阶段顺序检查学员是否满足条件；每日定时任务也会自动处理。",
+      "addStage": "新增阶段",
+      "save": "保存配置",
+      "saveSuccess": "导师奖励阶段已保存",
+      "runProcess": "执行奖励处理",
+      "runProcessSuccess": "奖励处理完成：覆盖 {relationships} 条关系，发放 {rewards} 笔奖励，共计 {total} 伏羲币，毕业 {graduated} 人",
+      "stageOrder": "阶段序号",
+      "stageName": "阶段名称",
+      "conditionType": "条件类型",
+      "threshold": "阈值",
+      "rewardAmount": "奖励数量",
+      "operation": "操作",
+      "remove": "删除",
+      "empty": "暂无奖励阶段，请新增至少一个阶段",
+      "validation": {
+        "stageOrder": "请输入大于 0 的整数阶段序号",
+        "name": "请输入阶段名称",
+        "conditionType": "请选择条件类型",
+        "threshold": "请输入大于 0 的整数阈值",
+        "rewardAmount": "请输入大于 0 的整数奖励数量"
       }
     }
   }

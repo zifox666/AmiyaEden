@@ -55,20 +55,11 @@
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": [
-        "Vertical",
-        "Horizontal",
-        "Mixed",
-        "Dual"
-      ]
+      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
     },
     "theme": {
       "title": "Theme Style",
-      "list": [
-        "Light",
-        "Dark",
-        "System"
-      ]
+      "list": ["Light", "Dark", "System"]
     },
     "menu": {
       "title": "Menu Style"
@@ -78,17 +69,11 @@
     },
     "box": {
       "title": "Box Style",
-      "list": [
-        "Border",
-        "Shadow"
-      ]
+      "list": ["Border", "Shadow"]
     },
     "container": {
       "title": "Container Width",
-      "list": [
-        "Full",
-        "Boxed"
-      ]
+      "list": ["Full", "Boxed"]
     },
     "basics": {
       "title": "Basic Config",
@@ -134,12 +119,8 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": [
-      "Notice"
-    ],
-    "text": [
-      "No"
-    ],
+    "bar": ["Notice"],
+    "text": ["No"],
     "viewAll": "View all"
   },
   "worktab": {
@@ -251,7 +232,8 @@
       "autoRole": "Auto Roles",
       "webhook": "Webhook Notifications",
       "basicConfig": "Basic Config",
-      "newbroSettings": "Newbro Settings"
+      "newbroSettings": "Newbro Settings",
+      "mentorRewardStages": "Mentor Reward Stages"
     },
     "welfare": {
       "title": "Corp Welfare",
@@ -289,8 +271,11 @@
     "newbro": {
       "title": "Newbro Support",
       "selectCaptain": "Choose Captain",
+      "selectMentor": "Choose Mentor",
       "captain": "I Am Captain",
-      "manage": "Support Manage"
+      "mentor": "I Am Mentor",
+      "manage": "Support Manage",
+      "mentorManage": "Mentor Manage"
     },
     "role": {
       "title": "Roles",
@@ -714,6 +699,7 @@
       "fc": "FC",
       "senior_fc": "Senior FC",
       "captain": "Captain",
+      "mentor": "Mentor",
       "welfare": "Welfare Officer",
       "user": "Verified User",
       "guest": "Guest"
@@ -747,6 +733,8 @@
   "newbro": {
     "common": {
       "player": "Player",
+      "mentor": "Mentor",
+      "mentee": "Mentee",
       "mainCharacter": "Current Main Character",
       "nickname": "Nickname",
       "captain": "Captain",
@@ -757,6 +745,18 @@
       "amount": "Amount",
       "journalAt": "Journal Time",
       "processedAt": "Processed At"
+    },
+    "mentorStatus": {
+      "pending": "Pending",
+      "active": "Active",
+      "rejected": "Rejected",
+      "revoked": "Revoked",
+      "graduated": "Graduated"
+    },
+    "mentorConditionTypes": {
+      "skill_points": "Total Skill Points",
+      "pap_count": "Corporation PAP Total",
+      "days_active": "Active Days"
     },
     "select": {
       "title": "Choose a Captain",
@@ -781,6 +781,28 @@
       "recentHistory": "Recent Affiliation History",
       "endAffiliationButton": "End Affiliation",
       "endAffiliationSuccess": "Affiliation ended"
+    },
+    "selectMentor": {
+      "title": "Choose a Mentor",
+      "subtitle": "Eligible mentees can review available mentors and submit an application here.",
+      "statusTitle": "My Mentee Status",
+      "eligible": "You are currently eligible as a mentee",
+      "ineligible": "You are currently not eligible as a mentee",
+      "disqualifiedReason": "You are currently not eligible: {reason}",
+      "currentRelationship": "Current Mentor Relationship",
+      "noCurrentRelationship": "No pending or active mentor relationship right now",
+      "mentorList": "Available Mentors",
+      "noMentors": "No mentors available right now",
+      "nicknameLabel": "Nickname",
+      "activeMentees": "Active Mentees",
+      "lastOnline": "Last Online",
+      "apply": "Apply",
+      "applied": "Applied",
+      "activeRelationship": "Relationship Active",
+      "applySuccess": "Mentor application submitted",
+      "ineligibleBecauseAccountTooOld": "account age exceeds the mentee eligibility window",
+      "ineligibleBecauseSkillPointsTooHigh": "total skill points exceed the mentee threshold",
+      "ineligibleBecauseNoCharacters": "no characters are available for eligibility evaluation"
     },
     "captain": {
       "title": "I Am Captain",
@@ -815,6 +837,37 @@
       "rewardAttributedTotal": "Attributed Bounty Total",
       "rewardBonusRate": "Bonus Rate",
       "rewardCreditedValue": "Credited Value"
+    },
+    "mentor": {
+      "title": "I Am Mentor",
+      "subtitle": "Review pending applications and current mentee progress, then process mentor applications.",
+      "applicationsTab": "Pending Applications",
+      "menteesTab": "Mentees",
+      "rewardStagesTab": "Reward Stages",
+      "applicationsTitle": "Pending Applications",
+      "menteesTitle": "Mentee List",
+      "rewardStagesTitle": "Current Reward Stage Config",
+      "rewardStagesDescription": "Read-only view. Admins still manage stage rules and manual processing from the Mentor Reward Stages page.",
+      "rewardStagesEmpty": "No reward stages configured yet",
+      "statusFilter": "Status",
+      "allStatuses": "All",
+      "pendingApplicationsEmpty": "No pending applications right now",
+      "menteesEmpty": "No mentee records yet",
+      "appliedAt": "Applied At",
+      "respondedAt": "Responded At",
+      "graduatedAt": "Graduated At",
+      "qq": "QQ",
+      "discordId": "Discord",
+      "totalSP": "Total SP",
+      "totalPap": "Corporation PAP",
+      "daysActive": "Active Days",
+      "distributedStages": "Rewarded Stages",
+      "distributedRewardAmount": "Distributed Fuxi Coin",
+      "noDistributedStages": "None",
+      "accept": "Accept",
+      "reject": "Reject",
+      "acceptSuccess": "Application accepted",
+      "rejectSuccess": "Application rejected"
     },
     "manage": {
       "title": "Support Management",
@@ -855,6 +908,26 @@
       "rewardBonusRate": "Bonus Rate",
       "rewardCreditedValue": "Credited Value",
       "rewardProcessSuccess": "Reward processing completed for {captains} captains and {attributions} attribution records, crediting {credited} in total."
+    },
+    "mentorManage": {
+      "title": "Mentor Management",
+      "subtitle": "Admins can review every mentor relationship, cancel pending applications, or revoke active relationships when necessary.",
+      "keyword": "Search mentor or mentee by character name / nickname",
+      "status": "Relationship Status",
+      "allStatuses": "All",
+      "relationshipList": "Mentor Relationships",
+      "mentorColumn": "Mentor",
+      "menteeColumn": "Mentee",
+      "mentorNickname": "Mentor Nickname",
+      "menteeNickname": "Mentee Nickname",
+      "appliedAt": "Applied At",
+      "respondedAt": "Responded At",
+      "revokedAt": "Revoked At",
+      "graduatedAt": "Graduated At",
+      "cancelPending": "Cancel Application",
+      "cancelPendingSuccess": "Pending mentor application cancelled",
+      "revoke": "Revoke",
+      "revokeSuccess": "Mentor relationship revoked"
     }
   },
   "fleet": {
@@ -1731,7 +1804,8 @@
       "welfare_payout": "Welfare Payout",
       "shop_purchase": "Shop Purchase",
       "shop_refund": "Shop Refund",
-      "newbro_captain_reward": "Captain Support Reward"
+      "newbro_captain_reward": "Captain Support Reward",
+      "mentor_reward": "Mentor Support Reward"
     },
     "validation": {
       "targetUserId": "Please enter a target user ID",
@@ -1907,6 +1981,31 @@
       "validation": {
         "mustBeGreaterThanZero": "Must be greater than 0",
         "mustBeZeroOrGreater": "Must be 0 or greater"
+      }
+    },
+    "mentorRewardStages": {
+      "title": "Mentor Reward Stages",
+      "subtitle": "Configure mentor milestone rewards and run reward processing manually when needed.",
+      "description": "Stages are checked in order. The daily cron job will also process mentor rewards automatically.",
+      "addStage": "Add Stage",
+      "save": "Save Configuration",
+      "saveSuccess": "Mentor reward stages saved",
+      "runProcess": "Run Reward Processing",
+      "runProcessSuccess": "Reward processing completed: {relationships} relationships checked, {rewards} rewards distributed, {total} Fuxi Coin awarded, {graduated} mentees graduated.",
+      "stageOrder": "Stage Order",
+      "stageName": "Stage Name",
+      "conditionType": "Condition Type",
+      "threshold": "Threshold",
+      "rewardAmount": "Reward Amount",
+      "operation": "Operation",
+      "remove": "Remove",
+      "empty": "No reward stages configured yet. Add at least one stage.",
+      "validation": {
+        "stageOrder": "Enter an integer stage order greater than 0",
+        "name": "Enter a stage name",
+        "conditionType": "Select a condition type",
+        "threshold": "Enter an integer threshold greater than 0",
+        "rewardAmount": "Enter an integer reward amount greater than 0"
       }
     }
   }

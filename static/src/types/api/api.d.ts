@@ -117,6 +117,7 @@ declare namespace Api {
       permissions: string[]
       profile_complete: boolean
       is_currently_newbro?: boolean | null
+      is_mentor_mentee_eligible?: boolean | null
     }
 
     /** 用户信息（路由守卫和权限指令使用） */
@@ -130,6 +131,7 @@ declare namespace Api {
       discordId: string
       profileComplete: boolean
       isCurrentlyNewbro?: boolean
+      isMentorMenteeEligible?: boolean
       characters?: EveCharacter[]
       primaryCharacterId?: number
     }
@@ -142,6 +144,7 @@ declare namespace Api {
       srp_pending?: number
       welfare_pending?: number
       order_pending?: number
+      mentor_pending_applications?: number
     }
   }
 
@@ -2116,6 +2119,146 @@ declare namespace Api {
       multi_character_threshold: number
       refresh_interval_days: number
       bonus_rate: number
+    }
+  }
+
+  /** 导师帮扶 */
+  namespace Mentor {
+    interface MentorCandidate {
+      mentor_user_id: number
+      mentor_character_id: number
+      mentor_character_name: string
+      mentor_nickname: string
+      qq: string
+      discord_id: string
+      mentor_portrait_url: string
+      active_mentee_count: number
+      last_online_at: string | null
+    }
+
+    type MentorRelationshipStatus = 'pending' | 'active' | 'rejected' | 'revoked' | 'graduated'
+
+    interface RelationshipView {
+      id: number
+      mentee_user_id: number
+      mentor_user_id: number
+      status: MentorRelationshipStatus
+      applied_at: string
+      responded_at: string | null
+      revoked_at: string | null
+      graduated_at: string | null
+      mentor_character_id: number
+      mentor_character_name: string
+      mentor_nickname: string
+      mentor_qq: string
+      mentor_discord_id: string
+      mentor_portrait_url: string
+      mentee_character_id: number
+      mentee_character_name: string
+      mentee_nickname: string
+      mentee_portrait_url: string
+    }
+
+    interface MyStatusResponse {
+      is_eligible: boolean
+      disqualified_reason: string
+      current_relationship: RelationshipView | null
+    }
+
+    interface ApplyParams {
+      mentor_user_id: number
+    }
+
+    interface ApplyResponse {
+      id: number
+      mentee_user_id: number
+      mentee_primary_character_id_at_start: number
+      mentor_user_id: number
+      status: MentorRelationshipStatus
+      applied_at: string
+      responded_at: string | null
+      revoked_at: string | null
+      revoked_by: number | null
+      graduated_at: string | null
+      created_at?: string
+      updated_at?: string
+    }
+
+    interface MenteeListItem {
+      relationship_id: number
+      mentee_user_id: number
+      mentee_character_id: number
+      mentee_character_name: string
+      mentee_nickname: string
+      mentee_portrait_url: string
+      mentee_qq: string
+      mentee_discord_id: string
+      mentee_total_sp: number
+      mentee_total_pap: number
+      mentee_days_active: number
+      status: MentorRelationshipStatus
+      applied_at: string
+      responded_at: string | null
+      graduated_at: string | null
+      distributed_stages: number[]
+      distributed_reward_amount: number
+    }
+
+    type MenteeListResponse = Api.Common.PaginatedResponse<MenteeListItem>
+
+    interface RelationshipActionParams {
+      relationship_id: number
+    }
+
+    type EmptyResponse = Record<string, never>
+
+    type MenteeStatusFilter = 'active' | 'pending' | 'rejected' | 'revoked' | 'graduated' | 'all'
+
+    type MentorMenteesParams = Partial<{
+      current: number
+      size: number
+      status: MenteeStatusFilter
+    }>
+
+    type AdminRelationshipsParams = Partial<{
+      current: number
+      size: number
+      status: MenteeStatusFilter
+      keyword: string
+    }>
+
+    type AdminRelationshipsResponse = Api.Common.PaginatedResponse<RelationshipView>
+
+    type RewardConditionType = 'skill_points' | 'pap_count' | 'days_active'
+
+    interface RewardStage {
+      id: number
+      stage_order: number
+      name: string
+      condition_type: RewardConditionType
+      threshold: number
+      reward_amount: number
+      created_at?: string
+      updated_at?: string
+    }
+
+    interface RewardStageInput {
+      stage_order: number
+      name: string
+      condition_type: RewardConditionType
+      threshold: number
+      reward_amount: number
+    }
+
+    interface UpdateRewardStagesParams {
+      stages: RewardStageInput[]
+    }
+
+    interface RewardProcessResult {
+      processed_relationships: number
+      rewards_distributed: number
+      total_coin_awarded: number
+      graduated_count: number
     }
   }
 

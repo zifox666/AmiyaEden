@@ -24,6 +24,7 @@ source_of_truth:
 - [srp.md](current/srp.md)
 - [welfare.md](current/welfare.md)
 - [newbro-support.md](current/newbro-support.md)
+- [mentor-system.md](current/mentor-system.md)
 - [commerce.md](current/commerce.md)
 - [administration.md](current/administration.md)
 - [esi-refresh.md](current/esi-refresh.md)

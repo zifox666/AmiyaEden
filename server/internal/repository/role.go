@@ -86,7 +86,10 @@ func (r *RoleRepository) RemoveUserRole(userID uint, roleCode string) error {
 // GetRoleUserIDs 获取拥有某职权的所有用户ID
 func (r *RoleRepository) GetRoleUserIDs(roleCode string) ([]uint, error) {
 	var ids []uint
-	err := global.DB.Model(&model.UserRole{}).Where("role_code = ?", roleCode).Pluck("user_id", &ids).Error
+	err := global.DB.Table(`user_role AS ur`).
+		Joins(`JOIN "user" AS u ON u.id = ur.user_id`).
+		Where("ur.role_code = ? AND u.deleted_at IS NULL", roleCode).
+		Pluck("ur.user_id", &ids).Error
 	return ids, err
 }
 

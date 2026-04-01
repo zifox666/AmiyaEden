@@ -131,6 +131,10 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
       }),
     isCurrentlyNewbro:
       typeof data.is_currently_newbro === 'boolean' ? data.is_currently_newbro : undefined,
+    isMentorMenteeEligible:
+      typeof data.is_mentor_mentee_eligible === 'boolean'
+        ? data.is_mentor_mentee_eligible
+        : undefined,
     roles,
     characters: characters ?? [],
     primaryCharacterId: user.primary_character_id ?? 0

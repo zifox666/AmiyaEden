@@ -48,8 +48,9 @@ export class MenuProcessor {
   private filterMenuByAccess(menu: AppRouteRecord[], roles: string[]): AppRouteRecord[] {
     const userStore = useUserStore()
     const isCurrentlyNewbro = userStore.info?.isCurrentlyNewbro
+    const isMentorMenteeEligible = userStore.info?.isMentorMenteeEligible
 
-    return applyMenuAccessFilter(menu, roles, isCurrentlyNewbro)
+    return applyMenuAccessFilter(menu, roles, isCurrentlyNewbro, isMentorMenteeEligible)
   }
 
   /**

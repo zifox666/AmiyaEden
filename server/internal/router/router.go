@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	srpManageRoles = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
-	srpPayoutRoles = []string{model.RoleSRP, model.RoleAdmin}
+	srpManageRoles       = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
+	srpPayoutRoles       = []string{model.RoleSRP, model.RoleAdmin}
 	skillPlanManageRoles = []string{model.RoleAdmin, model.RoleSeniorFC}
 )
 
@@ -213,6 +213,24 @@ func RegisterRoutes(r *gin.Engine) {
 		newbroCaptain.POST("/affiliation/end", newbroCaptainH.EndAffiliation)
 	}
 
+	mentorMenteeH := handler.NewMentorMenteeHandler()
+	mentorMentee := login.Group("/mentor")
+	{
+		mentorMentee.GET("/mentors", mentorMenteeH.ListMentors)
+		mentorMentee.GET("/me", mentorMenteeH.GetMyStatus)
+		mentorMentee.POST("/apply", mentorMenteeH.ApplyForMentor)
+	}
+
+	mentorMentorH := handler.NewMentorMentorHandler()
+	mentorDashboard := login.Group("/mentor/dashboard", middleware.RequireRole(model.RoleMentor))
+	{
+		mentorDashboard.GET("/applications", mentorMentorH.ListPendingApplications)
+		mentorDashboard.GET("/mentees", mentorMentorH.ListMyMentees)
+		mentorDashboard.GET("/reward-stages", mentorMentorH.GetRewardStages)
+		mentorDashboard.POST("/accept", mentorMentorH.AcceptApplication)
+		mentorDashboard.POST("/reject", mentorMentorH.RejectApplication)
+	}
+
 	// ─── 商店（用户端）───
 	shopH := handler.NewShopHandler()
 	shop := login.Group("/shop")
@@ -340,6 +358,16 @@ func RegisterRoutes(r *gin.Engine) {
 		adminNewbro.GET("/rewards", newbroAdminH.ListRewardSettlements)
 		adminNewbro.POST("/attribution/sync", newbroAdminH.RunAttributionSync)
 		adminNewbro.POST("/reward/process", newbroAdminH.RunRewardProcessing)
+	}
+
+	mentorAdminH := handler.NewMentorAdminHandler()
+	adminMentor := admin.Group("/mentor")
+	{
+		adminMentor.GET("/relationships", mentorAdminH.ListAllRelationships)
+		adminMentor.POST("/revoke", mentorAdminH.RevokeRelationship)
+		adminMentor.GET("/reward-stages", mentorAdminH.GetRewardStages)
+		adminMentor.PUT("/reward-stages", mentorAdminH.UpdateRewardStages)
+		adminMentor.POST("/reward/process", mentorAdminH.RunRewardProcessing)
 	}
 
 	// 伏羲币管理（管理员）

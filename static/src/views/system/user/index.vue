@@ -81,6 +81,7 @@
     senior_fc: { type: 'warning', text: t('userAdmin.roles.senior_fc') },
     fc: { type: 'warning', text: t('userAdmin.roles.fc') },
     captain: { type: 'primary', text: t('userAdmin.roles.captain') },
+    mentor: { type: 'success', text: t('userAdmin.roles.mentor') },
     welfare: { type: 'primary', text: t('userAdmin.roles.welfare') },
     user: { type: 'success', text: t('userAdmin.roles.user') },
     guest: { type: 'info', text: t('userAdmin.roles.guest') }
