@@ -365,6 +365,8 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		adminMentor.GET("/relationships", mentorAdminH.ListAllRelationships)
 		adminMentor.POST("/revoke", mentorAdminH.RevokeRelationship)
+		adminMentor.GET("/settings", mentorAdminH.GetSettings)
+		adminMentor.PUT("/settings", mentorAdminH.UpdateSettings)
 		adminMentor.GET("/reward-stages", mentorAdminH.GetRewardStages)
 		adminMentor.PUT("/reward-stages", mentorAdminH.UpdateRewardStages)
 		adminMentor.POST("/reward/process", mentorAdminH.RunRewardProcessing)

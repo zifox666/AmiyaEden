@@ -96,6 +96,13 @@ type MentorRewardProcessResult struct {
 	GraduatedCount         int     `json:"graduated_count"`
 }
 
+type mentorRelationshipProcessOutcome struct {
+	Processed          bool
+	RewardsDistributed int
+	TotalCoinAwarded   float64
+	Graduated          bool
+}
+
 type MentorRewardService struct {
 	stageRepo *repository.MentorRewardStageRepository
 	distRepo  *repository.MentorRewardDistributionRepository
@@ -150,20 +157,56 @@ func (s *MentorRewardService) ProcessRewards(now time.Time) (*MentorRewardProces
 
 	result := &MentorRewardProcessResult{}
 	for _, relationship := range relationships {
-		result.ProcessedRelationships++
 		metrics, err := s.getMenteeMetrics(relationship.MenteeUserID)
 		if err != nil {
 			global.Logger.Error("导师奖励处理：获取学员指标失败", zap.Uint("mentee_user_id", relationship.MenteeUserID), zap.Error(err))
 			continue
 		}
 
+		outcome, err := s.processActiveRelationshipSnapshot(relationship, stages, metrics, now)
+		if err != nil {
+			global.Logger.Error("导师奖励处理：处理关系失败", zap.Uint("relationship_id", relationship.ID), zap.Error(err))
+			continue
+		}
+		if !outcome.Processed {
+			continue
+		}
+		result.ProcessedRelationships++
+		result.RewardsDistributed += outcome.RewardsDistributed
+		result.TotalCoinAwarded += outcome.TotalCoinAwarded
+		if outcome.Graduated {
+			result.GraduatedCount++
+		}
+	}
+
+	return result, nil
+}
+
+func (s *MentorRewardService) processActiveRelationshipSnapshot(
+	relationship model.MentorMenteeRelationship,
+	stages []model.MentorRewardStage,
+	metrics *mentorMetrics,
+	now time.Time,
+) (*mentorRelationshipProcessOutcome, error) {
+	outcome := &mentorRelationshipProcessOutcome{}
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
+		currentRelationship, err := s.relRepo.GetByIDForUpdateTx(tx, relationship.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return err
+		}
+		if currentRelationship.Status != model.MentorRelationStatusActive {
+			return nil
+		}
+
+		outcome.Processed = true
 		allDistributed := true
 		for _, stage := range stages {
-			exists, err := s.distRepo.ExistsByRelationshipAndStageOrder(relationship.ID, stage.StageOrder)
+			exists, err := s.distRepo.ExistsByRelationshipAndStageOrderTx(tx, currentRelationship.ID, stage.StageOrder)
 			if err != nil {
-				global.Logger.Error("导师奖励处理：检查奖励记录失败", zap.Uint("relationship_id", relationship.ID), zap.Int("stage_order", stage.StageOrder), zap.Error(err))
-				allDistributed = false
-				break
+				return fmt.Errorf("check stage %d distribution: %w", stage.StageOrder, err)
 			}
 			if exists {
 				continue
@@ -172,25 +215,26 @@ func (s *MentorRewardService) ProcessRewards(now time.Time) (*MentorRewardProces
 				allDistributed = false
 				break
 			}
-			if err := s.distributeStageReward(relationship, stage, now); err != nil {
-				global.Logger.Error("导师奖励处理：发放奖励失败", zap.Uint("relationship_id", relationship.ID), zap.Int("stage_order", stage.StageOrder), zap.Error(err))
-				allDistributed = false
-				break
+			if err := s.distributeStageRewardTx(tx, *currentRelationship, stage, now); err != nil {
+				return fmt.Errorf("distribute stage %d reward: %w", stage.StageOrder, err)
 			}
-			result.RewardsDistributed++
-			result.TotalCoinAwarded += stage.RewardAmount
+			outcome.RewardsDistributed++
+			outcome.TotalCoinAwarded += stage.RewardAmount
 		}
 
-		if allDistributed {
-			if err := s.relRepo.UpdateStatus(relationship.ID, model.MentorRelationStatusGraduated, map[string]any{"graduated_at": now}); err != nil {
-				global.Logger.Error("导师奖励处理：标记毕业失败", zap.Uint("relationship_id", relationship.ID), zap.Error(err))
-			} else {
-				result.GraduatedCount++
-			}
+		if !allDistributed {
+			return nil
 		}
+		if err := s.relRepo.UpdateStatusTx(tx, currentRelationship.ID, model.MentorRelationStatusGraduated, map[string]any{"graduated_at": now}); err != nil {
+			return fmt.Errorf("mark relationship graduated: %w", err)
+		}
+		outcome.Graduated = true
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-
-	return result, nil
+	return outcome, nil
 }
 
 func (s *MentorRewardService) getMenteeMetrics(userID uint) (*mentorMetrics, error) {
@@ -221,24 +265,22 @@ func (s *MentorRewardService) getMenteeMetrics(userID uint) (*mentorMetrics, err
 	}, nil
 }
 
-func (s *MentorRewardService) distributeStageReward(rel model.MentorMenteeRelationship, stage model.MentorRewardStage, now time.Time) error {
+func (s *MentorRewardService) distributeStageRewardTx(tx *gorm.DB, rel model.MentorMenteeRelationship, stage model.MentorRewardStage, now time.Time) error {
 	walletRefID := fmt.Sprintf("mentor_reward:%d:%d:%d", rel.ID, stage.StageOrder, now.Unix())
 	reason := fmt.Sprintf("导师奖励 关系#%d 阶段#%d %s 学员#%d", rel.ID, stage.StageOrder, stage.Name, rel.MenteeUserID)
 
-	return global.DB.Transaction(func(tx *gorm.DB) error {
-		dist := &model.MentorRewardDistribution{
-			RelationshipID: rel.ID,
-			StageID:        stage.ID,
-			StageOrder:     stage.StageOrder,
-			MentorUserID:   rel.MentorUserID,
-			MenteeUserID:   rel.MenteeUserID,
-			RewardAmount:   stage.RewardAmount,
-			DistributedAt:  now,
-			WalletRefID:    walletRefID,
-		}
-		if err := s.distRepo.CreateTx(tx, dist); err != nil {
-			return err
-		}
-		return s.walletSvc.ApplyWalletDeltaTx(tx, rel.MentorUserID, stage.RewardAmount, reason, model.WalletRefMentorReward, walletRefID)
-	})
+	dist := &model.MentorRewardDistribution{
+		RelationshipID: rel.ID,
+		StageID:        stage.ID,
+		StageOrder:     stage.StageOrder,
+		MentorUserID:   rel.MentorUserID,
+		MenteeUserID:   rel.MenteeUserID,
+		RewardAmount:   stage.RewardAmount,
+		DistributedAt:  now,
+		WalletRefID:    walletRefID,
+	}
+	if err := s.distRepo.CreateTx(tx, dist); err != nil {
+		return err
+	}
+	return s.walletSvc.ApplyWalletDeltaTx(tx, rel.MentorUserID, stage.RewardAmount, reason, model.WalletRefMentorReward, walletRefID)
 }

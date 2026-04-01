@@ -38,6 +38,9 @@
               {{ item.formattedTitle }}
             </span>
             <div v-if="item.meta.showBadge" class="art-badge art-badge-mixed" />
+            <div v-if="item.meta.showTextBadge" class="art-text-badge art-text-badge-submenu">
+              {{ item.meta.showTextBadge }}
+            </div>
           </div>
         </template>
       </div>
