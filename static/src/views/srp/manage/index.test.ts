@@ -19,3 +19,7 @@ test('srp manage uses the shared copy button for the character column and shared
   assert.match(workflowHookSource, /useClipboardCopy/)
   assert.doesNotMatch(workflowHookSource, /navigator\.clipboard\.writeText/)
 })
+
+test('srp batch payout copy text keeps exact ISK values instead of smart-abbreviated amounts', () => {
+  assert.match(workflowHookSource, /formatBatchPayoutLine[\s\S]*formatIskPlain\(totalAmount\)/)
+})

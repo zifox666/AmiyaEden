@@ -23,7 +23,7 @@
           class="font-bold text-lg"
           :class="balance !== null && balance > 0 ? 'text-green-600' : 'text-red-500'"
         >
-          {{ balance !== null ? `${formatISK(balance)} ${$t('shop.currency')}` : '-' }}
+          {{ balance !== null ? `${formatFuxiCoinAmount(balance)} ${$t('shop.currency')}` : '-' }}
         </span>
       </div>
     </div>
@@ -41,7 +41,9 @@
           <h3 class="product-name">{{ item.name }}</h3>
           <p v-if="item.description" class="product-desc">{{ item.description }}</p>
           <div class="product-meta">
-            <div class="price">{{ formatISK(item.price) }} {{ $t('shop.currency') }}</div>
+            <div class="price">
+              {{ formatFuxiCoinAmount(item.price) }} {{ $t('shop.currency') }}
+            </div>
             <div class="stock text-xs text-gray-400">
               <template v-if="item.stock < 0">{{ $t('shop.unlimitedStock') }}</template>
               <template v-else>{{ $t('shop.stockRemaining', { n: item.stock }) }}</template>
@@ -91,6 +93,7 @@
 <script setup lang="ts">
   import { Refresh, ShoppingBag } from '@element-plus/icons-vue'
   import { ElCard, ElTag, ElButton, ElSelect, ElOption, ElPagination, ElEmpty } from 'element-plus'
+  import { formatFuxiCoinAmount } from '@utils/common'
   import { fetchProducts } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
 
@@ -104,9 +107,6 @@
   }>()
 
   const typeFilter = ref<string | undefined>(undefined)
-
-  const formatISK = (v: number) =>
-    v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   /** 图片加载失败时尝试回退：render → icon */
   function onImgError(e: Event) {

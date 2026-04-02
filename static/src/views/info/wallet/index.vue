@@ -49,7 +49,7 @@
             class="text-2xl font-bold mt-1"
             :class="walletBalance >= 0 ? 'text-green-600' : 'text-red-500'"
           >
-            {{ formatISK(walletBalance) }} ISK
+            {{ formatIskPlain(walletBalance) }} ISK
           </p>
         </div>
       </div>
@@ -78,6 +78,7 @@
   import { ElTag, ElAvatar, ElSelect, ElOption } from 'element-plus'
   import { fetchMyCharacters } from '@/api/auth'
   import { fetchInfoWallet } from '@/api/eve-info'
+  import { formatIskPlain } from '@/utils/common'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'EveInfoWallet' })
@@ -88,10 +89,6 @@
 
   // ─── 余额（从 API 响应中捕获） ───
   const walletBalance = ref<number | null>(null)
-
-  // ─── ISK 格式化 ───
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
   // ─── API 适配器：标准化非标准响应并捕获余额 ───
   const fetchWalletJournalList = async (params: {
@@ -162,7 +159,7 @@
             h(
               'span',
               { class: `font-medium ${row.amount >= 0 ? 'text-green-600' : 'text-red-500'}` },
-              `${row.amount >= 0 ? '+' : ''}${formatISK(row.amount)}`
+              `${row.amount >= 0 ? '+' : ''}${formatIskPlain(row.amount)}`
             )
         },
         {
@@ -170,7 +167,7 @@
           label: t('info.journalBalance'),
           width: 160,
           formatter: (row: WalletJournal) =>
-            h('span', { class: 'font-medium text-green-600' }, formatISK(row.balance))
+            h('span', { class: 'font-medium text-green-600' }, formatIskPlain(row.balance))
         },
         {
           prop: 'description',

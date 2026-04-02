@@ -12,7 +12,7 @@
             @keyup.enter="loadPrices"
             @clear="loadPrices"
           />
-          <ElButton type="primary" :icon="Plus" @click="openAddDialog">
+          <ElButton v-if="canManagePrices" type="primary" :icon="Plus" @click="openAddDialog">
             {{ $t('srp.prices.addPrice') }}
           </ElButton>
           <ArtExcelExport
@@ -23,7 +23,7 @@
             :button-text="$t('srp.prices.exportBtn')"
             type="success"
           />
-          <ArtExcelImport @import-success="handleImport">
+          <ArtExcelImport v-if="canManagePrices" @import-success="handleImport">
             {{ $t('srp.prices.importBtn') }}
           </ArtExcelImport>
         </template>
@@ -33,6 +33,7 @@
     </ElCard>
 
     <ElDialog
+      v-if="canManagePrices"
       v-model="dialogVisible"
       :title="editTarget ? $t('srp.prices.editDialog') : $t('srp.prices.addDialog')"
       width="460px"
@@ -52,12 +53,12 @@
         <ElFormItem :label="$t('srp.prices.fields.amount')" prop="amount">
           <div class="million-isk-input" style="width: 100%">
             <ElInputNumber
-              :model-value="toMillionISKInput(form.amount)"
+              :model-value="iskToMillionInput(form.amount)"
               :min="0"
               :precision="2"
               :step="1"
               class="million-isk-input__control"
-              @update:model-value="(v) => (form.amount = fromMillionISKInput(v))"
+              @update:model-value="(v) => (form.amount = millionInputToIsk(v))"
             />
             <span class="million-isk-input__suffix">{{ $t('common.millionIsk') }}</span>
           </div>
@@ -76,7 +77,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import { Plus } from '@element-plus/icons-vue'
-  import { formatTime } from '@utils/common'
+  import { formatIskSmart, formatTime, iskToMillionInput, millionInputToIsk } from '@utils/common'
   import {
     ElCard,
     ElButton,
@@ -94,21 +95,37 @@
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
   import ArtExcelImport from '@/components/core/forms/art-excel-import/index.vue'
+  import { useUserStore } from '@/store/modules/user'
   import { fetchShipPrices, upsertShipPrice, deleteShipPrice } from '@/api/srp'
   import SdeSearchSelect from '@/components/business/SdeSearchSelect.vue'
-  import { fromMillionISKInput, toMillionISKInput } from '@/utils/iskUnits'
+  import type { ColumnOption } from '@/types/component'
 
   defineOptions({ name: 'SrpPrices' })
 
   const { t } = useI18n()
+  const userStore = useUserStore()
 
   type ShipPrice = Api.Srp.ShipPrice
+  const canManagePrices = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((role) => ['super_admin', 'admin', 'senior_fc'].includes(role))
+  })
 
-  // ─── 格式化 ───
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-      (v ?? 0) / 1_000_000
-    )
+  const actionColumn: ColumnOption<ShipPrice>[] = canManagePrices.value
+    ? [
+        {
+          prop: 'actions',
+          label: t('srp.prices.columns.action'),
+          width: 120,
+          fixed: 'right',
+          formatter: (row: ShipPrice) =>
+            h('div', { class: 'flex gap-1' }, [
+              h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
+              h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) })
+            ])
+        }
+      ]
+    : []
 
   // ─── 列配置 ───
   const { columns, columnChecks } = useTableColumns<ShipPrice>(() => [
@@ -129,7 +146,7 @@
       label: t('srp.prices.columns.amount'),
       width: 200,
       formatter: (row: ShipPrice) =>
-        h('span', { class: 'font-medium text-blue-600' }, `${formatISK(row.amount)} M ISK`)
+        h('span', { class: 'font-medium text-blue-600' }, `${formatIskSmart(row.amount)} ISK`)
     },
     {
       prop: 'updated_at',
@@ -137,17 +154,7 @@
       width: 180,
       formatter: (row: ShipPrice) => h('span', {}, formatTime(row.updated_at))
     },
-    {
-      prop: 'actions',
-      label: t('srp.prices.columns.action'),
-      width: 120,
-      fixed: 'right',
-      formatter: (row: ShipPrice) =>
-        h('div', { class: 'flex gap-1' }, [
-          h(ArtButtonTable, { type: 'edit', onClick: () => openEditDialog(row) }),
-          h(ArtButtonTable, { type: 'delete', onClick: () => handleDelete(row) })
-        ])
-    }
+    ...actionColumn
   ])
 
   // ─── 导出 ───
@@ -168,6 +175,8 @@
 
   // ─── 导入 ───
   const handleImport = async (rows: Record<string, unknown>[]) => {
+    if (!canManagePrices.value) return
+
     const items = rows
       .map((row) => ({
         ship_type_id: Number(row['TypeID'] ?? row['ship_type_id'] ?? 0),
@@ -250,6 +259,8 @@
   }
 
   const openAddDialog = () => {
+    if (!canManagePrices.value) return
+
     editTarget.value = null
     form.id = 0
     form.ship_type_id = null
@@ -260,6 +271,8 @@
   }
 
   const openEditDialog = (row: ShipPrice) => {
+    if (!canManagePrices.value) return
+
     editTarget.value = row
     form.id = row.id
     form.ship_type_id = row.ship_type_id
@@ -272,6 +285,8 @@
   }
 
   const handleSave = async () => {
+    if (!canManagePrices.value) return
+
     await formRef.value?.validate()
     saving.value = true
     try {
@@ -290,6 +305,8 @@
 
   // ─── 删除 ───
   const handleDelete = async (row: ShipPrice) => {
+    if (!canManagePrices.value) return
+
     await ElMessageBox.confirm(t('srp.prices.deleteConfirm'), t('common.confirm'), {
       confirmButtonText: t('srp.prices.deleteBtn'),
       cancelButtonText: t('common.cancel'),

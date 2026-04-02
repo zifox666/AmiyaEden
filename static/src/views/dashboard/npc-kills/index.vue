@@ -25,19 +25,19 @@
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalBounty') }}</p>
         <p class="text-xl font-bold text-green-600 mt-1">{{
-          formatISK(reportData.summary.total_bounty)
+          formatIskPlain(reportData.summary.total_bounty)
         }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalTax') }}</p>
         <p class="text-xl font-bold text-red-500 mt-1">{{
-          formatISK(reportData.summary.total_tax)
+          formatIskPlain(reportData.summary.total_tax)
         }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.actualIncome') }}</p>
         <p class="text-xl font-bold text-green-600 mt-1">{{
-          formatISK(reportData.summary.actual_income)
+          formatIskPlain(reportData.summary.actual_income)
         }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
@@ -77,7 +77,7 @@
           sortable
         >
           <template #default="{ row }">
-            <span class="text-green-600 font-medium">{{ formatISK(row.total_bounty) }}</span>
+            <span class="text-green-600 font-medium">{{ formatIskPlain(row.total_bounty) }}</span>
           </template>
         </ElTableColumn>
         <ElTableColumn
@@ -88,7 +88,7 @@
           sortable
         >
           <template #default="{ row }">
-            <span class="text-red-500 font-medium">{{ formatISK(row.total_tax) }}</span>
+            <span class="text-red-500 font-medium">{{ formatIskPlain(row.total_tax) }}</span>
           </template>
         </ElTableColumn>
         <ElTableColumn
@@ -99,7 +99,7 @@
           sortable
         >
           <template #default="{ row }">
-            <span class="text-green-600 font-bold">{{ formatISK(row.actual_income) }}</span>
+            <span class="text-green-600 font-bold">{{ formatIskPlain(row.actual_income) }}</span>
           </template>
         </ElTableColumn>
         <ElTableColumn
@@ -141,7 +141,7 @@
             sortable
           >
             <template #default="{ row }">
-              <span class="text-green-600 font-medium">{{ formatISK(row.amount) }}</span>
+              <span class="text-green-600 font-medium">{{ formatIskPlain(row.amount) }}</span>
             </template>
           </ElTableColumn>
         </ElTable>
@@ -162,7 +162,7 @@
             sortable
           >
             <template #default="{ row }">
-              <span class="text-green-600 font-medium">{{ formatISK(row.amount) }}</span>
+              <span class="text-green-600 font-medium">{{ formatIskPlain(row.amount) }}</span>
             </template>
           </ElTableColumn>
           <ElTableColumn
@@ -181,6 +181,7 @@
 <script setup lang="ts">
   import { ElDatePicker } from 'element-plus'
   import { fetchCorpNpcKills } from '@/api/npc-kill'
+  import { formatIskPlain } from '@/utils/common'
 
   defineOptions({ name: 'CorpNpcKillReport' })
 
@@ -188,10 +189,6 @@
   const dateRange = ref<[string, string] | null>(null)
   const reportData = ref<Api.NpcKill.NpcKillCorpResponse | null>(null)
   const loading = ref(false)
-
-  // ─── ISK 格式化 ───
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
   // ─── 加载数据 ───
   const loadData = async () => {

@@ -11,12 +11,50 @@ import (
 )
 
 func TestSrpManageRolesIncludeAdmin(t *testing.T) {
+	if !containsRoleCode(srpPriceManageRoles, model.RoleAdmin) {
+		t.Fatal("expected srp price manage roles to include admin")
+	}
+	if !containsRoleCode(srpPriceManageRoles, model.RoleSeniorFC) {
+		t.Fatal("expected srp price manage roles to include senior_fc")
+	}
+	if containsRoleCode(srpPriceManageRoles, model.RoleSRP) {
+		t.Fatalf("expected srp price manage roles to exclude srp, got %v", srpPriceManageRoles)
+	}
 	if !containsRoleCode(srpManageRoles, model.RoleAdmin) {
 		t.Fatal("expected srp manage roles to include admin")
 	}
 	if !containsRoleCode(srpPayoutRoles, model.RoleAdmin) {
 		t.Fatal("expected srp payout roles to include admin")
 	}
+}
+
+func TestSrpPriceWriteRequiresAdminAndSeniorFCWhileReadAllowsSrp(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	userRouter := newSrpPricePermissionTestRouter([]string{model.RoleUser})
+	assertRouteStatus(t, userRouter, http.MethodGet, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, userRouter, http.MethodPost, "/srp/prices", http.StatusForbidden)
+	assertRouteStatus(t, userRouter, http.MethodDelete, "/srp/prices/1", http.StatusForbidden)
+
+	srpRouter := newSrpPricePermissionTestRouter([]string{model.RoleSRP})
+	assertRouteStatus(t, srpRouter, http.MethodGet, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, srpRouter, http.MethodPost, "/srp/prices", http.StatusForbidden)
+	assertRouteStatus(t, srpRouter, http.MethodDelete, "/srp/prices/1", http.StatusForbidden)
+
+	adminRouter := newSrpPricePermissionTestRouter([]string{model.RoleAdmin})
+	assertRouteStatus(t, adminRouter, http.MethodGet, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, adminRouter, http.MethodPost, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, adminRouter, http.MethodDelete, "/srp/prices/1", http.StatusNoContent)
+
+	seniorFCRouter := newSrpPricePermissionTestRouter([]string{model.RoleSeniorFC})
+	assertRouteStatus(t, seniorFCRouter, http.MethodGet, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, seniorFCRouter, http.MethodPost, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, seniorFCRouter, http.MethodDelete, "/srp/prices/1", http.StatusNoContent)
+
+	superAdminRouter := newSrpPricePermissionTestRouter([]string{model.RoleSuperAdmin})
+	assertRouteStatus(t, superAdminRouter, http.MethodGet, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, superAdminRouter, http.MethodPost, "/srp/prices", http.StatusNoContent)
+	assertRouteStatus(t, superAdminRouter, http.MethodDelete, "/srp/prices/1", http.StatusNoContent)
 }
 
 func TestSkillPlanReadAllowsLoggedInUserAndWriteStillRequiresManager(t *testing.T) {
@@ -124,6 +162,27 @@ func newSkillPlanPermissionTestRouter(roles []string) *gin.Engine {
 	write.PUT("/reorder", func(c *gin.Context) { c.Status(http.StatusNoContent) })
 	write.PUT("/:id", func(c *gin.Context) { c.Status(http.StatusNoContent) })
 	write.DELETE("/:id", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+
+	return r
+}
+
+func newSrpPricePermissionTestRouter(roles []string) *gin.Engine {
+	r := gin.New()
+	injectRoles := func(c *gin.Context) {
+		c.Set("roles", roles)
+		c.Next()
+	}
+
+	read := r.Group("/srp", injectRoles, middleware.RequireLoginUser())
+	read.GET("/prices", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+
+	write := r.Group("/srp", injectRoles, middleware.RequireLoginUser())
+	write.POST("/prices", middleware.RequireRole(srpPriceManageRoles...), func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+	write.DELETE("/prices/:id", middleware.RequireRole(srpPriceManageRoles...), func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
 
 	return r
 }

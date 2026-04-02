@@ -17,6 +17,7 @@ declare module 'vue' {
     ArtButtonTable: typeof import('./../../components/core/forms/art-button-table/index.vue')['default']
     ArtCardBanner: typeof import('./../../components/core/banners/art-card-banner/index.vue')['default']
     ArtChatWindow: typeof import('./../../components/core/layouts/art-chat-window/index.vue')['default']
+    ArtCopyButton: typeof import('./../../components/core/forms/art-copy-button/index.vue')['default']
     ArtCountTo: typeof import('./../../components/core/text-effect/art-count-to/index.vue')['default']
     ArtCutterImg: typeof import('./../../components/core/media/art-cutter-img/index.vue')['default']
     ArtDataListCard: typeof import('./../../components/core/cards/art-data-list-card/index.vue')['default']

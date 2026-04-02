@@ -49,19 +49,19 @@
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalBounty') }}</p>
         <p class="text-xl font-bold text-green-600 mt-1">{{
-          formatISK(reportData.summary.total_bounty)
+          formatIskPlain(reportData.summary.total_bounty)
         }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.totalTax') }}</p>
         <p class="text-xl font-bold text-red-500 mt-1">{{
-          formatISK(reportData.summary.total_tax)
+          formatIskPlain(reportData.summary.total_tax)
         }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
         <p class="text-sm text-gray-500">{{ $t('npcKill.actualIncome') }}</p>
         <p class="text-xl font-bold text-green-600 mt-1">{{
-          formatISK(reportData.summary.actual_income)
+          formatIskPlain(reportData.summary.actual_income)
         }}</p>
       </ElCard>
       <ElCard shadow="never" class="text-center">
@@ -127,7 +127,7 @@
             sortable
           >
             <template #default="{ row }">
-              <span class="text-green-600 font-medium">{{ formatISK(row.amount) }}</span>
+              <span class="text-green-600 font-medium">{{ formatIskPlain(row.amount) }}</span>
             </template>
           </ElTableColumn>
         </ElTable>
@@ -153,7 +153,7 @@
           sortable
         >
           <template #default="{ row }">
-            <span class="text-green-600 font-medium">{{ formatISK(row.amount) }}</span>
+            <span class="text-green-600 font-medium">{{ formatIskPlain(row.amount) }}</span>
           </template>
         </ElTableColumn>
         <ElTableColumn
@@ -188,6 +188,7 @@
   import { ElTag, ElAvatar, ElSelect, ElOption, ElDatePicker } from 'element-plus'
   import { fetchMyCharacters } from '@/api/auth'
   import { fetchNpcKills, fetchNpcKillsAll } from '@/api/npc-kill'
+  import { formatIskPlain } from '@/utils/common'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'NpcKillReport' })
@@ -201,10 +202,6 @@
   const selectedCharacterId = ref<number>(0) // 0 表示全部人物
   const dateRange = ref<[string, string] | null>(null)
   const reportData = ref<Api.NpcKill.NpcKillResponse | null>(null)
-
-  // ─── ISK 格式化 ───
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
   // ─── REF_TYPE 配置 ───
   const REF_TYPE_CONFIG: Record<string, { type: string; text: string }> = {
@@ -298,7 +295,7 @@
             h(
               'span',
               { class: `font-medium ${row.amount >= 0 ? 'text-green-600' : 'text-red-500'}` },
-              `${row.amount >= 0 ? '+' : ''}${formatISK(row.amount)}`
+              `${row.amount >= 0 ? '+' : ''}${formatIskPlain(row.amount)}`
             )
         },
         {
@@ -309,7 +306,7 @@
             h(
               'span',
               { class: 'font-medium text-red-500' },
-              row.tax !== 0 ? formatISK(row.tax) : '-'
+              row.tax !== 0 ? formatIskPlain(row.tax) : '-'
             )
         },
         {

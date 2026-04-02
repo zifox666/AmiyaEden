@@ -32,7 +32,7 @@
 <script setup lang="ts">
   import { ElTag, ElButton, ElInput } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { formatTime } from '@utils/common'
+  import { formatFuxiCoinWhole, formatTime } from '@utils/common'
   import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { adminListOrderHistory } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
@@ -47,7 +47,6 @@
     rejected: { label: t('shopAdmin.orders.status.rejected'), type: 'danger' }
   }
 
-  const formatISK = (v: number) => Math.round(v).toLocaleString('en-US')
   const formatContact = (row: Order) => {
     if (row.qq) return `QQ: ${row.qq}`
     if (row.discord_id) return `Discord: ${row.discord_id}`
@@ -127,7 +126,7 @@
             h(
               'span',
               { class: 'font-medium text-orange-600' },
-              `${formatISK(row.total_price)} ${t('shop.currency')}`
+              `${formatFuxiCoinWhole(row.total_price)} ${t('shop.currency')}`
             )
         },
         {
@@ -142,6 +141,14 @@
               () => cfg.label
             )
           }
+        },
+        {
+          prop: 'reviewer_name',
+          label: t('shopAdmin.orders.table.reviewerName'),
+          width: 140,
+          showOverflowTooltip: true,
+          formatter: (row: Order) =>
+            h('span', { class: row.reviewer_name ? '' : 'text-gray-400' }, row.reviewer_name || '-')
         },
         {
           prop: 'review_remark',

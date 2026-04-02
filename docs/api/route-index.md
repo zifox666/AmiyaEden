@@ -90,7 +90,7 @@ source_of_truth:
 | GET | `/operation/fleet-configs/:id` | 配置详情 | Login |
 | GET | `/operation/fleet-configs/:id/eft` | 获取 EFT 文本 | Login |
 | POST | `/operation/fleet-configs` | 创建配置 | `RequireRole(admin, senior_fc)` |
-| PUT | `/operation/fleet-configs/:id` | 更新配置 | `RequireRole(admin, senior_fc)` |
+| PUT | `/operation/fleet-configs/:id` | 更新配置；同一装配内按 `flag + type_id + quantity` 组合匹配物品，匹配项保留原有设置，其他项重置 | `RequireRole(admin, senior_fc)` |
 | DELETE | `/operation/fleet-configs/:id` | 删除配置 | `RequireRole(admin, senior_fc)` |
 | POST | `/operation/fleet-configs/import-fitting` | 从人物装配导入 | `RequireRole(admin, senior_fc)` |
 | POST | `/operation/fleet-configs/export-esi` | 导出到 ESI | Login |
@@ -211,8 +211,8 @@ source_of_truth:
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
 | GET | `/srp/prices` | 价格表 | Login |
-| POST | `/srp/prices` | 新增或更新价格 | `RequireRole(srp)` |
-| DELETE | `/srp/prices/:id` | 删除价格 | `RequireRole(srp)` |
+| POST | `/srp/prices` | 新增或更新价格 | `RequireRole(admin, senior_fc)` |
+| DELETE | `/srp/prices/:id` | 删除价格 | `RequireRole(admin, senior_fc)` |
 | POST | `/srp/applications` | 提交补损申请 | Login |
 | GET | `/srp/applications/me` | 我的补损申请 | Login |
 | GET | `/srp/killmails/me` | 我的 KM | Login |
@@ -324,7 +324,7 @@ source_of_truth:
 | POST | `/system/welfare/import` | 导入历史福利记录 | `RequireRole(admin)` |
 | POST | `/system/welfare/applications` | 福利申请列表（审批端） | `RequireRole(admin)` |
 | POST | `/system/welfare/applications/delete` | 删除单条福利申请记录 | `RequireRole(admin)` |
-| POST | `/system/welfare/review` | 审批福利申请（发放/拒绝；若当前福利配置 `pay_by_fuxi_coin > 0`，同步写入 `welfare_payout` 钱包流水） | `RequireRole(admin)` |
+| POST | `/system/welfare/review` | 审批福利申请（发放/拒绝；若当前福利配置 `pay_by_fuxi_coin > 0`，同步写入 `welfare_payout` 钱包流水；发放成功后尽力发送一封以发放福利官主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin)` |
 
 ### Newbro Admin
 
@@ -348,7 +348,7 @@ source_of_truth:
 | POST | `/system/shop/product/edit` | 编辑商品 | `RequireRole(admin)` |
 | POST | `/system/shop/product/delete` | 删除商品 | `RequireRole(admin)` |
 | POST | `/system/shop/order/list` | 订单列表 | `RequireRole(admin, welfare)` |
-| POST | `/system/shop/order/deliver` | 发放订单 | `RequireRole(admin, welfare)` |
+| POST | `/system/shop/order/deliver` | 发放订单（成功后尽力发送一封以执行发放官员主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin, welfare)` |
 | POST | `/system/shop/order/reject` | 驳回订单 | `RequireRole(admin, welfare)` |
 | POST | `/system/shop/redeem/list` | 兑换码列表 | `RequireRole(admin)` |
 

@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -254,9 +255,23 @@ func TestPayoutFuxiCoinModeCreditsWalletAndMarksApplicationPaid(t *testing.T) {
 	}
 
 	svc := newSrpServiceForTests()
+	mailAttempted := false
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, apps []*model.SrpApplication) error {
+		mailAttempted = true
+		if payerID != 77 {
+			t.Fatalf("payerID = %d, want 77", payerID)
+		}
+		if len(apps) != 1 || apps[0].ID != app.ID {
+			t.Fatalf("unexpected apps payload: %#v", apps)
+		}
+		return errors.New("mail failed")
+	}
 	paidApp, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin})
 	if err != nil {
 		t.Fatalf("Payout() error = %v", err)
+	}
+	if !mailAttempted {
+		t.Fatal("expected payout mail attempt after successful fuxi payout")
 	}
 
 	if paidApp.PayoutStatus != model.SrpPayoutPaid {
@@ -294,6 +309,66 @@ func TestPayoutFuxiCoinModeCreditsWalletAndMarksApplicationPaid(t *testing.T) {
 	wantReason := fmt.Sprintf("SRP#%d Guardian | 海燕护航", app.ID)
 	if tx.Reason != wantReason {
 		t.Fatalf("wallet tx reason = %q, want %q", tx.Reason, wantReason)
+	}
+}
+
+func TestPayoutManualTransferIgnoresPayoutMailErrors(t *testing.T) {
+	db := newSrpServiceTestDB(t)
+	oldDB := global.DB
+	global.DB = db
+	t.Cleanup(func() { global.DB = oldDB })
+
+	app := &model.SrpApplication{
+		UserID:            101,
+		CharacterID:       90001001,
+		CharacterName:     "Pilot One",
+		KillmailID:        880011,
+		ShipTypeID:        22436,
+		ShipName:          "Guardian",
+		SolarSystemID:     30000142,
+		KillmailTime:      time.Date(2026, time.March, 2, 1, 0, 0, 0, time.UTC),
+		RecommendedAmount: 2_350_000,
+		FinalAmount:       2_350_000,
+		ReviewStatus:      model.SrpReviewApproved,
+		PayoutStatus:      model.SrpPayoutNotPaid,
+	}
+	if err := db.Create(app).Error; err != nil {
+		t.Fatalf("create app: %v", err)
+	}
+
+	svc := newSrpServiceForTests()
+	mailAttempted := false
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, apps []*model.SrpApplication) error {
+		mailAttempted = true
+		if payerID != 77 {
+			t.Fatalf("payerID = %d, want 77", payerID)
+		}
+		if len(apps) != 1 || apps[0].ID != app.ID {
+			t.Fatalf("unexpected apps payload: %#v", apps)
+		}
+		return errors.New("mail failed")
+	}
+
+	paidApp, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeManualTransfer})
+	if err != nil {
+		t.Fatalf("Payout() error = %v", err)
+	}
+	if !mailAttempted {
+		t.Fatal("expected payout mail attempt after successful payout")
+	}
+	if paidApp.PayoutStatus != model.SrpPayoutPaid {
+		t.Fatalf("payout_status = %q, want %q", paidApp.PayoutStatus, model.SrpPayoutPaid)
+	}
+
+	var stored model.SrpApplication
+	if err := db.First(&stored, app.ID).Error; err != nil {
+		t.Fatalf("reload app: %v", err)
+	}
+	if stored.PayoutStatus != model.SrpPayoutPaid {
+		t.Fatalf("stored payout_status = %q, want %q", stored.PayoutStatus, model.SrpPayoutPaid)
+	}
+	if stored.PaidBy == nil || *stored.PaidBy != 77 {
+		t.Fatalf("stored paid_by = %v, want 77", stored.PaidBy)
 	}
 }
 
@@ -384,9 +459,23 @@ func TestBatchPayoutAsFuxiCoinCreditsApprovedRequestsAcrossUsers(t *testing.T) {
 	}
 
 	svc := newSrpServiceForTests()
+	mailAttempted := false
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, selectedApps []*model.SrpApplication) error {
+		mailAttempted = true
+		if payerID != 88 {
+			t.Fatalf("payerID = %d, want 88", payerID)
+		}
+		if len(selectedApps) != 3 {
+			t.Fatalf("mail app count = %d, want 3", len(selectedApps))
+		}
+		return errors.New("mail failed")
+	}
 	summary, err := svc.BatchPayoutAsFuxiCoin(88)
 	if err != nil {
 		t.Fatalf("BatchPayoutAsFuxiCoin() error = %v", err)
+	}
+	if !mailAttempted {
+		t.Fatal("expected payout mail attempt after successful fuxi batch payout")
 	}
 
 	if summary.ApplicationCount != 3 {
@@ -431,6 +520,146 @@ func TestBatchPayoutAsFuxiCoinCreditsApprovedRequestsAcrossUsers(t *testing.T) {
 	}
 	if txCount != 3 {
 		t.Fatalf("wallet transaction count = %d, want 3", txCount)
+	}
+}
+
+func TestBatchPayoutByUserIgnoresPayoutMailErrors(t *testing.T) {
+	db := newSrpServiceTestDB(t)
+	oldDB := global.DB
+	global.DB = db
+	t.Cleanup(func() { global.DB = oldDB })
+
+	if err := db.Create(&model.User{
+		BaseModel:          model.BaseModel{ID: 201},
+		Nickname:           "Pilot A",
+		PrimaryCharacterID: 90002001,
+	}).Error; err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	if err := db.Create(&model.EveCharacter{
+		CharacterID:   90002001,
+		CharacterName: "Pilot A Main",
+		UserID:        201,
+		TokenExpiry:   time.Now().Add(time.Hour),
+	}).Error; err != nil {
+		t.Fatalf("create character: %v", err)
+	}
+
+	apps := []*model.SrpApplication{
+		{
+			UserID:            201,
+			CharacterID:       90002011,
+			CharacterName:     "Pilot A",
+			KillmailID:        880301,
+			ShipTypeID:        111,
+			ShipName:          "Scimitar",
+			SolarSystemID:     30000142,
+			KillmailTime:      time.Date(2026, time.March, 10, 12, 30, 0, 0, time.UTC),
+			RecommendedAmount: 1_250_000,
+			FinalAmount:       1_250_000,
+			ReviewStatus:      model.SrpReviewApproved,
+			PayoutStatus:      model.SrpPayoutNotPaid,
+		},
+		{
+			UserID:            201,
+			CharacterID:       90002012,
+			CharacterName:     "Pilot A Alt",
+			KillmailID:        880302,
+			ShipTypeID:        222,
+			ShipName:          "Basilisk",
+			SolarSystemID:     30000142,
+			KillmailTime:      time.Date(2026, time.March, 10, 12, 40, 0, 0, time.UTC),
+			RecommendedAmount: 750_000,
+			FinalAmount:       750_000,
+			ReviewStatus:      model.SrpReviewApproved,
+			PayoutStatus:      model.SrpPayoutNotPaid,
+		},
+		{
+			UserID:            201,
+			CharacterID:       90002013,
+			CharacterName:     "Pilot A Pending",
+			KillmailID:        880303,
+			ShipTypeID:        333,
+			ShipName:          "Oneiros",
+			SolarSystemID:     30000142,
+			KillmailTime:      time.Date(2026, time.March, 10, 12, 50, 0, 0, time.UTC),
+			RecommendedAmount: 500_000,
+			FinalAmount:       500_000,
+			ReviewStatus:      model.SrpReviewSubmitted,
+			PayoutStatus:      model.SrpPayoutNotPaid,
+		},
+		{
+			UserID:            202,
+			CharacterID:       90002014,
+			CharacterName:     "Pilot B",
+			KillmailID:        880304,
+			ShipTypeID:        444,
+			ShipName:          "Guardian",
+			SolarSystemID:     30000142,
+			KillmailTime:      time.Date(2026, time.March, 10, 13, 0, 0, 0, time.UTC),
+			RecommendedAmount: 900_000,
+			FinalAmount:       900_000,
+			ReviewStatus:      model.SrpReviewApproved,
+			PayoutStatus:      model.SrpPayoutNotPaid,
+		},
+	}
+	for _, app := range apps {
+		if err := db.Create(app).Error; err != nil {
+			t.Fatalf("create app %d: %v", app.KillmailID, err)
+		}
+	}
+
+	svc := newSrpServiceForTests()
+	mailAttempted := false
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, selectedApps []*model.SrpApplication) error {
+		mailAttempted = true
+		if payerID != 88 {
+			t.Fatalf("payerID = %d, want 88", payerID)
+		}
+		if len(selectedApps) != 2 {
+			t.Fatalf("mail app count = %d, want 2", len(selectedApps))
+		}
+		return errors.New("mail failed")
+	}
+
+	summary, err := svc.BatchPayoutByUser(88, 201)
+	if err != nil {
+		t.Fatalf("BatchPayoutByUser() error = %v", err)
+	}
+	if !mailAttempted {
+		t.Fatal("expected payout mail attempt after successful batch payout")
+	}
+	if summary.UserID != 201 {
+		t.Fatalf("summary user_id = %d, want 201", summary.UserID)
+	}
+	if summary.ApplicationCount != 2 {
+		t.Fatalf("summary application_count = %d, want 2", summary.ApplicationCount)
+	}
+	if summary.TotalAmount != 2_000_000 {
+		t.Fatalf("summary total_amount = %v, want 2000000", summary.TotalAmount)
+	}
+	if summary.MainCharacterName != "Pilot A Main" {
+		t.Fatalf("summary main_character_name = %q, want %q", summary.MainCharacterName, "Pilot A Main")
+	}
+
+	var paidCount int64
+	if err := db.Model(&model.SrpApplication{}).
+		Where("user_id = ? AND payout_status = ?", 201, model.SrpPayoutPaid).
+		Count(&paidCount).Error; err != nil {
+		t.Fatalf("count paid apps: %v", err)
+	}
+	if paidCount != 2 {
+		t.Fatalf("paid app count = %d, want 2", paidCount)
+	}
+
+	var otherUserPaidCount int64
+	if err := db.Model(&model.SrpApplication{}).
+		Where("user_id = ? AND payout_status = ?", 202, model.SrpPayoutPaid).
+		Count(&otherUserPaidCount).Error; err != nil {
+		t.Fatalf("count other user paid apps: %v", err)
+	}
+	if otherUserPaidCount != 0 {
+		t.Fatalf("other user paid app count = %d, want 0", otherUserPaidCount)
 	}
 }
 
@@ -484,6 +713,8 @@ func newSrpServiceTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("open sqlite: %v", err)
 	}
 	if err := db.AutoMigrate(
+		&model.User{},
+		&model.EveCharacter{},
 		&model.SystemWallet{},
 		&model.WalletTransaction{},
 		&model.SrpApplication{},
@@ -498,6 +729,8 @@ func newSrpServiceForTests() *SrpService {
 	return &SrpService{
 		repo:      repository.NewSrpRepository(),
 		fleetRepo: repository.NewFleetRepository(),
+		charRepo:  repository.NewEveCharacterRepository(),
+		userRepo:  repository.NewUserRepository(),
 		sdeRepo:   repository.NewSdeRepository(),
 		walletSvc: NewSysWalletService(),
 	}

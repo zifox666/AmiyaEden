@@ -42,6 +42,7 @@ func NewFleetConfigService() *FleetConfigService {
 
 // FleetConfigFittingReq 创建/更新中的装配条目请求（输入 EFT 文本，后端解析存储）
 type FleetConfigFittingReq struct {
+	ID          *uint   `json:"id,omitempty"`
 	FittingName string  `json:"fitting_name" binding:"required"`
 	EFT         string  `json:"eft" binding:"required"` // 英文 EFT 格式，后端解析为 items
 	SrpAmount   float64 `json:"srp_amount"`
@@ -208,50 +209,53 @@ func (s *FleetConfigService) UpdateFleetConfig(id uint, _ uint, userRoles []stri
 	if req.Description != nil {
 		config.Description = *req.Description
 	}
+	if req.Fittings != nil && len(*req.Fittings) == 0 {
+		return nil, errors.New("至少保留一个装配")
+	}
+
+	if req.Fittings == nil {
+		if err := s.repo.UpdateMetadata(config); err != nil {
+			return nil, err
+		}
+
+		updatedFittings, err := s.repo.ListFittingsByConfigID(id)
+		if err != nil {
+			return nil, err
+		}
+		return s.buildResp(config, updatedFittings), nil
+	}
 
 	var fwis []repository.FittingWithItems
-	if req.Fittings != nil {
-		fwis = make([]repository.FittingWithItems, 0, len(*req.Fittings))
-		for _, f := range *req.Fittings {
-			shipTypeID, items, err := s.parseEFTToFitting(f.EFT)
-			if err != nil {
-				return nil, fmt.Errorf("装配「%s」EFT 解析失败: %w", f.FittingName, err)
-			}
-			fwis = append(fwis, repository.FittingWithItems{
-				Fitting: model.FleetConfigFitting{
-					FleetConfigID: id,
-					ShipTypeID:    shipTypeID,
-					FittingName:   f.FittingName,
-					SrpAmount:     f.SrpAmount,
-				},
-				Items: items,
-			})
+	fwis = make([]repository.FittingWithItems, 0, len(*req.Fittings))
+	for _, f := range *req.Fittings {
+		shipTypeID, items, err := s.parseEFTToFitting(f.EFT)
+		if err != nil {
+			return nil, fmt.Errorf("装配「%s」EFT 解析失败: %w", f.FittingName, err)
 		}
-	} else {
-		// Fittings 为 nil 表示不更新装配，保留现有
-		existFittings, _ := s.repo.ListFittingsByConfigID(id)
-		fittingIDs := make([]uint, len(existFittings))
-		for i, f := range existFittings {
-			fittingIDs[i] = f.ID
+		var fittingID uint
+		if f.ID != nil {
+			fittingID = *f.ID
 		}
-		existItems, _ := s.repo.ListItemsByFittingIDs(fittingIDs)
-		itemByFitting := make(map[uint][]model.FleetConfigFittingItem)
-		for _, item := range existItems {
-			itemByFitting[item.FleetConfigFittingID] = append(itemByFitting[item.FleetConfigFittingID], item)
-		}
-		for _, ef := range existFittings {
-			fwis = append(fwis, repository.FittingWithItems{
-				Fitting: ef,
-				Items:   itemByFitting[ef.ID],
-			})
-		}
+		fwis = append(fwis, repository.FittingWithItems{
+			Fitting: model.FleetConfigFitting{
+				ID:            fittingID,
+				FleetConfigID: id,
+				ShipTypeID:    shipTypeID,
+				FittingName:   f.FittingName,
+				SrpAmount:     f.SrpAmount,
+			},
+			Items: items,
+		})
 	}
 
 	if err := s.repo.Update(config, fwis); err != nil {
 		return nil, err
 	}
 
-	updatedFittings, _ := s.repo.ListFittingsByConfigID(id)
+	updatedFittings, err := s.repo.ListFittingsByConfigID(id)
+	if err != nil {
+		return nil, err
+	}
 	return s.buildResp(config, updatedFittings), nil
 }
 
@@ -559,6 +563,24 @@ func (s *FleetConfigService) parseEFTToFitting(eft string) (int64, []model.Fleet
 		return 0, nil, fmt.Errorf("未找到舰船类型「%s」，请确认 EFT 使用英文名称", header.ShipType)
 	}
 
+	typeInfoByID := make(map[int64]repository.TypeInfo, len(nameToTypeID))
+	resolvedTypeIDs := make([]int, 0, len(nameToTypeID))
+	seenTypeIDs := make(map[int64]struct{}, len(nameToTypeID))
+	for _, typeID := range nameToTypeID {
+		if _, exists := seenTypeIDs[typeID]; exists {
+			continue
+		}
+		seenTypeIDs[typeID] = struct{}{}
+		resolvedTypeIDs = append(resolvedTypeIDs, int(typeID))
+	}
+	if len(resolvedTypeIDs) > 0 {
+		if infos, sdeErr := s.sdeRepo.GetTypes(resolvedTypeIDs, nil, "en"); sdeErr == nil {
+			for _, info := range infos {
+				typeInfoByID[int64(info.TypeID)] = info
+			}
+		}
+	}
+
 	// 定义插槽组顺序
 	slotGroups := []struct {
 		prefix string
@@ -595,18 +617,18 @@ func (s *FleetConfigService) parseEFTToFitting(eft string) (int64, []model.Fleet
 				}
 				m := countRegex.FindStringSubmatch(line)
 				if m == nil {
-					continue
+					return 0, nil, fmt.Errorf("EFT 行格式错误：%s", line)
 				}
 				name := strings.TrimSpace(m[1])
 				qty, _ := strconv.Atoi(m[2])
 				typeID, exists := resolveTypeIDFromName(name, nameToTypeID)
 				if !exists {
-					continue
+					return 0, nil, fmt.Errorf("未找到装备类型「%s」，请确认 EFT 使用英文名称", name)
 				}
 				items = append(items, model.FleetConfigFittingItem{
 					TypeID:   typeID,
 					Quantity: qty,
-					Flag:     "DroneBay",
+					Flag:     countedItemFlag(typeID, typeInfoByID),
 				})
 			}
 		} else {
@@ -641,6 +663,8 @@ func (s *FleetConfigService) parseEFTToFitting(eft string) (int64, []model.Fleet
 							Quantity: 1,
 							Flag:     flag,
 						})
+					} else {
+						return 0, nil, fmt.Errorf("未找到装备类型「%s」，请确认 EFT 使用英文名称", moduleName)
 					}
 					slotCounter++
 
@@ -652,6 +676,8 @@ func (s *FleetConfigService) parseEFTToFitting(eft string) (int64, []model.Fleet
 								Quantity: 1,
 								Flag:     "Cargo",
 							})
+						} else {
+							return 0, nil, fmt.Errorf("未找到装填物类型「%s」，请确认 EFT 使用英文名称", chargeName)
 						}
 					}
 				}
@@ -678,8 +704,30 @@ func resolveTypeIDFromName(name string, nameToTypeID map[string]int64) (int64, b
 	return typeID, true
 }
 
+func countedItemFlag(typeID int64, typeInfoByID map[int64]repository.TypeInfo) string {
+	info, ok := typeInfoByID[typeID]
+	if !ok {
+		return "Cargo"
+	}
+
+	groupName := strings.ToLower(info.GroupName)
+	categoryName := strings.ToLower(info.CategoryName)
+	switch {
+	case strings.Contains(groupName, "fighter") || strings.Contains(categoryName, "fighter"):
+		return "FighterBay"
+	case strings.Contains(groupName, "drone") || strings.Contains(categoryName, "drone"):
+		return "DroneBay"
+	default:
+		return "Cargo"
+	}
+}
+
 // GetFittingEFT 返回舰队配置中所有装配的本地化 EFT 文本
 func (s *FleetConfigService) GetFittingEFT(configID uint, lang string) (*FleetConfigEFTResponse, error) {
+	if _, err := s.repo.GetByID(configID); err != nil {
+		return nil, errors.New("舰队配置不存在")
+	}
+
 	fittings, err := s.repo.ListFittingsByConfigID(configID)
 	if err != nil {
 		return nil, err
@@ -796,11 +844,38 @@ func buildEFT(shipName, fittingName string, items []model.EveCharacterFittingIte
 
 		isDroneOrCargo := group == "DroneBay" || group == "FighterBay" || group == "Cargo"
 
+		if !isDroneOrCargo {
+			itemsByIndex := make(map[int]slotItem, len(items))
+			maxIndex := -1
+			flagPrefix := group
+			if group == "SubSystem" {
+				flagPrefix = "SubSystemSlot"
+			}
+			for _, item := range items {
+				index, ok := parseFlagIndex(item.flag, flagPrefix)
+				if !ok {
+					continue
+				}
+				itemsByIndex[index] = item
+				if index > maxIndex {
+					maxIndex = index
+				}
+			}
+			if maxIndex >= 0 {
+				for index := 0; index <= maxIndex; index++ {
+					if item, ok := itemsByIndex[index]; ok {
+						fmt.Fprintf(&buf, "%s\n", item.name)
+						continue
+					}
+					fmt.Fprintf(&buf, "%s\n", emptySlotPlaceholder(group))
+				}
+				continue
+			}
+		}
+
 		for _, item := range items {
-			if isDroneOrCargo && item.quantity > 1 {
+			if isDroneOrCargo {
 				fmt.Fprintf(&buf, "%s x%d\n", item.name, item.quantity)
-			} else if isDroneOrCargo {
-				fmt.Fprintf(&buf, "%s\n", item.name)
 			} else {
 				fmt.Fprintf(&buf, "%s\n", item.name)
 			}
@@ -808,6 +883,36 @@ func buildEFT(shipName, fittingName string, items []model.EveCharacterFittingIte
 	}
 
 	return buf.String()
+}
+
+func parseFlagIndex(flag, prefix string) (int, bool) {
+	if !strings.HasPrefix(flag, prefix) {
+		return 0, false
+	}
+	index, err := strconv.Atoi(strings.TrimPrefix(flag, prefix))
+	if err != nil {
+		return 0, false
+	}
+	return index, true
+}
+
+func emptySlotPlaceholder(group string) string {
+	switch group {
+	case "LoSlot":
+		return "[Empty Low slot]"
+	case "MedSlot":
+		return "[Empty Med slot]"
+	case "HiSlot":
+		return "[Empty High slot]"
+	case "RigSlot":
+		return "[Empty Rig slot]"
+	case "SubSystem":
+		return "[Empty Subsystem slot]"
+	case "ServiceSlot":
+		return "[Empty Service slot]"
+	default:
+		return "[Empty Slot]"
+	}
 }
 
 // getFlagGroupForEFT 将 ESI flag 映射为 EFT 分组
@@ -981,8 +1086,20 @@ func (s *FleetConfigService) UpdateFittingItemsSettings(configID, fittingID, _ u
 		return errors.New("装配不属于该配置")
 	}
 
+	existingItems, err := s.repo.ListItemsByFittingIDs([]uint{fittingID})
+	if err != nil {
+		return err
+	}
+	validItemIDs := make(map[uint]struct{}, len(existingItems))
+	for _, existingItem := range existingItems {
+		validItemIDs[existingItem.ID] = struct{}{}
+	}
+
 	updates := make([]repository.ItemSettingUpdate, len(req.Items))
 	for i, item := range req.Items {
+		if _, ok := validItemIDs[item.ID]; !ok {
+			return fmt.Errorf("物品 %d 不属于该装配", item.ID)
+		}
 		// replaceable 才允许有替代品
 		reps := item.Replacements
 		if item.Importance != model.FittingItemReplaceable {

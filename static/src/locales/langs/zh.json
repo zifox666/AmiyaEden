@@ -611,6 +611,7 @@
     "unitPrice": "单价（伏羲币）",
     "totalPrice": "总价（伏羲币）",
     "status": "状态",
+    "reviewerName": "处理人昵称",
     "orderTime": "下单时间",
     "noOrders": "暂无订单",
     "myRedeemCodes": "我的兑换码",
@@ -1162,6 +1163,18 @@
     "itemSettingsTitle": "装备重要性与惩罚设置",
     "itemSettingsSaved": "装备设置已保存",
     "replacementSearch": "搜索替代装备",
+    "manageReplacements": "管理替代品",
+    "viewReplacements": "查看替代品",
+    "noReplacements": "暂无替代品",
+    "noItems": "当前装配没有可配置的装备项",
+    "replacementEditorTitle": "{name} 的替代品",
+    "itemColumns": {
+      "item": "装备",
+      "importance": "重要性",
+      "penalty": "惩罚",
+      "replacementPenalty": "替代惩罚",
+      "replacements": "替代品"
+    },
     "importance": {
       "required": "必需",
       "optional": "可选",
@@ -1378,6 +1391,7 @@
         "reviewStatus": "审核状态",
         "paid": "已打款",
         "payoutStatus": "发放状态",
+        "lastActor": "最后处理人",
         "action": "操作",
         "note": "备注",
         "fleetNote": "舰队/备注"
@@ -1477,6 +1491,7 @@
         "review": "审批",
         "reviewNote": "审批备注",
         "payout": "发放",
+        "lastActor": "最后处理人",
         "action": "操作"
       }
     },
@@ -1774,6 +1789,7 @@
         "product": "商品",
         "quantity": "数量",
         "totalPrice": "总价",
+        "reviewerName": "处理人昵称",
         "userRemark": "用户备注",
         "createdAt": "下单时间"
       },

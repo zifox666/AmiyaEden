@@ -25,6 +25,7 @@ source_of_truth:
 - 查看军团 PAP 汇总
 - 查看我的联盟 PAP
 - 舰队配置管理、EFT 导出、从人物装配导入、导出到 ESI
+- 舰队配置装配物品的独立装备设置：重要性、惩罚、替代品
 - 舰队级自动 SRP 模式：`disabled` / `submit_only` / `auto_approve`
 - 创建舰队时，选择舰队配置会默认把自动 SRP 模式设为 `auto_approve`
 
@@ -65,6 +66,8 @@ source_of_truth:
 - 自动 SRP 不是纯草案，当前模型、页面和后台处理逻辑都已存在
 - 自动 SRP 的触发与舰队成员、KM 刷新、舰队配置装配有关，不能只改 UI 字段
 - 保存到游戏是把现有舰队配置装配导出到当前用户自己的 ESI 人物，不是系统配置写操作
+- 装配物品的装备设置通过独立「装备设置」对话框单独保存，不随主配置表单同一次接口提交
+- 舰队配置编辑会在同一装配条目内按 `flag + type_id + quantity` 保留未变化物品的装备设置（重要性、惩罚、替代品）；删除、替换、改槽位或改数量后，该物品按新条目处理，并重置为默认设置
 - 联盟 PAP 的用户侧展示在 Operation，管理员配置与导入在 System
 - 军团 PAP 页面属于多块统计 + 表格混排的分析页，当前明确允许不走 `useTable` / `ArtTable` 默认模板
 - 发放 PAP 时的伏羲币换算不再是固定 1:1，而是按舰队 `importance`（`cta` / `strat_op` / `other`）查询 `pap_type_rate` 表中对应汇率；若成员是舰队 FC，则优先发放固定 `FC工资`，并受 `FC工资上限次数` 约束，汇率配置入口在「系统管理 → PAP兑换」，详见 `docs/features/current/pap-exchange.md`

@@ -27,6 +27,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
 
+  import { formatIskSmart } from '@/utils/common'
   import { humanizeNumber } from '@/utils/common/text'
 
   const props = defineProps<{
@@ -52,7 +53,7 @@
         value: c?.eve_wallet_balance ?? 0,
         decimals: 2,
         suffix: '',
-        desc: humanizeNumber(c?.eve_wallet_balance ?? 0)
+        desc: formatIskSmart(c?.eve_wallet_balance ?? 0)
       },
       {
         label: t('dashboardConsole.cards.eveSkillPoints'),

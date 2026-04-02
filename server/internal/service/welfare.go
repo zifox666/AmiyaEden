@@ -4,6 +4,8 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/pkg/eve/esi"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,10 +14,13 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 // WelfareService 福利业务逻辑层
+type welfareDeliveryMailSender func(ctx context.Context, reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) error
+
 type WelfareService struct {
 	repo      *repository.WelfareRepository
 	userRepo  *repository.UserRepository
@@ -23,17 +28,25 @@ type WelfareService struct {
 	fleetRepo *repository.FleetRepository
 	skillRepo *repository.EveSkillRepository
 	planRepo  *repository.SkillPlanRepository
+	ssoSvc    *EveSSOService
+	esiClient *esi.Client
+
+	deliveryMailSender welfareDeliveryMailSender
 }
 
 func NewWelfareService() *WelfareService {
-	return &WelfareService{
+	svc := &WelfareService{
 		repo:      repository.NewWelfareRepository(),
 		userRepo:  repository.NewUserRepository(),
 		charRepo:  repository.NewEveCharacterRepository(),
 		fleetRepo: repository.NewFleetRepository(),
 		skillRepo: repository.NewEveSkillRepository(),
 		planRepo:  repository.NewSkillPlanRepository(),
+		ssoSvc:    newConfiguredEveSSOService(),
+		esiClient: newConfiguredESIClient(),
 	}
+	svc.deliveryMailSender = svc.sendDeliveryMail
+	return svc
 }
 
 // ─────────────────────────────────────────────
@@ -896,7 +909,10 @@ func (s *WelfareService) AdminDeleteApplication(id uint) error {
 }
 
 func (s *WelfareService) AdminReviewApplication(appID uint, reviewerID uint, req *AdminReviewApplicationRequest) error {
-	return global.DB.Transaction(func(tx *gorm.DB) error {
+	var deliveredWelfare *model.Welfare
+	var deliveredApp *model.WelfareApplication
+
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
 		app, err := s.repo.GetApplicationByIDForUpdateTx(tx, appID)
 		if err != nil {
 			return errors.New("申请记录不存在")
@@ -935,10 +951,100 @@ func (s *WelfareService) AdminReviewApplication(appID uint, reviewerID uint, req
 					return err
 				}
 			}
+
+			appCopy := *app
+			welfareCopy := *welfare
+			deliveredApp = &appCopy
+			deliveredWelfare = &welfareCopy
 		}
 
 		return s.repo.UpdateApplicationTx(tx, app)
 	})
+	if err != nil {
+		return err
+	}
+
+	s.attemptDeliveryMail(reviewerID, deliveredWelfare, deliveredApp)
+	return nil
+}
+
+func (s *WelfareService) attemptDeliveryMail(reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) {
+	if deliveredWelfare == nil || deliveredApp == nil || s.deliveryMailSender == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := s.deliveryMailSender(ctx, reviewerID, deliveredWelfare, deliveredApp); err != nil && global.Logger != nil {
+		global.Logger.Warn("福利发放后邮件尝试失败",
+			zap.Uint("reviewer_user_id", reviewerID),
+			zap.Uint("welfare_id", deliveredWelfare.ID),
+			zap.Uint("application_id", deliveredApp.ID),
+			zap.Error(err),
+		)
+	}
+}
+
+func (s *WelfareService) sendDeliveryMail(
+	ctx context.Context,
+	reviewerID uint,
+	deliveredWelfare *model.Welfare,
+	deliveredApp *model.WelfareApplication,
+) error {
+	if deliveredWelfare == nil || deliveredApp == nil {
+		return nil
+	}
+	if deliveredApp.UserID == nil || *deliveredApp.UserID == 0 {
+		return errors.New("福利申请缺少收件用户信息")
+	}
+
+	mailSupport := newInGameMailSupport(s.userRepo, s.charRepo, s.ssoSvc, s.esiClient)
+	senderCharacterID, token, officerDisplayName, err := mailSupport.resolveSender(ctx, reviewerID)
+	if err != nil {
+		return err
+	}
+
+	recipientCharacterID, err := mailSupport.resolveUserPrimaryCharacterID(*deliveredApp.UserID)
+	if err != nil {
+		return err
+	}
+
+	subject, body := buildWelfareDeliveryMailContent(deliveredWelfare.Name, officerDisplayName)
+	return mailSupport.send(ctx, senderCharacterID, token, recipientCharacterID, subject, body)
+}
+
+func buildWelfareDeliveryMailContent(welfareName, officerDisplayName string) (string, string) {
+	welfareName = strings.TrimSpace(welfareName)
+	if welfareName == "" {
+		welfareName = "福利"
+	}
+	officerDisplayName = strings.TrimSpace(officerDisplayName)
+	if officerDisplayName == "" {
+		officerDisplayName = "Officer"
+	}
+
+	subject := fmt.Sprintf("[福利发放通知 / Welfare Delivery Notice] %s", welfareName)
+	var bodyBuilder strings.Builder
+	bodyBuilder.WriteString("你好，\n\n")
+	bodyBuilder.WriteString(fmt.Sprintf("你的福利「%s」已由福利官 %s 发放。\n", welfareName, officerDisplayName))
+	bodyBuilder.WriteString("发放详情：\n")
+	bodyBuilder.WriteString(fmt.Sprintf("福利名称：%s\n", welfareName))
+	bodyBuilder.WriteString(fmt.Sprintf("发放官员：%s\n", officerDisplayName))
+	bodyBuilder.WriteString("请检查你的伏羲币钱包或合同。\n")
+	bodyBuilder.WriteString("如有疑问，请联系处理此申请的福利官。\n")
+	bodyBuilder.WriteString("感谢你的支持，祝你飞行顺利。\n")
+
+	bodyBuilder.WriteString("Hello,\n\n")
+	bodyBuilder.WriteString(fmt.Sprintf("Your welfare \"%s\" has been delivered by officer %s.\n", welfareName, officerDisplayName))
+	bodyBuilder.WriteString("Delivery details:\n")
+	bodyBuilder.WriteString(fmt.Sprintf("Welfare: %s\n", welfareName))
+	bodyBuilder.WriteString(fmt.Sprintf("Delivered by: %s\n", officerDisplayName))
+	bodyBuilder.WriteString("Please check your FuxiCoin wallet or contract.\n")
+	bodyBuilder.WriteString("If anything looks incorrect, please contact the officer who handled this delivery.\n")
+	bodyBuilder.WriteString("Thank you for your support, and fly safe.\n")
+
+	return subject, bodyBuilder.String()
 }
 
 // MyApplicationResp 用户申请记录响应

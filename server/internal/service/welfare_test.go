@@ -3,7 +3,10 @@ package service
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -591,6 +594,105 @@ func TestAdminReviewApplicationDeliverCreditsConfiguredFuxiCoin(t *testing.T) {
 	}
 	if txs[0].OperatorID != 77 {
 		t.Fatalf("wallet tx operator_id = %d, want 77", txs[0].OperatorID)
+	}
+}
+
+func TestAdminReviewApplicationDeliverAttemptsInGameMailButIgnoresMailErrors(t *testing.T) {
+	db := newWelfareServiceTestDB(t)
+	useWelfareServiceTestDB(t, db)
+
+	welfare := &model.Welfare{
+		Name:      "Starter Pack",
+		DistMode:  model.WelfareDistModePerUser,
+		Status:    model.WelfareStatusActive,
+		CreatedBy: 1,
+	}
+	if err := db.Create(welfare).Error; err != nil {
+		t.Fatalf("create welfare: %v", err)
+	}
+
+	userID := uint(42)
+	app := &model.WelfareApplication{
+		WelfareID:     welfare.ID,
+		UserID:        &userID,
+		CharacterID:   90000001,
+		CharacterName: "Pilot One",
+		Status:        model.WelfareAppStatusRequested,
+	}
+	if err := db.Create(app).Error; err != nil {
+		t.Fatalf("create application: %v", err)
+	}
+
+	svc := NewWelfareService()
+	mailAttempted := false
+	svc.deliveryMailSender = func(ctx context.Context, reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) error {
+		mailAttempted = true
+		if reviewerID != 77 {
+			t.Fatalf("reviewerID = %d, want 77", reviewerID)
+		}
+		if deliveredWelfare.ID != welfare.ID {
+			t.Fatalf("welfare id = %d, want %d", deliveredWelfare.ID, welfare.ID)
+		}
+		if deliveredApp.ID != app.ID {
+			t.Fatalf("application id = %d, want %d", deliveredApp.ID, app.ID)
+		}
+		return errors.New("mail failed")
+	}
+
+	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
+		t.Fatalf("AdminReviewApplication() error = %v", err)
+	}
+	if !mailAttempted {
+		t.Fatal("expected deliver to attempt in-game mail after successful delivery")
+	}
+
+	var updated model.WelfareApplication
+	if err := db.First(&updated, app.ID).Error; err != nil {
+		t.Fatalf("reload application: %v", err)
+	}
+	if updated.Status != model.WelfareAppStatusDelivered {
+		t.Fatalf("status = %q, want %q", updated.Status, model.WelfareAppStatusDelivered)
+	}
+	if updated.ReviewedBy != 77 {
+		t.Fatalf("reviewed_by = %d, want 77", updated.ReviewedBy)
+	}
+}
+
+func TestBuildWelfareDeliveryMailContentIncludesBilingualOfficerNotice(t *testing.T) {
+	subject, body := buildWelfareDeliveryMailContent("Starter Pack", "Amiya")
+
+	if !strings.Contains(subject, "福利发放通知") || !strings.Contains(subject, "Welfare Delivery Notice") {
+		t.Fatalf("unexpected subject: %q", subject)
+	}
+	if !strings.Contains(body, "你的福利「Starter Pack」已由福利官 Amiya 发放") {
+		t.Fatalf("expected Chinese body to mention welfare name and officer nickname, got %q", body)
+	}
+	if !strings.Contains(body, "福利名称：Starter Pack") {
+		t.Fatalf("expected Chinese body to include welfare name detail, got %q", body)
+	}
+	if !strings.Contains(body, "发放官员：Amiya") {
+		t.Fatalf("expected Chinese body to include officer detail, got %q", body)
+	}
+	if !strings.Contains(body, "请检查你的伏羲币钱包或合同") {
+		t.Fatalf("expected Chinese body to mention FuxiCoin wallet or contract, got %q", body)
+	}
+	if !strings.Contains(body, "如有疑问，请联系处理此申请的福利官。") {
+		t.Fatalf("expected Chinese body to include a professional follow-up note, got %q", body)
+	}
+	if !strings.Contains(body, "Your welfare \"Starter Pack\" has been delivered by officer Amiya.") {
+		t.Fatalf("expected English body to mention welfare name and officer nickname, got %q", body)
+	}
+	if !strings.Contains(body, "Welfare: Starter Pack") {
+		t.Fatalf("expected English body to include welfare detail, got %q", body)
+	}
+	if !strings.Contains(body, "Delivered by: Amiya") {
+		t.Fatalf("expected English body to include officer detail, got %q", body)
+	}
+	if !strings.Contains(body, "Please check your FuxiCoin wallet or contract.") {
+		t.Fatalf("expected English body to mention FuxiCoin wallet or contract, got %q", body)
+	}
+	if !strings.Contains(body, "If anything looks incorrect, please contact the officer who handled this delivery.") {
+		t.Fatalf("expected English body to include a professional follow-up note, got %q", body)
 	}
 }
 

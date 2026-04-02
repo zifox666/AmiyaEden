@@ -1,0 +1,48 @@
+server:
+  port: "65432"
+  mode: "debug"
+
+database:
+  host: "amiya-eden-postgres"
+  port: 5432
+  user: "postgres"
+  password: "amiya_eden_dev"
+  dbname: "amiya_eden"
+  sslmode: "disable"
+  max_idle_conns: 10
+  max_open_conns: 100
+
+log:
+  level: "debug"
+  filename: "logs/app.log"
+  max_size: 100
+  max_backups: 7
+  max_age: 30
+  compress: true
+
+jwt:
+  secret: "change_me_in_production"
+  expire_day: 7
+
+redis:
+  addr: "amiya-eden-redis:6379"
+  password: "amiya_eden_dev"
+  db: 0
+  pool_size: 10
+
+eve_sso:
+  client_id: "YOUR_EVE_SSO_CLIENT_ID"
+  client_secret: "YOUR_EVE_SSO_CLIENT_SECRET"
+  callback_url: "http://localhost:65432/callback/"
+
+sde:
+  api_key: "dev_sde_key"
+  proxy: ""
+  download_url: "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"
+
+app:
+  allow_corporations: []
+
+alliance_pap:
+  base_url: ""
+  api_key: ""

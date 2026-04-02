@@ -4,15 +4,15 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"amiya-eden/pkg/eve/esi"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"math"
-	"net/http"
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -22,6 +22,8 @@ func slotCategory(flagName string) string {
 }
 
 // SrpService 补损业务逻辑层
+type srpPayoutMailSender func(ctx context.Context, payerID uint, apps []*model.SrpApplication) error
+
 type SrpService struct {
 	repo      *repository.SrpRepository
 	fleetRepo *repository.FleetRepository
@@ -31,10 +33,13 @@ type SrpService struct {
 	kmRepo    *repository.KillmailRepository
 	ssoSvc    *EveSSOService
 	walletSvc *SysWalletService
+	esiClient *esi.Client
+
+	payoutMailSender srpPayoutMailSender
 }
 
 func NewSrpService() *SrpService {
-	return &SrpService{
+	svc := &SrpService{
 		repo:      repository.NewSrpRepository(),
 		fleetRepo: repository.NewFleetRepository(),
 		charRepo:  repository.NewEveCharacterRepository(),
@@ -43,7 +48,10 @@ func NewSrpService() *SrpService {
 		kmRepo:    repository.NewKillmailRepository(),
 		ssoSvc:    NewEveSSOService(),
 		walletSvc: NewSysWalletService(),
+		esiClient: esi.NewClientWithConfig(global.Config.EveSSO.ESIBaseURL, global.Config.EveSSO.ESIAPIPrefix),
 	}
+	svc.payoutMailSender = svc.sendPayoutMails
+	return svc
 }
 
 const (
@@ -57,11 +65,9 @@ const (
 
 // resolveCharacterKillmail 确认 killmailID 与 characterID 有关联，并返回 EveKillmailList
 func (s *SrpService) resolveCharacterKillmail(killmailID int64, characterID int64) (*model.EveKillmailList, error) {
-	// 验证人物-KM 关联关系
 	if _, err := s.kmRepo.GetCharacterKillmailLink(characterID, killmailID); err != nil {
 		return nil, errors.New("该 KM 不属于指定人物，或尚未被 ESI 刷新任务录入")
 	}
-	// 加载 KM 详情
 	km, err := s.kmRepo.GetKillmailByID(killmailID)
 	if err != nil {
 		return nil, errors.New("KM 详情不存在")
@@ -218,9 +224,10 @@ func (s *SrpService) SubmitApplication(userID uint, req *SubmitApplicationReques
 // SrpApplicationResponse 补损申请响应（含舰队信息）
 type SrpApplicationResponse struct {
 	model.SrpApplication
-	FleetTitle  string `json:"fleet_title,omitempty"`
-	FleetFCName string `json:"fleet_fc_name,omitempty"`
-	Nickname    string `json:"nickname,omitempty"`
+	FleetTitle        string `json:"fleet_title,omitempty"`
+	FleetFCName       string `json:"fleet_fc_name,omitempty"`
+	Nickname          string `json:"nickname,omitempty"`
+	LastActorNickname string `json:"last_actor_nickname,omitempty"`
 }
 
 // SrpBatchPayoutSummaryResponse 按用户聚合的批量发放摘要
@@ -233,14 +240,51 @@ type SrpBatchPayoutSummaryResponse struct {
 	ApplicationCount  int64   `json:"application_count"`
 }
 
+func resolveSrpLastActorNickname(app model.SrpApplication, userMap map[uint]model.User) string {
+	if app.PaidBy != nil {
+		if user, ok := userMap[*app.PaidBy]; ok {
+			return user.Nickname
+		}
+	}
+	if app.ReviewedBy != nil {
+		if user, ok := userMap[*app.ReviewedBy]; ok {
+			return user.Nickname
+		}
+	}
+	return ""
+}
+
+func buildSrpApplicationResponses(apps []model.SrpApplication, userMap map[uint]model.User, fleetMap map[string]model.Fleet) []SrpApplicationResponse {
+	result := make([]SrpApplicationResponse, len(apps))
+	for i, app := range apps {
+		resp := SrpApplicationResponse{SrpApplication: app}
+		if user, ok := userMap[app.UserID]; ok {
+			resp.Nickname = user.Nickname
+		}
+		resp.LastActorNickname = resolveSrpLastActorNickname(app, userMap)
+		if app.FleetID != nil && *app.FleetID != "" {
+			if fleet, ok := fleetMap[*app.FleetID]; ok {
+				resp.FleetTitle = fleet.Title
+				resp.FleetFCName = fleet.FCCharacterName
+			}
+		}
+		result[i] = resp
+	}
+	return result
+}
+
 // enrichWithFleetInfo 为申请列表填充舰队信息
 func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpApplicationResponse {
-	result := make([]SrpApplicationResponse, len(apps))
 	userIDSet := make(map[uint]bool)
-	// 收集所有非空 fleet_id
 	fleetIDSet := make(map[string]bool)
 	for _, app := range apps {
 		userIDSet[app.UserID] = true
+		if app.ReviewedBy != nil {
+			userIDSet[*app.ReviewedBy] = true
+		}
+		if app.PaidBy != nil {
+			userIDSet[*app.PaidBy] = true
+		}
 		if app.FleetID != nil && *app.FleetID != "" {
 			fleetIDSet[*app.FleetID] = true
 		}
@@ -259,7 +303,6 @@ func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpAppli
 			}
 		}
 	}
-	// 批量查询舰队信息
 	fleetIDs := make([]string, 0, len(fleetIDSet))
 	for fleetID := range fleetIDSet {
 		fleetIDs = append(fleetIDs, fleetID)
@@ -274,21 +317,7 @@ func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpAppli
 			}
 		}
 	}
-	// 组装响应
-	for i, app := range apps {
-		resp := SrpApplicationResponse{SrpApplication: app}
-		if user, ok := userMap[app.UserID]; ok {
-			resp.Nickname = user.Nickname
-		}
-		if app.FleetID != nil && *app.FleetID != "" {
-			if fleet, ok := fleetMap[*app.FleetID]; ok {
-				resp.FleetTitle = fleet.Title
-				resp.FleetFCName = fleet.FCCharacterName
-			}
-		}
-		result[i] = resp
-	}
-	return result
+	return buildSrpApplicationResponses(apps, userMap, fleetMap)
 }
 
 // ListApplications 管理员端分页查询申请列表
@@ -324,6 +353,26 @@ func (s *SrpService) GetApplication(id uint) (*SrpApplicationResponse, error) {
 	resp := &SrpApplicationResponse{SrpApplication: *app}
 	if user, uerr := s.userRepo.GetByID(app.UserID); uerr == nil {
 		resp.Nickname = user.Nickname
+	}
+	actorIDSet := make(map[uint]struct{})
+	if app.ReviewedBy != nil {
+		actorIDSet[*app.ReviewedBy] = struct{}{}
+	}
+	if app.PaidBy != nil {
+		actorIDSet[*app.PaidBy] = struct{}{}
+	}
+	if len(actorIDSet) > 0 {
+		actorIDs := make([]uint, 0, len(actorIDSet))
+		for actorID := range actorIDSet {
+			actorIDs = append(actorIDs, actorID)
+		}
+		if users, uerr := s.userRepo.ListByIDs(actorIDs); uerr == nil {
+			actorMap := make(map[uint]model.User, len(users))
+			for _, user := range users {
+				actorMap[user.ID] = user
+			}
+			resp.LastActorNickname = resolveSrpLastActorNickname(*app, actorMap)
+		}
 	}
 	if app.FleetID != nil && *app.FleetID != "" {
 		if fleet, ferr := s.fleetRepo.GetByID(*app.FleetID); ferr == nil {
@@ -615,28 +664,16 @@ func markSrpApplicationPaid(app *model.SrpApplication, payerID uint, paidAt time
 }
 
 func (s *SrpService) resolveSrpPayoutShipName(app *model.SrpApplication) string {
-	if strings.TrimSpace(app.ShipName) != "" {
-		return strings.TrimSpace(app.ShipName)
-	}
-	names, err := s.sdeRepo.GetNames(map[string][]int{"type": {int(app.ShipTypeID)}}, "zh")
-	if err != nil {
-		return fmt.Sprintf("TypeID:%d", app.ShipTypeID)
-	}
-	if name := strings.TrimSpace(names["type"][int(app.ShipTypeID)]); name != "" {
+	if name := strings.TrimSpace(app.ShipName); name != "" {
 		return name
 	}
+	names, err := s.sdeRepo.GetNames(map[string][]int{"type": {int(app.ShipTypeID)}}, "zh")
+	if err == nil {
+		if name := strings.TrimSpace(names["type"][int(app.ShipTypeID)]); name != "" {
+			return name
+		}
+	}
 	return fmt.Sprintf("TypeID:%d", app.ShipTypeID)
-}
-
-func (s *SrpService) resolveSrpPayoutFleetTitle(app *model.SrpApplication) string {
-	if app.FleetID == nil || *app.FleetID == "" {
-		return ""
-	}
-	fleet, err := s.fleetRepo.GetByID(*app.FleetID)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(fleet.Title)
 }
 
 func (s *SrpService) buildSrpWalletPayoutData(app *model.SrpApplication) (float64, string, string, error) {
@@ -647,7 +684,7 @@ func (s *SrpService) buildSrpWalletPayoutData(app *model.SrpApplication) (float6
 
 	appCopy := *app
 	appCopy.ShipName = s.resolveSrpPayoutShipName(app)
-	fleetTitle := s.resolveSrpPayoutFleetTitle(app)
+	fleetTitle := s.resolveFleetTitle(app)
 	reason := buildSrpPayoutWalletReason(&appCopy, fleetTitle)
 
 	return fuxiCoinAmount, reason, buildSrpPayoutWalletRefID(app.ID), nil
@@ -674,6 +711,10 @@ type SrpPayoutRequest struct {
 
 // Payout 发放补损（srp/admin 可操作）
 func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, error) {
+	if req == nil {
+		req = &SrpPayoutRequest{}
+	}
+
 	mode := normalizeSrpPayoutMode(req.Mode)
 	if mode == "" {
 		return nil, errors.New("无效的发放方式")
@@ -717,6 +758,7 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 		if err != nil {
 			return nil, err
 		}
+		s.attemptPayoutMail(payerID, []*model.SrpApplication{app})
 		return app, nil
 	}
 
@@ -726,13 +768,14 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 	if err := s.repo.UpdateApplication(app); err != nil {
 		return nil, err
 	}
+	s.attemptPayoutMail(payerID, []*model.SrpApplication{app})
 	return app, nil
 }
 
 // BatchPayoutByUser 批量发放某用户所有已批准且未发放的 SRP
 func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, error) {
 	now := time.Now()
-	summary, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
+	summary, apps, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNoApprovedUnpaidBatchPayoutApplications):
@@ -748,6 +791,7 @@ func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayo
 	if err != nil {
 		return nil, err
 	}
+	s.attemptPayoutMail(payerID, srpApplicationPointers(apps))
 	return &enriched[0], nil
 }
 
@@ -755,6 +799,7 @@ func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayo
 func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, error) {
 	summary := &SrpBatchFuxiPayoutSummary{}
 	userIDs := make(map[uint]struct{})
+	var paidApps []model.SrpApplication
 
 	err := global.DB.Transaction(func(tx *gorm.DB) error {
 		apps, err := s.repo.ListApprovedUnpaidApplicationsForUpdate(tx)
@@ -780,6 +825,8 @@ func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSum
 			summary.TotalFuxiCoin += fuxiCoinAmount
 			userIDs[app.UserID] = struct{}{}
 		}
+
+		paidApps = append(paidApps[:0], apps...)
 		return nil
 	})
 	if err != nil {
@@ -789,7 +836,212 @@ func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSum
 	summary.UserCount = len(userIDs)
 	summary.TotalISKAmount = math.Round(summary.TotalISKAmount*100) / 100
 	summary.TotalFuxiCoin = math.Round(summary.TotalFuxiCoin*100) / 100
+	s.attemptPayoutMail(payerID, srpApplicationPointers(paidApps))
 	return summary, nil
+}
+
+func srpApplicationPointers(apps []model.SrpApplication) []*model.SrpApplication {
+	pointers := make([]*model.SrpApplication, 0, len(apps))
+	for i := range apps {
+		pointers = append(pointers, &apps[i])
+	}
+	return pointers
+}
+
+func (s *SrpService) attemptPayoutMail(payerID uint, apps []*model.SrpApplication) {
+	if len(apps) == 0 || s.payoutMailSender == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := s.payoutMailSender(ctx, payerID, apps); err != nil {
+		if global.Logger != nil {
+			global.Logger.Warn("SRP 发放后邮件尝试失败",
+				zap.Uint("payer_user_id", payerID),
+				zap.Int("application_count", len(apps)),
+				zap.Error(err),
+			)
+		}
+	}
+}
+
+func (s *SrpService) sendPayoutMails(ctx context.Context, payerID uint, apps []*model.SrpApplication) error {
+	if len(apps) == 0 {
+		return nil
+	}
+
+	mailSupport := newInGameMailSupport(s.userRepo, s.charRepo, s.ssoSvc, s.esiClient)
+	senderCharacterID, token, _, err := mailSupport.resolveSender(ctx, payerID)
+	if err != nil {
+		return err
+	}
+
+	grouped := make(map[int64][]*model.SrpApplication)
+	var errs []error
+
+	for _, app := range apps {
+		if app == nil {
+			continue
+		}
+		recipientCharacterID, err := mailSupport.resolveUserPrimaryCharacterID(app.UserID)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("application_id=%d: %w", app.ID, err))
+			continue
+		}
+		grouped[recipientCharacterID] = append(grouped[recipientCharacterID], app)
+	}
+
+	for recipientCharacterID, recipientApps := range grouped {
+		subject, body := s.buildPayoutMailContent(recipientApps)
+		if err := mailSupport.send(ctx, senderCharacterID, token, recipientCharacterID, subject, body); err != nil {
+			errs = append(errs, fmt.Errorf("recipient_character_id=%d: %w", recipientCharacterID, err))
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+func (s *SrpService) buildPayoutMailContent(apps []*model.SrpApplication) (string, string) {
+	if len(apps) == 1 {
+		app := apps[0]
+		subject := fmt.Sprintf("[SRP 发放通知 / SRP Payout Notice] %s - %s", app.CharacterName, formatISKCompact(app.FinalAmount))
+		return subject, buildSinglePayoutMailBody(app, s.resolveFleetTitle(app))
+	}
+
+	fleetTitles := make(map[uint]string, len(apps))
+	for _, app := range apps {
+		if app == nil {
+			continue
+		}
+		fleetTitles[app.ID] = s.resolveFleetTitle(app)
+	}
+	return buildBatchPayoutMailContent(apps, fleetTitles)
+}
+
+func (s *SrpService) resolveFleetTitle(app *model.SrpApplication) string {
+	if app == nil || app.FleetID == nil || *app.FleetID == "" || s.fleetRepo == nil {
+		return ""
+	}
+	fleet, err := s.fleetRepo.GetByID(*app.FleetID)
+	if err != nil || fleet == nil {
+		return ""
+	}
+	return fleet.Title
+}
+
+func formatISKCompact(amount float64) string {
+	abs := math.Abs(amount)
+	sign := ""
+	if amount < 0 {
+		sign = "-"
+	}
+
+	switch {
+	case abs >= 1_000_000_000:
+		return fmt.Sprintf("%s%.2fB ISK", sign, abs/1_000_000_000)
+	case abs >= 1_000_000:
+		return fmt.Sprintf("%s%.2fM ISK", sign, abs/1_000_000)
+	case abs >= 1_000:
+		return fmt.Sprintf("%s%.2fK ISK", sign, abs/1_000)
+	default:
+		return fmt.Sprintf("%s%.2f ISK", sign, abs)
+	}
+}
+
+func buildSinglePayoutMailBody(app *model.SrpApplication, fleetTitle string) string {
+	shipDisplay := app.ShipName
+	if shipDisplay == "" {
+		shipDisplay = fmt.Sprintf("Type %d", app.ShipTypeID)
+	}
+	amountDisplay := formatISKCompact(app.FinalAmount)
+	zkillURL := fmt.Sprintf("https://zkillboard.com/kill/%d/", app.KillmailID)
+
+	var bodyBuilder strings.Builder
+	bodyBuilder.WriteString(fmt.Sprintf("%s 你好，\n\n", app.CharacterName))
+	bodyBuilder.WriteString("你的 SRP 补损已发放完成，详情如下：\n")
+	if fleetTitle != "" {
+		bodyBuilder.WriteString(fmt.Sprintf("关联舰队：%s\n", fleetTitle))
+	}
+	bodyBuilder.WriteString(fmt.Sprintf("损失时间：%s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
+	bodyBuilder.WriteString(fmt.Sprintf("损失舰船：%s\n", shipDisplay))
+	bodyBuilder.WriteString(fmt.Sprintf("发放金额：%s\n", amountDisplay))
+	bodyBuilder.WriteString(fmt.Sprintf("zKillboard：<url=%s>查看击毁报告</url>\n\n", zkillURL))
+
+	bodyBuilder.WriteString("Hello ")
+	bodyBuilder.WriteString(app.CharacterName)
+	bodyBuilder.WriteString(",\n\n")
+	bodyBuilder.WriteString("Your SRP payout has been completed. Details are as follows:\n")
+	if fleetTitle != "" {
+		bodyBuilder.WriteString(fmt.Sprintf("Linked Fleet: %s\n", fleetTitle))
+	}
+	bodyBuilder.WriteString(fmt.Sprintf("Loss Time: %s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
+	bodyBuilder.WriteString(fmt.Sprintf("Ship Lost: %s\n", shipDisplay))
+	bodyBuilder.WriteString(fmt.Sprintf("Payout Amount: %s\n", amountDisplay))
+	bodyBuilder.WriteString(fmt.Sprintf("zKillboard: <url=%s>View Killmail</url>\n\n", zkillURL))
+
+	bodyBuilder.WriteString("────────────────────────\n")
+	bodyBuilder.WriteString("该打的仗一场不少，该补的损一分不差。\n")
+	bodyBuilder.WriteString("No battle is missed, no reimbursement is short.\n\n")
+
+	return bodyBuilder.String()
+}
+
+// buildBatchPayoutMailContent 为批量发放生成聚合邮件主题和内容
+// apps: 同一个收件人（recipient_character_id）的所有申请
+func buildBatchPayoutMailContent(apps []*model.SrpApplication, fleetTitles map[uint]string) (string, string) {
+	if len(apps) == 0 {
+		return "", ""
+	}
+
+	totalISK := 0.0
+	for _, app := range apps {
+		totalISK += app.FinalAmount
+	}
+
+	recipientName := apps[0].CharacterName
+	subject := fmt.Sprintf("[SRP 发放通知 / SRP Payout Notice] %s - %s", recipientName, formatISKCompact(totalISK))
+
+	var bodyBuilder strings.Builder
+	bodyBuilder.WriteString(fmt.Sprintf("%s 你好，\n\n以下 %d 条 SRP 补损申请已完成批量发放，合计 %s，详情如下：\n\n", recipientName, len(apps), formatISKCompact(totalISK)))
+	bodyBuilder.WriteString(fmt.Sprintf("Hello %s,\n\n", recipientName))
+	bodyBuilder.WriteString(fmt.Sprintf("Your %d SRP payouts have been completed. Total: %s. Details are as follows:\n\n", len(apps), formatISKCompact(totalISK)))
+
+	for i, app := range apps {
+		shipDisplay := app.ShipName
+		if shipDisplay == "" {
+			shipDisplay = fmt.Sprintf("Type %d", app.ShipTypeID)
+		}
+		zkillURL := fmt.Sprintf("https://zkillboard.com/kill/%d/", app.KillmailID)
+		fleetTitle := ""
+		if fleetTitles != nil {
+			fleetTitle = fleetTitles[app.ID]
+		}
+		bodyBuilder.WriteString("────────────────────────\n")
+		bodyBuilder.WriteString(fmt.Sprintf("第 %d 条\n", i+1))
+		if fleetTitle != "" {
+			bodyBuilder.WriteString(fmt.Sprintf("  关联舰队：%s\n", fleetTitle))
+		}
+		bodyBuilder.WriteString(fmt.Sprintf("  zKillboard：<url=%s>查看击毁报告</url>\n", zkillURL))
+		bodyBuilder.WriteString(fmt.Sprintf("  损失时间：%s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
+		bodyBuilder.WriteString(fmt.Sprintf("  损失舰船：%s\n", shipDisplay))
+		bodyBuilder.WriteString(fmt.Sprintf("  发放金额：%s\n", formatISKCompact(app.FinalAmount)))
+
+		bodyBuilder.WriteString(fmt.Sprintf("  Item %d\n", i+1))
+		if fleetTitle != "" {
+			bodyBuilder.WriteString(fmt.Sprintf("  Linked Fleet: %s\n", fleetTitle))
+		}
+		bodyBuilder.WriteString(fmt.Sprintf("  zKillboard: <url=%s>View Killmail</url>\n", zkillURL))
+		bodyBuilder.WriteString(fmt.Sprintf("  Loss Time: %s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
+		bodyBuilder.WriteString(fmt.Sprintf("  Ship Lost: %s\n", shipDisplay))
+		bodyBuilder.WriteString(fmt.Sprintf("  Payout Amount: %s\n", formatISKCompact(app.FinalAmount)))
+	}
+
+	bodyBuilder.WriteString("────────────────────────\n\n")
+	bodyBuilder.WriteString("该打的仗一场不少，该补的损一分不差。\n")
+	bodyBuilder.WriteString("No battle is missed, no reimbursement is short.\n\n")
+	return subject, bodyBuilder.String()
 }
 
 // ─────────────────────────────────────────────
@@ -806,42 +1058,19 @@ type OpenInfoWindowRequest struct {
 // POST /ui/openwindow/information?target_id=xxx
 // 需要 scope: esi-ui.open_window.v1
 func (s *SrpService) OpenInfoWindow(userID uint, req *OpenInfoWindowRequest) error {
-	// 1. 验证人物属于当前用户
 	char, err := s.charRepo.GetByCharacterID(req.CharacterID)
 	if err != nil || char.UserID != userID {
 		return errors.New("人物不属于当前用户或不存在")
 	}
 
-	// 2. 获取有效 token
 	ctx := context.Background()
 	token, err := s.ssoSvc.GetValidToken(ctx, req.CharacterID)
 	if err != nil {
 		return fmt.Errorf("获取 token 失败: %w", err)
 	}
 
-	// 3. 调用 ESI Open Information Window
-	url := fmt.Sprintf("%s/ui/openwindow/information/?target_id=%d", global.Config.EveSSO.ESIBaseURL, req.TargetID)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
-	if err != nil {
-		return fmt.Errorf("构建请求失败: %w", err)
-	}
-	httpReq.Header.Set("Authorization", "Bearer "+token)
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return fmt.Errorf("调用 ESI Open Window 失败: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("ESI error %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
+	path := fmt.Sprintf("/ui/openwindow/information/?target_id=%d", req.TargetID)
+	return s.esiClient.PostNoContent(ctx, path, token, nil)
 }
 
 // ─────────────────────────────────────────────
@@ -1103,7 +1332,7 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 		flagMap[f.FlagID] = f
 	}
 
-	// 4. 收集所有 typeID（物品 + 舰船），查翻译名
+	// 4. 收集所有 typeID（物品 + 舰船）+ 星系，批量查翻译名
 	typeIDSet := make(map[int]bool)
 	typeIDSet[int(km.ShipTypeID)] = true
 	for _, it := range items {
@@ -1113,15 +1342,15 @@ func (s *SrpService) GetKillmailDetail(req *KillmailDetailRequest) (*KillmailDet
 	for tid := range typeIDSet {
 		typeIDs = append(typeIDs, tid)
 	}
-	nameMap, err := s.sdeRepo.GetNames(map[string][]int{"type": typeIDs}, lang)
+	nameMap, err := s.sdeRepo.GetNames(map[string][]int{
+		"type":         typeIDs,
+		"solar_system": {int(km.SolarSystemID)},
+	}, lang)
 	if err != nil {
 		return nil, err
 	}
 	typeNames := nameMap["type"]
-
-	// 5. 查星系名
-	sysNameMap, _ := s.sdeRepo.GetNames(map[string][]int{"solar_system": {int(km.SolarSystemID)}}, lang)
-	solarSystemNames := sysNameMap["solar_system"]
+	solarSystemNames := nameMap["solar_system"]
 
 	// 6. 查人物名
 	charName := ""

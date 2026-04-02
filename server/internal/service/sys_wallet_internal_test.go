@@ -92,6 +92,55 @@ func TestNormalizeLedgerPageSizeUsesLedgerStandardBounds(t *testing.T) {
 	}
 }
 
+func TestGetMyTransactionsIncludesOperatorName(t *testing.T) {
+	db := newSysWalletTransactionListTestDB(t)
+	originalDB := global.DB
+	global.DB = db
+	defer func() { global.DB = originalDB }()
+
+	operatorCharacterID := int64(90000077)
+	if err := db.Create(&model.User{
+		BaseModel:          model.BaseModel{ID: 77},
+		Nickname:           "Officer Fox",
+		PrimaryCharacterID: operatorCharacterID,
+	}).Error; err != nil {
+		t.Fatalf("create operator user: %v", err)
+	}
+	if err := db.Create(&model.EveCharacter{
+		CharacterID:   operatorCharacterID,
+		CharacterName: "Operator Main",
+		UserID:        77,
+	}).Error; err != nil {
+		t.Fatalf("create operator character: %v", err)
+	}
+	if err := db.Create(&model.WalletTransaction{
+		UserID:       42,
+		Amount:       12.5,
+		Reason:       "manual payout",
+		RefType:      model.WalletRefManual,
+		RefID:        "manual:1",
+		BalanceAfter: 88.8,
+		OperatorID:   77,
+	}).Error; err != nil {
+		t.Fatalf("create wallet transaction: %v", err)
+	}
+
+	svc := NewSysWalletService()
+	records, total, err := svc.GetMyTransactions(42, 1, 20)
+	if err != nil {
+		t.Fatalf("GetMyTransactions() error = %v", err)
+	}
+	if total != 1 {
+		t.Fatalf("transaction total = %d, want 1", total)
+	}
+	if len(records) != 1 {
+		t.Fatalf("transaction count = %d, want 1", len(records))
+	}
+	if records[0].OperatorName != "Officer Fox" {
+		t.Fatalf("operator_name = %q, want %q", records[0].OperatorName, "Officer Fox")
+	}
+}
+
 func newSysWalletServiceTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -102,6 +151,20 @@ func newSysWalletServiceTestDB(t *testing.T) *gorm.DB {
 	}
 	if err := db.AutoMigrate(&model.SystemWallet{}, &model.WalletTransaction{}); err != nil {
 		t.Fatalf("auto migrate: %v", err)
+	}
+	return db
+}
+
+func newSysWalletTransactionListTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+
+	dsn := fmt.Sprintf("file:sys_wallet_tx_list_test_%d?mode=memory&cache=shared", time.Now().UnixNano())
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	if err := db.AutoMigrate(&model.User{}, &model.EveCharacter{}, &model.WalletTransaction{}); err != nil {
+		t.Fatalf("auto migrate transaction list db: %v", err)
 	}
 	return db
 }

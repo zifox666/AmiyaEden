@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-02
+last_reviewed: 2026-04-03
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/eve_info.go
@@ -26,6 +26,12 @@ source_of_truth:
 - 装配列表与保存
 - 个人 NPC 刷怪报表（详见 [npc-kills.md](npc-kills.md)）
 - 全量 NPC 刷怪报表（详见 [npc-kills.md](npc-kills.md)）
+
+## 前端金额展示
+
+- 钱包余额、钱包流水、个人 NPC 刷怪报表、公司 NPC 刷怪报表中的 ISK 金额使用 plain ISK value style。
+- 合同列表和合同详情中的 ISK 金额使用 smart abbreviation style。
+- 这些页面的 ISK 显示统一复用 `@/utils/common` 中的共享 helper，不再定义页面内本地 formatter。
 
 ## 入口
 

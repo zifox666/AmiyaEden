@@ -551,6 +551,7 @@ declare namespace Api {
 
     /** 创建/更新装配条目请求（输入英文 EFT，后端解析） */
     interface FittingReq {
+      id?: number
       fitting_name: string
       eft: string
       srp_amount: number
@@ -873,6 +874,7 @@ declare namespace Api {
       id: number
       user_id: number
       nickname?: string
+      last_actor_nickname?: string
       character_id: number
       character_name: string
       killmail_id: number
@@ -1212,6 +1214,7 @@ declare namespace Api {
       remark: string
       reviewed_by: number | null
       reviewed_at: string | null
+      reviewer_name?: string
       review_remark: string
       created_at: string
       updated_at: string

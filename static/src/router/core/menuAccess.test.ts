@@ -4,6 +4,7 @@ import type { AppRouteRecord } from '../../types/router'
 import { dashboardRoutes } from '../modules/dashboard'
 import { newbroRoutes as actualNewbroRoutes } from '../modules/newbro'
 import { skillPlanningRoutes } from '../modules/skill-planning'
+import { srpRoutes } from '../modules/srp'
 import { systemRoutes } from '../modules/system'
 import { applyMenuAccessFilter, pruneEmptyMenus } from './menuAccess'
 
@@ -146,5 +147,29 @@ test('CorpNpcKillReport lives under Dashboard for admins only', () => {
   assert.equal(
     adminSystem.children?.some((route) => route.name === 'CorpNpcKillReport'),
     false
+  )
+})
+
+test('applyMenuAccessFilter keeps SRP prices for SRP, admin, senior fc, and super admins', () => {
+  const adminSrpMenu = applyMenuAccessFilter([srpRoutes], ['admin'])[0]
+  const seniorFCSrpMenu = applyMenuAccessFilter([srpRoutes], ['senior_fc'])[0]
+  const srpOfficerMenu = applyMenuAccessFilter([srpRoutes], ['srp'])[0]
+  const superAdminSrpMenu = applyMenuAccessFilter([srpRoutes], ['super_admin'])[0]
+
+  assert.equal(
+    adminSrpMenu.children?.some((route) => route.name === 'SrpPrices'),
+    true
+  )
+  assert.equal(
+    seniorFCSrpMenu.children?.some((route) => route.name === 'SrpPrices'),
+    true
+  )
+  assert.equal(
+    srpOfficerMenu.children?.some((route) => route.name === 'SrpPrices'),
+    true
+  )
+  assert.equal(
+    superAdminSrpMenu.children?.some((route) => route.name === 'SrpPrices'),
+    true
   )
 })

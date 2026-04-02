@@ -26,7 +26,7 @@
         </ElFormItem>
         <ElFormItem :label="$t('shop.unitPrice')">
           <span class="text-orange-600 font-medium">
-            {{ formatISK(buyProduct.price) }} {{ $t('shop.currency') }}
+            {{ formatFuxiCoinAmount(buyProduct.price) }} {{ $t('shop.currency') }}
           </span>
         </ElFormItem>
         <ElFormItem :label="$t('shop.quantity')">
@@ -34,7 +34,7 @@
         </ElFormItem>
         <ElFormItem :label="$t('shop.totalPrice')">
           <span class="text-red-500 font-bold text-lg">{{
-            `${formatISK(buyProduct.price * buyQuantity)} ${$t('shop.currency')}`
+            `${formatFuxiCoinAmount(buyProduct.price * buyQuantity)} ${$t('shop.currency')}`
           }}</span>
         </ElFormItem>
         <ElFormItem :label="$t('shop.remark')">
@@ -69,6 +69,7 @@
     ElMessage
   } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import { formatFuxiCoinAmount } from '@utils/common'
   import { buyProduct as apiBuyProduct } from '@/api/shop'
   import { fetchMyWallet } from '@/api/sys-wallet'
   import ShopProducts from './modules/shop-products.vue'
@@ -120,9 +121,6 @@
     buyRemark.value = ''
     buyDialogVisible.value = true
   }
-
-  const formatISK = (v: number) =>
-    v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   async function confirmBuy() {
     if (!buyProduct.value) return

@@ -24,7 +24,7 @@
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { adminListWallets } from '@/api/sys-wallet'
-  import { formatTime } from '@utils/common'
+  import { formatFuxiCoinAmount, formatTime } from '@utils/common'
 
   defineOptions({ name: 'WalletList' })
   const { t } = useI18n()
@@ -35,9 +35,6 @@
     (e: 'adjust', userId: number, action: 'add' | 'deduct' | 'set'): void
     (e: 'viewTransactions', userId: number): void
   }>()
-
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
   const {
     columns,
@@ -69,7 +66,7 @@
             h(
               'span',
               { class: row.balance >= 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold' },
-              formatISK(row.balance)
+              formatFuxiCoinAmount(row.balance)
             )
         },
         {

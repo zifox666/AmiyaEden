@@ -193,6 +193,7 @@ func dropObsoleteSchema(db *gorm.DB) {
 		"shop_lottery_record",
 		"shop_lottery_prize",
 		"shop_lottery_activity",
+		"srp_payout_mail_log",
 	}
 	for _, table := range obsoleteTables {
 		if migrator.HasTable(table) {

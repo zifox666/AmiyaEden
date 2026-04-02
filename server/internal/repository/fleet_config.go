@@ -3,6 +3,9 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"fmt"
+
+	"gorm.io/gorm"
 )
 
 // FittingWithItems 装配条目及其物品明细
@@ -11,11 +14,77 @@ type FittingWithItems struct {
 	Items   []model.FleetConfigFittingItem
 }
 
+type preservedItemState struct {
+	Importance         string
+	Penalty            string
+	ReplacementPenalty string
+	Replacements       []int64
+}
+
 // FleetConfigRepository 舰队配置数据访问层
 type FleetConfigRepository struct{}
 
 func NewFleetConfigRepository() *FleetConfigRepository {
 	return &FleetConfigRepository{}
+}
+
+func (r *FleetConfigRepository) UpdateMetadata(config *model.FleetConfig) error {
+	return global.DB.Save(config).Error
+}
+
+func fleetConfigItemMatchKey(item model.FleetConfigFittingItem) string {
+	return fmt.Sprintf("%s|%d|%d", item.Flag, item.TypeID, item.Quantity)
+}
+
+func (r *FleetConfigRepository) loadPreservedItemStates(tx *gorm.DB, fittingIDs []uint) (map[uint]map[string][]preservedItemState, error) {
+	states := make(map[uint]map[string][]preservedItemState, len(fittingIDs))
+	if len(fittingIDs) == 0 {
+		return states, nil
+	}
+
+	var items []model.FleetConfigFittingItem
+	if err := tx.Where("fleet_config_fitting_id IN ?", fittingIDs).Order("id ASC").Find(&items).Error; err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return states, nil
+	}
+
+	itemIDs := make([]uint, len(items))
+	for i, item := range items {
+		itemIDs[i] = item.ID
+	}
+
+	var replacements []model.FleetConfigFittingItemReplacement
+	if err := tx.Where("fleet_config_fitting_item_id IN ?", itemIDs).Order("id ASC").Find(&replacements).Error; err != nil {
+		return nil, err
+	}
+
+	replacementsByItemID := make(map[uint][]int64, len(replacements))
+	for _, replacement := range replacements {
+		replacementsByItemID[replacement.FleetConfigFittingItemID] = append(
+			replacementsByItemID[replacement.FleetConfigFittingItemID],
+			replacement.TypeID,
+		)
+	}
+
+	for _, item := range items {
+		stateByKey := states[item.FleetConfigFittingID]
+		if stateByKey == nil {
+			stateByKey = make(map[string][]preservedItemState)
+			states[item.FleetConfigFittingID] = stateByKey
+		}
+		replacements := replacementsByItemID[item.ID]
+		clonedReplacements := append([]int64(nil), replacements...)
+		stateByKey[fleetConfigItemMatchKey(item)] = append(stateByKey[fleetConfigItemMatchKey(item)], preservedItemState{
+			Importance:         item.Importance,
+			Penalty:            item.Penalty,
+			ReplacementPenalty: item.ReplacementPenalty,
+			Replacements:       clonedReplacements,
+		})
+	}
+
+	return states, nil
 }
 
 // Create 创建舰队配置（含装配条目及物品）
@@ -96,6 +165,12 @@ func (r *FleetConfigRepository) Update(config *model.FleetConfig, fittings []Fit
 		return err
 	}
 
+	preservedStatesByFittingID, err := r.loadPreservedItemStates(tx, oldFittingIDs)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	// 删除旧替代品 + 物品
 	if len(oldFittingIDs) > 0 {
 		var oldItemIDs []uint
@@ -128,6 +203,9 @@ func (r *FleetConfigRepository) Update(config *model.FleetConfig, fittings []Fit
 
 	// 创建新装配条目及物品
 	for i := range fittings {
+		previousFittingID := fittings[i].Fitting.ID
+		preservedStates := preservedStatesByFittingID[previousFittingID]
+		matchedStates := make([]*preservedItemState, len(fittings[i].Items))
 		fittings[i].Fitting.FleetConfigID = config.ID
 		fittings[i].Fitting.ID = 0
 		if err := tx.Create(&fittings[i].Fitting).Error; err != nil {
@@ -135,6 +213,15 @@ func (r *FleetConfigRepository) Update(config *model.FleetConfig, fittings []Fit
 			return err
 		}
 		for j := range fittings[i].Items {
+			key := fleetConfigItemMatchKey(fittings[i].Items[j])
+			if queue := preservedStates[key]; len(queue) > 0 {
+				preserved := queue[0]
+				preservedStates[key] = queue[1:]
+				matchedStates[j] = &preserved
+				fittings[i].Items[j].Importance = preserved.Importance
+				fittings[i].Items[j].Penalty = preserved.Penalty
+				fittings[i].Items[j].ReplacementPenalty = preserved.ReplacementPenalty
+			}
 			fittings[i].Items[j].FleetConfigFittingID = fittings[i].Fitting.ID
 			fittings[i].Items[j].ID = 0
 		}
@@ -142,6 +229,26 @@ func (r *FleetConfigRepository) Update(config *model.FleetConfig, fittings []Fit
 			if err := tx.Create(&fittings[i].Items).Error; err != nil {
 				tx.Rollback()
 				return err
+			}
+
+			replacementRows := make([]model.FleetConfigFittingItemReplacement, 0)
+			for j, item := range fittings[i].Items {
+				preserved := matchedStates[j]
+				if preserved == nil || len(preserved.Replacements) == 0 {
+					continue
+				}
+				for _, typeID := range preserved.Replacements {
+					replacementRows = append(replacementRows, model.FleetConfigFittingItemReplacement{
+						FleetConfigFittingItemID: item.ID,
+						TypeID:                   typeID,
+					})
+				}
+			}
+			if len(replacementRows) > 0 {
+				if err := tx.Create(&replacementRows).Error; err != nil {
+					tx.Rollback()
+					return err
+				}
 			}
 		}
 	}

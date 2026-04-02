@@ -610,6 +610,7 @@
     "unitPrice": "Unit Price",
     "totalPrice": "Total",
     "status": "Status",
+    "reviewerName": "Handler Nickname",
     "orderTime": "Order Time",
     "noOrders": "No orders yet",
     "myRedeemCodes": "My Redeem Codes",
@@ -1162,6 +1163,18 @@
     "itemSettingsTitle": "Item Importance & Penalty Settings",
     "itemSettingsSaved": "Item settings saved",
     "replacementSearch": "Search replacement item",
+    "manageReplacements": "Manage Replacements",
+    "viewReplacements": "View Replacements",
+    "noReplacements": "No replacements yet",
+    "noItems": "This fitting has no configurable items",
+    "replacementEditorTitle": "Replacements for {name}",
+    "itemColumns": {
+      "item": "Item",
+      "importance": "Importance",
+      "penalty": "Penalty",
+      "replacementPenalty": "Replacement Penalty",
+      "replacements": "Replacements"
+    },
     "importance": {
       "required": "Required",
       "optional": "Optional",
@@ -1378,6 +1391,7 @@
         "reviewStatus": "Review",
         "paid": "Paid",
         "payoutStatus": "Payout",
+        "lastActor": "Last Actor",
         "action": "Action",
         "note": "Note",
         "fleetNote": "Fleet / Note"
@@ -1477,6 +1491,7 @@
         "review": "Review",
         "reviewNote": "Review Note",
         "payout": "Payout",
+        "lastActor": "Last Actor",
         "action": "Action"
       }
     },
@@ -1774,6 +1789,7 @@
         "product": "Product",
         "quantity": "Qty",
         "totalPrice": "Total",
+        "reviewerName": "Handler Nickname",
         "userRemark": "User Remark",
         "createdAt": "Order Time"
       },

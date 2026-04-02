@@ -7,7 +7,7 @@
         <div>
           <p class="text-sm text-gray-500">{{ $t('shop.myBalance') }}</p>
           <p class="text-3xl font-bold mt-1" :class="balanceColor">
-            {{ wallet ? `${formatISK(wallet.balance)} ${$t('shop.currency')}` : '-' }}
+            {{ wallet ? `${formatFuxiCoinAmount(wallet.balance)} ${$t('shop.currency')}` : '-' }}
           </p>
           <p v-if="wallet" class="text-xs text-gray-400 mt-1">
             {{ $t('common.updatedAt') }}: {{ formatTime(wallet.updated_at) }}
@@ -41,7 +41,7 @@
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElCard, ElButton, ElTag } from 'element-plus'
-  import { formatTime } from '@utils/common'
+  import { formatFuxiCoinAmount, formatTime } from '@utils/common'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchMyWallet, fetchMyWalletTransactions } from '@/api/sys-wallet'
 
@@ -51,12 +51,6 @@
 
   type WalletTransaction = Api.SysWallet.WalletTransaction
 
-  // ─── 格式化工具 ───
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(v)
   const getRefTypeLabel = (value: string) => {
     const key = `walletAdmin.refTypes.${value}`
     const translated = t(key)
@@ -107,7 +101,7 @@
             h(
               'span',
               { class: `font-medium ${row.amount >= 0 ? 'text-green-600' : 'text-red-500'}` },
-              `${row.amount >= 0 ? '+' : ''}${formatISK(row.amount)} ${t('shop.currency')}`
+              `${row.amount >= 0 ? '+' : ''}${formatFuxiCoinAmount(row.amount)} ${t('shop.currency')}`
             )
         },
         {
@@ -115,7 +109,7 @@
           label: t('fleet.wallet.balanceAfter'),
           width: 140,
           formatter: (row: WalletTransaction) =>
-            h('span', {}, `${formatISK(row.balance_after)} ${t('shop.currency')}`)
+            h('span', {}, `${formatFuxiCoinAmount(row.balance_after)} ${t('shop.currency')}`)
         },
         {
           prop: 'reason',
@@ -130,6 +124,19 @@
           maxWidth: 200,
           formatter: (row: WalletTransaction) =>
             h(ElTag, { size: 'small', effect: 'plain' }, () => getRefTypeLabel(row.ref_type))
+        },
+        {
+          prop: 'operator_id',
+          label: t('walletAdmin.transactions.operator'),
+          minWidth: 120,
+          formatter: (row: WalletTransaction) =>
+            h(
+              'span',
+              {},
+              row.operator_id === 0
+                ? t('walletAdmin.actions.system')
+                : row.operator_name || `#${row.operator_id}`
+            )
         },
         {
           prop: 'created_at',

@@ -58,7 +58,7 @@
 <script setup lang="ts">
   import { ElTag, ElSelect, ElOption } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
-  import { formatTime } from '@utils/common'
+  import { formatIskSmart, formatTime } from '@utils/common'
   import { useI18n } from 'vue-i18n'
   import { useUserStore } from '@/store/modules/user'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
@@ -88,14 +88,6 @@
     detailContractType.value = row.type
     detailContractTitle.value = row.title ?? `#${row.contract_id}`
     detailVisible.value = true
-  }
-
-  const formatISK = (v: number | undefined) => {
-    if (v == null) return '-'
-    if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(2)}B`
-    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`
-    if (v >= 1_000) return `${(v / 1_000).toFixed(2)}K`
-    return v.toLocaleString()
   }
 
   const typeTagConfig: Record<
@@ -193,13 +185,15 @@
           prop: 'price',
           label: t('info.contractPrice'),
           width: 120,
-          formatter: (row: ContractItem) => h('span', {}, formatISK(row.price))
+          formatter: (row: ContractItem) =>
+            h('span', {}, row.price == null ? '-' : formatIskSmart(row.price))
         },
         {
           prop: 'reward',
           label: t('info.contractReward'),
           width: 120,
-          formatter: (row: ContractItem) => h('span', {}, formatISK(row.reward))
+          formatter: (row: ContractItem) =>
+            h('span', {}, row.reward == null ? '-' : formatIskSmart(row.reward))
         },
         {
           prop: 'character_name',

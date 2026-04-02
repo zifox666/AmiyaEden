@@ -13,7 +13,7 @@ import {
   openInfoWindow
 } from '@/api/srp'
 import { useClipboardCopy } from '@/hooks/core/useClipboardCopy'
-import { fromMillionISKInput } from '@/utils/iskUnits'
+import { formatIskPlain, millionInputToIsk } from '@/utils/common'
 
 type SrpApp = Api.Srp.Application
 type BatchPayoutSummary = Api.Srp.BatchPayoutSummary
@@ -64,7 +64,7 @@ export function useSrpWorkflow(deps: {
     tpl.replaceAll('{{mainChracterName}}', primaryCharName.value || t('srp.manage.unknownReviewer'))
 
   const updateReviewFinalAmount = (value: number | null | undefined) => {
-    reviewForm.final_amount = fromMillionISKInput(value)
+    reviewForm.final_amount = millionInputToIsk(value)
   }
 
   const openReviewDialog = (row: SrpApp, action: 'approve' | 'reject') => {
@@ -289,17 +289,8 @@ export function useSrpWorkflow(deps: {
     }
   }
 
-  const formatBatchPayoutLine = (
-    characterId: number,
-    characterName: string,
-    totalAmount: number
-  ) => {
-    const fullAmount = new Intl.NumberFormat('en-US', {
-      maximumFractionDigits: 0,
-      useGrouping: false
-    }).format(totalAmount ?? 0)
-    return `<a href="showinfo:1376//${characterId}">${characterName}</a>  ${fullAmount}`
-  }
+  const formatBatchPayoutLine = (characterId: number, characterName: string, totalAmount: number) =>
+    `<a href="showinfo:1376//${characterId}">${characterName}</a>  ${formatIskPlain(totalAmount)}`
 
   const copyBatchPayoutListText = async () => {
     const lines = batchPayoutList.value

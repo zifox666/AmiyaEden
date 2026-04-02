@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-04-02
+last_reviewed: 2026-04-03
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/middleware/auth.go
@@ -177,6 +177,7 @@ source_of_truth:
 - `meta.requiresMentorMenteeEligibility = true` 表示该页面还要求当前用户的导师学员资格快照为 true
 - 不要用 `meta.roles: ['admin', 'fc', 'user']` 之类写法冒充 `Login`
 - `skill-planning/skill-plans` 当前使用 `meta.login = true` 提供只读访问，创建 / 编辑 / 删除 / 排序仍依赖页面内 `canManage` 与后端 `RequireRole(admin, senior_fc)` 双层限制
+- 某些页面可以对更宽的路由角色集合提供只读入口，但把新增 / 导入 / 编辑 / 删除等变更能力继续收敛到页面内 `canManage*` 判断与后端 `RequireRole(...)` 的双层限制
 
 修改权限时，必须同时考虑：
 

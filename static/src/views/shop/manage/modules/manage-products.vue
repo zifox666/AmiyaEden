@@ -170,6 +170,7 @@
   } from 'element-plus'
   import type { FormInstance, FormRules, UploadRequestOptions } from 'element-plus'
   import { Plus, Delete, Loading } from '@element-plus/icons-vue'
+  import { formatFuxiCoinWhole } from '@utils/common'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import SdeSearchSelect from '@/components/business/SdeSearchSelect.vue'
   import {
@@ -202,8 +203,6 @@
         0: { label: t('shop.manage.statusOffSale'), type: 'danger' }
       }) as unknown as Record<number, { label: string; type: string }>
   )
-
-  const formatISK = (v: number) => Math.round(v).toLocaleString('en-US')
 
   // ─── 搜索过滤状态 ───
   const nameFilter = ref('')
@@ -268,7 +267,7 @@
             h(
               'span',
               { class: 'font-medium text-orange-600' },
-              `${formatISK(row.price)} ${t('shop.currency')}`
+              `${formatFuxiCoinWhole(row.price)} ${t('shop.currency')}`
             )
         },
         {

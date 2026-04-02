@@ -50,7 +50,7 @@
 <script setup lang="ts">
   import { ElTag, ElButton, ElInput, ElSelect, ElOption } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { formatTime } from '@utils/common'
+  import { formatFuxiCoinAmount, formatTime } from '@utils/common'
   import { useTable } from '@/hooks/core/useTable'
   import { adminListTransactions } from '@/api/sys-wallet'
 
@@ -80,9 +80,6 @@
   }
   const getRefTypeLabel = (t: string) => REF_TYPE_MAP[t]?.label ?? t
   const getRefTypeTag = (t: string): any => REF_TYPE_MAP[t]?.tag ?? 'info'
-
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
   const filterForm = reactive({
     user_id: undefined as number | undefined,
@@ -123,14 +120,15 @@
               {
                 class: `font-medium ${row.amount >= 0 ? 'text-green-600' : 'text-red-500'}`
               },
-              `${row.amount >= 0 ? '+' : ''}${formatISK(row.amount)}`
+              `${row.amount >= 0 ? '+' : ''}${formatFuxiCoinAmount(row.amount)}`
             )
         },
         {
           prop: 'balance_after',
           label: t('walletAdmin.transactions.balanceAfter'),
           width: 140,
-          formatter: (row: WalletTransaction) => h('span', {}, formatISK(row.balance_after))
+          formatter: (row: WalletTransaction) =>
+            h('span', {}, formatFuxiCoinAmount(row.balance_after))
         },
         {
           prop: 'reason',

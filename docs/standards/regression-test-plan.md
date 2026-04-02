@@ -72,6 +72,8 @@ Do not default to the heaviest test layer. Choose the smallest, most stable laye
 First priority modules:
 
 - `operation`: fleets, fleet-detail, pap, fleet-configs
+
+  Fleet-configs bug fixes should prefer regression coverage for EFT parse / rebuild round trips and equipment-setting preservation. In particular, verify that settings are preserved only when `flag + type_id + quantity` remain unchanged, and that changed or removed items reset to defaults.
 - `system`: user, role, auto-role, pap, webhook
 - `auth-and-characters`: `/api/v1/me`, character binding, profile completion
 

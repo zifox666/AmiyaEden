@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-27
+last_reviewed: 2026-04-03
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/newbro_service.go
@@ -36,6 +36,11 @@ source_of_truth:
 - `帮扶管理` 页面新增 `奖励发放历史` tab，按“每次处理、每名队长一行”的粒度展示历史结算结果
 - `帮扶管理` 页面新增 `关系变更历史` tab，可按变更时间、队长用户 ID、新人人物 ID 查看全量关系记录，并显示实际创建该关系的人物
 - 赏金归因结果会持久化到 ledger 表，供后续队长奖励结算直接使用；奖励处理后会回写 `processed_at`
+
+## 前端金额展示
+
+- 新人帮扶页面里的 ISK 金额统一使用 plain ISK value style。
+- 队长奖励结算得到的是伏羲币，不受 ISK 格式化标准约束。
 
 
 ## 新人资格判定

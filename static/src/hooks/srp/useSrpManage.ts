@@ -6,7 +6,7 @@ import { useEnterSearch } from '@/hooks/core/useEnterSearch'
 import { useUserStore } from '@/store/modules/user'
 import { fetchFleetList } from '@/api/fleet'
 import { fetchApplicationList } from '@/api/srp'
-import { formatTime } from '@utils/common'
+import { formatIskSmart, formatTime } from '@utils/common'
 import { ElTag, ElTooltip, ElLink } from 'element-plus'
 import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
 import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
@@ -64,23 +64,6 @@ export function useSrpManage(callbacks: {
   const formatFleetLabel = (f: Api.Fleet.FleetItem) =>
     `${f.fc_character_name}: ${f.title} (${f.pap_count}PAP) @ ${formatTime(f.start_at)} ~ ${formatTime(f.end_at)}`
 
-  const formatISK = (v: number) => {
-    const value = Number(v ?? 0)
-    const abs = Math.abs(value)
-    const units = [
-      { threshold: 1_000_000_000_000, suffix: 'T' },
-      { threshold: 1_000_000_000, suffix: 'B' },
-      { threshold: 1_000_000, suffix: 'M' },
-      { threshold: 1_000, suffix: 'K' }
-    ]
-    for (const unit of units) {
-      if (abs >= unit.threshold) {
-        return `${(value / unit.threshold).toFixed(1)}${unit.suffix}`
-      }
-    }
-    return value.toFixed(1)
-  }
-
   // ─── Table ───
   const {
     columns,
@@ -123,6 +106,18 @@ export function useSrpManage(callbacks: {
             )
         },
         {
+          prop: 'last_actor_nickname',
+          label: t('srp.manage.columns.lastActor'),
+          width: 130,
+          showOverflowTooltip: true,
+          formatter: (row: SrpApp) =>
+            h(
+              'span',
+              { class: row.last_actor_nickname ? '' : 'text-gray-400' },
+              row.last_actor_nickname || '-'
+            )
+        },
+        {
           prop: 'nickname',
           label: t('srp.manage.columns.nickname'),
           width: 120,
@@ -152,14 +147,14 @@ export function useSrpManage(callbacks: {
           prop: 'recommended_amount',
           label: t('srp.manage.columns.recommendedAmount'),
           width: 90,
-          formatter: (row: SrpApp) => h('span', {}, formatISK(row.recommended_amount))
+          formatter: (row: SrpApp) => h('span', {}, formatIskSmart(row.recommended_amount))
         },
         {
           prop: 'final_amount',
           label: t('srp.manage.columns.finalAmount'),
           width: 90,
           formatter: (row: SrpApp) =>
-            h('span', { class: 'font-semibold text-blue-600' }, formatISK(row.final_amount))
+            h('span', { class: 'font-semibold text-blue-600' }, formatIskSmart(row.final_amount))
         },
         {
           prop: 'fleet_title',
@@ -393,7 +388,8 @@ export function useSrpManage(callbacks: {
     final_amount: '最终金额',
     review_status: '审批状态',
     review_note: '审批备注',
-    payout_status: '发放状态'
+    payout_status: '发放状态',
+    last_actor_nickname: '最后处理人'
   }
 
   const exportManageData = computed(() =>
@@ -416,7 +412,8 @@ export function useSrpManage(callbacks: {
       final_amount: app.final_amount,
       review_status: reviewStatusLabel(app.review_status),
       review_note: app.review_note || '-',
-      payout_status: app.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.notpaid')
+      payout_status: app.payout_status === 'paid' ? t('srp.status.paid') : t('srp.status.notpaid'),
+      last_actor_nickname: app.last_actor_nickname || '-'
     }))
   )
 
@@ -457,7 +454,7 @@ export function useSrpManage(callbacks: {
     handleCurrentChange,
     refreshData,
     // formatters
-    formatISK,
+    formatISK: formatIskSmart,
     // export
     manageExportHeaders,
     exportManageData,

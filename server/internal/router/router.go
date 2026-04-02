@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	srpPriceManageRoles          = []string{model.RoleAdmin, model.RoleSeniorFC}
 	srpManageRoles               = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
 	srpPayoutRoles               = []string{model.RoleSRP, model.RoleAdmin}
 	skillPlanManageRoles         = []string{model.RoleAdmin, model.RoleSeniorFC}
@@ -258,10 +259,10 @@ func RegisterRoutes(r *gin.Engine) {
 	srpH := handler.NewSrpHandler()
 	srp := login.Group("/srp")
 	{
-		// 价格表（查看公开，修改需权限）
+		// 价格表（登录用户可查看，修改仅 admin）
 		srp.GET("/prices", srpH.ListShipPrices)
-		srp.POST("/prices", middleware.RequireRole(model.RoleSRP), srpH.UpsertShipPrice)
-		srp.DELETE("/prices/:id", middleware.RequireRole(model.RoleSRP), srpH.DeleteShipPrice)
+		srp.POST("/prices", middleware.RequireRole(srpPriceManageRoles...), srpH.UpsertShipPrice)
+		srp.DELETE("/prices/:id", middleware.RequireRole(srpPriceManageRoles...), srpH.DeleteShipPrice)
 
 		// 个人申请
 		srp.POST("/applications", srpH.SubmitApplication)

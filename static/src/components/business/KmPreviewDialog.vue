@@ -22,7 +22,8 @@
             <p class="km-meta">{{ detail.character_name }}</p>
             <p class="km-meta">{{ detail.system_name }} · {{ formatTime(detail.killmail_time) }}</p>
             <p v-if="detail.janice_amount" class="km-meta">
-              {{ $t('srp.kmPreview.estimatedValue') }}: {{ formatISK(detail.janice_amount) }} ISK
+              {{ $t('srp.kmPreview.estimatedValue') }}:
+              {{ formatIskSmart(detail.janice_amount) }} ISK
             </p>
           </div>
         </div>
@@ -70,7 +71,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElDialog, ElButton, ElEmpty } from 'element-plus'
   import { fetchKillmailDetail } from '@/api/srp'
-  import { formatTime } from '@utils/common'
+  import { formatIskSmart, formatTime } from '@utils/common'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'KmPreviewDialog' })
@@ -106,12 +107,6 @@
   const openZkillboard = () => {
     window.open(`https://zkillboard.com/kill/${props.killmailId}/`, '_blank')
   }
-
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(v ?? 0)
 
   watch(
     () => props.killmailId,

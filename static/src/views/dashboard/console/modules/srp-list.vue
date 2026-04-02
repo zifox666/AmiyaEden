@@ -40,7 +40,7 @@
           align="right"
         >
           <template #default="{ row }">
-            <span class="text-g-700">{{ formatISK(row.recommended_amount) }}</span>
+            <span class="text-g-700">{{ formatIskSmart(row.recommended_amount) }}</span>
           </template>
         </ElTableColumn>
         <ElTableColumn
@@ -49,7 +49,7 @@
           align="right"
         >
           <template #default="{ row }">
-            <span class="font-medium">{{ formatISK(row.final_amount) }}</span>
+            <span class="font-medium">{{ formatIskSmart(row.final_amount) }}</span>
           </template>
         </ElTableColumn>
         <ElTableColumn :label="$t('srp.apply.columns.reviewStatus')" min-width="90" align="center">
@@ -73,17 +73,12 @@
 
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
-  import { formatTime } from '@utils/common'
+  import { formatIskSmart, formatTime } from '@utils/common'
 
   const { t } = useI18n()
   defineProps<{
     list: Api.Dashboard.SrpItem[]
   }>()
-
-  const formatISK = (amount: number): string => {
-    if (!amount) return '0'
-    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  }
 
   const reviewStatusLabel = (status: string): string => {
     const map: Record<string, string> = {

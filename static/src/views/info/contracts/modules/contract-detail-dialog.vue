@@ -58,7 +58,7 @@
             align="right"
           >
             <template #default="{ row }">
-              <strong>{{ formatISK(row.amount) }}</strong>
+              <strong>{{ formatIskSmart(row.amount) }}</strong>
             </template>
           </ElTableColumn>
           <ElTableColumn prop="bidder_id" :label="$t('info.contractBidder')" />
@@ -83,7 +83,7 @@
 <script setup lang="ts">
   import { ElDialog, ElTable, ElTableColumn, ElTag, ElEmpty } from 'element-plus'
   import { fetchInfoContractDetail } from '@/api/eve-info'
-  import { formatTime } from '@utils/common'
+  import { formatIskSmart, formatTime } from '@utils/common'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'ContractDetailDialog' })
@@ -112,13 +112,6 @@
   const sortedBids = computed(() =>
     detail.value?.bids ? [...detail.value.bids].sort((a, b) => b.amount - a.amount) : []
   )
-
-  const formatISK = (v: number) => {
-    if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(2)}B`
-    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`
-    if (v >= 1_000) return `${(v / 1_000).toFixed(2)}K`
-    return v.toLocaleString()
-  }
 
   const loadDetail = async () => {
     if (!props.characterId || !props.contractId) return

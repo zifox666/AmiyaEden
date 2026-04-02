@@ -234,7 +234,6 @@ func (r *SrpRepository) ListBatchPayoutSummary() ([]SrpBatchPayoutSummaryRow, er
 func buildApprovedUnpaidBatchPayoutApplicationsQuery(db *gorm.DB, userID uint) *gorm.DB {
 	return db.Model(&model.SrpApplication{}).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Select("id", "user_id", "final_amount").
 		Where("user_id = ? AND payout_status = ? AND review_status = ?", userID, model.SrpPayoutNotPaid, model.SrpReviewApproved).
 		Order("id ASC")
 }
@@ -276,8 +275,9 @@ func buildBatchPayoutApplicationsUpdateQuery(db *gorm.DB, applicationIDs []uint,
 }
 
 // BatchPayoutApplicationsByUser 将某用户所有已批准且待发放的申请标记为已发放
-func (r *SrpRepository) BatchPayoutApplicationsByUser(userID uint, payerID uint, paidAt time.Time) (*SrpBatchPayoutSummaryRow, error) {
+func (r *SrpRepository) BatchPayoutApplicationsByUser(userID uint, payerID uint, paidAt time.Time) (*SrpBatchPayoutSummaryRow, []model.SrpApplication, error) {
 	var summary *SrpBatchPayoutSummaryRow
+	var selectedApps []model.SrpApplication
 
 	err := global.DB.Transaction(func(tx *gorm.DB) error {
 		var apps []model.SrpApplication
@@ -298,11 +298,12 @@ func (r *SrpRepository) BatchPayoutApplicationsByUser(userID uint, payerID uint,
 		}
 
 		summary = &selectedSummary
+		selectedApps = append(selectedApps[:0], apps...)
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return summary, nil
+	return summary, selectedApps, nil
 }

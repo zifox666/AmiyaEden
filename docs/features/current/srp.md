@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-28
+last_reviewed: 2026-04-03
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/srp.go
@@ -17,9 +17,9 @@ source_of_truth:
 
 ## 当前能力
 
-- 舰船价格表查询、维护、删除
+- 舰船价格表查询；`admin` 与 `senior_fc` 可维护、删除，`srp` 可只读查看
 - 个人补损申请提交
-- 我的补损申请列表
+- 我的补损申请列表；展示审核状态、发放状态与最后处理人昵称
 - 我的 KM、按舰队筛选 KM、KM 详情
 - 管理端手动自动审批符合规则的待审批申请，`admin` 也可操作
 - SRP 管理列表的人物列提供共享内联复制按钮，便于复制申请人物名
@@ -28,6 +28,13 @@ source_of_truth:
 - 单条发放补损，`admin` 也可操作
 - 管理端批量发放补损汇总、按用户批量发放补损，`admin` 也可操作
 - 管理端待处理 tab 支持切换「伏羲币补损 / 手动打钱」两种发放模式，默认使用伏羲币补损
+- SRP 发放成功后会以 best-effort 方式尝试发送 EVE 游戏内邮件通知
+
+## 前端金额展示
+
+- SRP 页面中的 ISK 展示统一使用 smart abbreviation style。
+- SRP 价格维护、舰队配置等“以百万为输入单位”的编辑器，统一复用共享的 `iskToMillionInput` 与 `millionInputToIsk`，不再各自维护换算逻辑。
+- 伏羲币发放金额不属于 ISK 展示标准范围，继续沿用各自的钱包 / 商店文档约束。
 
 ## 入口
 
@@ -55,9 +62,9 @@ source_of_truth:
 
 ## 权限边界
 
-- 价格新增 / 更新要求 `srp:price:add`
-- 价格删除要求 `srp:price:delete`
-- 审核列表、详情、审批（approve/reject）要求 `srp` 或 `fc`
+- 价格表查看要求 `Login`
+- 价格新增 / 更新 / 删除要求 `admin` 或 `senior_fc`
+- 审核列表、详情、审批（approve/reject）要求 `srp`、`fc` 或 `admin`
 - 发放、批量发放、自动审批要求 `srp` 或 `admin`
 - 其余个人能力默认要求 `Login`
 
@@ -142,11 +149,19 @@ SRP 推荐金额同时由手动SRP机制和自动SRP机制使用，用于计算S
 - 对每条申请分别换算伏羲币金额、写伏羲币流水、再标记 SRP 为已发放
 - 整体使用数据库事务，任一申请发放失败则整批回滚
 
+**发放后邮件通知**：
+
+- 发放成功后，系统会尝试以当次发放操作人的主人物向申请所属用户的主人物发送 EVE 游戏内邮件
+- 单条发放发送单封邮件；批量发放按收件人聚合后发送
+- 邮件正文包含本次发放关联的 KM 与金额摘要
+- 邮件发送失败不会回滚发放
+- 当前不保存邮件发送日志，不提供重试入口，也不保证收件人实际收到邮件
+
 ### 管理端列表
 
 - 申请列表支持按 tab 分组：`pending`（待处理：submitted/approved + notpaid）和 `history`（发放记录：paid 或 rejected）
 - `history` tab 额外支持按申请人物名或当前用户昵称搜索
-- 列表结果附带舰队标题、FC 名称、用户昵称等关联信息
+- 列表结果附带舰队标题、FC 名称、用户昵称与最后处理人昵称等关联信息
 - 批量发放汇总按用户聚合，展示主人物名、昵称、总金额、申请数量
 - 待处理 tab 的发放方式单选默认选中「伏羲币补损」；切到「手动打钱」后，顶部“批量发放”和行内“发放”恢复旧的人工打款面板流程
 

@@ -47,7 +47,7 @@
 <script setup lang="ts">
   import { ElTag, ElButton, ElInput, ElSelect, ElOption } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { formatTime } from '@utils/common'
+  import { formatFuxiCoinAmount, formatTime } from '@utils/common'
   import { useTable } from '@/hooks/core/useTable'
   import { adminListWalletLogs } from '@/api/sys-wallet'
 
@@ -63,9 +63,6 @@
   }
   const getActionLabel = (a: string) => ACTION_MAP[a]?.label ?? a
   const getActionTag = (a: string): any => ACTION_MAP[a]?.tag ?? 'info'
-
-  const formatISK = (v: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
   const filterForm = reactive({ target_uid: '', operator_id: '', action: '' })
 
@@ -125,19 +122,19 @@
           prop: 'amount',
           label: t('common.amount'),
           width: 140,
-          formatter: (row: WalletLog) => h('span', {}, formatISK(row.amount))
+          formatter: (row: WalletLog) => h('span', {}, formatFuxiCoinAmount(row.amount))
         },
         {
           prop: 'before',
           label: t('walletAdmin.logs.before'),
           width: 140,
-          formatter: (row: WalletLog) => h('span', {}, formatISK(row.before))
+          formatter: (row: WalletLog) => h('span', {}, formatFuxiCoinAmount(row.before))
         },
         {
           prop: 'after',
           label: t('walletAdmin.logs.after'),
           width: 140,
-          formatter: (row: WalletLog) => h('span', {}, formatISK(row.after))
+          formatter: (row: WalletLog) => h('span', {}, formatFuxiCoinAmount(row.after))
         },
         {
           prop: 'reason',

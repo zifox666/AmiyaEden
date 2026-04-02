@@ -122,7 +122,7 @@
         <ElFormItem :label="$t('srp.manage.finalAmount')" v-if="reviewAction === 'approve'">
           <div class="million-isk-input">
             <ElInputNumber
-              :model-value="toMillionISKInput(reviewForm.final_amount)"
+              :model-value="iskToMillionInput(reviewForm.final_amount)"
               :min="0"
               :precision="2"
               :step="1"
@@ -323,7 +323,7 @@
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
   import KmPreviewDialog from '@/components/business/KmPreviewDialog.vue'
   import { CopyDocument } from '@element-plus/icons-vue'
-  import { toMillionISKInput } from '@/utils/iskUnits'
+  import { iskToMillionInput } from '@/utils/common'
   import { useSrpManage } from '@/hooks/srp/useSrpManage'
   import { useSrpWorkflow } from '@/hooks/srp/useSrpWorkflow'
 

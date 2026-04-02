@@ -34,7 +34,7 @@
   import { fetchMyOrders } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
   import { useI18n } from 'vue-i18n'
-  import { formatTime } from '@utils/common'
+  import { formatFuxiCoinWhole, formatTime } from '@utils/common'
 
   defineOptions({ name: 'ShopOrders' })
 
@@ -48,8 +48,6 @@
     delivered: { label: t('shopAdmin.orders.status.delivered'), type: 'success' },
     rejected: { label: t('shopAdmin.orders.status.rejected'), type: 'danger' }
   }
-
-  const formatISK = (v: number) => Math.round(v).toLocaleString('en-US')
 
   const statusFilter = ref<string | undefined>(undefined)
 
@@ -93,7 +91,7 @@
           label: t('shop.unitPrice'),
           width: 140,
           formatter: (row: Order) =>
-            h('span', {}, `${formatISK(row.unit_price)} ${t('shop.currency')}`)
+            h('span', {}, `${formatFuxiCoinWhole(row.unit_price)} ${t('shop.currency')}`)
         },
         {
           prop: 'total_price',
@@ -103,7 +101,7 @@
             h(
               'span',
               { class: 'font-medium text-red-500' },
-              `${formatISK(row.total_price)} ${t('shop.currency')}`
+              `${formatFuxiCoinWhole(row.total_price)} ${t('shop.currency')}`
             )
         },
         {
@@ -118,6 +116,14 @@
               () => cfg.label
             )
           }
+        },
+        {
+          prop: 'reviewer_name',
+          label: t('shop.reviewerName'),
+          width: 140,
+          showOverflowTooltip: true,
+          formatter: (row: Order) =>
+            h('span', { class: row.reviewer_name ? '' : 'text-gray-400' }, row.reviewer_name || '-')
         },
         {
           prop: 'created_at',

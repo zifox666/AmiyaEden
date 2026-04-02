@@ -1,4 +1,4 @@
-import { formatTime } from '@utils/common'
+import { formatIskPlain, formatTime } from '@utils/common'
 
 const decimalFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
@@ -15,7 +15,7 @@ export function formatNewbroDateTime(value?: string | null): string {
 }
 
 export function formatNewbroIsk(value: number): string {
-  return decimalFormatter.format(value)
+  return formatIskPlain(value)
 }
 
 export function formatNewbroCredit(value: number): string {

@@ -60,11 +60,11 @@ func (s *SysWalletService) GetMyWallet(userID uint) (*model.SystemWallet, error)
 }
 
 // GetMyTransactions 获取当前用户流水
-func (s *SysWalletService) GetMyTransactions(userID uint, page, pageSize int) ([]model.WalletTransaction, int64, error) {
+func (s *SysWalletService) GetMyTransactions(userID uint, page, pageSize int) ([]model.TransactionWithCharacter, int64, error) {
 	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
 	filter := repository.WalletTransactionFilter{UserID: &userID}
-	return s.repo.ListTransactions(page, pageSize, filter)
+	return s.repo.ListTransactionsWithCharacter(page, pageSize, filter)
 }
 
 // ─────────────────────────────────────────────

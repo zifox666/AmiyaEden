@@ -71,7 +71,7 @@
 <script setup lang="ts">
   import { ElButton, ElInput, ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { formatTime } from '@utils/common'
+  import { formatFuxiCoinWhole, formatTime } from '@utils/common'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { adminListOrders, adminDeliverOrder, adminRejectOrder } from '@/api/shop'
@@ -82,7 +82,6 @@
 
   type Order = Api.Shop.Order
 
-  const formatISK = (v: number) => Math.round(v).toLocaleString('en-US')
   const formatContact = (row: Order) => {
     if (row.qq) return `QQ: ${row.qq}`
     if (row.discord_id) return `Discord: ${row.discord_id}`
@@ -163,7 +162,7 @@
             h(
               'span',
               { class: 'font-medium text-orange-600' },
-              `${formatISK(row.total_price)} ${t('shop.currency')}`
+              `${formatFuxiCoinWhole(row.total_price)} ${t('shop.currency')}`
             )
         },
         {
