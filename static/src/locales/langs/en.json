@@ -715,9 +715,22 @@
       "empty": "No characters bound",
       "character": "Character",
       "characterIdLabel": "Character ID",
+      "tokenHealth": "ESI Health",
+      "tokenValid": "Valid",
+      "tokenExpired": "Expired",
       "characterId": "Character ID: {id}",
       "totalSkillPoints": "Total Skill Points: {points}",
       "totalSkillPointsLabel": "Total SP"
+    },
+    "characterEsiRestriction": {
+      "title": "Expired Character ESI Restriction",
+      "description": "When enabled, users who still have any bound character with expired ESI authorization are forced to stay on the characters page until they refresh or remove those characters.",
+      "switchLabel": "Enforce restriction",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "loadFailed": "Failed to load the character ESI restriction setting",
+      "saveSuccess": "Character ESI restriction updated",
+      "saveFailed": "Failed to update the character ESI restriction"
     },
     "unnamed": "Unnamed",
     "impersonate": "Impersonate",
@@ -1258,6 +1271,10 @@
     "noScopes": "No extra scopes",
     "scopeCount": "scopes",
     "tokenInvalid": "(Expired)",
+    "tokenHealth": {
+      "title": "You cannot continue while any bound character has expired ESI access",
+      "requiredHint": "Refresh ESI for every expired character or unbind the expired characters before leaving this page."
+    },
     "bindFailed": "Failed to get bind URL",
     "setPrimarySuccess": "{name} is now the primary character",
     "setPrimaryFailed": "Failed to set primary character",

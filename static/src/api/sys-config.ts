@@ -21,6 +21,21 @@ export function updateAllowCorporations(data: Api.SysConfig.UpdateAllowCorporati
   })
 }
 
+export function fetchCharacterESIRestrictionConfig() {
+  return request.get<Api.SysConfig.CharacterESIRestrictionConfig>({
+    url: '/api/v1/system/basic-config/character-esi-restriction'
+  })
+}
+
+export function updateCharacterESIRestrictionConfig(
+  data: Api.SysConfig.UpdateCharacterESIRestrictionParams
+) {
+  return request.put({
+    url: '/api/v1/system/basic-config/character-esi-restriction',
+    data
+  })
+}
+
 /** 获取 SDE 配置 */
 export function fetchSDEConfig() {
   return request.get<Api.SysConfig.SDEConfig>({

@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-04-01
+last_reviewed: 2026-04-02
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -44,7 +44,7 @@ source_of_truth:
 | GET | `/sso/eve/bind` | 获取绑定新人物的 SSO 地址 | JWT |
 | PUT | `/sso/eve/primary/:character_id` | 设为主人物 | JWT |
 | DELETE | `/sso/eve/characters/:character_id` | 解绑人物 | JWT |
-| GET | `/me` | 当前用户、人物、权限、绑定人物 | JWT |
+| GET | `/me` | 当前用户、人物、权限、绑定人物，并返回 `enforce_character_esi_restriction`；若主人物 ESI 已失效则返回未授权以阻止继续启动登录上下文 | JWT |
 | PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | JWT |
 | POST | `/dashboard` | Dashboard 聚合数据 | JWT |
 | GET | `/badge-counts` | 导航徽章计数；仅返回当前登录用户可见且非零的计数字段 | Login |
@@ -249,6 +249,8 @@ source_of_truth:
 | GET | `/system/basic-config` | 获取固定系统标识（军团 ID / 网站标题） | `RequireRole(admin)` |
 | GET | `/system/basic-config/allow-corporations` | 获取允许军团列表 | `RequireRole(admin)` |
 | PUT | `/system/basic-config/allow-corporations` | 更新允许军团列表 | `RequireRole(admin)` |
+| GET | `/system/basic-config/character-esi-restriction` | 获取任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(admin)` |
+| PUT | `/system/basic-config/character-esi-restriction` | 更新任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(admin)` + `super_admin` |
 
 ### SDE Config
 
@@ -291,13 +293,13 @@ source_of_truth:
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
 | GET | `/system/role/definitions` | 系统职权定义列表（只读） | `RequireRole(admin)` |
-| GET | `/system/user` | 用户列表；默认按 `last_login_at` 倒序，关键字支持昵称 / QQ / 已绑定人物名；职权字段仅返回有序 `roles[]`，不再返回历史单值 `role`，并附带已绑定人物与每个人物的 `total_sp` 快照 | `RequireRole(admin)` |
+| GET | `/system/user` | 用户列表；默认按 `last_login_at` 倒序，关键字支持昵称 / QQ / 已绑定人物名；职权字段仅返回有序 `roles[]`，不再返回历史单值 `role`，并附带已绑定人物与每个人物的 `total_sp`、`token_invalid` 快照 | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
 | PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态；`admin` 不可编辑其他 `admin` | `RequireRole(admin)` |
 | DELETE | `/system/user/:id` | 删除用户；`super_admin` 用户不可删除；`admin` 不可删除其他 `admin` | `RequireRole(admin)` |
 | GET | `/system/user/:id/roles` | 获取用户职权 | `RequireRole(admin)` |
 | PUT | `/system/user/:id/roles` | 设置用户职权；`super_admin` 职权不可通过 API 分配或修改（仅通过配置文件管理）；仅 `super_admin` 可分配 `admin` | `RequireRole(admin)` |
-| POST | `/system/user/:id/impersonate` | 模拟登录，需 `super_admin` | `RequireRole(admin)` + `super_admin` |
+| POST | `/system/user/:id/impersonate` | 模拟登录，需 `super_admin`；若目标用户主人物 ESI 已失效则拒绝签发 token | `RequireRole(admin)` + `super_admin` |
 
 ### Fuxi Coin
 

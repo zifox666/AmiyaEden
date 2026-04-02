@@ -1,18 +1,7 @@
 import request from '@/utils/http'
+import { isUserProfileComplete } from './auth-helpers'
 
-export function isUserProfileComplete(
-  user?: Partial<Pick<Api.Auth.UserInfo, 'nickname' | 'qq' | 'discordId' | 'profileComplete'>>
-): boolean {
-  if (!user) return false
-  if (typeof user.profileComplete === 'boolean') {
-    return user.profileComplete
-  }
-
-  const nickname = user.nickname?.trim() ?? ''
-  const qq = user.qq?.trim() ?? ''
-  const discordId = user.discordId?.trim() ?? ''
-  return nickname.length > 0 && (qq.length > 0 || discordId.length > 0)
-}
+export { hasInvalidCharacterToken, isUserProfileComplete } from './auth-helpers'
 
 /**
  * 获取 EVE SSO 授权 URL（通过后端接口获取，前端直接跳转）
@@ -129,6 +118,7 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
         qq: user.qq ?? '',
         discordId: user.discord_id ?? ''
       }),
+    enforceCharacterESIRestriction: data.enforce_character_esi_restriction !== false,
     isCurrentlyNewbro:
       typeof data.is_currently_newbro === 'boolean' ? data.is_currently_newbro : undefined,
     isMentorMenteeEligible:

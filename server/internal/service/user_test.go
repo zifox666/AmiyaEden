@@ -6,6 +6,43 @@ import (
 	"testing"
 )
 
+func TestValidatePrimaryCharacterTokenHealth(t *testing.T) {
+	t.Run("rejects invalid primary character token", func(t *testing.T) {
+		user := model.User{PrimaryCharacterID: 9001}
+		characters := []model.EveCharacter{
+			{CharacterID: 9001, TokenInvalid: true},
+			{CharacterID: 9002, TokenInvalid: false},
+		}
+
+		err := validatePrimaryCharacterTokenHealth(user, characters)
+		if err == nil || !strings.Contains(err.Error(), "ESI") {
+			t.Fatalf("expected invalid primary token error, got %v", err)
+		}
+	})
+
+	t.Run("allows invalid non primary character token", func(t *testing.T) {
+		user := model.User{PrimaryCharacterID: 9001}
+		characters := []model.EveCharacter{
+			{CharacterID: 9001, TokenInvalid: false},
+			{CharacterID: 9002, TokenInvalid: true},
+		}
+
+		if err := validatePrimaryCharacterTokenHealth(user, characters); err != nil {
+			t.Fatalf("expected invalid non-primary token to pass, got %v", err)
+		}
+	})
+}
+
+func TestValidateImpersonationTargetPrimaryCharacterHealth(t *testing.T) {
+	user := model.User{PrimaryCharacterID: 9001}
+	characters := []model.EveCharacter{{CharacterID: 9001, TokenInvalid: true}}
+
+	err := validateImpersonationTargetPrimaryCharacterHealth(user, characters)
+	if err == nil || !strings.Contains(err.Error(), "ESI") {
+		t.Fatalf("expected impersonation health error, got %v", err)
+	}
+}
+
 func TestBuildUserPatchUpdates(t *testing.T) {
 	t.Run("current profile requires nickname and contact", func(t *testing.T) {
 		current := &model.User{}

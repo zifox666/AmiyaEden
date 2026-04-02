@@ -49,13 +49,16 @@ import { staticRoutes } from '../routes/staticRoutes'
 import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
-import { fetchGetUserInfo, isUserProfileComplete } from '@/api/auth'
+import { fetchGetUserInfo } from '@/api/auth'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
 import { loadBadgeCounts } from './badge'
-
-const PROFILE_SETUP_PATH = '/dashboard/characters'
+import {
+  PROFILE_SETUP_PATH,
+  refreshCharactersGateState,
+  shouldRedirectToCharactersPage
+} from './charactersGate'
 
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
@@ -118,6 +121,11 @@ export function setupBeforeEachGuard(router: Router): void {
       try {
         await handleRouteGuard(to, from, next, router)
       } catch (error) {
+        if (isUnauthorizedError(error)) {
+          closeLoading()
+          next(false)
+          return
+        }
         console.error('[RouteGuard] 路由守卫处理失败:', error)
         closeLoading()
         next({ name: 'Exception500' })
@@ -185,7 +193,7 @@ async function handleRouteGuard(
   }
 
   // 4. 强制完成资料设置
-  if (handleProfileSetupRedirect(to, userStore, next)) {
+  if (await handleProfileSetupRedirect(to, userStore, next)) {
     return
   }
 
@@ -301,7 +309,10 @@ async function handleDynamicRoutes(
 
     // 8. 验证目标路径权限
     const { homePath } = useCommon()
-    const targetPath = shouldRedirectToProfileSetup(userStore, to.path)
+    const targetPath = shouldRedirectToCharactersPage(
+      { isLogin: userStore.isLogin, path: to.path },
+      userStore.getUserInfo
+    )
       ? PROFILE_SETUP_PATH
       : to.path
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
@@ -374,12 +385,18 @@ async function fetchUserInfo(): Promise<void> {
   userStore.checkAndClearWorktabs()
 }
 
-function handleProfileSetupRedirect(
+async function handleProfileSetupRedirect(
   to: RouteLocationNormalized,
   userStore: ReturnType<typeof useUserStore>,
   next: NavigationGuardNext
-): boolean {
-  if (!shouldRedirectToProfileSetup(userStore, to.path)) {
+): Promise<boolean> {
+  if (!userStore.isLogin) {
+    return false
+  }
+
+  const userInfo = await getCharactersGateUserInfo(to.path, userStore)
+
+  if (!shouldRedirectToCharactersPage({ isLogin: userStore.isLogin, path: to.path }, userInfo)) {
     return false
   }
 
@@ -387,15 +404,17 @@ function handleProfileSetupRedirect(
   return true
 }
 
-function shouldRedirectToProfileSetup(
-  userStore: ReturnType<typeof useUserStore>,
-  path: string
-): boolean {
-  if (!userStore.isLogin || path === PROFILE_SETUP_PATH) {
-    return false
+async function getCharactersGateUserInfo(
+  path: string,
+  userStore: ReturnType<typeof useUserStore>
+): Promise<Api.Auth.UserInfo> {
+  if (path === PROFILE_SETUP_PATH) {
+    return userStore.getUserInfo as Api.Auth.UserInfo
   }
 
-  return !isUserProfileComplete(userStore.getUserInfo)
+  return refreshCharactersGateState(fetchGetUserInfo, (userInfo) => {
+    userStore.setUserInfo(userInfo)
+  })
 }
 
 /**

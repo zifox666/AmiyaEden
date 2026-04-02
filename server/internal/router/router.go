@@ -306,6 +306,8 @@ func RegisterRoutes(r *gin.Engine) {
 	// 允许访问的军团列表
 	admin.GET("/basic-config/allow-corporations", sysConfigH.GetAllowCorporations)
 	admin.PUT("/basic-config/allow-corporations", sysConfigH.UpdateAllowCorporations)
+	admin.GET("/basic-config/character-esi-restriction", sysConfigH.GetCharacterESIRestrictionConfig)
+	admin.PUT("/basic-config/character-esi-restriction", middleware.RequireRole(model.RoleSuperAdmin), sysConfigH.UpdateCharacterESIRestrictionConfig)
 
 	// NPC 刷怪报表（管理员 — 公司级）
 	admin.POST("/npc-kills", npcKillH.GetCorpNpcKills)

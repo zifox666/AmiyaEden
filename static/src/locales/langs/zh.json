@@ -716,9 +716,22 @@
       "empty": "暂无绑定人物",
       "character": "人物",
       "characterIdLabel": "人物 ID",
+      "tokenHealth": "ESI 状态",
+      "tokenValid": "有效",
+      "tokenExpired": "已过期",
       "characterId": "人物 ID：{id}",
       "totalSkillPoints": "总技能点：{points}",
       "totalSkillPointsLabel": "总技能点"
+    },
+    "characterEsiRestriction": {
+      "title": "已失效人物 ESI 限制",
+      "description": "开启后，只要用户仍绑定任一 ESI 已过期的人物，就会被强制停留在人物管理页面，直到重新授权或解绑这些人物。",
+      "switchLabel": "启用限制",
+      "enabled": "已启用",
+      "disabled": "已关闭",
+      "loadFailed": "加载人物 ESI 限制配置失败",
+      "saveSuccess": "人物 ESI 限制配置已更新",
+      "saveFailed": "更新人物 ESI 限制配置失败"
     },
     "unnamed": "未命名",
     "impersonate": "模拟登录",
@@ -1258,6 +1271,10 @@
     "noScopes": "无额外权限",
     "scopeCount": "项权限",
     "tokenInvalid": "(已失效)",
+    "tokenHealth": {
+      "title": "只要存在任一已过期的 ESI 授权人物，就无法继续访问其他页面",
+      "requiredHint": "请重新授权所有已过期人物的 ESI，或解绑这些已过期人物，然后再离开本页面。"
+    },
     "bindFailed": "获取绑定链接失败",
     "setPrimarySuccess": "已将 {name} 设为主人物",
     "setPrimaryFailed": "设置主人物失败",

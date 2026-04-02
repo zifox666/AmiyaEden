@@ -4,6 +4,36 @@
     <!-- 搜索栏 -->
     <UserSearch v-model="searchForm" @search="handleSearch" @reset="resetSearchParams"></UserSearch>
 
+    <ElCard v-if="isSuperAdmin" class="mb-4" shadow="never">
+      <div class="user-page__config-card">
+        <div>
+          <div class="user-page__config-title">
+            {{ t('userAdmin.characterEsiRestriction.title') }}
+          </div>
+          <p class="user-page__config-description">
+            {{ t('userAdmin.characterEsiRestriction.description') }}
+          </p>
+        </div>
+
+        <div class="user-page__config-actions">
+          <ElTag :type="characterEsiRestrictionEnabled ? 'danger' : 'info'" effect="light" round>
+            {{
+              characterEsiRestrictionEnabled
+                ? t('userAdmin.characterEsiRestriction.enabled')
+                : t('userAdmin.characterEsiRestriction.disabled')
+            }}
+          </ElTag>
+          <ElSwitch
+            v-model="characterEsiRestrictionEnabled"
+            :loading="characterEsiRestrictionLoading || characterEsiRestrictionSaving"
+            :before-change="handleCharacterEsiRestrictionToggle"
+            :active-text="t('userAdmin.characterEsiRestriction.switchLabel')"
+            inline-prompt
+          />
+        </div>
+      </div>
+    </ElCard>
+
     <ElCard class="art-table-card" shadow="never">
       <!-- 表格头部 -->
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
@@ -44,6 +74,10 @@
   import { formatTime } from '@utils/common'
   import { fetchGetUserList, fetchDeleteUser, fetchImpersonateUser } from '@/api/system-manage'
   import { fetchGetUserInfo } from '@/api/auth'
+  import {
+    fetchCharacterESIRestrictionConfig,
+    updateCharacterESIRestrictionConfig
+  } from '@/api/sys-config'
   import { useUserStore } from '@/store/modules/user'
   import UserSearch from './modules/user-search.vue'
   import UserRoleDialog from './modules/user-role-dialog.vue'
@@ -64,6 +98,9 @@
   // 弹窗相关
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
+  const characterEsiRestrictionLoading = ref(false)
+  const characterEsiRestrictionSaving = ref(false)
+  const characterEsiRestrictionEnabled = ref(true)
 
   // 搜索表单
   const searchForm = ref({
@@ -143,6 +180,10 @@
   const getUserRowKey = (row: Record<string, any>) => String(row.id)
   const getUserCharacters = (row: UserListItem) => row.characters ?? []
   const userRowClassName = () => 'user-row--expandable'
+  const getTokenHealthConfig = (tokenInvalid: boolean) =>
+    tokenInvalid
+      ? { type: 'danger', text: t('userAdmin.characters.tokenExpired') }
+      : { type: 'success', text: t('userAdmin.characters.tokenValid') }
   const getSeatUrl = (characterId: number) =>
     `https://seat.winterco.space/character/view/sheet/${characterId}`
 
@@ -170,6 +211,11 @@
           { class: 'user-characters-panel__header-cell' },
           t('userAdmin.characters.characterIdLabel')
         ),
+        h(
+          'div',
+          { class: 'user-characters-panel__header-cell' },
+          t('userAdmin.characters.tokenHealth')
+        ),
         h('div', { class: 'user-characters-panel__header-cell' }, t('SeAT')),
         h(
           'div',
@@ -177,8 +223,10 @@
           t('userAdmin.characters.totalSkillPointsLabel')
         )
       ]),
-      ...characters.map((character) =>
-        h('div', { key: character.character_id, class: 'user-characters-panel__row' }, [
+      ...characters.map((character) => {
+        const tokenHealth = getTokenHealthConfig(character.token_invalid)
+
+        return h('div', { key: character.character_id, class: 'user-characters-panel__row' }, [
           h('div', { class: 'user-characters-panel__avatar-cell' }, [
             h(ElAvatar, {
               src: character.portrait_url,
@@ -191,6 +239,13 @@
           ]),
           h('div', { class: 'user-characters-panel__cell' }, [
             h('span', { class: 'user-character-badge' }, String(character.character_id))
+          ]),
+          h('div', { class: 'user-characters-panel__cell user-characters-panel__cell--token' }, [
+            h(
+              ElTag,
+              { type: tokenHealth.type as any, size: 'small', effect: 'light' },
+              () => tokenHealth.text
+            )
           ]),
           h('div', { class: 'user-characters-panel__cell user-characters-panel__cell--seat' }, [
             h(
@@ -209,7 +264,7 @@
             h('span', { class: 'user-character-sp' }, formatSkillPoints(character.total_sp))
           ])
         ])
-      )
+      })
     ])
   }
 
@@ -367,6 +422,51 @@
     expandedUserIds.value = expandedRows.map((item) => String(item.id))
   }
 
+  const syncCharacterEsiRestrictionStoreState = (enabled: boolean) => {
+    userStore.setUserInfo({
+      ...(userStore.getUserInfo as Api.Auth.UserInfo),
+      enforceCharacterESIRestriction: enabled
+    })
+  }
+
+  const loadCharacterEsiRestrictionConfig = async () => {
+    if (!isSuperAdmin.value) {
+      return
+    }
+
+    characterEsiRestrictionLoading.value = true
+    try {
+      const config = await fetchCharacterESIRestrictionConfig()
+      characterEsiRestrictionEnabled.value = config.enforce_character_esi_restriction
+      syncCharacterEsiRestrictionStoreState(config.enforce_character_esi_restriction)
+    } catch {
+      ElMessage.error(t('userAdmin.characterEsiRestriction.loadFailed'))
+    } finally {
+      characterEsiRestrictionLoading.value = false
+    }
+  }
+
+  const handleCharacterEsiRestrictionToggle = async () => {
+    const nextValue = !characterEsiRestrictionEnabled.value
+
+    characterEsiRestrictionSaving.value = true
+    try {
+      await updateCharacterESIRestrictionConfig({
+        enforce_character_esi_restriction: nextValue
+      })
+      syncCharacterEsiRestrictionStoreState(nextValue)
+      ElMessage.success(t('userAdmin.characterEsiRestriction.saveSuccess'))
+      return true
+    } catch {
+      ElMessage.error(t('userAdmin.characterEsiRestriction.saveFailed'))
+      return false
+    } finally {
+      characterEsiRestrictionSaving.value = false
+    }
+  }
+
+  onMounted(loadCharacterEsiRestrictionConfig)
+
   const handleRowClick = (
     row: UserListItem,
     column: TableColumnCtx<UserListItem>,
@@ -466,6 +566,35 @@
 
 <style lang="scss">
   .user-page {
+    &__config-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    &__config-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+    }
+
+    &__config-description {
+      margin-top: 6px;
+      max-width: 720px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--el-text-color-secondary);
+    }
+
+    &__config-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 40px;
+    }
+
     .user-characters-panel {
       width: 100%;
       margin: 4px 0 8px 56px;
@@ -488,8 +617,8 @@
       width: 100%;
       display: grid;
       grid-template-columns:
-        56px minmax(0, 0.18fr) minmax(25px, 0.12fr) minmax(50px, 0.3fr)
-        minmax(86px, 0.58fr);
+        56px minmax(0, 0.18fr) minmax(25px, 0.12fr) minmax(72px, 0.16fr)
+        minmax(50px, 0.24fr) minmax(86px, 0.3fr);
       column-gap: 12px;
       align-items: center;
     }
@@ -589,6 +718,10 @@
       text-decoration: underline;
     }
 
+    .user-characters-panel__cell--token {
+      min-width: 0;
+    }
+
     .user-row--expandable > td {
       cursor: pointer;
     }
@@ -616,9 +749,7 @@
         grid-column: 1 / -1;
       }
 
-      .user-characters-panel__header-cell:nth-child(3),
-      .user-characters-panel__header-cell:nth-child(4),
-      .user-characters-panel__header-cell:nth-child(5) {
+      .user-characters-panel__header-cell:nth-child(n + 3) {
         display: none;
       }
     }

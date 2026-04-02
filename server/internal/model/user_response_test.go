@@ -16,6 +16,7 @@ func TestNewUserListItem(t *testing.T) {
 			CharacterName: "Amiya Prime",
 			PortraitURL:   "portrait.png",
 			TotalSP:       123456,
+			TokenInvalid:  true,
 		}})
 
 		payload, err := json.Marshal(item)
@@ -57,6 +58,9 @@ func TestNewUserListItem(t *testing.T) {
 		}
 		if firstCharacter["total_sp"] != float64(123456) {
 			t.Fatalf("unexpected character total_sp payload: %#v", firstCharacter)
+		}
+		if firstCharacter["token_invalid"] != true {
+			t.Fatalf("expected token_invalid to be serialized, got %#v", firstCharacter)
 		}
 	})
 

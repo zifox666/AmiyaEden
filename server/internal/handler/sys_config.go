@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"amiya-eden/internal/middleware"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/utils"
 	"amiya-eden/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -88,6 +90,14 @@ type UpdateAllowCorporationsRequest struct {
 	AllowCorporations []int64 `json:"allow_corporations"`
 }
 
+type CharacterESIRestrictionConfigResponse struct {
+	EnforceCharacterESIRestriction bool `json:"enforce_character_esi_restriction"`
+}
+
+type UpdateCharacterESIRestrictionConfigRequest struct {
+	EnforceCharacterESIRestriction *bool `json:"enforce_character_esi_restriction"`
+}
+
 func (h *SysConfigHandler) GetAllowCorporations(c *gin.Context) {
 	response.OK(c, AllowCorporationsResponse{
 		AllowCorporations: utils.GetAllowCorporations(),
@@ -112,6 +122,43 @@ func (h *SysConfigHandler) UpdateAllowCorporations(c *gin.Context) {
 	}
 
 	utils.InvalidateAllowCorporationsCache()
+
+	response.OK(c, nil)
+}
+
+func (h *SysConfigHandler) GetCharacterESIRestrictionConfig(c *gin.Context) {
+	response.OK(c, CharacterESIRestrictionConfigResponse{
+		EnforceCharacterESIRestriction: h.repo.GetBool(
+			model.SysConfigEnforceCharacterESIRestriction,
+			model.SysConfigDefaultEnforceCharacterESIRestriction,
+		),
+	})
+}
+
+func (h *SysConfigHandler) UpdateCharacterESIRestrictionConfig(c *gin.Context) {
+	if !model.IsSuperAdmin(middleware.GetUserRoles(c)) {
+		response.Fail(c, response.CodeForbidden, "仅超级管理员可修改该配置")
+		return
+	}
+
+	var req UpdateCharacterESIRestrictionConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+	if req.EnforceCharacterESIRestriction == nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+
+	if err := h.repo.Set(
+		model.SysConfigEnforceCharacterESIRestriction,
+		strconv.FormatBool(*req.EnforceCharacterESIRestriction),
+		"是否强制限制失效人物 ESI 停留在人物页面",
+	); err != nil {
+		response.Fail(c, response.CodeBizError, "更新人物 ESI 限制配置失败")
+		return
+	}
 
 	response.OK(c, nil)
 }

@@ -33,7 +33,8 @@ const (
 	SysConfigSDEProxy       = "sde.proxy"        // SDE 下载代理
 	SysConfigSDEDownloadURL = "sde.download_url" // SDE 下载地址
 
-	SysConfigAllowCorporations = "app.allow_corporations" // 允许访问的公司 ID 列表 (JSON 数组)
+	SysConfigAllowCorporations              = "app.allow_corporations"                 // 允许访问的公司 ID 列表 (JSON 数组)
+	SysConfigEnforceCharacterESIRestriction = "auth.enforce_character_esi_restriction" // 是否强制限制失效人物 ESI 停留在人物页面
 
 	SysConfigNewbroMaxCharacterSP          = "newbro.max_character_sp"
 	SysConfigNewbroMultiCharacterSP        = "newbro.multi_character_sp"
@@ -48,13 +49,14 @@ const (
 	SysConfigDefaultSDEProxy       = ""
 	SysConfigDefaultSDEDownloadURL = "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"
 
-	SysConfigDefaultNewbroMaxCharacterSP          int64   = 20_000_000
-	SysConfigDefaultNewbroMultiCharacterSP        int64   = 10_000_000
-	SysConfigDefaultNewbroMultiCharacterThreshold         = 3
-	SysConfigDefaultNewbroRefreshIntervalDays             = 7
-	SysConfigDefaultNewbroBonusRate               float64 = 20
-	SysConfigDefaultMenteeMaxCharacterSP          int64   = 4_000_000
-	SysConfigDefaultMenteeMaxAccountAgeDays               = 7
-	SysConfigDefaultPAPFCSalary                   float64 = 400
-	SysConfigDefaultPAPFCSalaryLimit              int     = 5
+	SysConfigDefaultNewbroMaxCharacterSP           int64   = 20_000_000
+	SysConfigDefaultNewbroMultiCharacterSP         int64   = 10_000_000
+	SysConfigDefaultNewbroMultiCharacterThreshold          = 3
+	SysConfigDefaultNewbroRefreshIntervalDays              = 7
+	SysConfigDefaultNewbroBonusRate                float64 = 20
+	SysConfigDefaultMenteeMaxCharacterSP           int64   = 4_000_000
+	SysConfigDefaultMenteeMaxAccountAgeDays                = 7
+	SysConfigDefaultPAPFCSalary                    float64 = 400
+	SysConfigDefaultPAPFCSalaryLimit               int     = 5
+	SysConfigDefaultEnforceCharacterESIRestriction         = true
 )

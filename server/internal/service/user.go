@@ -46,6 +46,13 @@ func (s *UserService) GetUserByID(id uint) (*model.User, error) {
 	return s.repo.GetByID(id)
 }
 
+func (s *UserService) ValidateCurrentUserBootstrap(user *model.User, characters []model.EveCharacter) error {
+	if user == nil {
+		return errors.New("用户不存在")
+	}
+	return validatePrimaryCharacterTokenHealth(*user, characters)
+}
+
 func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter) ([]model.UserListItem, int64, error) {
 	page = normalizePage(page)
 	pageSize = normalizeLedgerPageSize(pageSize)
@@ -120,6 +127,13 @@ func (s *UserService) ImpersonateUser(id uint) (string, *model.User, error) {
 	user, err := s.repo.GetByID(id)
 	if err != nil {
 		return "", nil, errors.New("用户不存在")
+	}
+	characters, err := s.charRepo.ListByUserID(user.ID)
+	if err != nil {
+		return "", nil, err
+	}
+	if err := validateImpersonationTargetPrimaryCharacterHealth(*user, characters); err != nil {
+		return "", nil, err
 	}
 	token, err := jwt.GenerateToken(user.ID, user.PrimaryCharacterID, user.Role, global.Config.JWT.ExpireDay)
 	if err != nil {
@@ -232,6 +246,30 @@ func validateManageUserPermission(operatorRoles, targetRoles []string) error {
 	}
 	if model.ContainsAnyRole(targetRoles, model.RoleSuperAdmin, model.RoleAdmin) {
 		return errors.New("管理员不能编辑或删除超级管理员或其他管理员")
+	}
+	return nil
+}
+
+func validatePrimaryCharacterTokenHealth(user model.User, characters []model.EveCharacter) error {
+	if user.PrimaryCharacterID == 0 {
+		return nil
+	}
+
+	for _, character := range characters {
+		if character.CharacterID == user.PrimaryCharacterID {
+			if character.TokenInvalid {
+				return errors.New("主人物 ESI 已过期，请重新授权后再登录")
+			}
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func validateImpersonationTargetPrimaryCharacterHealth(user model.User, characters []model.EveCharacter) error {
+	if err := validatePrimaryCharacterTokenHealth(user, characters); err != nil {
+		return errors.New("该用户主人物 ESI 已过期，无法模拟登录")
 	}
 	return nil
 }

@@ -116,6 +116,7 @@ declare namespace Api {
       /** 用户所有权限标识列表 */
       permissions: string[]
       profile_complete: boolean
+      enforce_character_esi_restriction: boolean
       is_currently_newbro?: boolean | null
       is_mentor_mentee_eligible?: boolean | null
     }
@@ -130,6 +131,7 @@ declare namespace Api {
       qq: string
       discordId: string
       profileComplete: boolean
+      enforceCharacterESIRestriction: boolean
       isCurrentlyNewbro?: boolean
       isMentorMenteeEligible?: boolean
       characters?: EveCharacter[]
@@ -158,6 +160,7 @@ declare namespace Api {
       character_name: string
       portrait_url: string
       total_sp: number
+      token_invalid: boolean
     }
 
     /** 用户列表项（匹配后端 model.UserListItem） */
@@ -2298,6 +2301,14 @@ declare namespace Api {
 
     interface UpdateAllowCorporationsParams {
       allow_corporations: number[]
+    }
+
+    interface CharacterESIRestrictionConfig {
+      enforce_character_esi_restriction: boolean
+    }
+
+    interface UpdateCharacterESIRestrictionParams {
+      enforce_character_esi_restriction: boolean
     }
 
     interface SDEConfig {

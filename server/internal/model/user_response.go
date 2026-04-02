@@ -7,6 +7,7 @@ type UserListCharacter struct {
 	CharacterName string `json:"character_name"`
 	PortraitURL   string `json:"portrait_url"`
 	TotalSP       int64  `json:"total_sp"`
+	TokenInvalid  bool   `json:"token_invalid"`
 }
 
 // UserListItem is the system user page DTO. It intentionally exposes the
@@ -33,6 +34,7 @@ func NewUserListCharacter(char EveCharacter, totalSP int64) UserListCharacter {
 		CharacterName: char.CharacterName,
 		PortraitURL:   char.PortraitURL,
 		TotalSP:       totalSP,
+		TokenInvalid:  char.TokenInvalid,
 	}
 }
 

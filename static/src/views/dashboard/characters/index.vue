@@ -85,6 +85,16 @@
         </ElButton>
       </div>
 
+      <ElAlert
+        v-if="enforceCharacterESIRestriction && hasInvalidCharacterToken"
+        type="error"
+        :closable="false"
+        show-icon
+        class="mb-4"
+        :title="$t('characters.tokenHealth.title')"
+        :description="$t('characters.tokenHealth.requiredHint')"
+      />
+
       <!-- 人物列表 -->
       <div v-loading="loading" class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
@@ -167,6 +177,7 @@
   import {
     fetchMyCharacters,
     getEveBindURL,
+    hasInvalidCharacterToken as hasInvalidCharacterTokenInList,
     isUserProfileComplete,
     setPrimaryCharacter,
     updateMyProfile,
@@ -194,6 +205,10 @@
     discordId: ''
   })
   const profileComplete = computed(() => isUserProfileComplete(userStore.getUserInfo))
+  const enforceCharacterESIRestriction = computed(
+    () => userStore.getUserInfo.enforceCharacterESIRestriction !== false
+  )
+  const hasInvalidCharacterToken = computed(() => hasInvalidCharacterTokenInList(characters.value))
 
   const getTextLength = (value: string) => Array.from(value.trim()).length
 

@@ -11,11 +11,12 @@ import (
 )
 
 type MeHandler struct {
-	userSvc               *service.UserService
-	roleSvc               *service.RoleService
-	charRepo              *repository.EveCharacterRepository
-	eligibilitySvc        *service.NewbroEligibilityService
-	mentorEligibilitySvc  *service.MentorEligibilityService
+	userSvc              *service.UserService
+	roleSvc              *service.RoleService
+	charRepo             *repository.EveCharacterRepository
+	sysConfigRepo        *repository.SysConfigRepository
+	eligibilitySvc       *service.NewbroEligibilityService
+	mentorEligibilitySvc *service.MentorEligibilityService
 }
 
 func NewMeHandler() *MeHandler {
@@ -23,6 +24,7 @@ func NewMeHandler() *MeHandler {
 		userSvc:              service.NewUserService(),
 		roleSvc:              service.NewRoleService(),
 		charRepo:             repository.NewEveCharacterRepository(),
+		sysConfigRepo:        repository.NewSysConfigRepository(),
 		eligibilitySvc:       service.NewNewbroEligibilityService(),
 		mentorEligibilitySvc: service.NewMentorEligibilityService(),
 	}
@@ -38,9 +40,17 @@ func (h *MeHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	characters, _ := h.charRepo.ListByUserID(userID)
+	characters, err := h.charRepo.ListByUserID(userID)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, "加载人物信息失败")
+		return
+	}
 	if characters == nil {
 		characters = []model.EveCharacter{}
+	}
+	if err := h.userSvc.ValidateCurrentUserBootstrap(user, characters); err != nil {
+		response.Fail(c, response.CodeUnauthorized, err.Error())
+		return
 	}
 
 	roles := middleware.GetUserRoles(c)
@@ -57,14 +67,19 @@ func (h *MeHandler) GetMe(c *gin.Context) {
 		value := result.IsEligible
 		isMentorMenteeEligible = &value
 	}
+	enforceCharacterESIRestriction := h.sysConfigRepo.GetBool(
+		model.SysConfigEnforceCharacterESIRestriction,
+		model.SysConfigDefaultEnforceCharacterESIRestriction,
+	)
 
 	response.OK(c, gin.H{
-		"user":                        user,
-		"characters":                  characters,
-		"roles":                       roles,
-		"profile_complete":            user.ProfileComplete(),
-		"is_currently_newbro":         isCurrentlyNewbro,
-		"is_mentor_mentee_eligible":   isMentorMenteeEligible,
+		"user":                              user,
+		"characters":                        characters,
+		"roles":                             roles,
+		"profile_complete":                  user.ProfileComplete(),
+		"enforce_character_esi_restriction": enforceCharacterESIRestriction,
+		"is_currently_newbro":               isCurrentlyNewbro,
+		"is_mentor_mentee_eligible":         isMentorMenteeEligible,
 	})
 }
 
