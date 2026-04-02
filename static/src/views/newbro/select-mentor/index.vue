@@ -12,6 +12,8 @@
       </div>
     </ElCard>
 
+    <MentorResponsibilitiesCard class="mb-4" />
+
     <ElCard shadow="never" class="mb-4" v-loading="loading">
       <template #header>
         <span>{{ t('newbro.selectMentor.statusTitle') }}</span>
@@ -142,6 +144,7 @@
   import { applyForMentor, fetchMentorCandidates, fetchMyMentorStatus } from '@/api/mentor'
   import { useNewbroFormatters } from '@/hooks/newbro/useNewbroFormatters'
   import { useMenuStore } from '@/store/modules/menu'
+  import MentorResponsibilitiesCard from '../components/mentor-responsibilities-card.vue'
 
   defineOptions({ name: 'NewbroSelectMentor' })
 

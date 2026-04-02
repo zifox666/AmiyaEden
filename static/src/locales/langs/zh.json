@@ -864,6 +864,14 @@
       "rewardStagesTitle": "当前奖励阶段配置",
       "rewardStagesDescription": "仅供查看，实际配置与奖励执行仍由管理员在导师奖励阶段页面维护。",
       "rewardStagesEmpty": "当前未配置奖励阶段",
+      "responsibilitiesTitle": "导师职责",
+      "responsibilitiesDescription": "以下职责说明会同时展示给学员和导师，用于明确导师帮扶的范围。",
+      "responsibilityItems": {
+        "registration": "导师引导学生注册军团和联盟 IT 系统，如何添加新人物，加 Mumble 和集结群。",
+        "basics": "导师回答学生的游戏内基本操作问题，如总览，联盟规则，充值，炸鱼，装配。",
+        "pvp": "导师引导学生参加舰队 pvp 活动，挂正确的技能，领取军团奖励。",
+        "scope": "导师的主要职责为口头或书面教导，并不需要负责带学生刷怪。带新人刷怪为队长的职责。"
+      },
       "statusFilter": "状态筛选",
       "allStatuses": "全部",
       "pendingApplicationsEmpty": "当前没有待处理申请",

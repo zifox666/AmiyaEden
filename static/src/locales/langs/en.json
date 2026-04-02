@@ -863,6 +863,14 @@
       "rewardStagesTitle": "Current Reward Stage Config",
       "rewardStagesDescription": "Read-only view. Admins still manage stage rules and manual processing from the Mentor Reward Stages page.",
       "rewardStagesEmpty": "No reward stages configured yet",
+      "responsibilitiesTitle": "Mentor Responsibilities",
+      "responsibilitiesDescription": "This guidance is shown to both mentees and mentors so the mentor scope stays explicit.",
+      "responsibilityItems": {
+        "registration": "Mentors guide mentees through registering in the corporation and alliance IT systems, adding new characters, and joining Mumble plus the rally group chat.",
+        "basics": "Mentors answer basic in-game questions such as overview setup, alliance rules, top-ups, ratting, and fittings.",
+        "pvp": "Mentors guide mentees into fleet PvP activity, help them queue the correct skills, and claim corporation rewards.",
+        "scope": "A mentor's main duty is verbal or written guidance. Running PvE with a newbro is not required; that responsibility belongs to captains."
+      },
       "statusFilter": "Status",
       "allStatuses": "All",
       "pendingApplicationsEmpty": "No pending applications right now",

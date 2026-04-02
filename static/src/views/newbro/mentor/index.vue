@@ -12,6 +12,8 @@
       </div>
     </ElCard>
 
+    <MentorResponsibilitiesCard class="mb-4" />
+
     <ElTabs v-model="activeTab">
       <ElTabPane :label="t('newbro.mentor.applicationsTab')" name="applications">
         <ElCard shadow="never">
@@ -255,6 +257,7 @@
     rejectMentorApplication
   } from '@/api/mentor'
   import { useNewbroFormatters } from '@/hooks/newbro/useNewbroFormatters'
+  import MentorResponsibilitiesCard from '../components/mentor-responsibilities-card.vue'
 
   defineOptions({ name: 'NewbroMentorDashboard' })
 

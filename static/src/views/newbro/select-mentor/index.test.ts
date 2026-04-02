@@ -27,3 +27,7 @@ test('available mentor section is hidden after the relationship becomes active',
 test('mentor selection page allows mentor cards to grow with content', () => {
   assert.doesNotMatch(source, /<template>\s*<div class="[^"]*\bart-full-height\b[^"]*">/)
 })
+
+test('mentor selection page includes the mentor responsibilities card', () => {
+  assert.match(source, /<MentorResponsibilitiesCard\b/)
+})

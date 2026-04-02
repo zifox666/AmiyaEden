@@ -47,3 +47,7 @@ test('distributed stages show stage names instead of raw ids', () => {
   assert.match(source, /\{\{\s*formatDistributedStageName\(stage\)\s*\}\}/)
   assert.doesNotMatch(source, /#\{\{\s*stage\s*\}\}/)
 })
+
+test('mentor dashboard includes the mentor responsibilities card', () => {
+  assert.match(source, /<MentorResponsibilitiesCard\b/)
+})
