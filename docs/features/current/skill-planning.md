@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-31
+last_reviewed: 2026-04-03
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/skill_plan.go
@@ -20,6 +20,7 @@ source_of_truth:
 - 通过独立顶级菜单“技能规划”进入技能计划页面
 - 任意 `Login` 用户都可查看技能计划列表 / 详情；管理按钮只对可维护角色显示
 - 用户可在”检查完成度”页面保存自己的人物选择和规划选择，并把人物技能与选中的军团规划逐项比对
+- 完成度检查页的缺失技能列表支持通过共享内联复制按钮逐项复制技能名；表头悬浮预览仍保持只读文本
 - 规划选择默认包含全部规划，用户可取消选择不需要检查的规划，选择持久化保存
 
 ## 入口

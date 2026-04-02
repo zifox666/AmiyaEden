@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-26
+last_reviewed: 2026-04-03
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/shop.go
@@ -96,6 +96,7 @@ source_of_truth:
 
 - **订单管理**（`shop/order-manage` → 订单管理 Tab）：仅展示 `requested` 状态订单，支持按商品名/主人物名/昵称关键字搜索，可执行发放或拒绝操作。
 - **订单历史**（`shop/order-manage` → 订单历史 Tab）：展示 `delivered` + `rejected` 订单，支持相同关键字搜索，只读。
+- 两个 Tab 都为 `订单号` 与 `主人物` 提供共享内联复制按钮，便于发放时复制合同描述或转账备注所需文本。
 
 `/shop/manage` 仍保留为管理员专用的商品管理入口。
 

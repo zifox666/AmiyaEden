@@ -86,11 +86,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElInput, ElMessage, ElMessageBox, ElEmpty, ElImage } from 'element-plus'
-  import { CopyDocument } from '@element-plus/icons-vue'
+  import { ElTag, ElButton, ElInput, ElMessageBox, ElEmpty, ElImage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { formatTime } from '@utils/common'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { useEnterSearch } from '@/hooks/core/useEnterSearch'
   import { useTable } from '@/hooks/core/useTable'
   import {
@@ -124,16 +124,6 @@
         rejected: { label: t('welfareApproval.statusRejected'), type: 'danger' }
       }) as Record<string, { label: string; type: string }>
   )
-
-  // ─── Copy helper ───
-  const copyText = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      ElMessage.success(t('welfareApproval.copied'))
-    } catch {
-      ElMessage.warning(t('welfareApproval.copyFailed'))
-    }
-  }
 
   // ─── Row description tooltip ───
   const tooltipVisible = ref(false)
@@ -185,16 +175,7 @@
       formatter: (row: AppRow) =>
         h('div', { class: 'flex items-center gap-1' }, [
           h('span', {}, row.character_name),
-          h(
-            ElButton,
-            {
-              size: 'small',
-              icon: CopyDocument,
-              type: '' as const,
-              onClick: () => copyText(row.character_name)
-            },
-            () => ''
-          )
+          h(ArtCopyButton, { text: row.character_name })
         ])
     },
     {

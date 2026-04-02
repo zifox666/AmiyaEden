@@ -214,7 +214,10 @@
                         v-for="skill in plan.missing_skills"
                         :key="`${character.character_id}-${plan.plan_id}-${skill.skill_type_id}`"
                       >
-                        <span class="name">{{ skill.skill_name }}</span>
+                        <span class="missing-skills__name-row">
+                          <span class="name">{{ skill.skill_name }}</span>
+                          <ArtCopyButton :text="skill.skill_name" />
+                        </span>
                         <span class="meta">
                           {{
                             $t('skillPlanCheck.requiredVsCurrent', {
@@ -310,6 +313,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { fetchMyCharacters } from '@/api/auth'
   import {
     fetchSkillPlanCheckSelection,
@@ -679,6 +683,17 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+
+  .missing-skills__name-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+  }
+
+  .missing-skills__name-row :deep(.art-copy-button) {
+    flex-shrink: 0;
   }
 
   .missing-skills__list .name,

@@ -9,6 +9,7 @@ import { fetchApplicationList } from '@/api/srp'
 import { formatTime } from '@utils/common'
 import { ElTag, ElTooltip, ElLink } from 'element-plus'
 import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
 
 type SrpApp = Api.Srp.Application
 type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
@@ -133,7 +134,11 @@ export function useSrpManage(callbacks: {
           prop: 'character_name',
           label: t('srp.manage.columns.character'),
           width: 140,
-          showOverflowTooltip: true
+          formatter: (row: SrpApp) =>
+            h('div', { class: 'flex items-center gap-1 min-w-0' }, [
+              h('span', { class: 'truncate' }, row.character_name || '-'),
+              h(ArtCopyButton, { text: row.character_name })
+            ])
         },
         {
           prop: 'ship_type_id',

@@ -23,3 +23,14 @@ test('system user page keeps the restriction card out of the flex table shell', 
     /<ElCard v-if="isSuperAdmin" class="art-table-card mb-4" shadow="never">/
   )
 })
+
+test('system user expanded character rows render shared copy buttons beside character names', () => {
+  assert.match(
+    source,
+    /import ArtCopyButton from '@\/components\/core\/forms\/art-copy-button\/index.vue'/
+  )
+  assert.match(
+    source,
+    /user-character-name-row[\s\S]*h\(ArtCopyButton,[\s\S]*text:\s*character\.character_name/
+  )
+})

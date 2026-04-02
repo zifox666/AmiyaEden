@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-02
+last_reviewed: 2026-04-03
 source_of_truth:
   - server/internal/model/system_identity.go
   - server/internal/router/router.go
@@ -31,6 +31,7 @@ source_of_truth:
 - 用户 QQ / Discord ID 在管理端只读展示，仍由用户本人通过 `/api/v1/me` 维护
 - 用户管理列表默认按最后登录时间倒序，并支持按昵称、QQ、任意已绑定人物名搜索
 - 用户管理列表可展开每个用户行，查看该用户全部已绑定人物的头像、人物 ID、人物名、ESI 状态与人物总技能点
+- 用户管理展开人物列表在人物名右侧提供共享内联复制按钮，便于复制已绑定人物名
 - `super_admin` 可在 `/system/user` 切换“已失效人物 ESI 限制”，决定是否强制用户在任一已绑定人物 ESI 失效时停留在人物管理页
 - 超级管理员模拟登录
 - 自动权限映射（ESI corp roles / corp titles -> system roles）

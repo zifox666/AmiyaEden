@@ -73,6 +73,7 @@
   import { useI18n } from 'vue-i18n'
   import { formatTime } from '@utils/common'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { adminListOrders, adminDeliverOrder, adminRejectOrder } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
 
@@ -112,14 +113,22 @@
         {
           prop: 'order_no',
           label: t('shopAdmin.orders.table.orderNo'),
-          width: 120,
-          showOverflowTooltip: true
+          width: 140,
+          formatter: (row: Order) =>
+            h('div', { class: 'flex items-center gap-1 min-w-0' }, [
+              h('span', { class: 'truncate' }, row.order_no || '-'),
+              h(ArtCopyButton, { text: row.order_no })
+            ])
         },
         {
           prop: 'main_character_name',
           label: t('shopAdmin.orders.table.mainCharacter'),
-          width: 140,
-          showOverflowTooltip: true
+          width: 170,
+          formatter: (row: Order) =>
+            h('div', { class: 'flex items-center gap-1 min-w-0' }, [
+              h('span', { class: 'truncate' }, row.main_character_name || '-'),
+              h(ArtCopyButton, { text: row.main_character_name })
+            ])
         },
         {
           prop: 'nickname',

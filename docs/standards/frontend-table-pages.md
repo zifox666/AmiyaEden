@@ -2,7 +2,7 @@
 status: active
 doc_type: standard
 owner: frontend
-last_reviewed: 2026-04-01
+last_reviewed: 2026-04-03
 source_of_truth:
   - static/src/hooks/core/useTable
   - static/src/components/core
@@ -51,6 +51,13 @@ If the page is mixed layout or analytics-like, you may still use this pattern fo
 - For “selected” or “expanded” cards/rows, keep the background at most one brightness step lighter than the surrounding surface; use border and shadow emphasis instead of large areas of pure white.
 - When adding custom table or list visuals, manually verify the page in both light and dark modes and adjust colors using theme tokens rather than fixed hex values.
 
+## Inline Copy Rule
+
+- For compact inline copy actions attached to a text value inside a table cell, list row, or expanded record row, reuse the shared `ArtCopyButton`.
+- Do not introduce page-local copy icon buttons, duplicate clipboard success/failure toast handling, or ad hoc inline copy markup for the same interaction shape.
+- If the requirement is not a compact inline button beside a single displayed value, reuse the shared clipboard hook instead of forcing the button component into a mismatched flow.
+- Feature docs may describe where copy is available, but the reuse rule itself is defined here and applies repository-wide.
+
 ## Exceptions
 
 Use native `ElTable` only when the table itself does not fit `ArtTable`, for example:
@@ -69,6 +76,7 @@ Before finishing:
 
 - Is this paginated table using `useTable` unless there is a real exception?
 - If it is ledger-style, is it using `visual-variant="ledger"`?
+- If it adds a compact inline copy action, is it reusing `ArtCopyButton`?
 - Are API calls outside the view?
 - Are visible strings localized?
 - Is the implementation following existing page patterns instead of inventing a one-off abstraction?

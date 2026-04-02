@@ -70,6 +70,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { formatTime } from '@utils/common'
   import { fetchGetUserList, fetchDeleteUser, fetchImpersonateUser } from '@/api/system-manage'
@@ -235,7 +236,10 @@
             })
           ]),
           h('div', { class: 'user-characters-panel__cell user-characters-panel__cell--name' }, [
-            h('div', { class: 'user-character-name' }, character.character_name)
+            h('div', { class: 'user-character-name-row' }, [
+              h('span', { class: 'user-character-name' }, character.character_name),
+              h(ArtCopyButton, { text: character.character_name })
+            ])
           ]),
           h('div', { class: 'user-characters-panel__cell' }, [
             h('span', { class: 'user-character-badge' }, String(character.character_id))
@@ -683,6 +687,17 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .user-character-name-row {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-character-name-row :deep(.art-copy-button) {
+      flex-shrink: 0;
     }
 
     .user-character-badge,

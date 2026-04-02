@@ -12,6 +12,7 @@ import {
   runFleetAutoApproval,
   openInfoWindow
 } from '@/api/srp'
+import { useClipboardCopy } from '@/hooks/core/useClipboardCopy'
 import { fromMillionISKInput } from '@/utils/iskUnits'
 
 type SrpApp = Api.Srp.Application
@@ -28,6 +29,7 @@ export function useSrpWorkflow(deps: {
   const { t } = useI18n()
   const { getName } = useNameResolver()
   const userStore = useUserStore()
+  const { copyText } = useClipboardCopy()
 
   // ─── Review Dialog ───
   const reviewDialogVisible = ref(false)
@@ -284,16 +286,6 @@ export function useSrpWorkflow(deps: {
       /* handled */
     } finally {
       batchPayoutLoadingUserId.value = null
-    }
-  }
-
-  // ─── Clipboard ───
-  const copyText = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      ElMessage.success(t('srp.manage.copied'))
-    } catch {
-      ElMessage.warning(t('srp.manage.copyFailed'))
     }
   }
 
