@@ -99,8 +99,7 @@ func (s *NewbroReportService) GetCaptainOverview(captainUserID uint) (*CaptainOv
 }
 
 func (s *NewbroReportService) ListCaptainPlayers(captainUserID uint, status string, page, pageSize int) ([]CaptainPlayerListItem, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 20, 100)
+	normalizePageRequest(&page, &pageSize, 20, 100)
 	rows, total, err := s.affRepo.ListByCaptainUserID(captainUserID, status, page, pageSize)
 	if err != nil {
 		return nil, 0, err
@@ -141,8 +140,7 @@ func (s *NewbroReportService) ListCaptainPlayers(captainUserID uint, status stri
 }
 
 func (s *NewbroReportService) ListCaptainAttributions(captainUserID uint, req CaptainAttributionListRequest) (CaptainAttributionSummary, []CaptainAttributionListItem, int64, error) {
-	req.Page = normalizePage(req.Page)
-	req.PageSize = normalizePageSize(req.PageSize, 20, 100)
+	normalizePageRequest(&req.Page, &req.PageSize, 20, 100)
 	bountyTotal, recordCount, err := s.attrRepo.SummarizeByCaptainUserIDFiltered(
 		captainUserID,
 		req.PlayerUserID,
@@ -226,8 +224,7 @@ func (s *NewbroReportService) listRewardSettlements(
 	pageSize int,
 	keyword string,
 ) (CaptainRewardSummary, []CaptainRewardSettlementItem, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizeLedgerPageSize(pageSize)
+	normalizeLedgerPageRequest(&page, &pageSize)
 	filter := repository.CaptainRewardSettlementFilter{
 		CaptainUserID: captainUserID,
 		Keyword:       keyword,
@@ -259,8 +256,7 @@ func (s *NewbroReportService) listRewardSettlements(
 }
 
 func (s *NewbroReportService) ListAllCaptainOverviews(page, pageSize int, keyword string) ([]CaptainOverview, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 20, 100)
+	normalizePageRequest(&page, &pageSize, 20, 100)
 
 	userIDs, err := s.roleRepo.GetRoleUserIDs(model.RoleCaptain)
 	if err != nil {
@@ -358,8 +354,7 @@ func (s *NewbroReportService) GetAdminCaptainDetail(captainUserID uint) (*AdminC
 }
 
 func (s *NewbroReportService) ListAdminAffiliationHistory(req AdminAffiliationHistoryListRequest) ([]AdminAffiliationHistoryItem, int64, error) {
-	req.Page = normalizePage(req.Page)
-	req.PageSize = normalizeLedgerPageSize(req.PageSize)
+	normalizeLedgerPageRequest(&req.Page, &req.PageSize)
 
 	rows, total, err := s.affRepo.ListAdminAffiliationHistory(repository.AdminAffiliationHistoryFilter{
 		CaptainSearch:       req.CaptainSearch,

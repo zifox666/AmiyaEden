@@ -180,8 +180,7 @@ func (s *SkillPlanService) CreateSkillPlan(userID uint, req *CreateSkillPlanRequ
 
 // ListSkillPlans 获取技能计划列表
 func (s *SkillPlanService) ListSkillPlans(page, pageSize int, keyword string) ([]SkillPlanListItemResp, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 50, 100)
+	normalizePageRequest(&page, &pageSize, 50, 100)
 
 	plans, total, err := s.repo.List(page, pageSize, strings.TrimSpace(keyword))
 	if err != nil {
@@ -304,9 +303,9 @@ func (s *SkillPlanService) ReorderSkillPlans(ids []uint, userRoles []string) err
 }
 
 func (s *SkillPlanService) GetCheckSelection(userID uint) (*SkillPlanCheckSelectionResp, error) {
-	owned, err := s.charRepo.ListByUserID(userID)
+	owned, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, errors.New("获取人物列表失败")
+		return nil, err
 	}
 
 	ownedSet := make(map[int64]struct{}, len(owned))
@@ -634,9 +633,9 @@ func normalizeOptionalSkillPlanShipTypeID(shipTypeID *int) *int {
 }
 
 func (s *SkillPlanService) validateAndNormalizeOwnedCharacterIDs(userID uint, characterIDs []int64) ([]int64, error) {
-	ownedChars, err := s.charRepo.ListByUserID(userID)
+	ownedChars, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, errors.New("获取人物列表失败")
+		return nil, err
 	}
 
 	ownedSet := make(map[int64]struct{}, len(ownedChars))

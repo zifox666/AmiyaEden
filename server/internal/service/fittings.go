@@ -122,20 +122,6 @@ func getFlagGroup(flag string) string {
 //  业务方法
 // ─────────────────────────────────────────────
 
-// validateCharacterOwnership 校验人物归属
-func (s *FittingsService) validateCharacterOwnership(userID uint, characterID int64) (*model.EveCharacter, error) {
-	chars, err := s.charRepo.ListByUserID(userID)
-	if err != nil {
-		return nil, errors.New("获取人物列表失败")
-	}
-	for i := range chars {
-		if chars[i].CharacterID == characterID {
-			return &chars[i], nil
-		}
-	}
-	return nil, errors.New("该人物不属于当前用户")
-}
-
 // GetFittings 获取用户名下所有人物的装配列表
 func (s *FittingsService) GetFittings(userID uint, req *FittingsRequest) (*FittingsListResponse, error) {
 	lang := req.Language
@@ -144,9 +130,9 @@ func (s *FittingsService) GetFittings(userID uint, req *FittingsRequest) (*Fitti
 	}
 
 	// 获取用户所有人物
-	chars, err := s.charRepo.ListByUserID(userID)
+	chars, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, errors.New("获取人物列表失败")
+		return nil, err
 	}
 	if len(chars) == 0 {
 		return &FittingsListResponse{Fittings: []FittingResponse{}}, nil
@@ -299,7 +285,7 @@ func (s *FittingsService) GetFittings(userID uint, req *FittingsRequest) (*Fitti
 
 // SaveFitting 保存装配（同步 ESI + 数据库）
 func (s *FittingsService) SaveFitting(userID uint, req *SaveFittingRequest) (*FittingResponse, error) {
-	char, err := s.validateCharacterOwnership(userID, req.CharacterID)
+	char, err := findOwnedCharacter(s.charRepo, userID, req.CharacterID)
 	if err != nil {
 		return nil, err
 	}

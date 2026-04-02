@@ -169,8 +169,7 @@ func (s *MentorRewardService) ListAdminRewardDistributions(
 	pageSize int,
 	keyword string,
 ) ([]MentorRewardDistributionView, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizeLedgerPageSize(pageSize)
+	normalizeLedgerPageRequest(&page, &pageSize)
 	if err := s.backfillMissingRewardDistributionSnapshots(); err != nil {
 		return nil, 0, err
 	}

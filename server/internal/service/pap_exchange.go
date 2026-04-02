@@ -3,13 +3,23 @@ package service
 import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
-	"strconv"
 )
 
 // PAPExchangeService PAP 兑换汇率业务逻辑层
 type PAPExchangeService struct {
-	rateRepo   *repository.PAPTypeRateRepository
-	configRepo *repository.SysConfigRepository
+	rateRepo   papExchangeRateStore
+	configRepo papExchangeConfigStore
+}
+
+type papExchangeRateStore interface {
+	List() ([]model.PAPTypeRate, error)
+	Save(rates []model.PAPTypeRate) error
+}
+
+type papExchangeConfigStore interface {
+	GetFloat(key string, defaultVal float64) float64
+	GetInt(key string, defaultVal int) int
+	SetMany(items []repository.SysConfigUpsertItem) error
 }
 
 func NewPAPExchangeService() *PAPExchangeService {
@@ -58,10 +68,11 @@ func (s *PAPExchangeService) UpdateConfig(req *UpdateConfigRequest) (*PAPExchang
 	if err := s.SetRates(req.Rates); err != nil {
 		return nil, err
 	}
-	if err := s.configRepo.Set(model.SysConfigPAPFCSalary, formatFloat(*req.FCSalary), "FC工资"); err != nil {
-		return nil, err
-	}
-	if err := s.configRepo.Set(model.SysConfigPAPFCSalaryLimit, strconv.Itoa(*req.FCSalaryMonthlyLimit), "FC工资每月上限次数"); err != nil {
+	items := newSysConfigBatch(2).
+		AddFloat64(model.SysConfigPAPFCSalary, *req.FCSalary, "FC工资").
+		AddInt(model.SysConfigPAPFCSalaryLimit, *req.FCSalaryMonthlyLimit, "FC工资每月上限次数").
+		Items()
+	if err := s.configRepo.SetMany(items); err != nil {
 		return nil, err
 	}
 	return s.GetConfig()
@@ -86,8 +97,4 @@ func (s *PAPExchangeService) getFCSalary() float64 {
 
 func (s *PAPExchangeService) getFCSalaryMonthlyLimit() int {
 	return s.configRepo.GetInt(model.SysConfigPAPFCSalaryLimit, model.SysConfigDefaultPAPFCSalaryLimit)
-}
-
-func formatFloat(v float64) string {
-	return strconv.FormatFloat(v, 'f', -1, 64)
 }

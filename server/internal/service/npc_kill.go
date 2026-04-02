@@ -148,7 +148,7 @@ type NpcKillCorpResponse struct {
 // GetNpcKills 获取个人刷怪报表
 func (s *NpcKillService) GetNpcKills(userID uint, req *NpcKillRequest) (*NpcKillResponse, error) {
 	// 校验人物归属
-	if err := s.validateCharacterOwnership(userID, req.CharacterID); err != nil {
+	if err := requireOwnedCharacter(s.charRepo, userID, req.CharacterID); err != nil {
 		return nil, err
 	}
 
@@ -334,19 +334,6 @@ func (s *NpcKillService) GetCorpNpcKills(req *NpcKillCorpRequest) (*NpcKillCorpR
 // ─────────────────────────────────────────────
 //  内部辅助方法
 // ─────────────────────────────────────────────
-
-func (s *NpcKillService) validateCharacterOwnership(userID uint, characterID int64) error {
-	chars, err := s.charRepo.ListByUserID(userID)
-	if err != nil {
-		return fmt.Errorf("获取人物列表失败")
-	}
-	for _, c := range chars {
-		if c.CharacterID == characterID {
-			return nil
-		}
-	}
-	return fmt.Errorf("该人物不属于当前用户")
-}
 
 // calcSummary 计算总览统计
 func (s *NpcKillService) calcSummary(journals []model.EVECharacterWalletJournal) NpcKillSummary {

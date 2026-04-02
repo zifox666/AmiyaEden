@@ -100,13 +100,13 @@ func NewContractService() *ContractService {
 
 // GetUserContracts 分页获取用户名下所有人物的合同
 func (s *ContractService) GetUserContracts(userID uint, req *InfoContractsRequest) ([]ContractResponse, int64, error) {
-	page := normalizePage(req.Current)
-	pageSize := normalizeLedgerPageSize(req.Size)
+	page, pageSize := req.Current, req.Size
+	normalizeLedgerPageRequest(&page, &pageSize)
 
 	// 1. 获取人物列表
-	chars, err := s.charRepo.ListByUserID(userID)
+	chars, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, 0, errors.New("获取人物列表失败")
+		return nil, 0, err
 	}
 	if len(chars) == 0 {
 		return []ContractResponse{}, 0, nil
@@ -169,23 +169,15 @@ func (s *ContractService) GetContractDetail(userID uint, req *InfoContractDetail
 	}
 
 	// 1. 验证人物属于当前用户
-	chars, err := s.charRepo.ListByUserID(userID)
-	if err != nil {
-		return nil, errors.New("获取人物列表失败")
-	}
-	owned := false
-	for _, c := range chars {
-		if c.CharacterID == req.CharacterID {
-			owned = true
-			break
+	if _, err := findOwnedCharacter(s.charRepo, userID, req.CharacterID); err != nil {
+		if errors.Is(err, errCharacterNotOwned) {
+			return nil, errors.New("无权访问该合同")
 		}
-	}
-	if !owned {
-		return nil, errors.New("无权访问该合同")
+		return nil, err
 	}
 
 	// 2. 查询合同记录（权限校验通过后只需确认合同存在）
-	_, err = s.contractRepo.GetContractByCharacterAndID(req.CharacterID, req.ContractID)
+	_, err := s.contractRepo.GetContractByCharacterAndID(req.CharacterID, req.ContractID)
 	if err != nil {
 		return nil, errors.New("合同不存在")
 	}

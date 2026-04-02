@@ -87,24 +87,10 @@ func NewCloneService() *CloneService {
 	}
 }
 
-// validateCharacterOwnership 校验人物归属
-func (s *CloneService) validateCharacterOwnership(userID uint, characterID int64) error {
-	chars, err := s.charRepo.ListByUserID(userID)
-	if err != nil {
-		return errors.New("获取人物列表失败")
-	}
-	for _, c := range chars {
-		if c.CharacterID == characterID {
-			return nil
-		}
-	}
-	return errors.New("该人物不属于当前用户")
-}
-
 // GetCharacterImplants 获取人物克隆体/植入体信息
 func (s *CloneService) GetCharacterImplants(userID uint, req *InfoImplantsRequest) (*InfoImplantsResponse, error) {
 	// 校验人物归属
-	if err := s.validateCharacterOwnership(userID, req.CharacterID); err != nil {
+	if err := requireOwnedCharacter(s.charRepo, userID, req.CharacterID); err != nil {
 		return nil, err
 	}
 

@@ -4,7 +4,6 @@ import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"errors"
-	"fmt"
 )
 
 type MentorSettings struct {
@@ -57,18 +56,10 @@ func (s *MentorSettingsService) UpdateSettings(cfg MentorSettings) (MentorSettin
 		return MentorSettings{}, err
 	}
 
-	items := []repository.SysConfigUpsertItem{
-		{
-			Key:   model.SysConfigMenteeMaxCharacterSP,
-			Value: fmt.Sprintf("%d", cfg.MaxCharacterSP),
-			Desc:  "导师学员资格：人物技能点上限",
-		},
-		{
-			Key:   model.SysConfigMenteeMaxAccountAgeDays,
-			Value: fmt.Sprintf("%d", cfg.MaxAccountAgeDays),
-			Desc:  "导师学员资格：账号注册天数上限",
-		},
-	}
+	items := newSysConfigBatch(2).
+		AddInt64(model.SysConfigMenteeMaxCharacterSP, cfg.MaxCharacterSP, "导师学员资格：人物技能点上限").
+		AddInt(model.SysConfigMenteeMaxAccountAgeDays, cfg.MaxAccountAgeDays, "导师学员资格：账号注册天数上限").
+		Items()
 
 	if err := s.cfgRepo.SetMany(items); err != nil {
 		return MentorSettings{}, err

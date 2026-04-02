@@ -174,8 +174,7 @@ func (s *WelfareService) AdminDeleteWelfare(id uint) error {
 
 // AdminListWelfares 查询福利列表
 func (s *WelfareService) AdminListWelfares(page, pageSize int, filter repository.WelfareFilter) ([]model.Welfare, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 20, 100)
+	normalizePageRequest(&page, &pageSize, 20, 100)
 	return s.repo.ListWelfares(page, pageSize, filter)
 }
 
@@ -296,9 +295,9 @@ func (s *WelfareService) GetEligibleWelfares(userID uint) ([]EligibleWelfareResp
 	}
 
 	// 2. 获取用户所有人物
-	characters, err := s.charRepo.ListByUserID(userID)
+	characters, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, errors.New("获取人物列表失败")
+		return nil, err
 	}
 
 	// 3. 获取所有启用的福利
@@ -641,9 +640,9 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 	}
 
 	// 获取用户人物
-	characters, err := s.charRepo.ListByUserID(userID)
+	characters, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, errors.New("获取人物列表失败")
+		return nil, err
 	}
 
 	// 获取该福利的所有申请记录
@@ -679,17 +678,11 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 			return nil, errors.New("按人物模式必须指定人物")
 		}
 		// 验证人物属于用户
-		found := false
-		for _, c := range characters {
-			if c.CharacterID == req.CharacterID {
-				selectedChar = c
-				found = true
-				break
-			}
-		}
-		if !found {
+		ownedCharacter := findCharacterByID(characters, req.CharacterID)
+		if ownedCharacter == nil {
 			return nil, errors.New("该人物不属于您")
 		}
+		selectedChar = *ownedCharacter
 		// 检查人物是否已申请
 		for _, app := range apps {
 			if app.CharacterID == req.CharacterID || strings.TrimSpace(app.CharacterName) == strings.TrimSpace(selectedChar.CharacterName) {
@@ -790,8 +783,7 @@ type AdminApplicationResp struct {
 
 // AdminListApplications 管理端查询福利申请列表
 func (s *WelfareService) AdminListApplications(page, pageSize int, filter repository.WelfareApplicationFilter) ([]AdminApplicationResp, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizeLedgerPageSize(pageSize)
+	normalizeLedgerPageRequest(&page, &pageSize)
 
 	apps, total, err := s.repo.ListApplicationsPaginated(page, pageSize, filter)
 	if err != nil {
@@ -1093,8 +1085,7 @@ func buildMyApplicationResponses(
 
 // ListMyApplications 查询用户的福利申请列表
 func (s *WelfareService) ListMyApplications(userID uint, page, pageSize int, status string) ([]MyApplicationResp, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 10, 100)
+	normalizePageRequest(&page, &pageSize, 10, 100)
 
 	apps, total, err := s.repo.ListApplicationsByUserIDPaginated(userID, page, pageSize, status)
 	if err != nil {

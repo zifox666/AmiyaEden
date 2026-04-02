@@ -4,7 +4,6 @@ import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -89,33 +88,13 @@ func (s *NewbroSettingsService) UpdateSettings(cfg NewbroSettings) (NewbroSettin
 		return NewbroSettings{}, err
 	}
 
-	items := []repository.SysConfigUpsertItem{
-		{
-			Key:   model.SysConfigNewbroMaxCharacterSP,
-			Value: fmt.Sprintf("%d", cfg.MaxCharacterSP),
-			Desc:  "新人资格：单人物技能点阈值",
-		},
-		{
-			Key:   model.SysConfigNewbroMultiCharacterSP,
-			Value: fmt.Sprintf("%d", cfg.MultiCharacterSP),
-			Desc:  "新人资格：多人物技能点阈值",
-		},
-		{
-			Key:   model.SysConfigNewbroMultiCharacterThreshold,
-			Value: fmt.Sprintf("%d", cfg.MultiCharacterThreshold),
-			Desc:  "新人资格：达到多人物阈值的人物数量",
-		},
-		{
-			Key:   model.SysConfigNewbroRefreshIntervalDays,
-			Value: fmt.Sprintf("%d", cfg.RefreshIntervalDays),
-			Desc:  "新人资格快照刷新间隔（天）",
-		},
-		{
-			Key:   model.SysConfigNewbroBonusRate,
-			Value: fmt.Sprintf("%g", cfg.BonusRate),
-			Desc:  "队长奖励比例（百分比）",
-		},
-	}
+	items := newSysConfigBatch(5).
+		AddInt64(model.SysConfigNewbroMaxCharacterSP, cfg.MaxCharacterSP, "新人资格：单人物技能点阈值").
+		AddInt64(model.SysConfigNewbroMultiCharacterSP, cfg.MultiCharacterSP, "新人资格：多人物技能点阈值").
+		AddInt(model.SysConfigNewbroMultiCharacterThreshold, cfg.MultiCharacterThreshold, "新人资格：达到多人物阈值的人物数量").
+		AddInt(model.SysConfigNewbroRefreshIntervalDays, cfg.RefreshIntervalDays, "新人资格快照刷新间隔（天）").
+		AddFloat64(model.SysConfigNewbroBonusRate, cfg.BonusRate, "队长奖励比例（百分比）").
+		Items()
 
 	if err := s.cfgRepo.SetMany(items); err != nil {
 		return NewbroSettings{}, err

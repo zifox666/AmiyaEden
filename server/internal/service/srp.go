@@ -322,8 +322,7 @@ func (s *SrpService) enrichWithFleetInfo(apps []model.SrpApplication) []SrpAppli
 
 // ListApplications 管理员端分页查询申请列表
 func (s *SrpService) ListApplications(page, pageSize int, filter repository.SrpApplicationFilter) ([]SrpApplicationResponse, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizeLedgerPageSize(pageSize)
+	normalizeLedgerPageRequest(&page, &pageSize)
 
 	apps, total, err := s.repo.ListApplications(page, pageSize, filter)
 	if err != nil {
@@ -334,8 +333,7 @@ func (s *SrpService) ListApplications(page, pageSize int, filter repository.SrpA
 
 // ListMyApplications 当前用户申请列表
 func (s *SrpService) ListMyApplications(userID uint, page, pageSize int) ([]SrpApplicationResponse, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 20, 100)
+	normalizePageRequest(&page, &pageSize, 20, 100)
 
 	apps, total, err := s.repo.ListMyApplications(userID, page, pageSize)
 	if err != nil {

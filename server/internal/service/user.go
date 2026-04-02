@@ -54,8 +54,7 @@ func (s *UserService) ValidateCurrentUserBootstrap(user *model.User, characters 
 }
 
 func (s *UserService) ListUsers(page, pageSize int, filter repository.UserFilter) ([]model.UserListItem, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizeLedgerPageSize(pageSize)
+	normalizeLedgerPageRequest(&page, &pageSize)
 	users, total, err := s.repo.List(page, pageSize, filter)
 	if err != nil {
 		return nil, 0, err

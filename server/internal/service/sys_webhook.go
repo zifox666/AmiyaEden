@@ -27,8 +27,14 @@ type WebhookConfig struct {
 
 // WebhookService Webhook 业务逻辑层
 type WebhookService struct {
-	repo *repository.SysConfigRepository
+	repo webhookConfigStore
 	http *http.Client
+}
+
+type webhookConfigStore interface {
+	Get(key, defaultVal string) (string, error)
+	GetBool(key string, defaultVal bool) bool
+	SetMany(items []repository.SysConfigUpsertItem) error
 }
 
 func NewWebhookService() *WebhookService {
@@ -61,22 +67,16 @@ func (s *WebhookService) GetConfig() (*WebhookConfig, error) {
 
 // SetConfig 保存 Webhook 配置
 func (s *WebhookService) SetConfig(cfg *WebhookConfig) error {
-	type kv struct{ k, v, d string }
-	entries := []kv{
-		{model.SysConfigWebhookURL, cfg.URL, "Webhook URL"},
-		{model.SysConfigWebhookEnabled, fmt.Sprintf("%v", cfg.Enabled), "Webhook 是否启用"},
-		{model.SysConfigWebhookType, cfg.Type, "Webhook 类型 (discord/feishu/dingtalk/onebot)"},
-		{model.SysConfigWebhookFleetTemplate, cfg.FleetTemplate, "舰队行动通知模板"},
-		{model.SysConfigWebhookOBTargetType, cfg.OBTargetType, "OneBot 目标类型 (group/private)"},
-		{model.SysConfigWebhookOBTargetID, fmt.Sprintf("%d", cfg.OBTargetID), "OneBot 目标 ID"},
-		{model.SysConfigWebhookOBToken, cfg.OBToken, "OneBot Access Token"},
-	}
-	for _, e := range entries {
-		if err := s.repo.Set(e.k, e.v, e.d); err != nil {
-			return err
-		}
-	}
-	return nil
+	items := newSysConfigBatch(7).
+		AddString(model.SysConfigWebhookURL, cfg.URL, "Webhook URL").
+		AddBool(model.SysConfigWebhookEnabled, cfg.Enabled, "Webhook 是否启用").
+		AddString(model.SysConfigWebhookType, cfg.Type, "Webhook 类型 (discord/feishu/dingtalk/onebot)").
+		AddString(model.SysConfigWebhookFleetTemplate, cfg.FleetTemplate, "舰队行动通知模板").
+		AddString(model.SysConfigWebhookOBTargetType, cfg.OBTargetType, "OneBot 目标类型 (group/private)").
+		AddInt64(model.SysConfigWebhookOBTargetID, cfg.OBTargetID, "OneBot 目标 ID").
+		AddString(model.SysConfigWebhookOBToken, cfg.OBToken, "OneBot Access Token").
+		Items()
+	return s.repo.SetMany(items)
 }
 
 // SendFleetPing 发送舰队行动 Ping（若未启用则静默忽略）

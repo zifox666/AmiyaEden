@@ -363,8 +363,7 @@ func normalizeMentorStatuses(status string) []string {
 }
 
 func (s *MentorService) ListMyMentees(mentorUserID uint, status string, page, pageSize int) ([]MentorMenteeListItem, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 20, 100)
+	normalizePageRequest(&page, &pageSize, 20, 100)
 	rows, total, err := s.relRepo.ListByMentorUserID(mentorUserID, normalizeMentorStatuses(status), page, pageSize)
 	if err != nil {
 		return nil, 0, err
@@ -399,8 +398,7 @@ func (s *MentorService) AdminRevokeRelationship(adminUserID, relationshipID uint
 }
 
 func (s *MentorService) AdminListAllRelationships(status, keyword string, page, pageSize int) ([]MentorRelationshipView, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 20, 200)
+	normalizePageRequest(&page, &pageSize, 20, 200)
 	rows, total, err := s.relRepo.ListAllPaged(repository.MentorRelationshipAdminFilter{Status: status, Keyword: keyword}, page, pageSize)
 	if err != nil {
 		return nil, 0, err

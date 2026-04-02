@@ -39,9 +39,9 @@ type NotificationSummary struct {
 // ListNotifications 获取当前用户所有人物的通知列表
 func (s *NotificationService) ListNotifications(userID uint, req *ListNotificationsRequest) (*NotificationSummary, error) {
 	// 1. 获取用户绑定的所有人物
-	chars, err := s.charRepo.ListByUserID(userID)
+	chars, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, errors.New("获取人物列表失败")
+		return nil, err
 	}
 	if len(chars) == 0 {
 		return &NotificationSummary{
@@ -58,8 +58,8 @@ func (s *NotificationService) ListNotifications(userID uint, req *ListNotificati
 	}
 
 	// 2. 构建筛选条件
-	page := normalizePage(req.Page)
-	pageSize := normalizePageSize(req.PageSize, 20, 100)
+	page, pageSize := req.Page, req.PageSize
+	normalizePageRequest(&page, &pageSize, 20, 100)
 
 	filter := repository.NotificationFilter{
 		CharacterIDs: charIDs,
@@ -87,9 +87,9 @@ func (s *NotificationService) ListNotifications(userID uint, req *ListNotificati
 
 // GetUnreadCount 获取当前用户所有人物的未读通知数量
 func (s *NotificationService) GetUnreadCount(userID uint) (int64, error) {
-	chars, err := s.charRepo.ListByUserID(userID)
+	chars, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return 0, errors.New("获取人物列表失败")
+		return 0, err
 	}
 	if len(chars) == 0 {
 		return 0, nil
@@ -118,9 +118,9 @@ func (s *NotificationService) MarkAsRead(req *MarkAsReadRequest) error {
 
 // MarkAllAsRead 将当前用户所有人物的通知标记为已读
 func (s *NotificationService) MarkAllAsRead(userID uint) error {
-	chars, err := s.charRepo.ListByUserID(userID)
+	chars, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return errors.New("获取人物列表失败")
+		return err
 	}
 	if len(chars) == 0 {
 		return nil

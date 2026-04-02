@@ -1,10 +1,6 @@
 package service
 
-import (
-	"errors"
-
-	"amiya-eden/internal/repository"
-)
+import "amiya-eden/internal/repository"
 
 // EveInfoService EVE 人物信息业务逻辑层
 type EveInfoService struct {
@@ -105,24 +101,10 @@ type InfoSkillResponse struct {
 //  业务方法
 // ─────────────────────────────────────────────
 
-// validateCharacterOwnership 校验人物归属
-func (s *EveInfoService) validateCharacterOwnership(userID uint, characterID int64) error {
-	chars, err := s.charRepo.ListByUserID(userID)
-	if err != nil {
-		return errors.New("获取人物列表失败")
-	}
-	for _, c := range chars {
-		if c.CharacterID == characterID {
-			return nil
-		}
-	}
-	return errors.New("该人物不属于当前用户")
-}
-
 // GetWalletJournal 获取指定人物的钱包流水
 func (s *EveInfoService) GetWalletJournal(userID uint, req *InfoWalletRequest) (*InfoWalletResponse, error) {
 	// 校验人物归属
-	if err := s.validateCharacterOwnership(userID, req.CharacterID); err != nil {
+	if err := requireOwnedCharacter(s.charRepo, userID, req.CharacterID); err != nil {
 		return nil, err
 	}
 
@@ -183,7 +165,7 @@ func (s *EveInfoService) GetWalletJournal(userID uint, req *InfoWalletRequest) (
 // 返回 SDE 中 categoryID=16 的全量技能，已注射的附有等级数据，未注射的 learned=false
 func (s *EveInfoService) GetCharacterSkills(userID uint, req *InfoSkillRequest) (*InfoSkillResponse, error) {
 	// 校验人物归属
-	if err := s.validateCharacterOwnership(userID, req.CharacterID); err != nil {
+	if err := requireOwnedCharacter(s.charRepo, userID, req.CharacterID); err != nil {
 		return nil, err
 	}
 
@@ -364,7 +346,7 @@ type InfoShipResponse struct {
 // GetCharacterShips 获取人物可用舰船列表
 func (s *EveInfoService) GetCharacterShips(userID uint, req *InfoShipRequest) (*InfoShipResponse, error) {
 	// 校验人物归属
-	if err := s.validateCharacterOwnership(userID, req.CharacterID); err != nil {
+	if err := requireOwnedCharacter(s.charRepo, userID, req.CharacterID); err != nil {
 		return nil, err
 	}
 

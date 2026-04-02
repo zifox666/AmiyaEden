@@ -330,8 +330,7 @@ func (s *AlliancePAPService) GetAllPAP(year, month int) ([]model.AlliancePAPSumm
 // GetAllPAPPaged 分页获取所有成员某月联盟 PAP 汇总（管理员）
 // corporationIDs 非空时只返回这些军团的数据
 func (s *AlliancePAPService) GetAllPAPPaged(year, month, page, pageSize int, corporationIDs []int64) ([]model.AlliancePAPSummary, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizeLedgerPageSize(pageSize)
+	normalizeLedgerPageRequest(&page, &pageSize)
 
 	return s.repo.ListAllSummariesPaged(year, month, page, pageSize, corporationIDs)
 }

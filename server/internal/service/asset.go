@@ -87,9 +87,9 @@ func (s *AssetService) GetUserAssets(userID uint, req *InfoAssetsRequest) (*Info
 	}
 
 	// 1. 获取用户的所有人物
-	chars, err := s.charRepo.ListByUserID(userID)
+	chars, err := listOwnedCharacters(s.charRepo, userID)
 	if err != nil {
-		return nil, errors.New("获取人物列表失败")
+		return nil, err
 	}
 	if len(chars) == 0 {
 		return &InfoAssetsResponse{Locations: []AssetLocationNode{}}, nil

@@ -164,8 +164,7 @@ func (s *FleetConfigService) GetFleetConfig(id uint) (*FleetConfigResp, error) {
 
 // ListFleetConfigs 分页查询舰队配置列表
 func (s *FleetConfigService) ListFleetConfigs(page, pageSize int) ([]FleetConfigResp, int64, error) {
-	page = normalizePage(page)
-	pageSize = normalizePageSize(pageSize, 20, 100)
+	normalizePageRequest(&page, &pageSize, 20, 100)
 
 	configs, total, err := s.repo.List(page, pageSize)
 	if err != nil {
