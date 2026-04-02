@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-04-02
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/eve_info.go
@@ -39,6 +39,7 @@ source_of_truth:
 - `static/src/views/info/contracts`
 - `static/src/views/info/fittings`
 - `static/src/views/info/npc-kills`
+- `static/src/views/dashboard/npc-kills`
 
 ### 后端路由
 
@@ -58,7 +59,8 @@ source_of_truth:
 ## 权限边界
 
 - 用户侧信息查询要求 `Login`，`guest` 不可访问
-- 公司级 NPC 刷怪报表属于 `/system` 管理能力，要求 `admin`
+- 公司级 NPC 刷怪报表页面位于 `/dashboard/npc-kills`，仅 `admin` 或 `super_admin` 可见
+- 公司级 NPC 刷怪报表接口仍为 `/api/v1/system/npc-kills`
 
 ## 关键不变量
 

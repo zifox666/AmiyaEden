@@ -9,9 +9,12 @@ import (
 )
 
 var (
-	srpManageRoles       = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
-	srpPayoutRoles       = []string{model.RoleSRP, model.RoleAdmin}
-	skillPlanManageRoles = []string{model.RoleAdmin, model.RoleSeniorFC}
+	srpManageRoles               = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
+	srpPayoutRoles               = []string{model.RoleSRP, model.RoleAdmin}
+	skillPlanManageRoles         = []string{model.RoleAdmin, model.RoleSeniorFC}
+	autoRoleManageRoles          = []string{model.RoleSuperAdmin}
+	systemBasicConfigManageRoles = []string{model.RoleSuperAdmin}
+	systemWebhookManageRoles     = []string{model.RoleSuperAdmin}
 )
 
 // RegisterRoutes 注册所有业务路由
@@ -297,17 +300,19 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// 系统基础配置
 	sysConfigH := handler.NewSysConfigHandler()
-	admin.GET("/basic-config", sysConfigH.GetBasicConfig)
+	adminConfig := admin.Group("", middleware.RequireRole(systemBasicConfigManageRoles...))
+	adminBasicConfig := adminConfig.Group("/basic-config")
+	adminBasicConfig.GET("", sysConfigH.GetBasicConfig)
 
 	// SDE 配置管理
-	admin.GET("/sde-config", sysConfigH.GetSDEConfig)
-	admin.PUT("/sde-config", sysConfigH.UpdateSDEConfig)
+	adminConfig.GET("/sde-config", sysConfigH.GetSDEConfig)
+	adminConfig.PUT("/sde-config", sysConfigH.UpdateSDEConfig)
 
 	// 允许访问的军团列表
-	admin.GET("/basic-config/allow-corporations", sysConfigH.GetAllowCorporations)
-	admin.PUT("/basic-config/allow-corporations", sysConfigH.UpdateAllowCorporations)
-	admin.GET("/basic-config/character-esi-restriction", sysConfigH.GetCharacterESIRestrictionConfig)
-	admin.PUT("/basic-config/character-esi-restriction", middleware.RequireRole(model.RoleSuperAdmin), sysConfigH.UpdateCharacterESIRestrictionConfig)
+	adminBasicConfig.GET("/allow-corporations", sysConfigH.GetAllowCorporations)
+	adminBasicConfig.PUT("/allow-corporations", sysConfigH.UpdateAllowCorporations)
+	adminBasicConfig.GET("/character-esi-restriction", sysConfigH.GetCharacterESIRestrictionConfig)
+	adminBasicConfig.PUT("/character-esi-restriction", sysConfigH.UpdateCharacterESIRestrictionConfig)
 
 	// NPC 刷怪报表（管理员 — 公司级）
 	admin.POST("/npc-kills", npcKillH.GetCorpNpcKills)
@@ -435,7 +440,20 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// 自动权限映射管理（管理员）
 	autoRoleH := handler.NewAutoRoleHandler()
-	adminAutoRole := admin.Group("/auto-role")
+	registerAdminAutoRoleRoutes(admin, autoRoleH)
+
+	// Webhook 配置（仅 super_admin）
+	webhookH := handler.NewWebhookHandler()
+	adminWebhook := admin.Group("/webhook", middleware.RequireRole(systemWebhookManageRoles...))
+	{
+		adminWebhook.GET("/config", webhookH.GetConfig)
+		adminWebhook.PUT("/config", webhookH.SetConfig)
+		adminWebhook.POST("/test", webhookH.TestWebhook)
+	}
+}
+
+func registerAdminAutoRoleRoutes(admin *gin.RouterGroup, autoRoleH *handler.AutoRoleHandler) {
+	adminAutoRole := admin.Group("/auto-role", middleware.RequireRole(autoRoleManageRoles...))
 	{
 		// ESI 军团职权映射
 		adminAutoRole.GET("/esi-roles", autoRoleH.GetAllEsiRoles)
@@ -451,14 +469,5 @@ func RegisterRoutes(r *gin.Engine) {
 
 		// 手动触发同步
 		adminAutoRole.POST("/sync", autoRoleH.TriggerSync)
-	}
-
-	// Webhook 配置（管理员）
-	webhookH := handler.NewWebhookHandler()
-	adminWebhook := admin.Group("/webhook")
-	{
-		adminWebhook.GET("/config", webhookH.GetConfig)
-		adminWebhook.PUT("/config", webhookH.SetConfig)
-		adminWebhook.POST("/test", webhookH.TestWebhook)
 	}
 }

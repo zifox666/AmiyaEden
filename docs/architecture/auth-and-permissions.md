@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-31
+last_reviewed: 2026-04-02
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/middleware/auth.go
@@ -101,6 +101,11 @@ source_of_truth:
 | **admin** | ✗ | ✗ | ✅ |
 | **其他所有职权** | ✗ | ✗ | ✗ |
 
+补充规则：
+
+- `PUT /api/v1/system/user/:id` 仅允许维护昵称与状态；`QQ` / `Discord ID` 只能由用户本人通过 `/api/v1/me` 维护
+- 删除已登记 `QQ` 或 `Discord ID` 的用户属于更高敏感度操作；`DELETE /api/v1/system/user/:id` 仅 `super_admin` 可执行
+
 ## JWT 中间件行为
 
 `JWTAuth()` 当前会：
@@ -196,7 +201,7 @@ source_of_truth:
 - 授予时机：首次 SSO 登录创建用户时，若主人物 ID 在配置列表中则直接授予
 - 同步时机：每次 SSO 登录时，`SyncConfigSuperAdmins` 检查用户所有绑定人物 ID，任一命中配置则授予，全部未命中则移除
 - API 拦截：`SetUserRoles` 对 `super_admin` 职权做静默剥离处理；非 `super_admin` 操作者提交包含 `super_admin` 的请求会被拒绝；`super_admin` 操作者的请求中 `super_admin` 被静默剥离，目标用户已有的 `super_admin` 职权自动保留
-- 删除保护：`DeleteUser` 拒绝删除拥有 `super_admin` 职权的用户
+- 删除保护：`DeleteUser` 拒绝删除拥有 `super_admin` 职权的用户，且已登记联系方式的用户仅 `super_admin` 可删除
 - 前端禁用：职权分配对话框中 `super_admin` 复选框始终 disabled
 - ESI 自动映射：自动权限映射逻辑已排除 `super_admin`，不会被 ESI corp role / title 触发
 
@@ -205,6 +210,7 @@ source_of_truth:
 The following are not restated from the body above — they are additional constraints or easily missed boundaries:
 
 - 管理员用户列表 `/api/v1/system/user` 的职权展示与接口契约当前只认 `roles[]`，不应再依赖历史单值 `role`
+- `/system/basic-config` 页面及 `/api/v1/system/basic-config*`、`/api/v1/system/sde-config` 接口是 `system` 模块中的显式例外，只允许 `super_admin`
 - 细粒度权限不能只靠前端控制
 - 职权编码以代码常量为准，不以文档中文称呼为准
 

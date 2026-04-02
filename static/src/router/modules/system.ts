@@ -92,23 +92,13 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
-      path: 'npc-kills',
-      name: 'CorpNpcKillReport',
-      component: '/system/npc-kills',
-      meta: {
-        title: 'menus.system.npcKills',
-        keepAlive: true,
-        roles: ['super_admin', 'admin']
-      }
-    },
-    {
       path: 'auto-role',
       name: 'AutoRole',
       component: '/system/auto-role',
       meta: {
         title: 'menus.system.autoRole',
         keepAlive: true,
-        roles: ['super_admin', 'admin']
+        roles: ['super_admin']
       }
     },
     {
@@ -129,7 +119,7 @@ export const systemRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.system.webhook',
         keepAlive: true,
-        roles: ['super_admin', 'admin']
+        roles: ['super_admin']
       }
     },
     {
@@ -139,7 +129,7 @@ export const systemRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.system.basicConfig',
         keepAlive: true,
-        roles: ['super_admin', 'admin']
+        roles: ['super_admin']
       }
     }
   ]

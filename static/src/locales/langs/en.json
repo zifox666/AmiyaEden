@@ -210,7 +210,8 @@
     },
     "dashboard": {
       "title": "Dashboard",
-      "console": "Console"
+      "console": "Console",
+      "npcKills": "NPC Kill Report"
     },
     "exception": {
       "title": "Exception",

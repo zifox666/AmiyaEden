@@ -246,18 +246,18 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/system/basic-config` | 获取固定系统标识（军团 ID / 网站标题） | `RequireRole(admin)` |
-| GET | `/system/basic-config/allow-corporations` | 获取允许军团列表 | `RequireRole(admin)` |
-| PUT | `/system/basic-config/allow-corporations` | 更新允许军团列表 | `RequireRole(admin)` |
-| GET | `/system/basic-config/character-esi-restriction` | 获取任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(admin)` |
-| PUT | `/system/basic-config/character-esi-restriction` | 更新任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(admin)` + `super_admin` |
+| GET | `/system/basic-config` | 获取固定系统标识（军团 ID / 网站标题） | `RequireRole(super_admin)` |
+| GET | `/system/basic-config/allow-corporations` | 获取允许军团列表 | `RequireRole(super_admin)` |
+| PUT | `/system/basic-config/allow-corporations` | 更新允许军团列表 | `RequireRole(super_admin)` |
+| GET | `/system/basic-config/character-esi-restriction` | 获取任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(super_admin)` |
+| PUT | `/system/basic-config/character-esi-restriction` | 更新任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(super_admin)` |
 
 ### SDE Config
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/system/sde-config` | 获取 SDE 配置 | `RequireRole(admin)` |
-| PUT | `/system/sde-config` | 更新 SDE 配置 | `RequireRole(admin)` |
+| GET | `/system/sde-config` | 获取 SDE 配置 | `RequireRole(super_admin)` |
+| PUT | `/system/sde-config` | 更新 SDE 配置 | `RequireRole(super_admin)` |
 
 ### NPC Kills / Alliance PAP
 
@@ -296,8 +296,8 @@ source_of_truth:
 | GET | `/system/role/definitions` | 系统职权定义列表（只读） | `RequireRole(admin)` |
 | GET | `/system/user` | 用户列表；默认按 `last_login_at` 倒序，关键字支持昵称 / QQ / 已绑定人物名；职权字段仅返回有序 `roles[]`，不再返回历史单值 `role`，并附带已绑定人物与每个人物的 `total_sp`、`token_invalid` 快照 | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
-| PUT | `/system/user/:id` | 更新用户昵称 / QQ / Discord ID / 状态；`admin` 不可编辑其他 `admin` | `RequireRole(admin)` |
-| DELETE | `/system/user/:id` | 删除用户；`super_admin` 用户不可删除；`admin` 不可删除其他 `admin` | `RequireRole(admin)` |
+| PUT | `/system/user/:id` | 更新用户昵称 / 状态；不允许通过该接口修改 QQ / Discord ID，`admin` 也不可编辑其他 `admin` | `RequireRole(admin)` |
+| DELETE | `/system/user/:id` | 删除用户；`super_admin` 用户不可删除；`admin` 不可删除其他 `admin`，且已登记 QQ / Discord ID 的用户仅 `super_admin` 可删除 | `RequireRole(admin)` |
 | GET | `/system/user/:id/roles` | 获取用户职权 | `RequireRole(admin)` |
 | PUT | `/system/user/:id/roles` | 设置用户职权；`super_admin` 职权不可通过 API 分配或修改（仅通过配置文件管理）；仅 `super_admin` 可分配 `admin` | `RequireRole(admin)` |
 | POST | `/system/user/:id/impersonate` | 模拟登录，需 `super_admin`；若目标用户主人物 ESI 已失效则拒绝签发 token | `RequireRole(admin)` + `super_admin` |
@@ -356,15 +356,15 @@ source_of_truth:
 
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
-| GET | `/system/auto-role/esi-roles` | ESI corp roles 列表 | `RequireRole(admin)` |
-| GET | `/system/auto-role/esi-role-mappings` | ESI role 映射列表 | `RequireRole(admin)` |
-| POST | `/system/auto-role/esi-role-mappings` | 新增 ESI role 映射 | `RequireRole(admin)` |
-| DELETE | `/system/auto-role/esi-role-mappings/:id` | 删除 ESI role 映射 | `RequireRole(admin)` |
-| GET | `/system/auto-role/corp-titles` | Corp titles 列表（含军团名称） | `RequireRole(admin)` |
-| GET | `/system/auto-role/esi-title-mappings` | Title 映射列表 | `RequireRole(admin)` |
-| POST | `/system/auto-role/esi-title-mappings` | 新增 title 映射 | `RequireRole(admin)` |
-| DELETE | `/system/auto-role/esi-title-mappings/:id` | 删除 title 映射 | `RequireRole(admin)` |
-| POST | `/system/auto-role/sync` | 手动触发同步 | `RequireRole(admin)` |
-| GET | `/system/webhook/config` | 获取 Webhook 配置 | `RequireRole(admin)` |
-| PUT | `/system/webhook/config` | 保存 Webhook 配置 | `RequireRole(admin)` |
-| POST | `/system/webhook/test` | 测试 Webhook | `RequireRole(admin)` |
+| GET | `/system/auto-role/esi-roles` | ESI corp roles 列表 | `RequireRole(super_admin)` |
+| GET | `/system/auto-role/esi-role-mappings` | ESI role 映射列表 | `RequireRole(super_admin)` |
+| POST | `/system/auto-role/esi-role-mappings` | 新增 ESI role 映射 | `RequireRole(super_admin)` |
+| DELETE | `/system/auto-role/esi-role-mappings/:id` | 删除 ESI role 映射 | `RequireRole(super_admin)` |
+| GET | `/system/auto-role/corp-titles` | Corp titles 列表（含军团名称） | `RequireRole(super_admin)` |
+| GET | `/system/auto-role/esi-title-mappings` | Title 映射列表 | `RequireRole(super_admin)` |
+| POST | `/system/auto-role/esi-title-mappings` | 新增 title 映射 | `RequireRole(super_admin)` |
+| DELETE | `/system/auto-role/esi-title-mappings/:id` | 删除 title 映射 | `RequireRole(super_admin)` |
+| POST | `/system/auto-role/sync` | 手动触发同步 | `RequireRole(super_admin)` |
+| GET | `/system/webhook/config` | 获取 Webhook 配置 | `RequireRole(super_admin)` |
+| PUT | `/system/webhook/config` | 保存 Webhook 配置 | `RequireRole(super_admin)` |
+| POST | `/system/webhook/test` | 测试 Webhook | `RequireRole(super_admin)` |

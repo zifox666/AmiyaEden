@@ -68,6 +68,7 @@ source_of_truth:
 - `/api/v1/me` 是前端启动权限上下文的关键接口
 - `/api/v1/me` 不是"非 guest 才可访问"的业务接口，而是登录后立即可用的自助上下文接口
 - 当前登录后必须完成昵称与联系方式资料，才允许继续访问其他业务页面
+- QQ / Discord ID 的管理入口是 `/api/v1/me`；管理员侧 `/api/v1/system/user/:id` 不提供联系方式修改
 - 当前登录后若系统配置 `auth.enforce_character_esi_restriction = true`，则还必须保证所有已绑定人物的 ESI 有效，才允许离开 `/dashboard/characters`
 - 无论系统配置是否开启，主人物 ESI 已失效都会阻止 `/api/v1/me` 完成登录启动
 - 重新绑定已存在人物会沿用当前 SSO 回调流程刷新该人物 token 并清除 `token_invalid`

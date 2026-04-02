@@ -210,7 +210,8 @@
     },
     "dashboard": {
       "title": "仪表盘",
-      "console": "工作台"
+      "console": "工作台",
+      "npcKills": "刷怪报表"
     },
     "exception": {
       "title": "异常页面",

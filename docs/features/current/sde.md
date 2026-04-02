@@ -20,7 +20,7 @@ source_of_truth:
 - 批量查询 type 信息
 - 批量查询 ID 到名称映射
 - 模糊搜索物品 / 成员名称
-- 管理员可通过系统设置页面配置 SDE 参数
+- `super_admin` 可通过系统设置页面配置 SDE 参数
 - 为 EVE 信息、舰队配置、SRP、自动 SRP 等模块提供名称与静态数据支撑
 - **当前已禁用启动时与 cron 自动导入**，仅保留手动触发所需的配置与服务能力
 
@@ -34,7 +34,7 @@ source_of_truth:
 
 前端封装位于 `static/src/api/sde.ts`。
 
-### SDE 配置管理（管理员权限）
+### SDE 配置管理（super_admin 权限）
 - `GET /api/v1/system/sde-config`
 - `PUT /api/v1/system/sde-config`
 
@@ -58,7 +58,7 @@ source_of_truth:
 ## 权限边界
 
 - **SDE 查询接口**：公开访问，无需鉴权
-- **SDE 配置管理**：需要 `admin` 职权（`middleware.RequireRole(model.RoleAdmin)`）
+- **SDE 配置管理**：需要 `super_admin` 职权
 - 语言优先级由 body / header / cookie 决定，最终默认 `en`
 
 ## 验证

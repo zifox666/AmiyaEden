@@ -27,6 +27,16 @@ export const dashboardRoutes: AppRouteRecord = {
         title: 'menus.characters.title',
         keepAlive: true
       }
+    },
+    {
+      path: 'npc-kills',
+      name: 'CorpNpcKillReport',
+      component: '/dashboard/npc-kills',
+      meta: {
+        title: 'menus.dashboard.npcKills',
+        keepAlive: true,
+        roles: ['super_admin', 'admin']
+      }
     }
   ]
 }

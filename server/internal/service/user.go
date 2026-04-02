@@ -75,6 +75,9 @@ func (s *UserService) UpdateUserByAdmin(id uint, operatorRoles []string, patch U
 	if err := validateManageUserPermission(operatorRoles, targetRoles); err != nil {
 		return err
 	}
+	if err := validateAdminContactEditPermission(patch); err != nil {
+		return err
+	}
 	next, updates, err := buildUserPatchUpdates(current, patch, false)
 	if err != nil {
 		return err
@@ -106,7 +109,8 @@ func (s *UserService) UpdateCurrentProfile(id uint, patch UserPatch) (*model.Use
 }
 
 func (s *UserService) DeleteUser(id uint, operatorRoles []string) error {
-	if _, err := s.repo.GetByID(id); err != nil {
+	user, err := s.repo.GetByID(id)
+	if err != nil {
 		return errors.New("用户不存在")
 	}
 	targetRoles, err := s.roleRepo.GetUserRoleCodes(id)
@@ -117,6 +121,9 @@ func (s *UserService) DeleteUser(id uint, operatorRoles []string) error {
 		return errors.New("超级管理员仅通过配置文件管理，不可删除")
 	}
 	if err := validateManageUserPermission(operatorRoles, targetRoles); err != nil {
+		return err
+	}
+	if err := validateDeleteUserPermission(user, operatorRoles); err != nil {
 		return err
 	}
 	return s.repo.Delete(id)
@@ -227,6 +234,23 @@ func buildUserPatchUpdates(current *model.User, patch UserPatch, requireComplete
 func validateContactOwner(currentUserID uint, owner *model.User, label string) error {
 	if owner != nil && owner.ID != currentUserID {
 		return errors.New("该" + label + "已被其他用户使用")
+	}
+	return nil
+}
+
+func validateAdminContactEditPermission(patch UserPatch) error {
+	if patch.QQ != nil || patch.DiscordID != nil {
+		return errors.New("系统用户管理不可修改 QQ 或 Discord ID，请用户自行维护")
+	}
+	return nil
+}
+
+func validateDeleteUserPermission(user *model.User, operatorRoles []string) error {
+	if user == nil || model.IsSuperAdmin(operatorRoles) {
+		return nil
+	}
+	if user.HasRequiredContact() {
+		return errors.New("已登记联系方式的用户仅超级管理员可删除")
 	}
 	return nil
 }

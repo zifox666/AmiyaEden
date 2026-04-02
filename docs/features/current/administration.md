@@ -27,7 +27,8 @@ source_of_truth:
 - 固定系统标识读取
 - 系统职权定义只读查询
 - 用户管理、用户职权分配
-- 管理员可维护用户昵称、QQ、Discord ID 与状态
+- 管理员可维护用户昵称与状态
+- 用户 QQ / Discord ID 在管理端只读展示，仍由用户本人通过 `/api/v1/me` 维护
 - 用户管理列表默认按最后登录时间倒序，并支持按昵称、QQ、任意已绑定人物名搜索
 - 用户管理列表可展开每个用户行，查看该用户全部已绑定人物的头像、人物 ID、人物名、ESI 状态与人物总技能点
 - `super_admin` 可在 `/system/user` 切换“已失效人物 ESI 限制”，决定是否强制用户在任一已绑定人物 ESI 失效时停留在人物管理页
@@ -51,6 +52,7 @@ source_of_truth:
 ### 后端路由
 
 - `/api/v1/system/basic-config`
+- `/api/v1/system/sde-config`
 - `/api/v1/system/basic-config/allow-corporations`
 - `/api/v1/system/basic-config/character-esi-restriction`
 - `/api/v1/system/role/definitions`
@@ -63,9 +65,10 @@ source_of_truth:
 ## 权限边界
 
 - `/system/*` 默认要求 `admin`
-- `/system/basic-config/character-esi-restriction` 仅 `super_admin` 可写，`admin` 可读
+- `/system/basic-config` 页面及 `/api/v1/system/basic-config*`、`/api/v1/system/sde-config` 接口仅 `super_admin` 可见且可用
 - `/system/user/:id/impersonate` 额外要求 `super_admin`
 - `/system/user/:id/impersonate` 在目标用户主人物 ESI 已失效时拒绝签发模拟登录 token
+- `/system/user/:id` 删除用户时，若目标用户已登记 QQ 或 Discord ID，则仅 `super_admin` 可执行
 - `GET /system/role/definitions` 仅用于前端加载系统职权定义，属于只读数据源
 - `GET /system/basic-config` 仅返回固定系统标识，不提供写接口
 
