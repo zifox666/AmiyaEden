@@ -218,6 +218,10 @@ func NewMentorRewardDistributionRepository() *MentorRewardDistributionRepository
 	return &MentorRewardDistributionRepository{}
 }
 
+type MentorRewardDistributionAdminFilter struct {
+	Keyword string
+}
+
 func (r *MentorRewardDistributionRepository) Create(row *model.MentorRewardDistribution) error {
 	return global.DB.Create(row).Error
 }
@@ -232,6 +236,62 @@ func (r *MentorRewardDistributionRepository) ExistsByRelationshipAndStageOrder(r
 		Where("relationship_id = ? AND stage_order = ?", relationshipID, stageOrder).
 		Count(&count).Error
 	return count > 0, err
+}
+
+func buildMentorRewardDistributionAdminListQuery(db *gorm.DB, filter MentorRewardDistributionAdminFilter) *gorm.DB {
+	query := db.Model(&model.MentorRewardDistribution{})
+	return applyKeywordLikeFilter(
+		query,
+		filter.Keyword,
+		`LOWER(mentor_reward_distribution.mentor_nickname) LIKE ?`,
+		`LOWER(mentor_reward_distribution.mentor_character_name) LIKE ?`,
+	)
+}
+
+func (r *MentorRewardDistributionRepository) ListAdminPaged(
+	filter MentorRewardDistributionAdminFilter,
+	page int,
+	pageSize int,
+) ([]model.MentorRewardDistribution, int64, error) {
+	var rows []model.MentorRewardDistribution
+	var total int64
+	offset := (page - 1) * pageSize
+	query := buildMentorRewardDistributionAdminListQuery(global.DB, filter)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	err := query.
+		Order("mentor_reward_distribution.distributed_at DESC").
+		Order("mentor_reward_distribution.id DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&rows).Error
+	return rows, total, err
+}
+
+func (r *MentorRewardDistributionRepository) ListMissingSnapshots() ([]model.MentorRewardDistribution, error) {
+	var rows []model.MentorRewardDistribution
+	err := global.DB.
+		Where(`mentor_character_name = '' OR mentor_nickname = '' OR mentee_character_name = '' OR mentee_nickname = ''`).
+		Find(&rows).Error
+	return rows, err
+}
+
+func (r *MentorRewardDistributionRepository) UpdateSnapshots(
+	id uint,
+	mentorCharacterName string,
+	mentorNickname string,
+	menteeCharacterName string,
+	menteeNickname string,
+) error {
+	return global.DB.Model(&model.MentorRewardDistribution{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"mentor_character_name": mentorCharacterName,
+			"mentor_nickname":       mentorNickname,
+			"mentee_character_name": menteeCharacterName,
+			"mentee_nickname":       menteeNickname,
+		}).Error
 }
 
 func (r *MentorRewardDistributionRepository) ExistsByRelationshipAndStageOrderTx(tx *gorm.DB, relationshipID uint, stageOrder int) (bool, error) {

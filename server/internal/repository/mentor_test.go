@@ -107,3 +107,26 @@ func TestListDistributedRewardAmountsByRelationshipIDsQuerySumsRewardAmount(t *t
 		t.Fatalf("expected grouping by relationship_id, got SQL: %s", sql)
 	}
 }
+
+func TestBuildMentorRewardDistributionAdminListQueryFiltersByMentorCharacterOrNickname(t *testing.T) {
+	db := newDryRunPostgresDB(t)
+
+	filter := MentorRewardDistributionAdminFilter{Keyword: "Aura"}
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return buildMentorRewardDistributionAdminListQuery(tx, filter).
+			Find(&[]model.MentorRewardDistribution{})
+	})
+
+	if !strings.Contains(sql, `FROM "mentor_reward_distribution"`) {
+		t.Fatalf("expected mentor reward distribution table, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LOWER(mentor_reward_distribution.mentor_nickname) LIKE '%aura%'`) {
+		t.Fatalf("expected mentor reward distribution query to filter mentor nickname, got SQL: %s", sql)
+	}
+	if !strings.Contains(sql, `LOWER(mentor_reward_distribution.mentor_character_name) LIKE '%aura%'`) {
+		t.Fatalf("expected mentor reward distribution query to filter mentor character name, got SQL: %s", sql)
+	}
+	if strings.Contains(sql, `LEFT JOIN "user" AS mentor_user`) || strings.Contains(sql, `LEFT JOIN eve_character AS mentor_character`) {
+		t.Fatalf("expected mentor reward distribution query to read immutable snapshot fields, got SQL: %s", sql)
+	}
+}

@@ -366,6 +366,7 @@ func RegisterRoutes(r *gin.Engine) {
 	adminMentor := admin.Group("/mentor")
 	{
 		adminMentor.GET("/relationships", mentorAdminH.ListAllRelationships)
+		adminMentor.GET("/reward-distributions", mentorAdminH.ListRewardDistributions)
 		adminMentor.POST("/revoke", mentorAdminH.RevokeRelationship)
 		adminMentor.GET("/settings", mentorAdminH.GetSettings)
 		adminMentor.PUT("/settings", mentorAdminH.UpdateSettings)

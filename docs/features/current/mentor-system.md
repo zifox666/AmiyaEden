@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-01
+last_reviewed: 2026-04-02
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/mentor_service.go
@@ -34,6 +34,7 @@ source_of_truth:
 - 导师可在 `我是导师` 页面查看当前生效的只读 `导师奖励阶段` 配置，便于理解学员奖励进度
 - 当导师存在待处理学员申请时，`新人帮扶` 一级菜单与 `我是导师` 菜单会显示相同的待处理数量徽标
 - 管理员可在 `导师管理` 页面查看全部导师关系；对 `pending` 状态可取消学员申请，对 `active` 状态可撤销导师关系
+- 管理员可在 `导师管理` 页面查看导师奖励发放记录，按 ledger 方式分页展示，并支持按导师人物名或昵称搜索
 - 管理员可在 `导师奖励阶段` 页面配置阶段化奖励规则、学员资格阈值，并手动执行一次奖励处理
 - 每日定时任务会自动扫描进行中的导师关系，按阶段顺序发放伏羲币奖励；当全部阶段都已发放后，关系会被标记为 `graduated`
 
@@ -71,6 +72,8 @@ source_of_truth:
 - `static/src/views/newbro/select-mentor` — 新人选导师
 - `static/src/views/newbro/mentor` — 我是导师
 - `static/src/views/newbro/mentor-manage` — 导师管理
+  - 导师关系 tab：查看全部导师关系，支持按导师/学员人物名或昵称筛选
+  - 奖励发放记录 tab：按 ledger 方式分页显示导师奖励发放记录，并支持按导师人物名或昵称搜索
 - `static/src/views/system/mentor-reward-stages` — 导师奖励阶段
 
 ### 后端路由
@@ -92,6 +95,7 @@ source_of_truth:
 管理侧：
 
 - `GET /api/v1/system/mentor/relationships`
+- `GET /api/v1/system/mentor/reward-distributions`
 - `POST /api/v1/system/mentor/revoke`
 - `GET /api/v1/system/mentor/settings`
 - `PUT /api/v1/system/mentor/settings`

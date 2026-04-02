@@ -44,14 +44,18 @@ func (MentorRewardStage) TableName() string { return "mentor_reward_stage" }
 
 type MentorRewardDistribution struct {
 	BaseModel
-	RelationshipID uint      `gorm:"not null;index;uniqueIndex:idx_mrd_rel_stage_order" json:"relationship_id"`
-	StageID        uint      `gorm:"not null;index"                                      json:"stage_id"`
-	StageOrder     int       `gorm:"not null;uniqueIndex:idx_mrd_rel_stage_order"       json:"stage_order"`
-	MentorUserID   uint      `gorm:"not null;index"                                      json:"mentor_user_id"`
-	MenteeUserID   uint      `gorm:"not null;index"                                      json:"mentee_user_id"`
-	RewardAmount   float64   `gorm:"not null"                                            json:"reward_amount"`
-	DistributedAt  time.Time `gorm:"not null;index"                                      json:"distributed_at"`
-	WalletRefID    string    `gorm:"size:128;not null;uniqueIndex"                       json:"wallet_ref_id"`
+	RelationshipID      uint      `gorm:"not null;index;uniqueIndex:idx_mrd_rel_stage_order" json:"relationship_id"`
+	StageID             uint      `gorm:"not null;index"                                      json:"stage_id"`
+	StageOrder          int       `gorm:"not null;uniqueIndex:idx_mrd_rel_stage_order"       json:"stage_order"`
+	MentorUserID        uint      `gorm:"not null;index"                                      json:"mentor_user_id"`
+	MentorCharacterName string    `gorm:"size:255;not null;default:''"                       json:"mentor_character_name"`
+	MentorNickname      string    `gorm:"size:255;not null;default:''"                       json:"mentor_nickname"`
+	MenteeUserID        uint      `gorm:"not null;index"                                      json:"mentee_user_id"`
+	MenteeCharacterName string    `gorm:"size:255;not null;default:''"                       json:"mentee_character_name"`
+	MenteeNickname      string    `gorm:"size:255;not null;default:''"                       json:"mentee_nickname"`
+	RewardAmount        float64   `gorm:"not null"                                            json:"reward_amount"`
+	DistributedAt       time.Time `gorm:"not null;index"                                      json:"distributed_at"`
+	WalletRefID         string    `gorm:"size:128;not null;uniqueIndex"                       json:"wallet_ref_id"`
 }
 
 func (MentorRewardDistribution) TableName() string { return "mentor_reward_distribution" }

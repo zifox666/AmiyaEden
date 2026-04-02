@@ -42,6 +42,20 @@ func (h *MentorAdminHandler) ListAllRelationships(c *gin.Context) {
 	response.OKWithPage(c, result, total, page, pageSize)
 }
 
+func (h *MentorAdminHandler) ListRewardDistributions(c *gin.Context) {
+	page, pageSize, err := parseLedgerPaginationQuery(c, 200)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, err.Error())
+		return
+	}
+	result, total, err := h.rewardSvc.ListAdminRewardDistributions(page, pageSize, c.Query("keyword"))
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OKWithPage(c, result, total, page, pageSize)
+}
+
 type revokeRelationshipRequest struct {
 	RelationshipID uint `json:"relationship_id" binding:"required"`
 }

@@ -258,6 +258,150 @@ func TestMentorRewardServiceProcessActiveRelationshipSnapshotSkipsRevokedRelatio
 	}
 }
 
+func TestMentorRewardServiceListAdminRewardDistributionsUsesDistributionSnapshots(t *testing.T) {
+	now := time.Date(2026, time.April, 4, 10, 0, 0, 0, time.UTC)
+	db := newMentorRewardTestDB(t)
+	useMentorRewardTestDB(t, db)
+	fixture := seedMentorRewardTestFixture(t, db, now)
+	seedMentorRewardMentorPrimaryCharacter(t, db, fixture.mentor.ID, 800001, "Mentor Prime Old")
+
+	if err := db.Model(&model.User{}).Where("id = ?", fixture.mentor.ID).Updates(map[string]any{
+		"primary_character_id": 800001,
+		"nickname":             "Mentor Old",
+	}).Error; err != nil {
+		t.Fatalf("update mentor before distribution: %v", err)
+	}
+	if err := db.Model(&model.User{}).Where("id = ?", fixture.mentee.ID).Update("nickname", "Mentee Old").Error; err != nil {
+		t.Fatalf("update mentee nickname before distribution: %v", err)
+	}
+
+	stage := model.MentorRewardStage{
+		StageOrder:    1,
+		Name:          "Immediate reward",
+		ConditionType: model.MentorConditionSkillPoints,
+		Threshold:     1,
+		RewardAmount:  100,
+	}
+	if err := db.Create(&stage).Error; err != nil {
+		t.Fatalf("create stage: %v", err)
+	}
+
+	svc := NewMentorRewardService()
+	result, err := svc.ProcessRewards(now)
+	if err != nil {
+		t.Fatalf("ProcessRewards() error = %v", err)
+	}
+	if result.RewardsDistributed != 1 {
+		t.Fatalf("ProcessRewards() rewards_distributed = %d, want 1", result.RewardsDistributed)
+	}
+
+	seedMentorRewardMentorPrimaryCharacter(t, db, fixture.mentor.ID, 800002, "Mentor Prime New")
+	if err := db.Model(&model.User{}).Where("id = ?", fixture.mentor.ID).Updates(map[string]any{
+		"primary_character_id": 800002,
+		"nickname":             "Mentor New",
+	}).Error; err != nil {
+		t.Fatalf("update mentor after distribution: %v", err)
+	}
+	if err := db.Model(&model.User{}).Where("id = ?", fixture.mentee.ID).Update("nickname", "Mentee New").Error; err != nil {
+		t.Fatalf("update mentee nickname after distribution: %v", err)
+	}
+	if err := db.Model(&model.EveCharacter{}).
+		Where("character_id = ?", fixture.mentee.PrimaryCharacterID).
+		Update("character_name", "Curious Mentee New").Error; err != nil {
+		t.Fatalf("update mentee character after distribution: %v", err)
+	}
+
+	rows, total, err := svc.ListAdminRewardDistributions(1, 50, "Mentor Prime Old")
+	if err != nil {
+		t.Fatalf("ListAdminRewardDistributions() error = %v", err)
+	}
+	if total != 1 {
+		t.Fatalf("ListAdminRewardDistributions() total = %d, want 1", total)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("ListAdminRewardDistributions() len = %d, want 1", len(rows))
+	}
+	if rows[0].MentorCharacterName != "Mentor Prime Old" {
+		t.Fatalf("mentor_character_name = %q, want %q", rows[0].MentorCharacterName, "Mentor Prime Old")
+	}
+	if rows[0].MentorNickname != "Mentor Old" {
+		t.Fatalf("mentor_nickname = %q, want %q", rows[0].MentorNickname, "Mentor Old")
+	}
+	if rows[0].MenteeCharacterName != "Curious Mentee" {
+		t.Fatalf("mentee_character_name = %q, want %q", rows[0].MenteeCharacterName, "Curious Mentee")
+	}
+	if rows[0].MenteeNickname != "Mentee Old" {
+		t.Fatalf("mentee_nickname = %q, want %q", rows[0].MenteeNickname, "Mentee Old")
+	}
+}
+
+func TestMentorRewardServiceListAdminRewardDistributionsBackfillsMissingSnapshots(t *testing.T) {
+	now := time.Date(2026, time.April, 4, 11, 0, 0, 0, time.UTC)
+	db := newMentorRewardTestDB(t)
+	useMentorRewardTestDB(t, db)
+	fixture := seedMentorRewardTestFixture(t, db, now)
+	seedMentorRewardMentorPrimaryCharacter(t, db, fixture.mentor.ID, 800001, "Mentor Prime Current")
+
+	if err := db.Model(&model.User{}).Where("id = ?", fixture.mentor.ID).Updates(map[string]any{
+		"primary_character_id": 800001,
+		"nickname":             "Mentor Current",
+	}).Error; err != nil {
+		t.Fatalf("update mentor current profile: %v", err)
+	}
+	if err := db.Model(&model.User{}).Where("id = ?", fixture.mentee.ID).Update("nickname", "Mentee Current").Error; err != nil {
+		t.Fatalf("update mentee current profile: %v", err)
+	}
+
+	legacyDistribution := model.MentorRewardDistribution{
+		RelationshipID: fixture.relationship.ID,
+		StageID:        1,
+		StageOrder:     1,
+		MentorUserID:   fixture.mentor.ID,
+		MenteeUserID:   fixture.mentee.ID,
+		RewardAmount:   100,
+		DistributedAt:  now,
+		WalletRefID:    "legacy-snapshotless-row",
+	}
+	if err := db.Create(&legacyDistribution).Error; err != nil {
+		t.Fatalf("create legacy distribution: %v", err)
+	}
+
+	svc := NewMentorRewardService()
+	rows, total, err := svc.ListAdminRewardDistributions(1, 50, "Mentor Prime Current")
+	if err != nil {
+		t.Fatalf("ListAdminRewardDistributions() error = %v", err)
+	}
+	if total != 1 {
+		t.Fatalf("ListAdminRewardDistributions() total = %d, want 1", total)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("ListAdminRewardDistributions() len = %d, want 1", len(rows))
+	}
+	if rows[0].MentorCharacterName != "Mentor Prime Current" {
+		t.Fatalf("mentor_character_name = %q, want %q", rows[0].MentorCharacterName, "Mentor Prime Current")
+	}
+	if rows[0].MentorNickname != "Mentor Current" {
+		t.Fatalf("mentor_nickname = %q, want %q", rows[0].MentorNickname, "Mentor Current")
+	}
+
+	var stored model.MentorRewardDistribution
+	if err := db.First(&stored, legacyDistribution.ID).Error; err != nil {
+		t.Fatalf("reload legacy distribution: %v", err)
+	}
+	if stored.MentorCharacterName != "Mentor Prime Current" {
+		t.Fatalf("stored mentor_character_name = %q, want %q", stored.MentorCharacterName, "Mentor Prime Current")
+	}
+	if stored.MentorNickname != "Mentor Current" {
+		t.Fatalf("stored mentor_nickname = %q, want %q", stored.MentorNickname, "Mentor Current")
+	}
+	if stored.MenteeCharacterName != "Curious Mentee" {
+		t.Fatalf("stored mentee_character_name = %q, want %q", stored.MenteeCharacterName, "Curious Mentee")
+	}
+	if stored.MenteeNickname != "Mentee Current" {
+		t.Fatalf("stored mentee_nickname = %q, want %q", stored.MenteeNickname, "Mentee Current")
+	}
+}
+
 type mentorRewardTestFixture struct {
 	mentor       model.User
 	mentee       model.User
@@ -358,6 +502,18 @@ func seedMentorRewardTestFixture(t *testing.T, db *gorm.DB, now time.Time) mento
 		mentor:       mentor,
 		mentee:       mentee,
 		relationship: relationship,
+	}
+}
+
+func seedMentorRewardMentorPrimaryCharacter(t *testing.T, db *gorm.DB, userID uint, characterID int64, characterName string) {
+	t.Helper()
+
+	if err := db.Create(&model.EveCharacter{
+		CharacterID:   characterID,
+		CharacterName: characterName,
+		UserID:        userID,
+	}).Error; err != nil {
+		t.Fatalf("create mentor primary character: %v", err)
 	}
 }
 

@@ -2232,6 +2232,30 @@ declare namespace Api {
 
     type AdminRelationshipsResponse = Api.Common.PaginatedResponse<RelationshipView>
 
+    interface RewardDistributionView {
+      id: number
+      relationship_id: number
+      stage_id: number
+      stage_order: number
+      mentor_user_id: number
+      mentor_character_name: string
+      mentor_nickname: string
+      mentee_user_id: number
+      mentee_character_name: string
+      mentee_nickname: string
+      reward_amount: number
+      distributed_at: string
+      wallet_ref_id: string
+    }
+
+    type AdminRewardDistributionsParams = Partial<{
+      current: number
+      size: number
+      keyword: string
+    }>
+
+    type AdminRewardDistributionsResponse = Api.Common.PaginatedResponse<RewardDistributionView>
+
     interface Settings {
       max_character_sp: number
       max_account_age_days: number

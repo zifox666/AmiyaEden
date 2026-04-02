@@ -281,6 +281,7 @@ source_of_truth:
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
 | GET | `/system/mentor/relationships` | 全量导师关系列表 | `RequireRole(admin)` |
+| GET | `/system/mentor/reward-distributions` | 导师奖励发放记录分页列表；关键字支持导师人物名 / 昵称 | `RequireRole(admin)` |
 | POST | `/system/mentor/revoke` | 撤销指定导师关系 | `RequireRole(admin)` |
 | GET | `/system/mentor/settings` | 导师学员资格阈值配置 | `RequireRole(admin)` |
 | PUT | `/system/mentor/settings` | 更新导师学员资格阈值配置 | `RequireRole(admin)` |

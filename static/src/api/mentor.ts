@@ -59,6 +59,15 @@ export function fetchAdminMentorRelationships(params?: Api.Mentor.AdminRelations
   })
 }
 
+export function fetchAdminMentorRewardDistributions(
+  params?: Api.Mentor.AdminRewardDistributionsParams
+) {
+  return request.get<Api.Mentor.AdminRewardDistributionsResponse>({
+    url: '/api/v1/system/mentor/reward-distributions',
+    params
+  })
+}
+
 export function revokeMentorRelationship(data: Api.Mentor.RelationshipActionParams) {
   return request.post<Api.Mentor.EmptyResponse>({
     url: '/api/v1/system/mentor/revoke',

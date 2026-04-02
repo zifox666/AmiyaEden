@@ -96,11 +96,34 @@ type MentorRewardProcessResult struct {
 	GraduatedCount         int     `json:"graduated_count"`
 }
 
+type MentorRewardDistributionView struct {
+	ID                  uint      `json:"id"`
+	RelationshipID      uint      `json:"relationship_id"`
+	StageID             uint      `json:"stage_id"`
+	StageOrder          int       `json:"stage_order"`
+	MentorUserID        uint      `json:"mentor_user_id"`
+	MentorCharacterName string    `json:"mentor_character_name"`
+	MentorNickname      string    `json:"mentor_nickname"`
+	MenteeUserID        uint      `json:"mentee_user_id"`
+	MenteeCharacterName string    `json:"mentee_character_name"`
+	MenteeNickname      string    `json:"mentee_nickname"`
+	RewardAmount        float64   `json:"reward_amount"`
+	DistributedAt       time.Time `json:"distributed_at"`
+	WalletRefID         string    `json:"wallet_ref_id"`
+}
+
 type mentorRelationshipProcessOutcome struct {
 	Processed          bool
 	RewardsDistributed int
 	TotalCoinAwarded   float64
 	Graduated          bool
+}
+
+type mentorRewardDistributionSnapshot struct {
+	mentorCharacterName string
+	mentorNickname      string
+	menteeCharacterName string
+	menteeNickname      string
 }
 
 type MentorRewardService struct {
@@ -139,6 +162,124 @@ func (s *MentorRewardService) UpdateStages(inputs []MentorRewardStageInput) ([]m
 		return nil, err
 	}
 	return s.stageRepo.ListAll()
+}
+
+func (s *MentorRewardService) ListAdminRewardDistributions(
+	page,
+	pageSize int,
+	keyword string,
+) ([]MentorRewardDistributionView, int64, error) {
+	page = normalizePage(page)
+	pageSize = normalizeLedgerPageSize(pageSize)
+	if err := s.backfillMissingRewardDistributionSnapshots(); err != nil {
+		return nil, 0, err
+	}
+
+	rows, total, err := s.distRepo.ListAdminPaged(repository.MentorRewardDistributionAdminFilter{
+		Keyword: keyword,
+	}, page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(rows) == 0 {
+		return []MentorRewardDistributionView{}, total, nil
+	}
+
+	result := make([]MentorRewardDistributionView, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, MentorRewardDistributionView{
+			ID:                  row.ID,
+			RelationshipID:      row.RelationshipID,
+			StageID:             row.StageID,
+			StageOrder:          row.StageOrder,
+			MentorUserID:        row.MentorUserID,
+			MentorCharacterName: row.MentorCharacterName,
+			MentorNickname:      row.MentorNickname,
+			MenteeUserID:        row.MenteeUserID,
+			MenteeCharacterName: row.MenteeCharacterName,
+			MenteeNickname:      row.MenteeNickname,
+			RewardAmount:        row.RewardAmount,
+			DistributedAt:       row.DistributedAt,
+			WalletRefID:         row.WalletRefID,
+		})
+	}
+
+	return result, total, nil
+}
+
+func (s *MentorRewardService) backfillMissingRewardDistributionSnapshots() error {
+	rows, err := s.distRepo.ListMissingSnapshots()
+	if err != nil || len(rows) == 0 {
+		return err
+	}
+
+	userIDs := make([]uint, 0, len(rows)*2)
+	for _, row := range rows {
+		userIDs = append(userIDs, row.MentorUserID, row.MenteeUserID)
+	}
+	users, err := s.userRepo.ListByIDs(userIDs)
+	if err != nil {
+		return err
+	}
+
+	userByID := make(map[uint]model.User, len(users))
+	characterIDs := make([]int64, 0, len(users))
+	for _, user := range users {
+		userByID[user.ID] = user
+		if user.PrimaryCharacterID != 0 {
+			characterIDs = append(characterIDs, user.PrimaryCharacterID)
+		}
+	}
+
+	characters, err := s.charRepo.ListByCharacterIDs(characterIDs)
+	if err != nil {
+		return err
+	}
+	characterByID := make(map[int64]model.EveCharacter, len(characters))
+	for _, character := range characters {
+		characterByID[character.CharacterID] = character
+	}
+
+	for _, row := range rows {
+		mentorUser := userByID[row.MentorUserID]
+		menteeUser := userByID[row.MenteeUserID]
+
+		mentorCharacterName := row.MentorCharacterName
+		if mentorCharacterName == "" {
+			mentorCharacterName = characterByID[mentorUser.PrimaryCharacterID].CharacterName
+		}
+		mentorNickname := row.MentorNickname
+		if mentorNickname == "" {
+			mentorNickname = mentorUser.Nickname
+		}
+		menteeCharacterName := row.MenteeCharacterName
+		if menteeCharacterName == "" {
+			menteeCharacterName = characterByID[menteeUser.PrimaryCharacterID].CharacterName
+		}
+		menteeNickname := row.MenteeNickname
+		if menteeNickname == "" {
+			menteeNickname = menteeUser.Nickname
+		}
+
+		if mentorCharacterName == row.MentorCharacterName &&
+			mentorNickname == row.MentorNickname &&
+			menteeCharacterName == row.MenteeCharacterName &&
+			menteeNickname == row.MenteeNickname {
+			continue
+		}
+
+		if err := s.distRepo.UpdateSnapshots(
+			row.ID,
+			mentorCharacterName,
+			mentorNickname,
+			menteeCharacterName,
+			menteeNickname,
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *MentorRewardService) ProcessRewards(now time.Time) (*MentorRewardProcessResult, error) {
@@ -202,6 +343,7 @@ func (s *MentorRewardService) processActiveRelationshipSnapshot(
 		}
 
 		outcome.Processed = true
+		var distributionSnapshot *mentorRewardDistributionSnapshot
 		allDistributed := true
 		for _, stage := range stages {
 			exists, err := s.distRepo.ExistsByRelationshipAndStageOrderTx(tx, currentRelationship.ID, stage.StageOrder)
@@ -215,7 +357,13 @@ func (s *MentorRewardService) processActiveRelationshipSnapshot(
 				allDistributed = false
 				break
 			}
-			if err := s.distributeStageRewardTx(tx, *currentRelationship, stage, now); err != nil {
+			if distributionSnapshot == nil {
+				distributionSnapshot, err = s.buildRewardDistributionSnapshot(*currentRelationship)
+				if err != nil {
+					return fmt.Errorf("build reward distribution snapshot: %w", err)
+				}
+			}
+			if err := s.distributeStageRewardTx(tx, *currentRelationship, stage, distributionSnapshot, now); err != nil {
 				return fmt.Errorf("distribute stage %d reward: %w", stage.StageOrder, err)
 			}
 			outcome.RewardsDistributed++
@@ -265,19 +413,73 @@ func (s *MentorRewardService) getMenteeMetrics(userID uint) (*mentorMetrics, err
 	}, nil
 }
 
-func (s *MentorRewardService) distributeStageRewardTx(tx *gorm.DB, rel model.MentorMenteeRelationship, stage model.MentorRewardStage, now time.Time) error {
+func (s *MentorRewardService) buildRewardDistributionSnapshot(
+	rel model.MentorMenteeRelationship,
+) (*mentorRewardDistributionSnapshot, error) {
+	mentorUser, err := s.userRepo.GetByID(rel.MentorUserID)
+	if err != nil {
+		return nil, err
+	}
+	menteeUser, err := s.userRepo.GetByID(rel.MenteeUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	mentorCharacterName, err := s.getRewardDistributionCharacterName(mentorUser.PrimaryCharacterID)
+	if err != nil {
+		return nil, err
+	}
+	menteeCharacterName, err := s.getRewardDistributionCharacterName(menteeUser.PrimaryCharacterID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mentorRewardDistributionSnapshot{
+		mentorCharacterName: mentorCharacterName,
+		mentorNickname:      mentorUser.Nickname,
+		menteeCharacterName: menteeCharacterName,
+		menteeNickname:      menteeUser.Nickname,
+	}, nil
+}
+
+func (s *MentorRewardService) getRewardDistributionCharacterName(characterID int64) (string, error) {
+	if characterID == 0 {
+		return "", nil
+	}
+
+	character, err := s.charRepo.GetByCharacterID(characterID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", err
+	}
+	return character.CharacterName, nil
+}
+
+func (s *MentorRewardService) distributeStageRewardTx(
+	tx *gorm.DB,
+	rel model.MentorMenteeRelationship,
+	stage model.MentorRewardStage,
+	snapshot *mentorRewardDistributionSnapshot,
+	now time.Time,
+) error {
 	walletRefID := fmt.Sprintf("mentor_reward:%d:%d:%d", rel.ID, stage.StageOrder, now.Unix())
 	reason := fmt.Sprintf("导师奖励 关系#%d 阶段#%d %s 学员#%d", rel.ID, stage.StageOrder, stage.Name, rel.MenteeUserID)
 
 	dist := &model.MentorRewardDistribution{
-		RelationshipID: rel.ID,
-		StageID:        stage.ID,
-		StageOrder:     stage.StageOrder,
-		MentorUserID:   rel.MentorUserID,
-		MenteeUserID:   rel.MenteeUserID,
-		RewardAmount:   stage.RewardAmount,
-		DistributedAt:  now,
-		WalletRefID:    walletRefID,
+		RelationshipID:      rel.ID,
+		StageID:             stage.ID,
+		StageOrder:          stage.StageOrder,
+		MentorUserID:        rel.MentorUserID,
+		MentorCharacterName: snapshot.mentorCharacterName,
+		MentorNickname:      snapshot.mentorNickname,
+		MenteeUserID:        rel.MenteeUserID,
+		MenteeCharacterName: snapshot.menteeCharacterName,
+		MenteeNickname:      snapshot.menteeNickname,
+		RewardAmount:        stage.RewardAmount,
+		DistributedAt:       now,
+		WalletRefID:         walletRefID,
 	}
 	if err := s.distRepo.CreateTx(tx, dist); err != nil {
 		return err
