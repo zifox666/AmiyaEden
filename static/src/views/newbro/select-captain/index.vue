@@ -1,5 +1,5 @@
 <template>
-  <div class="newbro-select-page art-full-height">
+  <div class="newbro-select-page">
     <ElCard shadow="never" class="mb-4">
       <div class="flex items-center justify-between gap-4 flex-wrap">
         <div>

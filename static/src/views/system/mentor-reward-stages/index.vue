@@ -1,5 +1,5 @@
 <template>
-  <div class="mentor-reward-stages-page art-full-height">
+  <div class="mentor-reward-stages-page">
     <ElCard shadow="never" class="mb-4">
       <div class="flex items-center justify-between gap-4 flex-wrap">
         <div>

@@ -23,3 +23,7 @@ test('available mentor section is hidden after the relationship becomes active',
   )
   assert.match(source, /<ElCard shadow="never" v-if="!hasActiveRelationship">/)
 })
+
+test('mentor selection page allows mentor cards to grow with content', () => {
+  assert.doesNotMatch(source, /<template>\s*<div class="[^"]*\bart-full-height\b[^"]*">/)
+})

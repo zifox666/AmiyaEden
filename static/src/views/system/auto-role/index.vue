@@ -1,6 +1,6 @@
 <!-- ESI 自动权限映射管理 -->
 <template>
-  <div class="art-full-height">
+  <div>
     <!-- 页头操作区 -->
     <ElCard class="mb-4" shadow="never">
       <div class="flex items-center justify-between">

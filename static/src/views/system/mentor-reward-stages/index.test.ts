@@ -62,3 +62,7 @@ test('mentor reward stage and eligibility number inputs are configured for integ
     /v-model="mentorSettings\.max_account_age_days"[\s\S]*?:step="1"[\s\S]*?step-strictly/
   )
 })
+
+test('mentor reward stages page allows the stage list to grow with content', () => {
+  assert.doesNotMatch(viewSource, /<template>\s*<div class="[^"]*\bart-full-height\b[^"]*">/)
+})
