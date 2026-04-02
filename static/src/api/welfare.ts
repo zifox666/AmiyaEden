@@ -68,7 +68,7 @@ export function adminListApplications(data?: Api.Welfare.AdminApplicationSearchP
 
 /** 管理端审批福利申请 */
 export function adminReviewApplication(data: Api.Welfare.ReviewParams) {
-  return request.post({
+  return request.post<Api.Welfare.ReviewResult>({
     url: '/api/v1/system/welfare/review',
     data
   })

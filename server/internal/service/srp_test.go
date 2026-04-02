@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -266,12 +267,15 @@ func TestPayoutFuxiCoinModeCreditsWalletAndMarksApplicationPaid(t *testing.T) {
 		}
 		return errors.New("mail failed")
 	}
-	paidApp, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin})
+	paidApp, mailWarning, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin})
 	if err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful fuxi payout")
+	}
+	if !strings.Contains(mailWarning, "mail failed") {
+		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
 	}
 
 	if paidApp.PayoutStatus != model.SrpPayoutPaid {
@@ -349,12 +353,15 @@ func TestPayoutManualTransferIgnoresPayoutMailErrors(t *testing.T) {
 		return errors.New("mail failed")
 	}
 
-	paidApp, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeManualTransfer})
+	paidApp, mailWarning, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeManualTransfer})
 	if err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful payout")
+	}
+	if !strings.Contains(mailWarning, "mail failed") {
+		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
 	}
 	if paidApp.PayoutStatus != model.SrpPayoutPaid {
 		t.Fatalf("payout_status = %q, want %q", paidApp.PayoutStatus, model.SrpPayoutPaid)
@@ -470,12 +477,15 @@ func TestBatchPayoutAsFuxiCoinCreditsApprovedRequestsAcrossUsers(t *testing.T) {
 		}
 		return errors.New("mail failed")
 	}
-	summary, err := svc.BatchPayoutAsFuxiCoin(88)
+	summary, mailWarning, err := svc.BatchPayoutAsFuxiCoin(88)
 	if err != nil {
 		t.Fatalf("BatchPayoutAsFuxiCoin() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful fuxi batch payout")
+	}
+	if !strings.Contains(mailWarning, "mail failed") {
+		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
 	}
 
 	if summary.ApplicationCount != 3 {
@@ -622,12 +632,15 @@ func TestBatchPayoutByUserIgnoresPayoutMailErrors(t *testing.T) {
 		return errors.New("mail failed")
 	}
 
-	summary, err := svc.BatchPayoutByUser(88, 201)
+	summary, mailWarning, err := svc.BatchPayoutByUser(88, 201)
 	if err != nil {
 		t.Fatalf("BatchPayoutByUser() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful batch payout")
+	}
+	if !strings.Contains(mailWarning, "mail failed") {
+		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
 	}
 	if summary.UserID != 201 {
 		t.Fatalf("summary user_id = %d, want 201", summary.UserID)
@@ -688,7 +701,7 @@ func TestPayoutAsFuxiCoinStoresPayerAsWalletOperator(t *testing.T) {
 	}
 
 	svc := newSrpServiceForTests()
-	if _, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin}); err != nil {
+	if _, _, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin}); err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
 

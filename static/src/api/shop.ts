@@ -94,7 +94,7 @@ export function adminListOrderHistory(data?: Api.Shop.OrderSearchParams) {
 
 /** 管理员发放订单 */
 export function adminDeliverOrder(data: Api.Shop.OrderReviewParams) {
-  return request.post<Api.Shop.Order>({
+  return request.post<Api.Shop.OrderActionResult>({
     url: '/api/v1/system/shop/order/deliver',
     data
   })

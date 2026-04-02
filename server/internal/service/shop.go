@@ -372,13 +372,13 @@ func (s *ShopService) AdminListOrders(page, pageSize int, filter repository.Orde
 }
 
 // AdminDeliverOrder 发放订单
-func (s *ShopService) AdminDeliverOrder(orderID uint, operatorID uint, remark string) (*model.ShopOrder, error) {
+func (s *ShopService) AdminDeliverOrder(orderID uint, operatorID uint, remark string) (*model.ShopOrder, string, error) {
 	order, err := s.repo.GetOrderByID(orderID)
 	if err != nil {
-		return nil, errors.New("订单不存在")
+		return nil, "", errors.New("订单不存在")
 	}
 	if order.Status != model.OrderStatusRequested {
-		return nil, fmt.Errorf("订单状态为 %s，无法发放", order.Status)
+		return nil, "", fmt.Errorf("订单状态为 %s，无法发放", order.Status)
 	}
 
 	now := time.Now()
@@ -399,35 +399,39 @@ func (s *ShopService) AdminDeliverOrder(orderID uint, operatorID uint, remark st
 				Status:    model.RedeemStatusUnused,
 			}
 			if err := s.repo.CreateRedeemCode(code); err != nil {
-				return nil, fmt.Errorf("生成兑换码失败: %w", err)
+				return nil, "", fmt.Errorf("生成兑换码失败: %w", err)
 			}
 		}
 	}
 
 	if err := s.repo.UpdateOrder(order); err != nil {
-		return nil, fmt.Errorf("更新订单失败: %w", err)
+		return nil, "", fmt.Errorf("更新订单失败: %w", err)
 	}
 
-	s.attemptOrderDeliveryMail(operatorID, order)
-	return order, nil
+	mailWarning := s.attemptOrderDeliveryMail(operatorID, order)
+	return order, mailWarning, nil
 }
 
-func (s *ShopService) attemptOrderDeliveryMail(operatorID uint, deliveredOrder *model.ShopOrder) {
+func (s *ShopService) attemptOrderDeliveryMail(operatorID uint, deliveredOrder *model.ShopOrder) string {
 	if deliveredOrder == nil || s.orderDeliveryMailSender == nil {
-		return
+		return ""
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := s.orderDeliveryMailSender(ctx, operatorID, deliveredOrder); err != nil && global.Logger != nil {
-		global.Logger.Warn("商店订单发放后邮件尝试失败",
-			zap.Uint("operator_user_id", operatorID),
-			zap.Uint("order_id", deliveredOrder.ID),
-			zap.String("order_no", deliveredOrder.OrderNo),
-			zap.Error(err),
-		)
+	if err := s.orderDeliveryMailSender(ctx, operatorID, deliveredOrder); err != nil {
+		if global.Logger != nil {
+			global.Logger.Warn("商店订单发放后邮件尝试失败",
+				zap.Uint("operator_user_id", operatorID),
+				zap.Uint("order_id", deliveredOrder.ID),
+				zap.String("order_no", deliveredOrder.OrderNo),
+				zap.Error(err),
+			)
+		}
+		return mailErrorDetail(err)
 	}
+	return ""
 }
 
 func (s *ShopService) sendOrderDeliveryMail(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) error {
@@ -475,23 +479,23 @@ func buildShopOrderDeliveryMailContent(orderNo, orderItem string, quantity int, 
 	subject := fmt.Sprintf("[订单发放通知 / Order Delivery Notice] %s", orderItem)
 	var bodyBuilder strings.Builder
 	bodyBuilder.WriteString("你好，\n\n")
-	bodyBuilder.WriteString(fmt.Sprintf("你的订单已由 %s 发放。\n", officerDisplayName))
+	fmt.Fprintf(&bodyBuilder, "你的订单已由 %s 发放。\n", officerDisplayName)
 	bodyBuilder.WriteString("订单详情：\n")
-	bodyBuilder.WriteString(fmt.Sprintf("订单编号：%s\n", orderNo))
-	bodyBuilder.WriteString(fmt.Sprintf("订单内容：%s\n", orderItem))
-	bodyBuilder.WriteString(fmt.Sprintf("数量：%d\n", quantity))
-	bodyBuilder.WriteString(fmt.Sprintf("发放官员：%s\n", officerDisplayName))
+	fmt.Fprintf(&bodyBuilder, "订单编号：%s\n", orderNo)
+	fmt.Fprintf(&bodyBuilder, "订单内容：%s\n", orderItem)
+	fmt.Fprintf(&bodyBuilder, "数量：%d\n", quantity)
+	fmt.Fprintf(&bodyBuilder, "发放官员：%s\n", officerDisplayName)
 	bodyBuilder.WriteString("请检查你的钱包或合同。\n")
 	bodyBuilder.WriteString("如有疑问，请联系处理此订单的官员。\n")
 	bodyBuilder.WriteString("感谢你的耐心等待。\n")
 
 	bodyBuilder.WriteString("Hello,\n\n")
-	bodyBuilder.WriteString(fmt.Sprintf("Your shop order has been delivered by %s.\n", officerDisplayName))
+	fmt.Fprintf(&bodyBuilder, "Your shop order has been delivered by %s.\n", officerDisplayName)
 	bodyBuilder.WriteString("Order details:\n")
-	bodyBuilder.WriteString(fmt.Sprintf("Order No: %s\n", orderNo))
-	bodyBuilder.WriteString(fmt.Sprintf("Item: %s\n", orderItem))
-	bodyBuilder.WriteString(fmt.Sprintf("Quantity: %d\n", quantity))
-	bodyBuilder.WriteString(fmt.Sprintf("Delivered by: %s\n", officerDisplayName))
+	fmt.Fprintf(&bodyBuilder, "Order No: %s\n", orderNo)
+	fmt.Fprintf(&bodyBuilder, "Item: %s\n", orderItem)
+	fmt.Fprintf(&bodyBuilder, "Quantity: %d\n", quantity)
+	fmt.Fprintf(&bodyBuilder, "Delivered by: %s\n", officerDisplayName)
 	bodyBuilder.WriteString("Please check your wallet or contract.\n")
 	bodyBuilder.WriteString("If anything looks incorrect, please contact the officer who handled this order.\n")
 	bodyBuilder.WriteString("Thank you for your patience.\n")

@@ -56,6 +56,10 @@ declare namespace Api {
       pageSize: number
     }
 
+    interface MailActionResult {
+      mail_error?: string
+    }
+
     /** 启用状态 */
     type EnableStatus = '1' | '2'
   }
@@ -959,6 +963,10 @@ declare namespace Api {
       total_fuxi_coin: number
     }
 
+    type PayoutResult = Application & Api.Common.MailActionResult
+    type BatchPayoutActionResult = BatchPayoutSummary & Api.Common.MailActionResult
+    type BatchFuxiPayoutActionResult = BatchFuxiPayoutSummary & Api.Common.MailActionResult
+
     /** 批量自动审批请求 */
     interface AutoApproveParams {
       fleet_id: string
@@ -1173,6 +1181,8 @@ declare namespace Api {
       id: number
       action: 'deliver' | 'reject'
     }
+
+    type ReviewResult = Api.Common.MailActionResult
   }
 
   /** 商店系统类型 */
@@ -1219,6 +1229,8 @@ declare namespace Api {
       created_at: string
       updated_at: string
     }
+
+    type OrderActionResult = Order & Api.Common.MailActionResult
 
     /** 兑换码 */
     interface RedeemCode {

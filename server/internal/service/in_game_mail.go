@@ -140,3 +140,10 @@ func hasScope(scopes, target string) bool {
 	}
 	return false
 }
+
+func mailErrorDetail(err error) string {
+	if err == nil {
+		return ""
+	}
+	return strings.TrimSpace(err.Error())
+}

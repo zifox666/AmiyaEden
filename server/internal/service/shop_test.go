@@ -60,12 +60,15 @@ func TestAdminDeliverOrderAttemptsInGameMailButIgnoresMailErrors(t *testing.T) {
 		return errors.New("mail failed")
 	}
 
-	deliveredOrder, err := svc.AdminDeliverOrder(order.ID, 77, "contract issued")
+	deliveredOrder, mailWarning, err := svc.AdminDeliverOrder(order.ID, 77, "contract issued")
 	if err != nil {
 		t.Fatalf("AdminDeliverOrder() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected deliver to attempt in-game mail after successful delivery")
+	}
+	if !strings.Contains(mailWarning, "mail failed") {
+		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
 	}
 	if deliveredOrder.Status != model.OrderStatusDelivered {
 		t.Fatalf("status = %q, want %q", deliveredOrder.Status, model.OrderStatusDelivered)

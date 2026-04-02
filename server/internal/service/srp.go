@@ -710,25 +710,25 @@ type SrpPayoutRequest struct {
 }
 
 // Payout 发放补损（srp/admin 可操作）
-func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, error) {
+func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, string, error) {
 	if req == nil {
 		req = &SrpPayoutRequest{}
 	}
 
 	mode := normalizeSrpPayoutMode(req.Mode)
 	if mode == "" {
-		return nil, errors.New("无效的发放方式")
+		return nil, "", errors.New("无效的发放方式")
 	}
 
 	app, err := s.repo.GetApplicationByID(appID)
 	if err != nil {
-		return nil, errors.New("申请不存在")
+		return nil, "", errors.New("申请不存在")
 	}
 	if app.ReviewStatus != model.SrpReviewApproved {
-		return nil, errors.New("申请未被批准，无法发放")
+		return nil, "", errors.New("申请未被批准，无法发放")
 	}
 	if app.PayoutStatus == model.SrpPayoutPaid {
-		return nil, errors.New("该申请已发放，不能重复操作")
+		return nil, "", errors.New("该申请已发放，不能重复操作")
 	}
 	if req.FinalAmount > 0 {
 		app.FinalAmount = req.FinalAmount
@@ -756,47 +756,44 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 			return nil
 		})
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
-		s.attemptPayoutMail(payerID, []*model.SrpApplication{app})
-		return app, nil
+		return app, s.attemptPayoutMail(payerID, []*model.SrpApplication{app}), nil
 	}
 
 	now := time.Now()
 	markSrpApplicationPaid(app, payerID, now)
 
 	if err := s.repo.UpdateApplication(app); err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	s.attemptPayoutMail(payerID, []*model.SrpApplication{app})
-	return app, nil
+	return app, s.attemptPayoutMail(payerID, []*model.SrpApplication{app}), nil
 }
 
 // BatchPayoutByUser 批量发放某用户所有已批准且未发放的 SRP
-func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, error) {
+func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, string, error) {
 	now := time.Now()
 	summary, apps, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNoApprovedUnpaidBatchPayoutApplications):
-			return nil, errors.New("该用户没有可批量发放的 SRP 申请")
+			return nil, "", errors.New("该用户没有可批量发放的 SRP 申请")
 		case errors.Is(err, repository.ErrBatchPayoutSelectionChanged):
-			return nil, errors.New("待发放申请已变更，请刷新后重试")
+			return nil, "", errors.New("待发放申请已变更，请刷新后重试")
 		default:
-			return nil, err
+			return nil, "", err
 		}
 	}
 
 	enriched, err := s.enrichBatchPayoutSummaryRows([]repository.SrpBatchPayoutSummaryRow{*summary})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	s.attemptPayoutMail(payerID, srpApplicationPointers(apps))
-	return &enriched[0], nil
+	return &enriched[0], s.attemptPayoutMail(payerID, srpApplicationPointers(apps)), nil
 }
 
 // BatchPayoutAsFuxiCoin 将全部已批准未发放的申请换算为伏羲币并发放到伏羲币账户
-func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, error) {
+func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, string, error) {
 	summary := &SrpBatchFuxiPayoutSummary{}
 	userIDs := make(map[uint]struct{})
 	var paidApps []model.SrpApplication
@@ -830,14 +827,13 @@ func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSum
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	summary.UserCount = len(userIDs)
 	summary.TotalISKAmount = math.Round(summary.TotalISKAmount*100) / 100
 	summary.TotalFuxiCoin = math.Round(summary.TotalFuxiCoin*100) / 100
-	s.attemptPayoutMail(payerID, srpApplicationPointers(paidApps))
-	return summary, nil
+	return summary, s.attemptPayoutMail(payerID, srpApplicationPointers(paidApps)), nil
 }
 
 func srpApplicationPointers(apps []model.SrpApplication) []*model.SrpApplication {
@@ -848,9 +844,9 @@ func srpApplicationPointers(apps []model.SrpApplication) []*model.SrpApplication
 	return pointers
 }
 
-func (s *SrpService) attemptPayoutMail(payerID uint, apps []*model.SrpApplication) {
+func (s *SrpService) attemptPayoutMail(payerID uint, apps []*model.SrpApplication) string {
 	if len(apps) == 0 || s.payoutMailSender == nil {
-		return
+		return ""
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -864,7 +860,9 @@ func (s *SrpService) attemptPayoutMail(payerID uint, apps []*model.SrpApplicatio
 				zap.Error(err),
 			)
 		}
+		return mailErrorDetail(err)
 	}
+	return ""
 }
 
 func (s *SrpService) sendPayoutMails(ctx context.Context, payerID uint, apps []*model.SrpApplication) error {
@@ -959,27 +957,27 @@ func buildSinglePayoutMailBody(app *model.SrpApplication, fleetTitle string) str
 	zkillURL := fmt.Sprintf("https://zkillboard.com/kill/%d/", app.KillmailID)
 
 	var bodyBuilder strings.Builder
-	bodyBuilder.WriteString(fmt.Sprintf("%s 你好，\n\n", app.CharacterName))
+	fmt.Fprintf(&bodyBuilder, "%s 你好，\n\n", app.CharacterName)
 	bodyBuilder.WriteString("你的 SRP 补损已发放完成，详情如下：\n")
 	if fleetTitle != "" {
-		bodyBuilder.WriteString(fmt.Sprintf("关联舰队：%s\n", fleetTitle))
+		fmt.Fprintf(&bodyBuilder, "关联舰队：%s\n", fleetTitle)
 	}
-	bodyBuilder.WriteString(fmt.Sprintf("损失时间：%s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
-	bodyBuilder.WriteString(fmt.Sprintf("损失舰船：%s\n", shipDisplay))
-	bodyBuilder.WriteString(fmt.Sprintf("发放金额：%s\n", amountDisplay))
-	bodyBuilder.WriteString(fmt.Sprintf("zKillboard：<url=%s>查看击毁报告</url>\n\n", zkillURL))
+	fmt.Fprintf(&bodyBuilder, "损失时间：%s\n", app.KillmailTime.Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(&bodyBuilder, "损失舰船：%s\n", shipDisplay)
+	fmt.Fprintf(&bodyBuilder, "发放金额：%s\n", amountDisplay)
+	fmt.Fprintf(&bodyBuilder, "zKillboard：<url=%s>查看击毁报告</url>\n\n", zkillURL)
 
 	bodyBuilder.WriteString("Hello ")
 	bodyBuilder.WriteString(app.CharacterName)
 	bodyBuilder.WriteString(",\n\n")
 	bodyBuilder.WriteString("Your SRP payout has been completed. Details are as follows:\n")
 	if fleetTitle != "" {
-		bodyBuilder.WriteString(fmt.Sprintf("Linked Fleet: %s\n", fleetTitle))
+		fmt.Fprintf(&bodyBuilder, "Linked Fleet: %s\n", fleetTitle)
 	}
-	bodyBuilder.WriteString(fmt.Sprintf("Loss Time: %s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
-	bodyBuilder.WriteString(fmt.Sprintf("Ship Lost: %s\n", shipDisplay))
-	bodyBuilder.WriteString(fmt.Sprintf("Payout Amount: %s\n", amountDisplay))
-	bodyBuilder.WriteString(fmt.Sprintf("zKillboard: <url=%s>View Killmail</url>\n\n", zkillURL))
+	fmt.Fprintf(&bodyBuilder, "Loss Time: %s\n", app.KillmailTime.Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(&bodyBuilder, "Ship Lost: %s\n", shipDisplay)
+	fmt.Fprintf(&bodyBuilder, "Payout Amount: %s\n", amountDisplay)
+	fmt.Fprintf(&bodyBuilder, "zKillboard: <url=%s>View Killmail</url>\n\n", zkillURL)
 
 	bodyBuilder.WriteString("────────────────────────\n")
 	bodyBuilder.WriteString("该打的仗一场不少，该补的损一分不差。\n")
@@ -1004,9 +1002,9 @@ func buildBatchPayoutMailContent(apps []*model.SrpApplication, fleetTitles map[u
 	subject := fmt.Sprintf("[SRP 发放通知 / SRP Payout Notice] %s - %s", recipientName, formatISKCompact(totalISK))
 
 	var bodyBuilder strings.Builder
-	bodyBuilder.WriteString(fmt.Sprintf("%s 你好，\n\n以下 %d 条 SRP 补损申请已完成批量发放，合计 %s，详情如下：\n\n", recipientName, len(apps), formatISKCompact(totalISK)))
-	bodyBuilder.WriteString(fmt.Sprintf("Hello %s,\n\n", recipientName))
-	bodyBuilder.WriteString(fmt.Sprintf("Your %d SRP payouts have been completed. Total: %s. Details are as follows:\n\n", len(apps), formatISKCompact(totalISK)))
+	fmt.Fprintf(&bodyBuilder, "%s 你好，\n\n以下 %d 条 SRP 补损申请已完成批量发放，合计 %s，详情如下：\n\n", recipientName, len(apps), formatISKCompact(totalISK))
+	fmt.Fprintf(&bodyBuilder, "Hello %s,\n\n", recipientName)
+	fmt.Fprintf(&bodyBuilder, "Your %d SRP payouts have been completed. Total: %s. Details are as follows:\n\n", len(apps), formatISKCompact(totalISK))
 
 	for i, app := range apps {
 		shipDisplay := app.ShipName
@@ -1019,23 +1017,23 @@ func buildBatchPayoutMailContent(apps []*model.SrpApplication, fleetTitles map[u
 			fleetTitle = fleetTitles[app.ID]
 		}
 		bodyBuilder.WriteString("────────────────────────\n")
-		bodyBuilder.WriteString(fmt.Sprintf("第 %d 条\n", i+1))
+		fmt.Fprintf(&bodyBuilder, "第 %d 条\n", i+1)
 		if fleetTitle != "" {
-			bodyBuilder.WriteString(fmt.Sprintf("  关联舰队：%s\n", fleetTitle))
+			fmt.Fprintf(&bodyBuilder, "  关联舰队：%s\n", fleetTitle)
 		}
-		bodyBuilder.WriteString(fmt.Sprintf("  zKillboard：<url=%s>查看击毁报告</url>\n", zkillURL))
-		bodyBuilder.WriteString(fmt.Sprintf("  损失时间：%s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
-		bodyBuilder.WriteString(fmt.Sprintf("  损失舰船：%s\n", shipDisplay))
-		bodyBuilder.WriteString(fmt.Sprintf("  发放金额：%s\n", formatISKCompact(app.FinalAmount)))
+		fmt.Fprintf(&bodyBuilder, "  zKillboard：<url=%s>查看击毁报告</url>\n", zkillURL)
+		fmt.Fprintf(&bodyBuilder, "  损失时间：%s\n", app.KillmailTime.Format("2006-01-02 15:04:05"))
+		fmt.Fprintf(&bodyBuilder, "  损失舰船：%s\n", shipDisplay)
+		fmt.Fprintf(&bodyBuilder, "  发放金额：%s\n", formatISKCompact(app.FinalAmount))
 
-		bodyBuilder.WriteString(fmt.Sprintf("  Item %d\n", i+1))
+		fmt.Fprintf(&bodyBuilder, "  Item %d\n", i+1)
 		if fleetTitle != "" {
-			bodyBuilder.WriteString(fmt.Sprintf("  Linked Fleet: %s\n", fleetTitle))
+			fmt.Fprintf(&bodyBuilder, "  Linked Fleet: %s\n", fleetTitle)
 		}
-		bodyBuilder.WriteString(fmt.Sprintf("  zKillboard: <url=%s>View Killmail</url>\n", zkillURL))
-		bodyBuilder.WriteString(fmt.Sprintf("  Loss Time: %s\n", app.KillmailTime.Format("2006-01-02 15:04:05")))
-		bodyBuilder.WriteString(fmt.Sprintf("  Ship Lost: %s\n", shipDisplay))
-		bodyBuilder.WriteString(fmt.Sprintf("  Payout Amount: %s\n", formatISKCompact(app.FinalAmount)))
+		fmt.Fprintf(&bodyBuilder, "  zKillboard: <url=%s>View Killmail</url>\n", zkillURL)
+		fmt.Fprintf(&bodyBuilder, "  Loss Time: %s\n", app.KillmailTime.Format("2006-01-02 15:04:05"))
+		fmt.Fprintf(&bodyBuilder, "  Ship Lost: %s\n", shipDisplay)
+		fmt.Fprintf(&bodyBuilder, "  Payout Amount: %s\n", formatISKCompact(app.FinalAmount))
 	}
 
 	bodyBuilder.WriteString("────────────────────────\n\n")

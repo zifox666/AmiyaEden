@@ -553,7 +553,7 @@ func TestAdminReviewApplicationDeliverCreditsConfiguredFuxiCoin(t *testing.T) {
 	}
 
 	svc := NewWelfareService()
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
+	if _, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
 		t.Fatalf("AdminReviewApplication() error = %v", err)
 	}
 
@@ -639,11 +639,15 @@ func TestAdminReviewApplicationDeliverAttemptsInGameMailButIgnoresMailErrors(t *
 		return errors.New("mail failed")
 	}
 
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
+	mailWarning, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"})
+	if err != nil {
 		t.Fatalf("AdminReviewApplication() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected deliver to attempt in-game mail after successful delivery")
+	}
+	if !strings.Contains(mailWarning, "mail failed") {
+		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
 	}
 
 	var updated model.WelfareApplication
@@ -723,7 +727,7 @@ func TestAdminReviewApplicationDeliverWithoutConfiguredPayoutSkipsWalletCredit(t
 	}
 
 	svc := NewWelfareService()
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
+	if _, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
 		t.Fatalf("AdminReviewApplication() error = %v", err)
 	}
 
@@ -771,7 +775,7 @@ func TestAdminReviewApplicationDeliverUsesApprovalTimePayoutConfig(t *testing.T)
 	}
 
 	svc := NewWelfareService()
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
+	if _, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
 		t.Fatalf("AdminReviewApplication() error = %v", err)
 	}
 
@@ -822,7 +826,7 @@ func TestAdminReviewApplicationDeliverWithConfiguredPayoutRequiresUserID(t *test
 	}
 
 	svc := NewWelfareService()
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err == nil {
+	if _, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err == nil {
 		t.Fatal("expected deliver to fail when payout requires user_id")
 	}
 
@@ -872,7 +876,7 @@ func TestAdminReviewApplicationRejectStillStampsReviewerAuditFields(t *testing.T
 	}
 
 	svc := NewWelfareService()
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "reject"}); err != nil {
+	if _, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "reject"}); err != nil {
 		t.Fatalf("AdminReviewApplication() error = %v", err)
 	}
 
@@ -928,10 +932,10 @@ func TestAdminReviewApplicationSecondDeliverAttemptDoesNotCreateSecondPayout(t *
 	}
 
 	svc := NewWelfareService()
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
+	if _, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err != nil {
 		t.Fatalf("first deliver error = %v", err)
 	}
-	if err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err == nil {
+	if _, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"}); err == nil {
 		t.Fatal("expected second deliver attempt to fail")
 	}
 

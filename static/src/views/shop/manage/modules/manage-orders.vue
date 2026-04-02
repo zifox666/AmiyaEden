@@ -247,8 +247,11 @@
         remark: reviewRemark.value
       }
       if (reviewAction.value === 'deliver') {
-        await adminDeliverOrder(params)
+        const result = await adminDeliverOrder(params)
         ElMessage.success(t('shopAdmin.orders.messages.deliverSuccess'))
+        if (result.mail_error) {
+          ElMessage.warning(result.mail_error)
+        }
       } else {
         await adminRejectOrder(params)
         ElMessage.success(t('shopAdmin.orders.messages.rejectSuccess'))

@@ -278,14 +278,14 @@ func (h *WelfareHandler) AdminReviewApplication(c *gin.Context) {
 	}
 
 	reviewerID := middleware.GetUserID(c)
-	err := h.svc.AdminReviewApplication(req.ID, reviewerID, &service.AdminReviewApplicationRequest{
+	mailError, err := h.svc.AdminReviewApplication(req.ID, reviewerID, &service.AdminReviewApplicationRequest{
 		Action: req.Action,
 	})
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
-	response.OK(c, nil)
+	response.OK(c, service.MailActionResult{MailError: mailError})
 }
 
 // ─────────────────────────────────────────────

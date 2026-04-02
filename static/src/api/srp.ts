@@ -93,7 +93,7 @@ export function reviewApplication(id: number, data: Api.Srp.ReviewParams) {
 
 /** 发放补损 */
 export function payoutApplication(id: number, data?: Api.Srp.PayoutParams) {
-  return request.put<Api.Srp.Application>({
+  return request.put<Api.Srp.PayoutResult>({
     url: `/api/v1/srp/applications/${id}/payout`,
     data: data ?? {}
   })
@@ -101,7 +101,7 @@ export function payoutApplication(id: number, data?: Api.Srp.PayoutParams) {
 
 /** 以伏羲币批量发放全部已批准未发放的 SRP */
 export function batchPayoutAsFuxiCoin() {
-  return request.put<Api.Srp.BatchFuxiPayoutSummary>({
+  return request.put<Api.Srp.BatchFuxiPayoutActionResult>({
     url: '/api/v1/srp/applications/fuxi-payout',
     data: {}
   })
@@ -124,7 +124,7 @@ export function runFleetAutoApproval(data: Api.Srp.AutoApproveParams) {
 
 /** 按用户批量发放 SRP */
 export function batchPayoutByUser(userId: number) {
-  return request.put<Api.Srp.BatchPayoutSummary>({
+  return request.put<Api.Srp.BatchPayoutActionResult>({
     url: `/api/v1/srp/applications/users/${userId}/payout`,
     data: {}
   })

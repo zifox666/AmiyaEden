@@ -30,6 +30,7 @@ source_of_truth:
 - 申请状态流转：requested → delivered / rejected
 - 当福利当前配置 `pay_by_fuxi_coin > 0` 时，审批端执行 delivered 会同步给申请人钱包入账，流水 `ref_type = welfare_payout`
 - 审批端执行 delivered 后，系统会以发放福利官的主人物为发件人尽力发送一封双语游戏内邮件；若发件人未绑定可用主人物、未授权 `esi-mail.send_mail.v1` 或 ESI 发送失败，不影响发放结果
+- 若发放已成功但邮件发送失败，审批界面会继续显示成功提示，并额外弹出一条包含后端错误内容的警告提示
 - 我的福利页面"已领取福利" tab 展示审批福利官昵称
 - 福利审批页面：福利官/管理员浏览待发放申请，执行发放或拒绝操作；审批列表展示申请人上传的证明图片缩略图，并支持原页预览，行悬停时展示福利描述
 - 福利审批页面的人物列提供共享内联复制按钮，便于复制申请人物名
@@ -107,7 +108,7 @@ source_of_truth:
 - 申请时服务端二次校验资格，防止并发竞态
 - `pay_by_fuxi_coin` 使用审批当下的福利配置，不在申请记录里冻结快照
 - 当 `pay_by_fuxi_coin > 0` 且申请记录包含 `user_id` 时，`requested -> delivered` 会在同一事务内写入一条 `wallet_transaction`，`ref_type = welfare_payout`
-- `requested -> delivered` 提交成功后，服务会尽力向申请人主人物发送一封双语发放通知邮件，发件人为执行发放的福利官主人物；邮件失败只记录告警，不回滚发放
+- `requested -> delivered` 提交成功后，服务会尽力向申请人主人物发送一封双语发放通知邮件，发件人为执行发放的福利官主人物；邮件失败只记录告警、不回滚发放，并在成功响应里附带 `mail_error` 供前端提示
 - 导入历史福利记录只写福利申请历史，不补写 `welfare_payout` 钱包流水
 - 技能计划检查复用 skill_plan 模块，福利定义通过 welfare_skill_plans 关联表支持多技能计划
 

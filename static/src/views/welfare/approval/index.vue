@@ -353,8 +353,11 @@
 
     actionLoading.value = true
     try {
-      await adminReviewApplication({ id: row.id, action: 'deliver' })
+      const result = await adminReviewApplication({ id: row.id, action: 'deliver' })
       ElMessage.success(t('welfareApproval.deliverSuccess'))
+      if (result.mail_error) {
+        ElMessage.warning(result.mail_error)
+      }
       loadPending()
     } catch {
       /* handled by interceptor */
