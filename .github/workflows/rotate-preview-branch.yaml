@@ -1,0 +1,55 @@
+name: Rotate preview branch
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  rotate-preview:
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'preview' &&
+      github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Rotate preview branch from main via SSH deploy key
+        env:
+          PREVIEW_ROTATE_DEPLOY_KEY: ${{ secrets.PREVIEW_ROTATE_DEPLOY_KEY }}
+        run: |
+          if [ -z "$PREVIEW_ROTATE_DEPLOY_KEY" ]; then
+            echo "PREVIEW_ROTATE_DEPLOY_KEY is not set"
+            exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          echo "$PREVIEW_ROTATE_DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+
+          git config --global user.name "preview-rotate-bot"
+          git config --global user.email "preview-rotate-bot@users.noreply.github.com"
+
+          git remote set-url origin git@github.com:${{ github.repository }}.git
+
+          git fetch origin main preview --prune
+
+          if git ls-remote --heads origin preview > /dev/null 2>&1; then
+            git push origin :preview
+          else
+            echo "preview branch does not exist on remote, continue"
+          fi
+
+          git checkout -B preview origin/main
+          git push origin preview
