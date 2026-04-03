@@ -77,33 +77,64 @@
         />
       </ElFormItem>
       <!-- 图片上传区域 -->
-      <ElFormItem :label="t('shop.manage.productImage')">
-        <div class="image-upload-area">
-          <div v-if="formData.image" class="image-preview">
-            <img :src="formData.image" :alt="t('shop.manage.productImage')" />
-            <div class="image-actions">
+      <ElFormItem>
+        <template #label>
+          {{ t('shop.manage.productImage') }}
+        </template>
+        <div style="display: flex; flex-direction: column; width: 100%;">
+          <ElRadioGroup v-model="imageSourceType" style="margin-bottom: 15px">
+            <ElRadioButton label="upload">{{ t('shop.manage.uploadImage') }}</ElRadioButton>
+            <ElRadioButton label="url">{{ t('shop.manage.inputImageUrl') }}</ElRadioButton>
+          </ElRadioGroup>
+          
+          <div v-if="imageSourceType === 'upload'" style="margin-top: 10px;">
+            <div class="image-upload-area">
+              <div v-if="formData.image" class="image-preview">
+                <img :src="formData.image" :alt="t('shop.manage.productImage')" />
+                <div class="image-actions">
+                  <ElButton size="small" type="danger" text @click="formData.image = ''">
+                    <el-icon><Delete /></el-icon>
+                  </ElButton>
+                </div>
+              </div>
+              <ElUpload
+                v-else
+                class="image-uploader"
+                :show-file-list="false"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                :before-upload="handleImageBeforeUpload"
+                :http-request="handleImageUpload"
+              >
+                <div class="upload-placeholder">
+                  <el-icon v-if="!imageUploading" :size="32"><Plus /></el-icon>
+                  <el-icon v-else :size="32" class="animate-spin"><Loading /></el-icon>
+                  <span>{{
+                    imageUploading ? t('shop.manage.uploading') : t('shop.manage.uploadImage')
+                  }}</span>
+                  <span class="upload-hint">{{ t('shop.manage.uploadHint') }}</span>
+                </div>
+              </ElUpload>
+            </div>
+          </div>
+          
+          <div v-else-if="imageSourceType === 'url'" class="image-url-input" style="margin-top: 10px;">
+            <ElInput
+              v-model="formData.image"
+              :placeholder="t('shop.manage.inputImageUrl')"
+              clearable
+            >
+              <template #prepend>URL</template>
+            </ElInput>
+            <div v-if="formData.image" class="image-preview-container">
+              <div class="image-preview-label">{{ t('shop.manage.previewImage') }}:</div>
+              <div class="image-preview-wrapper">
+                <img :src="formData.image" :alt="t('shop.manage.previewImage')" class="image-preview-small" />
+              </div>
               <ElButton size="small" type="danger" text @click="formData.image = ''">
                 <el-icon><Delete /></el-icon>
               </ElButton>
             </div>
           </div>
-          <ElUpload
-            v-else
-            class="image-uploader"
-            :show-file-list="false"
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            :before-upload="handleImageBeforeUpload"
-            :http-request="handleImageUpload"
-          >
-            <div class="upload-placeholder">
-              <el-icon v-if="!imageUploading" :size="32"><Plus /></el-icon>
-              <el-icon v-else :size="32" class="animate-spin"><Loading /></el-icon>
-              <span>{{
-                imageUploading ? t('shop.manage.uploading') : t('shop.manage.uploadImage')
-              }}</span>
-              <span class="upload-hint">{{ t('shop.manage.uploadHint') }}</span>
-            </div>
-          </ElUpload>
         </div>
       </ElFormItem>
       <ElFormItem :label="t('shop.manage.price')" prop="price">
@@ -173,7 +204,9 @@
     ElSwitch,
     ElMessage,
     ElMessageBox,
-    ElUpload
+    ElUpload,
+    ElRadioGroup,
+    ElRadioButton
   } from 'element-plus'
   import type { FormInstance, FormRules, UploadRequestOptions } from 'element-plus'
   import { Plus, Delete, Loading } from '@element-plus/icons-vue'
@@ -406,6 +439,8 @@
       status: 1,
       sort_order: 0
     })
+    // 重置时默认为上传模式
+    imageSourceType.value = 'upload'
     editingProduct.value = null
   }
 
@@ -430,6 +465,12 @@
       status: row.status,
       sort_order: row.sort_order
     })
+    // 根据现有图片URL自动选择图片源类型
+    if (row.image && (row.image.startsWith('http://') || row.image.startsWith('https://'))) {
+      imageSourceType.value = 'url'
+    } else {
+      imageSourceType.value = 'upload'
+    }
     dialogVisible.value = true
   }
 
@@ -474,6 +515,7 @@
   }
 
   // ─── 图片上传 ───
+  const imageSourceType = ref<'upload' | 'url'>('upload')
   const imageUploading = ref(false)
 
   function handleImageBeforeUpload(file: File) {
@@ -507,6 +549,8 @@
         formData.name = item.name
       }
       formData.image = `https://images.evetech.net/types/${item.id}/icon?size=256`
+      // 当使用SDE选择时，自动切换到URL模式
+      imageSourceType.value = 'url'
       ElMessage.success(t('shop.manage.sdeSelected', { name: item.name }))
     }
   }
@@ -591,5 +635,37 @@
 
   .animate-spin {
     animation: spin 1s linear infinite;
+  }
+
+  .image-url-input {
+    width: 100%;
+  }
+  
+  .image-preview-container {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .image-preview-label {
+    font-size: 14px;
+    color: var(--el-text-color-regular);
+    white-space: nowrap;
+  }
+  
+  .image-preview-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .image-preview-small {
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: contain;
+    border-radius: 4px;
+    border: 1px solid var(--el-border-color);
   }
 </style>

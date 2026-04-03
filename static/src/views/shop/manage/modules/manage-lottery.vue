@@ -149,32 +149,64 @@
           :placeholder="t('lottery.manage.fields.descriptionPlaceholder')"
         />
       </ElFormItem>
-      <ElFormItem :label="t('lottery.manage.fields.coverImage')">
-        <div class="image-upload-area">
-          <div v-if="activityForm.image" class="image-preview">
-            <img :src="activityForm.image" alt="封面" />
-            <div class="image-actions">
+      <!-- 图片上传区域 -->
+      <ElFormItem>
+        <template #label>
+          {{ t('lottery.manage.fields.coverImage') }}
+        </template>
+        <div style="display: flex; flex-direction: column; width: 100%;">
+          <ElRadioGroup v-model="activityImageSourceType" style="margin-bottom: 15px">
+            <ElRadioButton label="upload">{{ t('lottery.manage.uploadImage') }}</ElRadioButton>
+            <ElRadioButton label="url">{{ t('lottery.manage.inputImageUrl') }}</ElRadioButton>
+          </ElRadioGroup>
+          
+          <div v-if="activityImageSourceType === 'upload'" style="margin-top: 10px;">
+            <div class="image-upload-area">
+              <div v-if="activityForm.image" class="image-preview">
+                <img :src="activityForm.image" alt="封面" />
+                <div class="image-actions">
+                  <ElButton size="small" type="danger" text @click="activityForm.image = ''">
+                    <el-icon><Delete /></el-icon>
+                  </ElButton>
+                </div>
+              </div>
+              <ElUpload
+                v-else
+                class="image-uploader"
+                :show-file-list="false"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                :before-upload="handleImageBeforeUpload"
+                :http-request="(opts) => handleImageUpload(opts, 'activity')"
+              >
+                <div class="upload-placeholder">
+                  <el-icon v-if="!imageUploading" :size="28"><Plus /></el-icon>
+                  <el-icon v-else :size="28" class="animate-spin"><Loading /></el-icon>
+                  <span class="text-xs">{{
+                    imageUploading ? t('lottery.manage.uploading') : t('lottery.manage.uploadCover')
+                  }}</span>
+                </div>
+              </ElUpload>
+            </div>
+          </div>
+          
+          <div v-else-if="activityImageSourceType === 'url'" class="image-url-input" style="margin-top: 10px;">
+            <ElInput
+              v-model="activityForm.image"
+              :placeholder="t('lottery.manage.inputImageUrl')"
+              clearable
+            >
+              <template #prepend>URL</template>
+            </ElInput>
+            <div v-if="activityForm.image" class="image-preview-container">
+              <div class="image-preview-label">{{ t('lottery.manage.previewImage') }}:</div>
+              <div class="image-preview-wrapper">
+                <img :src="activityForm.image" :alt="t('lottery.manage.coverImage')" class="image-preview-small" />
+              </div>
               <ElButton size="small" type="danger" text @click="activityForm.image = ''">
                 <el-icon><Delete /></el-icon>
               </ElButton>
             </div>
           </div>
-          <ElUpload
-            v-else
-            class="image-uploader"
-            :show-file-list="false"
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            :before-upload="handleImageBeforeUpload"
-            :http-request="(opts) => handleImageUpload(opts, 'activity')"
-          >
-            <div class="upload-placeholder">
-              <el-icon v-if="!imageUploading" :size="28"><Plus /></el-icon>
-              <el-icon v-else :size="28" class="animate-spin"><Loading /></el-icon>
-              <span class="text-xs">{{
-                imageUploading ? t('lottery.manage.uploading') : t('lottery.manage.uploadCover')
-              }}</span>
-            </div>
-          </ElUpload>
         </div>
       </ElFormItem>
       <ElFormItem :label="t('lottery.manage.fields.costPerDraw')" prop="cost_per_draw">
@@ -294,39 +326,68 @@
           :placeholder="t('lottery.manage.prizeFields.namePlaceholder')"
         />
       </ElFormItem>
+      <!-- 图片上传区域 -->
       <ElFormItem :label="t('lottery.manage.prizeFields.image')">
-        <div class="image-upload-area small">
-          <div v-if="prizeForm.image" class="image-preview">
-            <img :src="prizeForm.image" :alt="t('lottery.manage.prizeFields.image')" />
-            <div class="image-actions">
+        <div style="display: flex; flex-direction: column; width: 100%;">
+          <ElRadioGroup v-model="prizeImageSourceType" style="margin-bottom: 15px">
+            <ElRadioButton label="upload">{{ t('lottery.manage.uploadImage') }}</ElRadioButton>
+            <ElRadioButton label="url">{{ t('lottery.manage.inputImageUrl') }}</ElRadioButton>
+          </ElRadioGroup>
+          
+          <div v-if="prizeImageSourceType === 'upload'" style="margin-top: 10px;">
+            <div class="image-upload-area small">
+              <div v-if="prizeForm.image" class="image-preview">
+                <img :src="prizeForm.image" :alt="t('lottery.manage.prizeFields.image')" />
+                <div class="image-actions">
+                  <ElButton size="small" type="danger" text @click="prizeForm.image = ''">
+                    <el-icon><Delete /></el-icon>
+                  </ElButton>
+                </div>
+              </div>
+              <ElUpload
+                v-else
+                class="image-uploader"
+                :show-file-list="false"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                :before-upload="handleImageBeforeUpload"
+                :http-request="(opts) => handlePrizeImageUpload(opts)"
+              >
+                <div class="upload-placeholder">
+                  <el-icon v-if="!prizeImageUploading" :size="22"><Plus /></el-icon>
+                  <el-icon v-else :size="22" class="animate-spin"><Loading /></el-icon>
+                  <span class="text-xs">{{
+                    prizeImageUploading
+                      ? t('lottery.manage.uploading')
+                      : t('lottery.manage.uploadImage')
+                  }}</span>
+                </div>
+              </ElUpload>
+            </div>
+          </div>
+          
+          <div v-else-if="prizeImageSourceType === 'url'" class="image-url-input" style="margin-top: 10px;">
+            <ElInput
+              v-model="prizeForm.image"
+              :placeholder="t('lottery.manage.inputImageUrl')"
+              clearable
+            >
+              <template #prepend>URL</template>
+            </ElInput>
+            <div v-if="prizeForm.image" class="image-preview-container">
+              <div class="image-preview-label">{{ t('lottery.manage.previewImage') }}:</div>
+              <div class="image-preview-wrapper">
+                <img :src="prizeForm.image" :alt="t('lottery.manage.previewImage')" class="image-preview-small" />
+              </div>
               <ElButton size="small" type="danger" text @click="prizeForm.image = ''">
                 <el-icon><Delete /></el-icon>
               </ElButton>
             </div>
           </div>
-          <ElUpload
-            v-else
-            class="image-uploader"
-            :show-file-list="false"
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            :before-upload="handleImageBeforeUpload"
-            :http-request="(opts) => handlePrizeImageUpload(opts)"
-          >
-            <div class="upload-placeholder">
-              <el-icon v-if="!prizeImageUploading" :size="22"><Plus /></el-icon>
-              <el-icon v-else :size="22" class="animate-spin"><Loading /></el-icon>
-              <span class="text-xs">{{
-                prizeImageUploading
-                  ? t('lottery.manage.uploading')
-                  : t('lottery.manage.uploadImage')
-              }}</span>
-            </div>
-          </ElUpload>
         </div>
         <SdeSearchSelect
           v-model="prizeSdeTypeId"
           :placeholder="t('lottery.manage.prizeFields.sdeSearchPlaceholder')"
-          style="width: 200px; margin-left: 12px"
+          style="width: 200px; margin-left: 12px; margin-top: 15px;"
           @select="onPrizeSdeSelect"
         />
       </ElFormItem>
@@ -374,7 +435,9 @@
     ElTabPane,
     ElDrawer,
     ElDatePicker,
-    ElEmpty
+    ElEmpty,
+    ElRadioGroup,
+    ElRadioButton
   } from 'element-plus'
   import type { FormInstance, FormRules, UploadRequestOptions } from 'element-plus'
   import { Plus, Refresh, Delete, Loading } from '@element-plus/icons-vue'
@@ -441,6 +504,7 @@
   const activityFormRef = ref<FormInstance>()
   const editingActivity = ref<LotteryActivity | null>(null)
   const imageUploading = ref(false)
+  const activityImageSourceType = ref<'upload' | 'url'>('upload')
 
   const activityForm = reactive({
     name: '',
@@ -469,6 +533,8 @@
       end_at: null,
       sort_order: 0
     })
+    // 重置时默认为上传模式
+    activityImageSourceType.value = 'upload'
     editingActivity.value = null
   }
 
@@ -489,6 +555,12 @@
       end_at: act.end_at ? new Date(act.end_at) : null,
       sort_order: act.sort_order
     })
+    // 根据现有图片URL自动选择图片源类型
+    if (act.image && (act.image.startsWith('http://') || act.image.startsWith('https://'))) {
+      activityImageSourceType.value = 'url'
+    } else {
+      activityImageSourceType.value = 'upload'
+    }
     activityDialogVisible.value = true
   }
 
@@ -561,6 +633,7 @@
 
   // ─── 奖品图片上传 ───
   const prizeImageUploading = ref(false)
+  const prizeImageSourceType = ref<'upload' | 'url'>('upload')
 
   async function handlePrizeImageUpload(options: UploadRequestOptions) {
     prizeImageUploading.value = true
@@ -581,6 +654,8 @@
   function onPrizeSdeSelect(item: Api.Sde.FuzzySearchItem | null) {
     if (item) {
       prizeForm.image = `https://images.evetech.net/types/${item.id}/icon?size=64`
+      // 当使用SDE选择时，自动切换到URL模式
+      prizeImageSourceType.value = 'url'
       if (!prizeForm.name) {
         prizeForm.name = item.name
       }
@@ -627,6 +702,8 @@
       probability_weight: 10,
       total_stock: 0
     })
+    // 重置时默认为上传模式
+    prizeImageSourceType.value = 'upload'
     prizeSdeTypeId.value = null
     prizeDialogVisible.value = true
   }
@@ -640,6 +717,12 @@
       probability_weight: prize.probability_weight,
       total_stock: prize.total_stock
     })
+    // 根据现有图片URL自动选择图片源类型
+    if (prize.image && (prize.image.startsWith('http://') || prize.image.startsWith('https://'))) {
+      prizeImageSourceType.value = 'url'
+    } else {
+      prizeImageSourceType.value = 'upload'
+    }
     prizeSdeTypeId.value = null
     prizeDialogVisible.value = true
   }
@@ -988,5 +1071,37 @@
 
   .animate-spin {
     animation: spin 1s linear infinite;
+  }
+
+  .image-url-input {
+    width: 100%;
+  }
+
+  .image-preview-container {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .image-preview-label {
+    font-size: 14px;
+    color: var(--el-text-color-regular);
+    white-space: nowrap;
+  }
+
+  .image-preview-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .image-preview-small {
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: contain;
+    border-radius: 4px;
+    border: 1px solid var(--el-border-color);
   }
 </style>
