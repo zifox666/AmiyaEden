@@ -109,6 +109,7 @@ source_of_truth:
 - `pay_by_fuxi_coin` 使用审批当下的福利配置，不在申请记录里冻结快照
 - 当 `pay_by_fuxi_coin > 0` 且申请记录包含 `user_id` 时，`requested -> delivered` 会在同一事务内写入一条 `wallet_transaction`，`ref_type = welfare_payout`
 - `requested -> delivered` 提交成功后，服务会尽力向申请人主人物发送一封双语发放通知邮件，发件人为执行发放的福利官主人物；邮件失败只记录告警、不回滚发放，并在成功响应里附带 `mail_error` 供前端提示
+- 若 ESI 接受了发信请求，成功响应还可能附带邮件调试信息；具体字段以代码契约为准
 - 导入历史福利记录只写福利申请历史，不补写 `welfare_payout` 钱包流水
 - 技能计划检查复用 skill_plan 模块，福利定义通过 welfare_skill_plans 关联表支持多技能计划
 

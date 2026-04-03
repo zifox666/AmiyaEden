@@ -300,14 +300,14 @@ func (h *ShopHandler) AdminDeliverOrder(c *gin.Context) {
 	}
 
 	operatorID := middleware.GetUserID(c)
-	order, mailError, err := h.svc.AdminDeliverOrder(req.OrderID, operatorID, req.Remark)
+	order, mailSummary, err := h.svc.AdminDeliverOrder(req.OrderID, operatorID, req.Remark)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
 	response.OK(c, service.ShopOrderActionResult{
-		ShopOrder: *order,
-		MailError: mailError,
+		ShopOrder:          *order,
+		MailAttemptSummary: mailSummary,
 	})
 }
 

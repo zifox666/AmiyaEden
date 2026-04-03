@@ -240,14 +240,14 @@ func (h *SrpHandler) Payout(c *gin.Context) {
 		return
 	}
 	payerID := middleware.GetUserID(c)
-	app, mailError, err := h.svc.Payout(payerID, id, &req)
+	app, mailSummary, err := h.svc.Payout(payerID, id, &req)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
 	response.OK(c, service.SrpPayoutActionResult{
-		SrpApplication: *app,
-		MailError:      mailError,
+		SrpApplication:     *app,
+		MailAttemptSummary: mailSummary,
 	})
 }
 
@@ -258,28 +258,28 @@ func (h *SrpHandler) BatchPayoutByUser(c *gin.Context) {
 		return
 	}
 	payerID := middleware.GetUserID(c)
-	result, mailError, err := h.svc.BatchPayoutByUser(payerID, userID)
+	result, mailSummary, err := h.svc.BatchPayoutByUser(payerID, userID)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
 	response.OK(c, service.SrpBatchPayoutActionResult{
 		SrpBatchPayoutSummaryResponse: *result,
-		MailError:                     mailError,
+		MailAttemptSummary:            mailSummary,
 	})
 }
 
 // BatchPayoutAsFuxiCoin PUT /srp/applications/fuxi-payout
 func (h *SrpHandler) BatchPayoutAsFuxiCoin(c *gin.Context) {
 	payerID := middleware.GetUserID(c)
-	result, mailError, err := h.svc.BatchPayoutAsFuxiCoin(payerID)
+	result, mailSummary, err := h.svc.BatchPayoutAsFuxiCoin(payerID)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
 	}
 	response.OK(c, service.SrpBatchFuxiPayoutActionResult{
 		SrpBatchFuxiPayoutSummary: *result,
-		MailError:                 mailError,
+		MailAttemptSummary:        mailSummary,
 	})
 }
 

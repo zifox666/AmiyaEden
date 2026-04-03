@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTag, ElButton, ElInput, ElMessageBox, ElEmpty, ElImage } from 'element-plus'
+  import { ElTag, ElButton, ElInput, ElMessage, ElMessageBox, ElEmpty, ElImage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { formatTime } from '@utils/common'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
@@ -99,6 +99,7 @@
     adminDeleteApplication
   } from '@/api/welfare'
   import { useUserStore } from '@/store/modules/user'
+  import { showMailAttemptMessage } from '@/utils/mailAttempt'
 
   defineOptions({ name: 'WelfareApproval' })
   const { t } = useI18n()
@@ -355,9 +356,7 @@
     try {
       const result = await adminReviewApplication({ id: row.id, action: 'deliver' })
       ElMessage.success(t('welfareApproval.deliverSuccess'))
-      if (result.mail_error) {
-        ElMessage.warning(result.mail_error)
-      }
+      showMailAttemptMessage(result, t)
       loadPending()
     } catch {
       /* handled by interceptor */

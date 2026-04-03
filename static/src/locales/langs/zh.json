@@ -48,6 +48,13 @@
     "search": "查询",
     "reset": "重置"
   },
+  "mailAttempt": {
+    "sent": "游戏内邮件已被 ESI 接受。",
+    "failed": "游戏内邮件发送失败：",
+    "sender": "发件人",
+    "recipient": "收件人",
+    "mailId": "Mail ID"
+  },
   "search": {
     "placeholder": "搜索页面",
     "historyTitle": "搜索历史",

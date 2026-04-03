@@ -58,6 +58,11 @@ declare namespace Api {
 
     interface MailActionResult {
       mail_error?: string
+      mail_id?: number
+      mail_sender_character_id?: number
+      mail_sender_character_name?: string
+      mail_recipient_character_id?: number
+      mail_recipient_character_name?: string
     }
 
     /** 启用状态 */

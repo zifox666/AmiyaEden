@@ -48,6 +48,13 @@
     "search": "Search",
     "reset": "Reset"
   },
+  "mailAttempt": {
+    "sent": "In-game mail accepted.",
+    "failed": "In-game mail failed:",
+    "sender": "sender",
+    "recipient": "recipient",
+    "mailId": "mail ID"
+  },
   "search": {
     "placeholder": "Search page",
     "historyTitle": "Search history",

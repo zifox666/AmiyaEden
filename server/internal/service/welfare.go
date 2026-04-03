@@ -19,7 +19,7 @@ import (
 )
 
 // WelfareService 福利业务逻辑层
-type welfareDeliveryMailSender func(ctx context.Context, reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) error
+type welfareDeliveryMailSender func(ctx context.Context, reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) (MailAttemptSummary, error)
 
 type WelfareService struct {
 	repo      *repository.WelfareRepository
@@ -908,7 +908,7 @@ func (s *WelfareService) AdminDeleteApplication(id uint) error {
 	return s.repo.DeleteApplication(id)
 }
 
-func (s *WelfareService) AdminReviewApplication(appID uint, reviewerID uint, req *AdminReviewApplicationRequest) (string, error) {
+func (s *WelfareService) AdminReviewApplication(appID uint, reviewerID uint, req *AdminReviewApplicationRequest) (MailAttemptSummary, error) {
 	var deliveredWelfare *model.Welfare
 	var deliveredApp *model.WelfareApplication
 
@@ -961,21 +961,22 @@ func (s *WelfareService) AdminReviewApplication(appID uint, reviewerID uint, req
 		return s.repo.UpdateApplicationTx(tx, app)
 	})
 	if err != nil {
-		return "", err
+		return MailAttemptSummary{}, err
 	}
 
 	return s.attemptDeliveryMail(reviewerID, deliveredWelfare, deliveredApp), nil
 }
 
-func (s *WelfareService) attemptDeliveryMail(reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) string {
+func (s *WelfareService) attemptDeliveryMail(reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) MailAttemptSummary {
 	if deliveredWelfare == nil || deliveredApp == nil || s.deliveryMailSender == nil {
-		return ""
+		return MailAttemptSummary{}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := s.deliveryMailSender(ctx, reviewerID, deliveredWelfare, deliveredApp); err != nil {
+	summary, err := s.deliveryMailSender(ctx, reviewerID, deliveredWelfare, deliveredApp)
+	if err != nil {
 		if global.Logger != nil {
 			global.Logger.Warn("福利发放后邮件尝试失败",
 				zap.Uint("reviewer_user_id", reviewerID),
@@ -984,9 +985,9 @@ func (s *WelfareService) attemptDeliveryMail(reviewerID uint, deliveredWelfare *
 				zap.Error(err),
 			)
 		}
-		return mailErrorDetail(err)
+		return summary.withError(err)
 	}
-	return ""
+	return summary
 }
 
 func (s *WelfareService) sendDeliveryMail(
@@ -994,27 +995,34 @@ func (s *WelfareService) sendDeliveryMail(
 	reviewerID uint,
 	deliveredWelfare *model.Welfare,
 	deliveredApp *model.WelfareApplication,
-) error {
+) (MailAttemptSummary, error) {
 	if deliveredWelfare == nil || deliveredApp == nil {
-		return nil
+		return MailAttemptSummary{}, nil
 	}
+	summary := MailAttemptSummary{}
 	if deliveredApp.UserID == nil || *deliveredApp.UserID == 0 {
-		return errors.New("福利申请缺少收件用户信息")
+		return summary, errors.New("福利申请缺少收件用户信息")
 	}
 
 	mailSupport := newInGameMailSupport(s.userRepo, s.charRepo, s.ssoSvc, s.esiClient)
-	senderCharacterID, token, officerDisplayName, err := mailSupport.resolveSender(ctx, reviewerID)
+	sender, err := mailSupport.resolveSender(ctx, reviewerID)
+	summary.MailSenderCharacterID = sender.CharacterID
+	summary.MailSenderCharacterName = sender.CharacterName
 	if err != nil {
-		return err
+		return summary, err
 	}
 
-	recipientCharacterID, err := mailSupport.resolveUserPrimaryCharacterID(*deliveredApp.UserID)
+	recipient, err := mailSupport.resolveUserPrimaryCharacter(*deliveredApp.UserID)
+	summary.MailRecipientCharacterID = recipient.CharacterID
+	summary.MailRecipientCharacterName = recipient.CharacterName
 	if err != nil {
-		return err
+		return summary, err
 	}
 
-	subject, body := buildWelfareDeliveryMailContent(deliveredWelfare.Name, officerDisplayName)
-	return mailSupport.send(ctx, senderCharacterID, token, recipientCharacterID, subject, body)
+	subject, body := buildWelfareDeliveryMailContent(deliveredWelfare.Name, sender.DisplayName)
+	mailID, err := mailSupport.send(ctx, sender.CharacterID, sender.AccessToken, recipient.CharacterID, subject, body)
+	summary.MailID = mailID
+	return summary, err
 }
 
 func buildWelfareDeliveryMailContent(welfareName, officerDisplayName string) (string, string) {
@@ -1027,22 +1035,18 @@ func buildWelfareDeliveryMailContent(welfareName, officerDisplayName string) (st
 		officerDisplayName = "Officer"
 	}
 
-	subject := fmt.Sprintf("[福利发放通知 / Welfare Delivery Notice] %s", welfareName)
+	subject := fmt.Sprintf("福利发放通知 / Welfare Delivery Notice %s", welfareName)
 	var bodyBuilder strings.Builder
 	bodyBuilder.WriteString("你好，\n\n")
 	fmt.Fprintf(&bodyBuilder, "你的福利「%s」已由福利官 %s 发放。\n", welfareName, officerDisplayName)
-	bodyBuilder.WriteString("发放详情：\n")
 	fmt.Fprintf(&bodyBuilder, "福利名称：%s\n", welfareName)
-	fmt.Fprintf(&bodyBuilder, "发放官员：%s\n", officerDisplayName)
 	bodyBuilder.WriteString("请检查你的伏羲币钱包或合同。\n")
 	bodyBuilder.WriteString("如有疑问，请联系处理此申请的福利官。\n")
 	bodyBuilder.WriteString("感谢你的支持，祝你飞行顺利。\n")
-
+	bodyBuilder.WriteString("================\n\n")
 	bodyBuilder.WriteString("Hello,\n\n")
 	fmt.Fprintf(&bodyBuilder, "Your welfare \"%s\" has been delivered by officer %s.\n", welfareName, officerDisplayName)
-	bodyBuilder.WriteString("Delivery details:\n")
 	fmt.Fprintf(&bodyBuilder, "Welfare: %s\n", welfareName)
-	fmt.Fprintf(&bodyBuilder, "Delivered by: %s\n", officerDisplayName)
 	bodyBuilder.WriteString("Please check your FuxiCoin wallet or contract.\n")
 	bodyBuilder.WriteString("If anything looks incorrect, please contact the officer who handled this delivery.\n")
 	bodyBuilder.WriteString("Thank you for your support, and fly safe.\n")

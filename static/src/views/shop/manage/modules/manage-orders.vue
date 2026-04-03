@@ -76,6 +76,7 @@
   import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { adminListOrders, adminDeliverOrder, adminRejectOrder } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
+  import { showMailAttemptMessage } from '@/utils/mailAttempt'
 
   defineOptions({ name: 'ManageOrders' })
   const { t } = useI18n()
@@ -249,9 +250,7 @@
       if (reviewAction.value === 'deliver') {
         const result = await adminDeliverOrder(params)
         ElMessage.success(t('shopAdmin.orders.messages.deliverSuccess'))
-        if (result.mail_error) {
-          ElMessage.warning(result.mail_error)
-        }
+        showMailAttemptMessage(result, t)
       } else {
         await adminRejectOrder(params)
         ElMessage.success(t('shopAdmin.orders.messages.rejectSuccess'))

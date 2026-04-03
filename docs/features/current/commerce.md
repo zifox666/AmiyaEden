@@ -121,6 +121,7 @@ source_of_truth:
 - 商店商品图片上传当前通过 `/upload/image` 返回 base64 data URL，不写入项目文件夹；大小上限 2MB，仅支持 jpeg/png/webp
 - 钱包在下单时立即扣款；拒绝订单时通过 `CreditUser` 退款，流水类型为 `shop_refund`
 - `requested -> delivered` 成功后，服务会尽力向下单用户主人物发送一封双语发放通知邮件，发件人为执行发放的官员主人物；邮件失败只记录告警、不回滚订单发放，并在成功响应里附带 `mail_error` 供前端提示
+- 若 ESI 接受了发信请求，成功响应还可能附带邮件调试信息；具体字段以代码契约为准
 
 ## 主要代码文件
 

@@ -22,7 +22,7 @@ func slotCategory(flagName string) string {
 }
 
 // SrpService 补损业务逻辑层
-type srpPayoutMailSender func(ctx context.Context, payerID uint, apps []*model.SrpApplication) error
+type srpPayoutMailSender func(ctx context.Context, payerID uint, apps []*model.SrpApplication) (MailAttemptSummary, error)
 
 type SrpService struct {
 	repo      *repository.SrpRepository
@@ -709,30 +709,44 @@ type SrpPayoutRequest struct {
 	Mode        string  `json:"mode"`         // manual_transfer / fuxi_coin
 }
 
+func validateSrpApplicationPayoutable(app *model.SrpApplication) error {
+	if app == nil {
+		return errors.New("申请不存在")
+	}
+	if app.ReviewStatus != model.SrpReviewApproved {
+		return errors.New("申请未被批准，无法发放")
+	}
+	if app.PayoutStatus == model.SrpPayoutPaid {
+		return errors.New("该申请已发放，不能重复操作")
+	}
+	return nil
+}
+
+func applySrpPayoutFinalAmount(app *model.SrpApplication, finalAmount float64) {
+	if app != nil && finalAmount > 0 {
+		app.FinalAmount = finalAmount
+	}
+}
+
 // Payout 发放补损（srp/admin 可操作）
-func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, string, error) {
+func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, MailAttemptSummary, error) {
 	if req == nil {
 		req = &SrpPayoutRequest{}
 	}
 
 	mode := normalizeSrpPayoutMode(req.Mode)
 	if mode == "" {
-		return nil, "", errors.New("无效的发放方式")
+		return nil, MailAttemptSummary{}, errors.New("无效的发放方式")
 	}
 
 	app, err := s.repo.GetApplicationByID(appID)
 	if err != nil {
-		return nil, "", errors.New("申请不存在")
+		return nil, MailAttemptSummary{}, errors.New("申请不存在")
 	}
-	if app.ReviewStatus != model.SrpReviewApproved {
-		return nil, "", errors.New("申请未被批准，无法发放")
+	if err := validateSrpApplicationPayoutable(app); err != nil {
+		return nil, MailAttemptSummary{}, err
 	}
-	if app.PayoutStatus == model.SrpPayoutPaid {
-		return nil, "", errors.New("该申请已发放，不能重复操作")
-	}
-	if req.FinalAmount > 0 {
-		app.FinalAmount = req.FinalAmount
-	}
+	applySrpPayoutFinalAmount(app, req.FinalAmount)
 
 	if mode == SrpPayoutModeFuxiCoin {
 		err := global.DB.Transaction(func(tx *gorm.DB) error {
@@ -740,15 +754,10 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 			if lockErr != nil {
 				return errors.New("申请不存在")
 			}
-			if lockedApp.ReviewStatus != model.SrpReviewApproved {
-				return errors.New("申请未被批准，无法发放")
+			if err := validateSrpApplicationPayoutable(lockedApp); err != nil {
+				return err
 			}
-			if lockedApp.PayoutStatus == model.SrpPayoutPaid {
-				return errors.New("该申请已发放，不能重复操作")
-			}
-			if req.FinalAmount > 0 {
-				lockedApp.FinalAmount = req.FinalAmount
-			}
+			applySrpPayoutFinalAmount(lockedApp, req.FinalAmount)
 			if err := s.payoutApplicationWithFuxiCoinTx(tx, payerID, lockedApp); err != nil {
 				return err
 			}
@@ -756,7 +765,7 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 			return nil
 		})
 		if err != nil {
-			return nil, "", err
+			return nil, MailAttemptSummary{}, err
 		}
 		return app, s.attemptPayoutMail(payerID, []*model.SrpApplication{app}), nil
 	}
@@ -765,35 +774,35 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 	markSrpApplicationPaid(app, payerID, now)
 
 	if err := s.repo.UpdateApplication(app); err != nil {
-		return nil, "", err
+		return nil, MailAttemptSummary{}, err
 	}
 	return app, s.attemptPayoutMail(payerID, []*model.SrpApplication{app}), nil
 }
 
 // BatchPayoutByUser 批量发放某用户所有已批准且未发放的 SRP
-func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, string, error) {
+func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, MailAttemptSummary, error) {
 	now := time.Now()
 	summary, apps, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNoApprovedUnpaidBatchPayoutApplications):
-			return nil, "", errors.New("该用户没有可批量发放的 SRP 申请")
+			return nil, MailAttemptSummary{}, errors.New("该用户没有可批量发放的 SRP 申请")
 		case errors.Is(err, repository.ErrBatchPayoutSelectionChanged):
-			return nil, "", errors.New("待发放申请已变更，请刷新后重试")
+			return nil, MailAttemptSummary{}, errors.New("待发放申请已变更，请刷新后重试")
 		default:
-			return nil, "", err
+			return nil, MailAttemptSummary{}, err
 		}
 	}
 
 	enriched, err := s.enrichBatchPayoutSummaryRows([]repository.SrpBatchPayoutSummaryRow{*summary})
 	if err != nil {
-		return nil, "", err
+		return nil, MailAttemptSummary{}, err
 	}
 	return &enriched[0], s.attemptPayoutMail(payerID, srpApplicationPointers(apps)), nil
 }
 
 // BatchPayoutAsFuxiCoin 将全部已批准未发放的申请换算为伏羲币并发放到伏羲币账户
-func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, string, error) {
+func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, MailAttemptSummary, error) {
 	summary := &SrpBatchFuxiPayoutSummary{}
 	userIDs := make(map[uint]struct{})
 	var paidApps []model.SrpApplication
@@ -827,7 +836,7 @@ func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSum
 		return nil
 	})
 	if err != nil {
-		return nil, "", err
+		return nil, MailAttemptSummary{}, err
 	}
 
 	summary.UserCount = len(userIDs)
@@ -844,15 +853,16 @@ func srpApplicationPointers(apps []model.SrpApplication) []*model.SrpApplication
 	return pointers
 }
 
-func (s *SrpService) attemptPayoutMail(payerID uint, apps []*model.SrpApplication) string {
+func (s *SrpService) attemptPayoutMail(payerID uint, apps []*model.SrpApplication) MailAttemptSummary {
 	if len(apps) == 0 || s.payoutMailSender == nil {
-		return ""
+		return MailAttemptSummary{}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := s.payoutMailSender(ctx, payerID, apps); err != nil {
+	summary, err := s.payoutMailSender(ctx, payerID, apps)
+	if err != nil {
 		if global.Logger != nil {
 			global.Logger.Warn("SRP 发放后邮件尝试失败",
 				zap.Uint("payer_user_id", payerID),
@@ -860,20 +870,23 @@ func (s *SrpService) attemptPayoutMail(payerID uint, apps []*model.SrpApplicatio
 				zap.Error(err),
 			)
 		}
-		return mailErrorDetail(err)
+		return summary.withError(err)
 	}
-	return ""
+	return summary
 }
 
-func (s *SrpService) sendPayoutMails(ctx context.Context, payerID uint, apps []*model.SrpApplication) error {
+func (s *SrpService) sendPayoutMails(ctx context.Context, payerID uint, apps []*model.SrpApplication) (MailAttemptSummary, error) {
 	if len(apps) == 0 {
-		return nil
+		return MailAttemptSummary{}, nil
 	}
 
+	summary := MailAttemptSummary{}
 	mailSupport := newInGameMailSupport(s.userRepo, s.charRepo, s.ssoSvc, s.esiClient)
-	senderCharacterID, token, _, err := mailSupport.resolveSender(ctx, payerID)
+	sender, err := mailSupport.resolveSender(ctx, payerID)
+	summary.MailSenderCharacterID = sender.CharacterID
+	summary.MailSenderCharacterName = sender.CharacterName
 	if err != nil {
-		return err
+		return summary, err
 	}
 
 	grouped := make(map[int64][]*model.SrpApplication)
@@ -883,22 +896,30 @@ func (s *SrpService) sendPayoutMails(ctx context.Context, payerID uint, apps []*
 		if app == nil {
 			continue
 		}
-		recipientCharacterID, err := mailSupport.resolveUserPrimaryCharacterID(app.UserID)
+		recipient, err := mailSupport.resolveUserPrimaryCharacter(app.UserID)
+		if summary.MailRecipientCharacterID == 0 {
+			summary.MailRecipientCharacterID = recipient.CharacterID
+			summary.MailRecipientCharacterName = recipient.CharacterName
+		}
 		if err != nil {
 			errs = append(errs, fmt.Errorf("application_id=%d: %w", app.ID, err))
 			continue
 		}
-		grouped[recipientCharacterID] = append(grouped[recipientCharacterID], app)
+		grouped[recipient.CharacterID] = append(grouped[recipient.CharacterID], app)
 	}
 
 	for recipientCharacterID, recipientApps := range grouped {
 		subject, body := s.buildPayoutMailContent(recipientApps)
-		if err := mailSupport.send(ctx, senderCharacterID, token, recipientCharacterID, subject, body); err != nil {
+		mailID, err := mailSupport.send(ctx, sender.CharacterID, sender.AccessToken, recipientCharacterID, subject, body)
+		if summary.MailID == 0 {
+			summary.MailID = mailID
+		}
+		if err != nil {
 			errs = append(errs, fmt.Errorf("recipient_character_id=%d: %w", recipientCharacterID, err))
 		}
 	}
 
-	return errors.Join(errs...)
+	return summary, errors.Join(errs...)
 }
 
 func (s *SrpService) buildPayoutMailContent(apps []*model.SrpApplication) (string, string) {
@@ -966,7 +987,7 @@ func buildSinglePayoutMailBody(app *model.SrpApplication, fleetTitle string) str
 	fmt.Fprintf(&bodyBuilder, "损失舰船：%s\n", shipDisplay)
 	fmt.Fprintf(&bodyBuilder, "发放金额：%s\n", amountDisplay)
 	fmt.Fprintf(&bodyBuilder, "zKillboard：<url=%s>查看击毁报告</url>\n\n", zkillURL)
-
+	bodyBuilder.WriteString("=============\n\n")
 	bodyBuilder.WriteString("Hello ")
 	bodyBuilder.WriteString(app.CharacterName)
 	bodyBuilder.WriteString(",\n\n")

@@ -23,6 +23,27 @@ type inGameMailSendRequest struct {
 	Recipients []inGameMailRecipient `json:"recipients"`
 }
 
+type MailAttemptSummary struct {
+	MailError                  string `json:"mail_error,omitempty"`
+	MailID                     int64  `json:"mail_id,omitempty"`
+	MailSenderCharacterID      int64  `json:"mail_sender_character_id,omitempty"`
+	MailSenderCharacterName    string `json:"mail_sender_character_name,omitempty"`
+	MailRecipientCharacterID   int64  `json:"mail_recipient_character_id,omitempty"`
+	MailRecipientCharacterName string `json:"mail_recipient_character_name,omitempty"`
+}
+
+type resolvedMailSender struct {
+	CharacterID   int64
+	CharacterName string
+	AccessToken   string
+	DisplayName   string
+}
+
+type resolvedMailRecipient struct {
+	CharacterID   int64
+	CharacterName string
+}
+
 type inGameMailSupport struct {
 	userRepo  *repository.UserRepository
 	charRepo  *repository.EveCharacterRepository
@@ -58,46 +79,59 @@ func newConfiguredESIClient() *esi.Client {
 	return esi.NewClientWithConfig(global.Config.EveSSO.ESIBaseURL, global.Config.EveSSO.ESIAPIPrefix)
 }
 
-func (s inGameMailSupport) resolveUserPrimaryCharacterID(userID uint) (int64, error) {
+func (s inGameMailSupport) resolveUserPrimaryCharacter(userID uint) (resolvedMailRecipient, error) {
 	if s.userRepo == nil {
-		return 0, errors.New("in-game mail user repository unavailable")
+		return resolvedMailRecipient{}, errors.New("in-game mail user repository unavailable")
 	}
 
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
-		return 0, fmt.Errorf("用户不存在(user_id=%d): %w", userID, err)
+		return resolvedMailRecipient{}, fmt.Errorf("用户不存在(user_id=%d): %w", userID, err)
 	}
+	recipient := resolvedMailRecipient{CharacterID: user.PrimaryCharacterID}
 	if user.PrimaryCharacterID == 0 {
-		return 0, fmt.Errorf("用户主角色未设置(user_id=%d)", userID)
+		return recipient, fmt.Errorf("用户主角色未设置(user_id=%d)", userID)
 	}
-	return user.PrimaryCharacterID, nil
+	if s.charRepo == nil {
+		return recipient, errors.New("in-game mail character repository unavailable")
+	}
+
+	char, err := s.charRepo.GetByCharacterID(user.PrimaryCharacterID)
+	if err != nil {
+		return recipient, fmt.Errorf("收信角色不存在: %w", err)
+	}
+	recipient.CharacterName = strings.TrimSpace(char.CharacterName)
+	return recipient, nil
 }
 
-func (s inGameMailSupport) resolveSender(ctx context.Context, senderUserID uint) (int64, string, string, error) {
+func (s inGameMailSupport) resolveSender(ctx context.Context, senderUserID uint) (resolvedMailSender, error) {
 	if s.userRepo == nil || s.charRepo == nil || s.ssoSvc == nil {
-		return 0, "", "", errors.New("in-game mail dependencies unavailable")
+		return resolvedMailSender{}, errors.New("in-game mail dependencies unavailable")
 	}
 
 	user, err := s.userRepo.GetByID(senderUserID)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("发信用户不存在(user_id=%d): %w", senderUserID, err)
+		return resolvedMailSender{}, fmt.Errorf("发信用户不存在(user_id=%d): %w", senderUserID, err)
 	}
+	sender := resolvedMailSender{CharacterID: user.PrimaryCharacterID}
 	if user.PrimaryCharacterID == 0 {
-		return 0, "", "", fmt.Errorf("发信用户主角色未设置(user_id=%d)", senderUserID)
+		return sender, fmt.Errorf("发信用户主角色未设置(user_id=%d)", senderUserID)
 	}
 
 	senderChar, err := s.charRepo.GetByCharacterID(user.PrimaryCharacterID)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("发信角色不存在: %w", err)
+		return sender, fmt.Errorf("发信角色不存在: %w", err)
 	}
+	sender.CharacterName = strings.TrimSpace(senderChar.CharacterName)
 	if !hasScope(senderChar.Scopes, esiMailSendScope) {
-		return 0, "", "", fmt.Errorf("发信角色未授权 scope: %s", esiMailSendScope)
+		return sender, fmt.Errorf("发信角色未授权 scope: %s", esiMailSendScope)
 	}
 
 	token, err := s.ssoSvc.GetValidToken(ctx, senderChar.CharacterID)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("获取发信 token 失败: %w", err)
+		return sender, fmt.Errorf("获取发信 token 失败: %w", err)
 	}
+	sender.AccessToken = token
 
 	displayName := strings.TrimSpace(user.Nickname)
 	if displayName == "" {
@@ -106,8 +140,9 @@ func (s inGameMailSupport) resolveSender(ctx context.Context, senderUserID uint)
 	if displayName == "" {
 		displayName = fmt.Sprintf("Officer %d", senderUserID)
 	}
+	sender.DisplayName = displayName
 
-	return senderChar.CharacterID, token, displayName, nil
+	return sender, nil
 }
 
 func (s inGameMailSupport) send(
@@ -117,19 +152,21 @@ func (s inGameMailSupport) send(
 	recipientCharacterID int64,
 	subject string,
 	body string,
-) error {
+) (int64, error) {
 	if s.esiClient == nil {
-		return errors.New("in-game mail client unavailable")
+		return 0, errors.New("in-game mail client unavailable")
 	}
 
 	path := fmt.Sprintf("/characters/%d/mail/", senderCharacterID)
-	return s.esiClient.PostNoContent(ctx, path, accessToken, inGameMailSendRequest{
+	var mailID int64
+	err := s.esiClient.PostCreatedJSON(ctx, path, accessToken, inGameMailSendRequest{
 		Subject: subject,
 		Body:    body,
 		Recipients: []inGameMailRecipient{
 			{RecipientID: recipientCharacterID, RecipientType: "character"},
 		},
-	})
+	}, &mailID)
+	return mailID, err
 }
 
 func hasScope(scopes, target string) bool {
@@ -146,4 +183,11 @@ func mailErrorDetail(err error) string {
 		return ""
 	}
 	return strings.TrimSpace(err.Error())
+}
+
+func (s MailAttemptSummary) withError(err error) MailAttemptSummary {
+	if s.MailError == "" {
+		s.MailError = mailErrorDetail(err)
+	}
+	return s
 }

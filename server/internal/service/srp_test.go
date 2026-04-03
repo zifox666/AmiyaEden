@@ -257,7 +257,7 @@ func TestPayoutFuxiCoinModeCreditsWalletAndMarksApplicationPaid(t *testing.T) {
 
 	svc := newSrpServiceForTests()
 	mailAttempted := false
-	svc.payoutMailSender = func(ctx context.Context, payerID uint, apps []*model.SrpApplication) error {
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, apps []*model.SrpApplication) (MailAttemptSummary, error) {
 		mailAttempted = true
 		if payerID != 77 {
 			t.Fatalf("payerID = %d, want 77", payerID)
@@ -265,17 +265,25 @@ func TestPayoutFuxiCoinModeCreditsWalletAndMarksApplicationPaid(t *testing.T) {
 		if len(apps) != 1 || apps[0].ID != app.ID {
 			t.Fatalf("unexpected apps payload: %#v", apps)
 		}
-		return errors.New("mail failed")
+		return MailAttemptSummary{
+			MailSenderCharacterID:      90000077,
+			MailSenderCharacterName:    "Officer Main",
+			MailRecipientCharacterID:   90001001,
+			MailRecipientCharacterName: "Pilot Main",
+		}, errors.New("mail failed")
 	}
-	paidApp, mailWarning, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin})
+	paidApp, mailSummary, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin})
 	if err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful fuxi payout")
 	}
-	if !strings.Contains(mailWarning, "mail failed") {
-		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
+	if !strings.Contains(mailSummary.MailError, "mail failed") {
+		t.Fatalf("mailError = %q, want to contain %q", mailSummary.MailError, "mail failed")
+	}
+	if mailSummary.MailSenderCharacterID != 90000077 || mailSummary.MailRecipientCharacterID != 90001001 {
+		t.Fatalf("unexpected mail summary: %#v", mailSummary)
 	}
 
 	if paidApp.PayoutStatus != model.SrpPayoutPaid {
@@ -342,7 +350,7 @@ func TestPayoutManualTransferIgnoresPayoutMailErrors(t *testing.T) {
 
 	svc := newSrpServiceForTests()
 	mailAttempted := false
-	svc.payoutMailSender = func(ctx context.Context, payerID uint, apps []*model.SrpApplication) error {
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, apps []*model.SrpApplication) (MailAttemptSummary, error) {
 		mailAttempted = true
 		if payerID != 77 {
 			t.Fatalf("payerID = %d, want 77", payerID)
@@ -350,18 +358,23 @@ func TestPayoutManualTransferIgnoresPayoutMailErrors(t *testing.T) {
 		if len(apps) != 1 || apps[0].ID != app.ID {
 			t.Fatalf("unexpected apps payload: %#v", apps)
 		}
-		return errors.New("mail failed")
+		return MailAttemptSummary{
+			MailSenderCharacterID:      90000077,
+			MailSenderCharacterName:    "Officer Main",
+			MailRecipientCharacterID:   90001001,
+			MailRecipientCharacterName: "Pilot Main",
+		}, errors.New("mail failed")
 	}
 
-	paidApp, mailWarning, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeManualTransfer})
+	paidApp, mailSummary, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeManualTransfer})
 	if err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful payout")
 	}
-	if !strings.Contains(mailWarning, "mail failed") {
-		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
+	if !strings.Contains(mailSummary.MailError, "mail failed") {
+		t.Fatalf("mailError = %q, want to contain %q", mailSummary.MailError, "mail failed")
 	}
 	if paidApp.PayoutStatus != model.SrpPayoutPaid {
 		t.Fatalf("payout_status = %q, want %q", paidApp.PayoutStatus, model.SrpPayoutPaid)
@@ -467,7 +480,7 @@ func TestBatchPayoutAsFuxiCoinCreditsApprovedRequestsAcrossUsers(t *testing.T) {
 
 	svc := newSrpServiceForTests()
 	mailAttempted := false
-	svc.payoutMailSender = func(ctx context.Context, payerID uint, selectedApps []*model.SrpApplication) error {
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, selectedApps []*model.SrpApplication) (MailAttemptSummary, error) {
 		mailAttempted = true
 		if payerID != 88 {
 			t.Fatalf("payerID = %d, want 88", payerID)
@@ -475,17 +488,22 @@ func TestBatchPayoutAsFuxiCoinCreditsApprovedRequestsAcrossUsers(t *testing.T) {
 		if len(selectedApps) != 3 {
 			t.Fatalf("mail app count = %d, want 3", len(selectedApps))
 		}
-		return errors.New("mail failed")
+		return MailAttemptSummary{
+			MailSenderCharacterID:      90000088,
+			MailSenderCharacterName:    "Officer Main",
+			MailRecipientCharacterID:   90002001,
+			MailRecipientCharacterName: "Pilot A Main",
+		}, errors.New("mail failed")
 	}
-	summary, mailWarning, err := svc.BatchPayoutAsFuxiCoin(88)
+	summary, mailSummary, err := svc.BatchPayoutAsFuxiCoin(88)
 	if err != nil {
 		t.Fatalf("BatchPayoutAsFuxiCoin() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful fuxi batch payout")
 	}
-	if !strings.Contains(mailWarning, "mail failed") {
-		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
+	if !strings.Contains(mailSummary.MailError, "mail failed") {
+		t.Fatalf("mailError = %q, want to contain %q", mailSummary.MailError, "mail failed")
 	}
 
 	if summary.ApplicationCount != 3 {
@@ -621,7 +639,7 @@ func TestBatchPayoutByUserIgnoresPayoutMailErrors(t *testing.T) {
 
 	svc := newSrpServiceForTests()
 	mailAttempted := false
-	svc.payoutMailSender = func(ctx context.Context, payerID uint, selectedApps []*model.SrpApplication) error {
+	svc.payoutMailSender = func(ctx context.Context, payerID uint, selectedApps []*model.SrpApplication) (MailAttemptSummary, error) {
 		mailAttempted = true
 		if payerID != 88 {
 			t.Fatalf("payerID = %d, want 88", payerID)
@@ -629,18 +647,23 @@ func TestBatchPayoutByUserIgnoresPayoutMailErrors(t *testing.T) {
 		if len(selectedApps) != 2 {
 			t.Fatalf("mail app count = %d, want 2", len(selectedApps))
 		}
-		return errors.New("mail failed")
+		return MailAttemptSummary{
+			MailSenderCharacterID:      90000088,
+			MailSenderCharacterName:    "Officer Main",
+			MailRecipientCharacterID:   90002001,
+			MailRecipientCharacterName: "Pilot A Main",
+		}, errors.New("mail failed")
 	}
 
-	summary, mailWarning, err := svc.BatchPayoutByUser(88, 201)
+	summary, mailSummary, err := svc.BatchPayoutByUser(88, 201)
 	if err != nil {
 		t.Fatalf("BatchPayoutByUser() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected payout mail attempt after successful batch payout")
 	}
-	if !strings.Contains(mailWarning, "mail failed") {
-		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
+	if !strings.Contains(mailSummary.MailError, "mail failed") {
+		t.Fatalf("mailError = %q, want to contain %q", mailSummary.MailError, "mail failed")
 	}
 	if summary.UserID != 201 {
 		t.Fatalf("summary user_id = %d, want 201", summary.UserID)

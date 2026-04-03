@@ -200,6 +200,35 @@ func (c *Client) postJSON(ctx context.Context, path string, accessToken string, 
 	return nil
 }
 
+// PostCreatedJSON 发起带认证的 POST 请求（JSON body），期望 201 Created 并解码响应
+func (c *Client) PostCreatedJSON(ctx context.Context, path string, accessToken string, reqBody interface{}, dest interface{}) error {
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("marshal request body: %w", err)
+	}
+
+	req, err := c.newAuthorizedRequest(http.MethodPost, path, accessToken, bytes.NewReader(bodyBytes), "application/json")
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
+
+	respBody, resp, err := c.performRequest(req, path, "ESI POST", 0)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("ESI error %d on POST %s: %s", resp.StatusCode, path, string(respBody))
+	}
+
+	if dest != nil {
+		if err := json.Unmarshal(respBody, dest); err != nil {
+			return fmt.Errorf("decode ESI response: %w", err)
+		}
+	}
+	return nil
+}
+
 // PutJSON 发起带认证的 PUT 请求（JSON body）
 func (c *Client) PutJSON(ctx context.Context, path string, accessToken string, reqBody interface{}) error {
 	bodyBytes, err := json.Marshal(reqBody)

@@ -3,25 +3,25 @@ package service
 import "amiya-eden/internal/model"
 
 type MailActionResult struct {
-	MailError string `json:"mail_error,omitempty"`
+	MailAttemptSummary
 }
 
 type ShopOrderActionResult struct {
 	model.ShopOrder
-	MailError string `json:"mail_error,omitempty"`
+	MailAttemptSummary
 }
 
 type SrpPayoutActionResult struct {
 	model.SrpApplication
-	MailError string `json:"mail_error,omitempty"`
+	MailAttemptSummary
 }
 
 type SrpBatchPayoutActionResult struct {
 	SrpBatchPayoutSummaryResponse
-	MailError string `json:"mail_error,omitempty"`
+	MailAttemptSummary
 }
 
 type SrpBatchFuxiPayoutActionResult struct {
 	SrpBatchFuxiPayoutSummary
-	MailError string `json:"mail_error,omitempty"`
+	MailAttemptSummary
 }

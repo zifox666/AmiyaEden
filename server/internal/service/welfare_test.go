@@ -625,7 +625,7 @@ func TestAdminReviewApplicationDeliverAttemptsInGameMailButIgnoresMailErrors(t *
 
 	svc := NewWelfareService()
 	mailAttempted := false
-	svc.deliveryMailSender = func(ctx context.Context, reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) error {
+	svc.deliveryMailSender = func(ctx context.Context, reviewerID uint, deliveredWelfare *model.Welfare, deliveredApp *model.WelfareApplication) (MailAttemptSummary, error) {
 		mailAttempted = true
 		if reviewerID != 77 {
 			t.Fatalf("reviewerID = %d, want 77", reviewerID)
@@ -636,18 +636,26 @@ func TestAdminReviewApplicationDeliverAttemptsInGameMailButIgnoresMailErrors(t *
 		if deliveredApp.ID != app.ID {
 			t.Fatalf("application id = %d, want %d", deliveredApp.ID, app.ID)
 		}
-		return errors.New("mail failed")
+		return MailAttemptSummary{
+			MailSenderCharacterID:      90000077,
+			MailSenderCharacterName:    "Officer Main",
+			MailRecipientCharacterID:   90000042,
+			MailRecipientCharacterName: "Pilot Main",
+		}, errors.New("mail failed")
 	}
 
-	mailWarning, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"})
+	mailSummary, err := svc.AdminReviewApplication(app.ID, 77, &AdminReviewApplicationRequest{Action: "deliver"})
 	if err != nil {
 		t.Fatalf("AdminReviewApplication() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected deliver to attempt in-game mail after successful delivery")
 	}
-	if !strings.Contains(mailWarning, "mail failed") {
-		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
+	if !strings.Contains(mailSummary.MailError, "mail failed") {
+		t.Fatalf("mailError = %q, want to contain %q", mailSummary.MailError, "mail failed")
+	}
+	if mailSummary.MailSenderCharacterID != 90000077 || mailSummary.MailRecipientCharacterID != 90000042 {
+		t.Fatalf("unexpected mail summary: %#v", mailSummary)
 	}
 
 	var updated model.WelfareApplication
@@ -674,9 +682,6 @@ func TestBuildWelfareDeliveryMailContentIncludesBilingualOfficerNotice(t *testin
 	if !strings.Contains(body, "福利名称：Starter Pack") {
 		t.Fatalf("expected Chinese body to include welfare name detail, got %q", body)
 	}
-	if !strings.Contains(body, "发放官员：Amiya") {
-		t.Fatalf("expected Chinese body to include officer detail, got %q", body)
-	}
 	if !strings.Contains(body, "请检查你的伏羲币钱包或合同") {
 		t.Fatalf("expected Chinese body to mention FuxiCoin wallet or contract, got %q", body)
 	}
@@ -688,9 +693,6 @@ func TestBuildWelfareDeliveryMailContentIncludesBilingualOfficerNotice(t *testin
 	}
 	if !strings.Contains(body, "Welfare: Starter Pack") {
 		t.Fatalf("expected English body to include welfare detail, got %q", body)
-	}
-	if !strings.Contains(body, "Delivered by: Amiya") {
-		t.Fatalf("expected English body to include officer detail, got %q", body)
 	}
 	if !strings.Contains(body, "Please check your FuxiCoin wallet or contract.") {
 		t.Fatalf("expected English body to mention FuxiCoin wallet or contract, got %q", body)

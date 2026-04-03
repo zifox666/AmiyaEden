@@ -49,7 +49,7 @@ func TestAdminDeliverOrderAttemptsInGameMailButIgnoresMailErrors(t *testing.T) {
 
 	svc := NewShopService()
 	mailAttempted := false
-	svc.orderDeliveryMailSender = func(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) error {
+	svc.orderDeliveryMailSender = func(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) (MailAttemptSummary, error) {
 		mailAttempted = true
 		if operatorID != 77 {
 			t.Fatalf("operatorID = %d, want 77", operatorID)
@@ -57,18 +57,26 @@ func TestAdminDeliverOrderAttemptsInGameMailButIgnoresMailErrors(t *testing.T) {
 		if deliveredOrder.ID != order.ID {
 			t.Fatalf("order id = %d, want %d", deliveredOrder.ID, order.ID)
 		}
-		return errors.New("mail failed")
+		return MailAttemptSummary{
+			MailSenderCharacterID:      90000077,
+			MailSenderCharacterName:    "Officer Main",
+			MailRecipientCharacterID:   90000042,
+			MailRecipientCharacterName: "Pilot Main",
+		}, errors.New("mail failed")
 	}
 
-	deliveredOrder, mailWarning, err := svc.AdminDeliverOrder(order.ID, 77, "contract issued")
+	deliveredOrder, mailSummary, err := svc.AdminDeliverOrder(order.ID, 77, "contract issued")
 	if err != nil {
 		t.Fatalf("AdminDeliverOrder() error = %v", err)
 	}
 	if !mailAttempted {
 		t.Fatal("expected deliver to attempt in-game mail after successful delivery")
 	}
-	if !strings.Contains(mailWarning, "mail failed") {
-		t.Fatalf("mailWarning = %q, want to contain %q", mailWarning, "mail failed")
+	if !strings.Contains(mailSummary.MailError, "mail failed") {
+		t.Fatalf("mailError = %q, want to contain %q", mailSummary.MailError, "mail failed")
+	}
+	if mailSummary.MailSenderCharacterID != 90000077 || mailSummary.MailRecipientCharacterID != 90000042 {
+		t.Fatalf("unexpected mail summary: %#v", mailSummary)
 	}
 	if deliveredOrder.Status != model.OrderStatusDelivered {
 		t.Fatalf("status = %q, want %q", deliveredOrder.Status, model.OrderStatusDelivered)
@@ -83,6 +91,63 @@ func TestAdminDeliverOrderAttemptsInGameMailButIgnoresMailErrors(t *testing.T) {
 	}
 	if updated.ReviewedBy == nil || *updated.ReviewedBy != 77 {
 		t.Fatalf("reviewed_by = %v, want 77", updated.ReviewedBy)
+	}
+}
+
+func TestAdminDeliverOrderReturnsMailAttemptSummaryWhenMailSucceeds(t *testing.T) {
+	db := newShopServiceTestDB(t)
+	useShopServiceTestDB(t, db)
+
+	product := &model.ShopProduct{
+		Name:      "Navy Omen",
+		Price:     10,
+		Stock:     -1,
+		Type:      model.ProductTypeNormal,
+		Status:    model.ProductStatusOnSale,
+		SortOrder: 1,
+	}
+	if err := db.Create(product).Error; err != nil {
+		t.Fatalf("create product: %v", err)
+	}
+
+	order := &model.ShopOrder{
+		OrderNo:           "ORDER002",
+		UserID:            42,
+		MainCharacterName: "Pilot One",
+		ProductID:         product.ID,
+		ProductName:       product.Name,
+		Quantity:          1,
+		UnitPrice:         product.Price,
+		TotalPrice:        product.Price,
+		Status:            model.OrderStatusRequested,
+	}
+	if err := db.Create(order).Error; err != nil {
+		t.Fatalf("create order: %v", err)
+	}
+
+	svc := NewShopService()
+	svc.orderDeliveryMailSender = func(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) (MailAttemptSummary, error) {
+		return MailAttemptSummary{
+			MailID:                     123456789,
+			MailSenderCharacterID:      90000077,
+			MailSenderCharacterName:    "Officer Main",
+			MailRecipientCharacterID:   90000042,
+			MailRecipientCharacterName: "Pilot Main",
+		}, nil
+	}
+
+	_, mailSummary, err := svc.AdminDeliverOrder(order.ID, 77, "contract issued")
+	if err != nil {
+		t.Fatalf("AdminDeliverOrder() error = %v", err)
+	}
+	if mailSummary.MailError != "" {
+		t.Fatalf("mailError = %q, want empty", mailSummary.MailError)
+	}
+	if mailSummary.MailID != 123456789 {
+		t.Fatalf("mailID = %d, want 123456789", mailSummary.MailID)
+	}
+	if mailSummary.MailSenderCharacterName != "Officer Main" || mailSummary.MailRecipientCharacterName != "Pilot Main" {
+		t.Fatalf("unexpected mail summary: %#v", mailSummary)
 	}
 }
 
@@ -104,9 +169,6 @@ func TestBuildShopOrderDeliveryMailContentIncludesBilingualOfficerNotice(t *test
 	if !strings.Contains(body, "数量：2") {
 		t.Fatalf("expected Chinese body to include quantity, got %q", body)
 	}
-	if !strings.Contains(body, "发放官员：Amiya") {
-		t.Fatalf("expected Chinese body to include officer detail, got %q", body)
-	}
 	if !strings.Contains(body, "请检查你的钱包或合同") {
 		t.Fatalf("expected Chinese body to mention wallet or contract, got %q", body)
 	}
@@ -124,9 +186,6 @@ func TestBuildShopOrderDeliveryMailContentIncludesBilingualOfficerNotice(t *test
 	}
 	if !strings.Contains(body, "Quantity: 2") {
 		t.Fatalf("expected English body to include quantity, got %q", body)
-	}
-	if !strings.Contains(body, "Delivered by: Amiya") {
-		t.Fatalf("expected English body to include officer detail, got %q", body)
 	}
 	if !strings.Contains(body, "Please check your wallet or contract.") {
 		t.Fatalf("expected English body to mention wallet or contract, got %q", body)

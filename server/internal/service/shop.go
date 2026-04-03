@@ -17,7 +17,7 @@ import (
 )
 
 // ShopService 商店业务逻辑层
-type shopOrderDeliveryMailSender func(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) error
+type shopOrderDeliveryMailSender func(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) (MailAttemptSummary, error)
 
 type ShopService struct {
 	repo      *repository.ShopRepository
@@ -372,13 +372,13 @@ func (s *ShopService) AdminListOrders(page, pageSize int, filter repository.Orde
 }
 
 // AdminDeliverOrder 发放订单
-func (s *ShopService) AdminDeliverOrder(orderID uint, operatorID uint, remark string) (*model.ShopOrder, string, error) {
+func (s *ShopService) AdminDeliverOrder(orderID uint, operatorID uint, remark string) (*model.ShopOrder, MailAttemptSummary, error) {
 	order, err := s.repo.GetOrderByID(orderID)
 	if err != nil {
-		return nil, "", errors.New("订单不存在")
+		return nil, MailAttemptSummary{}, errors.New("订单不存在")
 	}
 	if order.Status != model.OrderStatusRequested {
-		return nil, "", fmt.Errorf("订单状态为 %s，无法发放", order.Status)
+		return nil, MailAttemptSummary{}, fmt.Errorf("订单状态为 %s，无法发放", order.Status)
 	}
 
 	now := time.Now()
@@ -399,28 +399,29 @@ func (s *ShopService) AdminDeliverOrder(orderID uint, operatorID uint, remark st
 				Status:    model.RedeemStatusUnused,
 			}
 			if err := s.repo.CreateRedeemCode(code); err != nil {
-				return nil, "", fmt.Errorf("生成兑换码失败: %w", err)
+				return nil, MailAttemptSummary{}, fmt.Errorf("生成兑换码失败: %w", err)
 			}
 		}
 	}
 
 	if err := s.repo.UpdateOrder(order); err != nil {
-		return nil, "", fmt.Errorf("更新订单失败: %w", err)
+		return nil, MailAttemptSummary{}, fmt.Errorf("更新订单失败: %w", err)
 	}
 
-	mailWarning := s.attemptOrderDeliveryMail(operatorID, order)
-	return order, mailWarning, nil
+	mailSummary := s.attemptOrderDeliveryMail(operatorID, order)
+	return order, mailSummary, nil
 }
 
-func (s *ShopService) attemptOrderDeliveryMail(operatorID uint, deliveredOrder *model.ShopOrder) string {
+func (s *ShopService) attemptOrderDeliveryMail(operatorID uint, deliveredOrder *model.ShopOrder) MailAttemptSummary {
 	if deliveredOrder == nil || s.orderDeliveryMailSender == nil {
-		return ""
+		return MailAttemptSummary{}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := s.orderDeliveryMailSender(ctx, operatorID, deliveredOrder); err != nil {
+	summary, err := s.orderDeliveryMailSender(ctx, operatorID, deliveredOrder)
+	if err != nil {
 		if global.Logger != nil {
 			global.Logger.Warn("商店订单发放后邮件尝试失败",
 				zap.Uint("operator_user_id", operatorID),
@@ -429,34 +430,41 @@ func (s *ShopService) attemptOrderDeliveryMail(operatorID uint, deliveredOrder *
 				zap.Error(err),
 			)
 		}
-		return mailErrorDetail(err)
+		return summary.withError(err)
 	}
-	return ""
+	return summary
 }
 
-func (s *ShopService) sendOrderDeliveryMail(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) error {
+func (s *ShopService) sendOrderDeliveryMail(ctx context.Context, operatorID uint, deliveredOrder *model.ShopOrder) (MailAttemptSummary, error) {
 	if deliveredOrder == nil {
-		return nil
+		return MailAttemptSummary{}, nil
 	}
 
+	summary := MailAttemptSummary{}
 	mailSupport := newInGameMailSupport(s.userRepo, s.charRepo, s.ssoSvc, s.esiClient)
-	senderCharacterID, token, officerDisplayName, err := mailSupport.resolveSender(ctx, operatorID)
+	sender, err := mailSupport.resolveSender(ctx, operatorID)
+	summary.MailSenderCharacterID = sender.CharacterID
+	summary.MailSenderCharacterName = sender.CharacterName
 	if err != nil {
-		return err
+		return summary, err
 	}
 
-	recipientCharacterID, err := mailSupport.resolveUserPrimaryCharacterID(deliveredOrder.UserID)
+	recipient, err := mailSupport.resolveUserPrimaryCharacter(deliveredOrder.UserID)
+	summary.MailRecipientCharacterID = recipient.CharacterID
+	summary.MailRecipientCharacterName = recipient.CharacterName
 	if err != nil {
-		return err
+		return summary, err
 	}
 
 	subject, body := buildShopOrderDeliveryMailContent(
 		deliveredOrder.OrderNo,
 		deliveredOrder.ProductName,
 		deliveredOrder.Quantity,
-		officerDisplayName,
+		sender.DisplayName,
 	)
-	return mailSupport.send(ctx, senderCharacterID, token, recipientCharacterID, subject, body)
+	mailID, err := mailSupport.send(ctx, sender.CharacterID, sender.AccessToken, recipient.CharacterID, subject, body)
+	summary.MailID = mailID
+	return summary, err
 }
 
 func buildShopOrderDeliveryMailContent(orderNo, orderItem string, quantity int, officerDisplayName string) (string, string) {
@@ -476,28 +484,22 @@ func buildShopOrderDeliveryMailContent(orderNo, orderItem string, quantity int, 
 		officerDisplayName = "Officer"
 	}
 
-	subject := fmt.Sprintf("[订单发放通知 / Order Delivery Notice] %s", orderItem)
+	subject := fmt.Sprintf("订单发放通知 / Order Delivery Notice %s", orderItem)
 	var bodyBuilder strings.Builder
 	bodyBuilder.WriteString("你好，\n\n")
 	fmt.Fprintf(&bodyBuilder, "你的订单已由 %s 发放。\n", officerDisplayName)
-	bodyBuilder.WriteString("订单详情：\n")
 	fmt.Fprintf(&bodyBuilder, "订单编号：%s\n", orderNo)
 	fmt.Fprintf(&bodyBuilder, "订单内容：%s\n", orderItem)
 	fmt.Fprintf(&bodyBuilder, "数量：%d\n", quantity)
-	fmt.Fprintf(&bodyBuilder, "发放官员：%s\n", officerDisplayName)
 	bodyBuilder.WriteString("请检查你的钱包或合同。\n")
-	bodyBuilder.WriteString("如有疑问，请联系处理此订单的官员。\n")
 	bodyBuilder.WriteString("感谢你的耐心等待。\n")
-
+	bodyBuilder.WriteString("==============\n\n")
 	bodyBuilder.WriteString("Hello,\n\n")
 	fmt.Fprintf(&bodyBuilder, "Your shop order has been delivered by %s.\n", officerDisplayName)
-	bodyBuilder.WriteString("Order details:\n")
 	fmt.Fprintf(&bodyBuilder, "Order No: %s\n", orderNo)
 	fmt.Fprintf(&bodyBuilder, "Item: %s\n", orderItem)
 	fmt.Fprintf(&bodyBuilder, "Quantity: %d\n", quantity)
-	fmt.Fprintf(&bodyBuilder, "Delivered by: %s\n", officerDisplayName)
 	bodyBuilder.WriteString("Please check your wallet or contract.\n")
-	bodyBuilder.WriteString("If anything looks incorrect, please contact the officer who handled this order.\n")
 	bodyBuilder.WriteString("Thank you for your patience.\n")
 
 	return subject, bodyBuilder.String()

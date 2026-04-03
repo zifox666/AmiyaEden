@@ -14,6 +14,7 @@ import {
 } from '@/api/srp'
 import { useClipboardCopy } from '@/hooks/core/useClipboardCopy'
 import { formatIskPlain, millionInputToIsk } from '@/utils/common'
+import { showMailAttemptMessage } from '@/utils/mailAttempt'
 
 type SrpApp = Api.Srp.Application
 type BatchPayoutSummary = Api.Srp.BatchPayoutSummary
@@ -152,9 +153,7 @@ export function useSrpWorkflow(deps: {
       ElMessage.success(
         t('srp.manage.fuxiPayoutSuccess', { amount: formatFuxiCoin(row.final_amount) })
       )
-      if (result.mail_error) {
-        ElMessage.warning(result.mail_error)
-      }
+      showMailAttemptMessage(result, t)
       await deps.refreshData()
     } catch {
       /* handled */
@@ -169,9 +168,7 @@ export function useSrpWorkflow(deps: {
     try {
       const result = await payoutApplication(payoutTarget.value.id, { mode: 'manual_transfer' })
       ElMessage.success(t('srp.manage.payoutSuccess'))
-      if (result.mail_error) {
-        ElMessage.warning(result.mail_error)
-      }
+      showMailAttemptMessage(result, t)
       payoutDialogVisible.value = false
       deps.refreshData()
     } catch {
@@ -234,9 +231,7 @@ export function useSrpWorkflow(deps: {
           amount: result.total_fuxi_coin.toFixed(2)
         })
       )
-      if (result.mail_error) {
-        ElMessage.warning(result.mail_error)
-      }
+      showMailAttemptMessage(result, t)
       await deps.refreshData()
     } catch {
       /* handled */
@@ -290,9 +285,7 @@ export function useSrpWorkflow(deps: {
     try {
       const result = await batchPayoutByUser(row.user_id)
       ElMessage.success(t('srp.manage.batchPayoutSuccess'))
-      if (result.mail_error) {
-        ElMessage.warning(result.mail_error)
-      }
+      showMailAttemptMessage(result, t)
       await Promise.all([loadBatchPayoutSummary(), deps.refreshData()])
     } catch {
       /* handled */
