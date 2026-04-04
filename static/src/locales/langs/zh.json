@@ -61,16 +61,25 @@
     "historyTitle": "搜索历史",
     "switchKeydown": "切换",
     "selectKeydown": "选择",
-    "exitKeydown": "关闭"
+    "exitKeydown": "@:common.close"
   },
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": ["垂直", "水平", "混合", "双列"]
+      "list": [
+        "垂直",
+        "水平",
+        "混合",
+        "双列"
+      ]
     },
     "theme": {
       "title": "主题风格",
-      "list": ["浅色", "深色", "系统"]
+      "list": [
+        "浅色",
+        "深色",
+        "系统"
+      ]
     },
     "menu": {
       "title": "菜单风格"
@@ -80,11 +89,17 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": ["边框", "阴影"]
+      "list": [
+        "边框",
+        "阴影"
+      ]
     },
     "container": {
       "title": "容器宽度",
-      "list": ["铺满", "定宽"]
+      "list": [
+        "铺满",
+        "定宽"
+      ]
     },
     "basics": {
       "title": "基础配置",
@@ -130,8 +145,12 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": ["通知"],
-    "text": ["暂无"],
+    "bar": [
+      "通知"
+    ],
+    "text": [
+      "暂无"
+    ],
     "viewAll": "查看全部"
   },
   "console": {
@@ -145,7 +164,7 @@
   },
   "worktab": {
     "btn": {
-      "refresh": "刷新",
+      "refresh": "@:common.refresh",
       "fixed": "固定",
       "unfixed": "取消固定",
       "closeLeft": "关闭左侧",
@@ -304,12 +323,12 @@
       "menu": "菜单管理",
       "esiRefresh": "定时任务",
       "wallet": "钱包管理",
-      "alliancePap": "联盟 PAP",
+      "alliancePap": "@:console.alliancePap",
       "papExchange": "PAP兑换",
       "npcKills": "刷怪报表",
       "autoRole": "自动权限",
       "webhook": "Webhook 通知",
-      "basicConfig": "基础配置",
+      "basicConfig": "@:setting.basics.title",
       "newbroSettings": "帮扶设置",
       "mentorRewardStages": "导师奖励阶段"
     }
@@ -322,11 +341,11 @@
     "walletBalance": "钱包余额",
     "walletJournal": "钱包流水",
     "journalDate": "时间",
-    "journalType": "类型",
-    "journalAmount": "金额",
+    "journalType": "@:common.type",
+    "journalAmount": "@:common.amount",
     "journalBalance": "余额",
     "journalDescription": "描述",
-    "journalReason": "备注",
+    "journalReason": "@:common.reason",
     "noJournalData": "暂无钱包流水记录",
     "totalSP": "总技能点",
     "unallocatedSP": "未分配 SP",
@@ -432,8 +451,8 @@
     "selectCharacterPlaceholder": "请选择一个人物",
     "startDate": "开始日期",
     "endDate": "结束日期",
-    "search": "查询",
-    "reset": "重置",
+    "search": "@:common.search",
+    "reset": "@:common.reset",
     "summary": "总览",
     "totalBounty": "刷怪赏金",
     "totalIncursion": "入侵收入",
@@ -455,11 +474,11 @@
     "trendCount": "记录数",
     "journals": "流水明细",
     "journalDate": "时间",
-    "journalAmount": "金额",
+    "journalAmount": "@:common.amount",
     "journalTax": "税金",
-    "journalRefType": "类型",
+    "journalRefType": "@:common.type",
     "journalSystem": "星系",
-    "journalReason": "备注",
+    "journalReason": "@:common.reason",
     "characterName": "人物名称",
     "allCharacters": "全部人物",
     "noData": "暂无刷怪数据",
@@ -489,7 +508,7 @@
     "statusActive": "启用",
     "statusDisabled": "停用",
     "filterName": "福利名称",
-    "filterStatus": "状态",
+    "filterStatus": "@:common.status",
     "yes": "是",
     "no": "否",
     "validName": "请输入福利名称",
@@ -582,8 +601,8 @@
     "rejectConfirm": "确定拒绝 {name} 的福利申请？",
     "deliverSuccess": "福利已发放",
     "rejectSuccess": "福利申请已拒绝",
-    "copied": "已复制",
-    "copyFailed": "复制失败",
+    "copied": "@:common.copied",
+    "copyFailed": "@:common.copyFailed",
     "noPending": "暂无待发放请求",
     "noHistory": "暂无处理记录",
     "searchBtn": "搜索",
@@ -597,7 +616,7 @@
     "products": "商品列表",
     "allTypes": "全部类型",
     "typeNormal": "普通商品",
-    "typeRedeem": "兑换码",
+    "typeRedeem": "@:shop.redeemCode",
     "myBalance": "我的余额",
     "unlimitedStock": "库存充足",
     "stockRemaining": "库存: {n}",
@@ -618,7 +637,7 @@
     "quantity": "数量",
     "unitPrice": "单价（伏羲币）",
     "totalPrice": "总价（伏羲币）",
-    "status": "状态",
+    "status": "@:common.status",
     "reviewerName": "操作人",
     "orderTime": "下单时间",
     "noOrders": "暂无订单",
@@ -640,9 +659,9 @@
       "editProduct": "编辑商品",
       "filterName": "商品名称",
       "filterType": "商品类型",
-      "filterStatus": "状态",
-      "search": "查询",
-      "reset": "重置",
+      "filterStatus": "@:common.status",
+      "search": "@:common.search",
+      "reset": "@:common.reset",
       "description": "描述",
       "descriptionPlaceholder": "商品描述（可选）",
       "productImage": "商品图片",
@@ -650,7 +669,7 @@
       "uploadImage": "点击上传图片",
       "uploadHint": "JPG/PNG/WebP，最大 2MB",
       "price": "价格",
-      "type": "类型",
+      "type": "@:common.type",
       "typeNormal": "普通商品",
       "typeNormalShort": "普通",
       "typeRedeem": "兑换码/服务",
@@ -667,7 +686,7 @@
       "periodWeekly": "每周",
       "periodMonthly": "每月",
       "needApproval": "需要审批",
-      "status": "状态",
+      "status": "@:common.status",
       "statusOnSale": "上架",
       "statusOffSale": "下架",
       "sortOrder": "排序",
@@ -675,7 +694,7 @@
       "yes": "是",
       "no": "否",
       "colImage": "图片",
-      "colType": "类型",
+      "colType": "@:common.type",
       "colApproval": "需审批",
       "colSort": "排序",
       "updateSuccess": "更新成功",
@@ -683,7 +702,7 @@
       "operationFailed": "操作失败",
       "deleteConfirm": "确定要删除商品「{name}」吗？",
       "deleteTitle": "确认删除",
-      "deleteBtn": "删除",
+      "deleteBtn": "@:common.delete",
       "deleteSuccess": "删除成功",
       "deleteFailed": "删除失败",
       "imageTooLarge": "图片大小不能超过 2MB",
@@ -720,7 +739,7 @@
     },
     "table": {
       "userInfo": "用户信息",
-      "contact": "联系方式",
+      "contact": "@:welfareApproval.contact",
       "lastLogin": "最后登录",
       "loginIp": "登录IP",
       "registeredAt": "注册时间"
@@ -769,7 +788,7 @@
       "endedAt": "结束时间",
       "refType": "流水类型",
       "systemId": "星系 ID",
-      "amount": "金额",
+      "amount": "@:common.amount",
       "journalAt": "流水时间",
       "processedAt": "处理时间"
     },
@@ -798,7 +817,7 @@
       "noCurrentCaptain": "当前还没有选择队长",
       "affiliationStarted": "开始时间",
       "captainList": "可选队长",
-      "nicknameLabel": "昵称",
+      "nicknameLabel": "@:newbro.common.nickname",
       "activeNewbros": "当前带新人数量",
       "lastOnline": "最近在线",
       "currentSelection": "当前选择",
@@ -820,7 +839,7 @@
       "noCurrentRelationship": "当前没有待处理或生效中的导师关系",
       "mentorList": "可选导师",
       "noMentors": "当前没有可申请的导师",
-      "nicknameLabel": "昵称",
+      "nicknameLabel": "@:newbro.common.nickname",
       "activeMentees": "当前学员数",
       "lastOnline": "最近在线",
       "apply": "申请导师",
@@ -900,7 +919,7 @@
       "distributedRewardAmount": "累计已发伏羲币",
       "noDistributedStages": "暂无",
       "accept": "接受",
-      "reject": "拒绝",
+      "reject": "@:welfareApproval.rejectBtn",
       "acceptSuccess": "申请已接受",
       "rejectSuccess": "申请已拒绝"
     },
@@ -926,8 +945,8 @@
       "newbroNicknameColumn": "新人昵称",
       "changedByCharacterColumn": "变更操作人物",
       "historyPlayerCharacterId": "新人人物 ID",
-      "nicknameLabel": "昵称",
-      "nicknameColumn": "昵称",
+      "nicknameLabel": "@:newbro.common.nickname",
+      "nicknameColumn": "@:newbro.common.nickname",
       "activeNewbroCount": "当前新人数",
       "historicalNewbroCount": "历史新人数",
       "viewDetail": "查看详情",
@@ -991,7 +1010,7 @@
       "timeRange": "起止时间",
       "startAt": "开始时间",
       "endAt": "结束时间",
-      "createdAt": "创建时间",
+      "createdAt": "@:common.createdAt",
       "fc": "舰队指挥",
       "fcPlaceholder": "选择一个人物作为舰队指挥",
       "description": "详细信息",
@@ -1060,7 +1079,7 @@
         "stratOp": "Strat Op",
         "other": "普通"
       },
-      "allianceCard": "联盟 PAP",
+      "allianceCard": "@:console.alliancePap",
       "allianceEmpty": "暂无联盟 PAP 记录",
       "allianceYearly": "年度 PAP",
       "allianceCorpMonthRank": "军团月排名",
@@ -1069,15 +1088,15 @@
       "allianceDataSource": "数据来源：联盟 PAP 系统",
       "allianceLastCalc": "最后计算",
       "allianceOperationName": "行动名称",
-      "allianceStartTime": "开始时间",
-      "allianceEndTime": "结束时间"
+      "allianceStartTime": "@:fleet.fields.startAt",
+      "allianceEndTime": "@:fleet.fields.endAt"
     },
     "corporationPap": {
       "title": "军团PAP",
       "summaryTitle": "军团 PAP 汇总",
       "empty": "暂无军团 PAP 汇总记录",
-      "search": "查询",
-      "reset": "重置",
+      "search": "@:common.search",
+      "reset": "@:common.reset",
       "filters": {
         "period": "时间范围",
         "year": "年份",
@@ -1097,7 +1116,7 @@
       },
       "columns": {
         "corpTicker": "军团",
-        "nickname": "昵称",
+        "nickname": "@:newbro.common.nickname",
         "mainCharacter": "主人物名",
         "characterCount": "人物数量",
         "stratOpPaps": "战略OP",
@@ -1135,11 +1154,11 @@
       "title": "我的钱包",
       "balance": "余额",
       "transactions": "交易记录",
-      "amount": "金额",
+      "amount": "@:common.amount",
       "balanceAfter": "余额",
-      "reason": "说明",
-      "refType": "类型",
-      "time": "时间",
+      "reason": "@:common.reason",
+      "refType": "@:common.type",
+      "time": "@:common.time",
       "empty": "暂无交易记录"
     }
   },
@@ -1329,7 +1348,7 @@
       "incomplete": "未完成",
       "completedHint": "个人资料已完成，可以正常访问其他页面。",
       "requiredHint": "需要填写昵称，并至少填写 QQ 或 Discord ID 后才能继续使用系统。",
-      "nickname": "昵称",
+      "nickname": "@:newbro.common.nickname",
       "nicknamePlaceholder": "请输入昵称",
       "qq": "QQ",
       "qqPlaceholder": "请输入 QQ",
@@ -1364,7 +1383,7 @@
       "fleetNotePlaceholder": "把集结信息写在这里。",
       "fleetDetailTitle": "舰队详情",
       "fleetDetailFC": "FC",
-      "fleetDetailTime": "时间",
+      "fleetDetailTime": "@:common.time",
       "fleetDetailImportance": "重要性",
       "fleetDetailDesc": "描述",
       "killmail": "KillMail",
@@ -1380,7 +1399,7 @@
       "note": "备注",
       "notePlaceholder": "可选",
       "noteRequired": "无关联舰队时必填",
-      "cancelBtn": "取消",
+      "cancelBtn": "@:common.cancel",
       "confirmSubmitBtn": "提交申请",
       "submitSuccess": "申请提交成功",
       "noKmFound": "未找到符合条件的 KM",
@@ -1390,7 +1409,7 @@
         "ship": "舰船",
         "system": "星系",
         "killId": "KillID",
-        "time": "时间",
+        "time": "@:common.time",
         "estimatedValue": "估价",
         "fleetId": "舰队ID",
         "recommendedAmount": "推荐金额",
@@ -1416,11 +1435,11 @@
       "title": "补损申请列表",
       "pendingTab": "待处理",
       "historyTab": "发放记录",
-      "refresh": "刷新",
+      "refresh": "@:common.refresh",
       "selectFleet": "按舰队筛选",
       "userKeywordFilter": "按人物名或昵称搜索",
-      "searchBtn": "查询",
-      "resetBtn": "重置",
+      "searchBtn": "@:common.search",
+      "resetBtn": "@:common.reset",
       "payoutModeLabel": "发放方式",
       "payoutModes": {
         "fuxiCoin": "伏羲币补损",
@@ -1430,7 +1449,7 @@
       "autoApproveBtn": "自动审批",
       "batchPayoutBtn": "批量发放",
       "approveBtn": "批准",
-      "rejectBtn": "拒绝",
+      "rejectBtn": "@:welfareApproval.rejectBtn",
       "payoutBtn": "发放",
       "approveDialog": "批准申请",
       "rejectDialog": "拒绝申请",
@@ -1438,7 +1457,7 @@
       "batchPayoutDialog": "批量发放",
       "batchPayoutHint": "点击右侧复制按钮，将内容粘贴至游戏内记事本",
       "batchPayoutMainCharacter": "主人物",
-      "batchPayoutAmount": "金额",
+      "batchPayoutAmount": "@:common.amount",
       "batchPayoutApprovedAmount": "已批准金额",
       "batchPayoutPendingAmount": "待审批金额",
       "batchPayoutTotalAmount": "合计金额",
@@ -1474,17 +1493,17 @@
       "unknownReviewer": "审批人",
       "payoutKillId": "KillID",
       "openInfoWindow": "打开人物信息",
-      "editBtn": "编辑",
+      "editBtn": "@:common.edit",
       "reRejectBtn": "拒绝",
       "reApproveBtn": "批准",
-      "copied": "已复制",
-      "copyFailed": "复制失败",
+      "copied": "@:common.copied",
+      "copyFailed": "@:common.copyFailed",
       "noPrimaryCharacter": "请先设置主人物",
       "openInfoWindowSuccess": "已发送打开信息窗口请求",
       "unknownMainCharacter": "未知人物",
       "columns": {
         "id": "#",
-        "nickname": "昵称",
+        "nickname": "@:newbro.common.nickname",
         "character": "人物",
         "ship": "舰船",
         "system": "星系",
@@ -1506,7 +1525,7 @@
     "prices": {
       "title": "舰船补损价格表",
       "searchPlaceholder": "按舰船名搜索",
-      "refresh": "刷新",
+      "refresh": "@:common.refresh",
       "addPrice": "新增价格",
       "exportBtn": "导出价格",
       "importBtn": "导入价格",
@@ -1515,14 +1534,14 @@
       "importNoData": "未找到有效数据，请检查列名（TypeID / 舰船名称 / 标准补损金额）",
       "addDialog": "新增舰船价格",
       "editDialog": "编辑舰船价格",
-      "saveBtn": "保存",
-      "cancelBtn": "取消",
+      "saveBtn": "@:common.save",
+      "cancelBtn": "@:common.cancel",
       "deleteConfirm": "确认删除该条记录？",
       "updateSuccess": "更新成功",
       "addSuccess": "新增成功",
       "deleteSuccess": "已删除",
-      "editBtn": "编辑",
-      "deleteBtn": "删除",
+      "editBtn": "@:common.edit",
+      "deleteBtn": "@:common.delete",
       "validTypeId": "请填写有效的 TypeID",
       "validName": "请填写舰船名称",
       "validAmount": "金额不能为负",
@@ -1551,11 +1570,11 @@
   },
   "alliancePap": {
     "title": "联盟 PAP - 全员视图",
-    "shortTitle": "联盟 PAP",
+    "shortTitle": "@:console.alliancePap",
     "selectMonth": "选择月份",
     "memberCount": "共 {count} 名成员有记录",
     "totalPap": "总 PAP",
-    "refresh": "刷新",
+    "refresh": "@:common.refresh",
     "fetchLatest": "拉取最新数据",
     "fetchTriggered": "已触发后台拉取，请稍后刷新查看",
     "fetchFailed": "触发拉取失败",
@@ -1580,8 +1599,8 @@
       "character": "人物",
       "level": "等级",
       "ship": "舰船",
-      "startTime": "开始时间",
-      "endTime": "结束时间",
+      "startTime": "@:fleet.fields.startAt",
+      "endTime": "@:fleet.fields.endAt",
       "monthlyPap": "月 PAP",
       "yearlyPap": "年度 PAP",
       "corpMonthlyRank": "军团月排",
@@ -1589,7 +1608,7 @@
       "corpYearlyRank": "军团年排",
       "allianceYearlyRank": "联盟年排",
       "calculatedAt": "数据时间",
-      "status": "状态"
+      "status": "@:common.status"
     },
     "status": {
       "archived": "已归档",
@@ -1715,9 +1734,9 @@
       "createProduct": "新增商品",
       "searchNamePlaceholder": "商品名称",
       "typePlaceholder": "商品类型",
-      "statusPlaceholder": "状态",
+      "statusPlaceholder": "@:common.status",
       "typeNormal": "普通商品",
-      "typeRedeem": "兑换码",
+      "typeRedeem": "@:shop.redeemCode",
       "typeRedeemService": "兑换码/服务",
       "statusOnSale": "上架",
       "statusOffSale": "下架",
@@ -1728,11 +1747,11 @@
         "description": "描述",
         "image": "图片 URL",
         "price": "价格（伏羲币）",
-        "type": "类型",
+        "type": "@:common.type",
         "stock": "库存",
         "maxPerUser": "限购/人",
         "needApproval": "需要审批",
-        "status": "状态",
+        "status": "@:common.status",
         "sort": "排序"
       },
       "placeholders": {
@@ -1754,7 +1773,7 @@
       },
       "values": {
         "normal": "普通",
-        "redeem": "兑换码",
+        "redeem": "@:shop.redeemCode",
         "unlimited": "无限",
         "noLimit": "不限"
       },
@@ -1774,11 +1793,11 @@
       "dialogDeliver": "发放订单",
       "dialogReject": "拒绝订单",
       "deliverButton": "发放",
-      "rejectButton": "拒绝",
+      "rejectButton": "@:welfareApproval.rejectBtn",
       "deliverConfirm": "确认发放",
       "rejectConfirm": "确认拒绝",
       "fields": {
-        "orderNo": "订单号",
+        "orderNo": "@:shop.orderNo",
         "deliverRemark": "发放备注"
       },
       "placeholders": {
@@ -1790,10 +1809,10 @@
         "rejected": "已拒绝"
       },
       "table": {
-        "orderNo": "订单号",
+        "orderNo": "@:shop.orderNo",
         "mainCharacter": "主人物",
-        "nickname": "昵称",
-        "contact": "联系方式",
+        "nickname": "@:newbro.common.nickname",
+        "contact": "@:welfareApproval.contact",
         "product": "商品",
         "quantity": "数量",
         "totalPrice": "总价",
@@ -1809,7 +1828,7 @@
     },
     "redeem": {
       "productIdPlaceholder": "商品 ID",
-      "statusPlaceholder": "状态",
+      "statusPlaceholder": "@:common.status",
       "status": {
         "unused": "未使用",
         "used": "已使用",
@@ -1819,8 +1838,8 @@
         "productId": "商品ID",
         "userId": "用户ID",
         "orderId": "订单ID",
-        "code": "兑换码",
-        "createdAt": "创建时间",
+        "code": "@:shop.redeemCode",
+        "createdAt": "@:common.createdAt",
         "expiresAt": "过期时间"
       }
     }
@@ -1836,8 +1855,8 @@
     "fields": {
       "targetUserId": "目标用户 ID",
       "action": "操作类型",
-      "amount": "金额",
-      "reason": "操作原因"
+      "amount": "@:common.amount",
+      "reason": "@:common.reason"
     },
     "placeholders": {
       "reason": "请说明操作原因（必填）",
@@ -1884,7 +1903,7 @@
     "transactions": {
       "userId": "用户 ID",
       "characterName": "主人物",
-      "amount": "金额",
+      "amount": "@:common.amount",
       "balanceAfter": "余额",
       "operator": "操作人"
     },
@@ -1896,7 +1915,7 @@
     }
   },
   "dashboardConsole": {
-    "alliancePapTitle": "联盟 PAP",
+    "alliancePapTitle": "@:console.alliancePap",
     "internalPapTitle": "内部 PAP",
     "cards": {
       "eveWalletBalance": "EVE 钱包余额",
@@ -1944,12 +1963,12 @@
   },
   "table": {
     "form": {
-      "reset": "重置",
+      "reset": "@:common.reset",
       "submit": "提交"
     },
     "searchBar": {
-      "reset": "重置",
-      "search": "查询",
+      "reset": "@:common.reset",
+      "search": "@:common.search",
       "expand": "展开",
       "collapse": "收起",
       "searchInputPlaceholder": "请输入",
@@ -1978,7 +1997,7 @@
       "url": "Webhook URL",
       "urlPlaceholder": "https://discord.com/api/webhooks/...",
       "obUrlPlaceholder": "http://127.0.0.1:5700",
-      "type": "类型",
+      "type": "@:common.type",
       "template": "消息模板",
       "templatePlaceholder": "输入消息模板，支持变量替换",
       "templateHint": "可用变量",
@@ -1993,7 +2012,7 @@
     "test": {
       "title": "测试发送",
       "url": "测试 URL",
-      "type": "类型",
+      "type": "@:common.type",
       "content": "测试内容",
       "contentPlaceholder": "留空则使用默认测试文本",
       "sendBtn": "发送测试",
@@ -2002,8 +2021,8 @@
   },
   "system": {
     "basicConfig": {
-      "title": "基础配置",
-      "save": "保存",
+      "title": "@:setting.basics.title",
+      "save": "@:common.save",
       "saveSuccess": "配置已保存",
       "allowCorporations": "允许军团列表",
       "allowCorporationsLabel": "军团 ID 列表",

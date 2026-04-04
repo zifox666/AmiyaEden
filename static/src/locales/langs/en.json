@@ -61,16 +61,25 @@
     "historyTitle": "Search history",
     "switchKeydown": "Navigate",
     "selectKeydown": "Select",
-    "exitKeydown": "Close"
+    "exitKeydown": "@:common.close"
   },
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
+      "list": [
+        "Vertical",
+        "Horizontal",
+        "Mixed",
+        "Dual"
+      ]
     },
     "theme": {
       "title": "Theme Style",
-      "list": ["Light", "Dark", "System"]
+      "list": [
+        "Light",
+        "Dark",
+        "System"
+      ]
     },
     "menu": {
       "title": "Menu Style"
@@ -80,11 +89,17 @@
     },
     "box": {
       "title": "Box Style",
-      "list": ["Border", "Shadow"]
+      "list": [
+        "Border",
+        "Shadow"
+      ]
     },
     "container": {
       "title": "Container Width",
-      "list": ["Full", "Boxed"]
+      "list": [
+        "Full",
+        "Boxed"
+      ]
     },
     "basics": {
       "title": "Basic Config",
@@ -130,13 +145,17 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": ["Notice"],
-    "text": ["No"],
+    "bar": [
+      "Notice"
+    ],
+    "text": [
+      "No"
+    ],
     "viewAll": "View all"
   },
   "worktab": {
     "btn": {
-      "refresh": "Refresh",
+      "refresh": "@:common.refresh",
       "fixed": "Fixed",
       "unfixed": "Unfixed",
       "closeLeft": "Close left",
@@ -238,12 +257,12 @@
       "menu": "Menu Manage",
       "esiRefresh": "Scheduled Tasks",
       "wallet": "Wallet Management",
-      "alliancePap": "Alliance PAP",
+      "alliancePap": "@:console.alliancePap",
       "papExchange": "PAP Exchange",
       "npcKills": "NPC Kill Report",
       "autoRole": "Auto Roles",
       "webhook": "Webhook Notifications",
-      "basicConfig": "Basic Config",
+      "basicConfig": "@:setting.basics.title",
       "newbroSettings": "Newbro Settings",
       "mentorRewardStages": "Mentor Reward Stages"
     },
@@ -322,11 +341,11 @@
     "walletBalance": "Wallet Balance",
     "walletJournal": "Wallet Journal",
     "journalDate": "Date",
-    "journalType": "Type",
-    "journalAmount": "Amount",
+    "journalType": "@:common.type",
+    "journalAmount": "@:common.amount",
     "journalBalance": "Balance",
     "journalDescription": "Description",
-    "journalReason": "Reason",
+    "journalReason": "@:common.reason",
     "noJournalData": "No wallet journal entries",
     "totalSP": "Total SP",
     "unallocatedSP": "Unallocated SP",
@@ -431,8 +450,8 @@
     "selectCharacterPlaceholder": "Choose a character",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "search": "Search",
-    "reset": "Reset",
+    "search": "@:common.search",
+    "reset": "@:common.reset",
     "summary": "Summary",
     "totalBounty": "Total Bounty",
     "totalIncursion": "Incursion",
@@ -454,11 +473,11 @@
     "trendCount": "Records",
     "journals": "Journal Details",
     "journalDate": "Date",
-    "journalAmount": "Amount",
+    "journalAmount": "@:common.amount",
     "journalTax": "Tax",
-    "journalRefType": "Type",
+    "journalRefType": "@:common.type",
     "journalSystem": "System",
-    "journalReason": "Reason",
+    "journalReason": "@:common.reason",
     "characterName": "Character",
     "allCharacters": "All Characters",
     "noData": "No NPC kill data",
@@ -488,7 +507,7 @@
     "statusActive": "Active",
     "statusDisabled": "Disabled",
     "filterName": "Name",
-    "filterStatus": "Status",
+    "filterStatus": "@:common.status",
     "yes": "Yes",
     "no": "No",
     "validName": "Please enter a name",
@@ -581,8 +600,8 @@
     "rejectConfirm": "Confirm rejecting welfare application from {name}?",
     "deliverSuccess": "Welfare delivered successfully",
     "rejectSuccess": "Welfare application rejected",
-    "copied": "Copied",
-    "copyFailed": "Copy failed",
+    "copied": "@:common.copied",
+    "copyFailed": "@:common.copyFailed",
     "noPending": "No requested applications",
     "noHistory": "No processed records yet",
     "searchBtn": "Search",
@@ -596,7 +615,7 @@
     "products": "Products",
     "allTypes": "All Types",
     "typeNormal": "Normal",
-    "typeRedeem": "Redeem Code",
+    "typeRedeem": "@:shop.redeemCode",
     "myBalance": "My Balance",
     "unlimitedStock": "In Stock",
     "stockRemaining": "Stock: {n}",
@@ -617,7 +636,7 @@
     "quantity": "Qty",
     "unitPrice": "Unit Price",
     "totalPrice": "Total",
-    "status": "Status",
+    "status": "@:common.status",
     "reviewerName": "Operator",
     "orderTime": "Order Time",
     "noOrders": "No orders yet",
@@ -639,9 +658,9 @@
       "editProduct": "Edit Product",
       "filterName": "Product name",
       "filterType": "Type",
-      "filterStatus": "Status",
-      "search": "Search",
-      "reset": "Reset",
+      "filterStatus": "@:common.status",
+      "search": "@:common.search",
+      "reset": "@:common.reset",
       "description": "Description",
       "descriptionPlaceholder": "Product description (optional)",
       "productImage": "Product Image",
@@ -649,7 +668,7 @@
       "uploadImage": "Click to upload",
       "uploadHint": "JPG/PNG/WebP, max 2MB",
       "price": "Price",
-      "type": "Type",
+      "type": "@:common.type",
       "typeNormal": "Normal",
       "typeNormalShort": "Normal",
       "typeRedeem": "Redeem / Service",
@@ -666,7 +685,7 @@
       "periodWeekly": "Weekly",
       "periodMonthly": "Monthly",
       "needApproval": "Requires Approval",
-      "status": "Status",
+      "status": "@:common.status",
       "statusOnSale": "On Sale",
       "statusOffSale": "Off Sale",
       "sortOrder": "Sort",
@@ -674,7 +693,7 @@
       "yes": "Yes",
       "no": "No",
       "colImage": "Image",
-      "colType": "Type",
+      "colType": "@:common.type",
       "colApproval": "Approval",
       "colSort": "Sort",
       "updateSuccess": "Updated",
@@ -682,7 +701,7 @@
       "operationFailed": "Operation failed",
       "deleteConfirm": "Delete product \"{name}\"?",
       "deleteTitle": "Confirm Delete",
-      "deleteBtn": "Delete",
+      "deleteBtn": "@:common.delete",
       "deleteSuccess": "Deleted",
       "deleteFailed": "Delete failed",
       "imageTooLarge": "Image must be under 2MB",
@@ -719,7 +738,7 @@
     },
     "table": {
       "userInfo": "User Info",
-      "contact": "Contact",
+      "contact": "@:welfareApproval.contact",
       "lastLogin": "Last Login",
       "loginIp": "Login IP",
       "registeredAt": "Registered At"
@@ -768,7 +787,7 @@
       "endedAt": "Ended At",
       "refType": "Ref Type",
       "systemId": "System ID",
-      "amount": "Amount",
+      "amount": "@:common.amount",
       "journalAt": "Journal Time",
       "processedAt": "Processed At"
     },
@@ -797,7 +816,7 @@
       "noCurrentCaptain": "No captain selected yet",
       "affiliationStarted": "Started At",
       "captainList": "Available Captains",
-      "nicknameLabel": "Nickname",
+      "nicknameLabel": "@:newbro.common.nickname",
       "activeNewbros": "Active newbros",
       "lastOnline": "Last Online",
       "currentSelection": "Current Selection",
@@ -819,7 +838,7 @@
       "noCurrentRelationship": "No pending or active mentor relationship right now",
       "mentorList": "Available Mentors",
       "noMentors": "No mentors available right now",
-      "nicknameLabel": "Nickname",
+      "nicknameLabel": "@:newbro.common.nickname",
       "activeMentees": "Active Mentees",
       "lastOnline": "Last Online",
       "apply": "Apply",
@@ -899,7 +918,7 @@
       "distributedRewardAmount": "Distributed Fuxi Coin",
       "noDistributedStages": "None",
       "accept": "Accept",
-      "reject": "Reject",
+      "reject": "@:welfareApproval.rejectBtn",
       "acceptSuccess": "Application accepted",
       "rejectSuccess": "Application rejected"
     },
@@ -925,8 +944,8 @@
       "newbroNicknameColumn": "Newbro Nickname",
       "changedByCharacterColumn": "Changed By",
       "historyPlayerCharacterId": "Newbro Character ID",
-      "nicknameLabel": "Nickname",
-      "nicknameColumn": "Nickname",
+      "nicknameLabel": "@:newbro.common.nickname",
+      "nicknameColumn": "@:newbro.common.nickname",
       "activeNewbroCount": "Current Newbros",
       "historicalNewbroCount": "Historical Newbros",
       "viewDetail": "View Detail",
@@ -990,7 +1009,7 @@
       "timeRange": "Time Range",
       "startAt": "Start Time",
       "endAt": "End Time",
-      "createdAt": "Created At",
+      "createdAt": "@:common.createdAt",
       "fc": "Fleet Commander",
       "fcPlaceholder": "Select a character as FC",
       "description": "Description",
@@ -1059,7 +1078,7 @@
         "stratOp": "Strat Op",
         "other": "Regular"
       },
-      "allianceCard": "Alliance PAP",
+      "allianceCard": "@:console.alliancePap",
       "allianceEmpty": "No alliance PAP records",
       "allianceMonthly": "Monthly PAP",
       "allianceYearly": "Yearly PAP",
@@ -1069,15 +1088,15 @@
       "allianceDataSource": "Data source: Alliance PAP",
       "allianceLastCalc": "Last calculated",
       "allianceOperationName": "Operation Name",
-      "allianceStartTime": "Start Time",
-      "allianceEndTime": "End Time"
+      "allianceStartTime": "@:fleet.fields.startAt",
+      "allianceEndTime": "@:fleet.fields.endAt"
     },
     "corporationPap": {
       "title": "Corporation PAP",
       "summaryTitle": "Corporation PAP Summary",
       "empty": "No corporation PAP summary records",
-      "search": "Search",
-      "reset": "Reset",
+      "search": "@:common.search",
+      "reset": "@:common.reset",
       "filters": {
         "period": "Period",
         "year": "Year",
@@ -1097,7 +1116,7 @@
       },
       "columns": {
         "corpTicker": "Corporation",
-        "nickname": "Nickname",
+        "nickname": "@:newbro.common.nickname",
         "mainCharacter": "Main Character",
         "characterCount": "Characters",
         "stratOpPaps": "Strategic OP",
@@ -1135,11 +1154,11 @@
       "title": "My Wallet",
       "balance": "Balance",
       "transactions": "Transactions",
-      "amount": "Amount",
+      "amount": "@:common.amount",
       "balanceAfter": "Balance After",
-      "reason": "Reason",
-      "refType": "Type",
-      "time": "Time",
+      "reason": "@:common.reason",
+      "refType": "@:common.type",
+      "time": "@:common.time",
       "empty": "No transactions"
     }
   },
@@ -1329,7 +1348,7 @@
       "incomplete": "Incomplete",
       "completedHint": "Your profile setup is complete. You can access the rest of the app normally.",
       "requiredHint": "You must set a nickname and at least one of QQ number or Discord ID before continuing.",
-      "nickname": "Nickname",
+      "nickname": "@:newbro.common.nickname",
       "nicknamePlaceholder": "Enter nickname",
       "qq": "QQ Number",
       "qqPlaceholder": "Enter QQ number",
@@ -1364,7 +1383,7 @@
       "fleetNotePlaceholder": "Enter fleet details here.",
       "fleetDetailTitle": "Fleet Details",
       "fleetDetailFC": "FC",
-      "fleetDetailTime": "Time",
+      "fleetDetailTime": "@:common.time",
       "fleetDetailImportance": "Importance",
       "fleetDetailDesc": "Description",
       "killmail": "KillMail",
@@ -1380,7 +1399,7 @@
       "note": "Note",
       "notePlaceholder": "Optional",
       "noteRequired": "Required when no fleet is linked",
-      "cancelBtn": "Cancel",
+      "cancelBtn": "@:common.cancel",
       "confirmSubmitBtn": "Submit Application",
       "submitSuccess": "Application submitted",
       "noKmFound": "No matching KMs found",
@@ -1390,7 +1409,7 @@
         "ship": "Ship",
         "system": "System",
         "killId": "KillID",
-        "time": "Time",
+        "time": "@:common.time",
         "estimatedValue": "Est. Value",
         "fleetId": "Fleet ID",
         "recommendedAmount": "Recommended",
@@ -1416,11 +1435,11 @@
       "title": "SRP Applications",
       "pendingTab": "Pending",
       "historyTab": "Delivery Records",
-      "refresh": "Refresh",
+      "refresh": "@:common.refresh",
       "selectFleet": "Filter by fleet",
       "userKeywordFilter": "Search by character or nickname",
-      "searchBtn": "Search",
-      "resetBtn": "Reset",
+      "searchBtn": "@:common.search",
+      "resetBtn": "@:common.reset",
       "payoutModeLabel": "Payout Mode",
       "payoutModes": {
         "fuxiCoin": "Fuxi Coin",
@@ -1430,7 +1449,7 @@
       "autoApproveBtn": "Auto Approve",
       "batchPayoutBtn": "Batch Payout",
       "approveBtn": "Approve",
-      "rejectBtn": "Reject",
+      "rejectBtn": "@:welfareApproval.rejectBtn",
       "payoutBtn": "Payout",
       "approveDialog": "Approve Application",
       "rejectDialog": "Reject Application",
@@ -1438,7 +1457,7 @@
       "batchPayoutDialog": "Batch Payout",
       "batchPayoutHint": "Click the copy button on the right, then paste the content into an in-game note.",
       "batchPayoutMainCharacter": "Main Character",
-      "batchPayoutAmount": "Amount",
+      "batchPayoutAmount": "@:common.amount",
       "batchPayoutApprovedAmount": "Approved Amount",
       "batchPayoutPendingAmount": "Pending Amount",
       "batchPayoutTotalAmount": "Total Amount",
@@ -1474,17 +1493,17 @@
       "unknownReviewer": "Reviewer",
       "payoutKillId": "KillID",
       "openInfoWindow": "Open Info Window",
-      "editBtn": "Edit",
+      "editBtn": "@:common.edit",
       "reRejectBtn": "Re-reject",
       "reApproveBtn": "Re-approve",
-      "copied": "Copied",
-      "copyFailed": "Copy failed",
+      "copied": "@:common.copied",
+      "copyFailed": "@:common.copyFailed",
       "noPrimaryCharacter": "Please set a primary character first",
       "openInfoWindowSuccess": "Open window request sent",
       "unknownMainCharacter": "Unknown",
       "columns": {
         "id": "#",
-        "nickname": "Nickname",
+        "nickname": "@:newbro.common.nickname",
         "character": "Character",
         "ship": "Ship",
         "system": "System",
@@ -1506,7 +1525,7 @@
     "prices": {
       "title": "SRP Price List",
       "searchPlaceholder": "Search by ship name",
-      "refresh": "Refresh",
+      "refresh": "@:common.refresh",
       "addPrice": "Add Price",
       "exportBtn": "Export Prices",
       "importBtn": "Import Prices",
@@ -1515,14 +1534,14 @@
       "importNoData": "No valid data found, check columns (TypeID / 舰船名称 / 标准补损金额)",
       "addDialog": "Add Ship Price",
       "editDialog": "Edit Ship Price",
-      "saveBtn": "Save",
-      "cancelBtn": "Cancel",
+      "saveBtn": "@:common.save",
+      "cancelBtn": "@:common.cancel",
       "deleteConfirm": "Confirm delete this record?",
       "updateSuccess": "Updated",
       "addSuccess": "Added",
       "deleteSuccess": "Deleted",
-      "editBtn": "Edit",
-      "deleteBtn": "Delete",
+      "editBtn": "@:common.edit",
+      "deleteBtn": "@:common.delete",
       "validTypeId": "Please enter a valid TypeID",
       "validName": "Please enter a ship name",
       "validAmount": "Amount cannot be negative",
@@ -1551,11 +1570,11 @@
   },
   "alliancePap": {
     "title": "Alliance PAP - All Members",
-    "shortTitle": "Alliance PAP",
+    "shortTitle": "@:console.alliancePap",
     "selectMonth": "Select month",
     "memberCount": "{count} members have records",
     "totalPap": "Total PAP",
-    "refresh": "Refresh",
+    "refresh": "@:common.refresh",
     "fetchLatest": "Fetch Latest Data",
     "fetchTriggered": "Fetch triggered, please refresh later",
     "fetchFailed": "Failed to trigger fetch",
@@ -1580,8 +1599,8 @@
       "character": "Character",
       "level": "Level",
       "ship": "Ship",
-      "startTime": "Start Time",
-      "endTime": "End Time",
+      "startTime": "@:fleet.fields.startAt",
+      "endTime": "@:fleet.fields.endAt",
       "monthlyPap": "Monthly PAP",
       "yearlyPap": "Yearly PAP",
       "corpMonthlyRank": "Corp Monthly",
@@ -1589,7 +1608,7 @@
       "corpYearlyRank": "Corp Yearly",
       "allianceYearlyRank": "Alliance Yearly",
       "calculatedAt": "Calculated At",
-      "status": "Status"
+      "status": "@:common.status"
     },
     "status": {
       "archived": "Archived",
@@ -1715,9 +1734,9 @@
       "createProduct": "Add Product",
       "searchNamePlaceholder": "Product name",
       "typePlaceholder": "Product type",
-      "statusPlaceholder": "Status",
+      "statusPlaceholder": "@:common.status",
       "typeNormal": "Normal Product",
-      "typeRedeem": "Redeem Code",
+      "typeRedeem": "@:shop.redeemCode",
       "typeRedeemService": "Redeem Code / Service",
       "statusOnSale": "On Sale",
       "statusOffSale": "Off Sale",
@@ -1728,11 +1747,11 @@
         "description": "Description",
         "image": "Image URL",
         "price": "Price",
-        "type": "Type",
+        "type": "@:common.type",
         "stock": "Stock",
         "maxPerUser": "Limit Per User",
         "needApproval": "Requires Approval",
-        "status": "Status",
+        "status": "@:common.status",
         "sort": "Sort"
       },
       "placeholders": {
@@ -1754,7 +1773,7 @@
       },
       "values": {
         "normal": "Normal",
-        "redeem": "Redeem Code",
+        "redeem": "@:shop.redeemCode",
         "unlimited": "Unlimited",
         "noLimit": "No Limit"
       },
@@ -1774,11 +1793,11 @@
       "dialogDeliver": "Deliver Order",
       "dialogReject": "Reject Order",
       "deliverButton": "Deliver",
-      "rejectButton": "Reject",
+      "rejectButton": "@:welfareApproval.rejectBtn",
       "deliverConfirm": "Confirm Delivery",
       "rejectConfirm": "Confirm Rejection",
       "fields": {
-        "orderNo": "Order No.",
+        "orderNo": "@:shop.orderNo",
         "deliverRemark": "Delivery Remark"
       },
       "placeholders": {
@@ -1790,10 +1809,10 @@
         "rejected": "Rejected"
       },
       "table": {
-        "orderNo": "Order No.",
+        "orderNo": "@:shop.orderNo",
         "mainCharacter": "Main Character",
-        "nickname": "Nickname",
-        "contact": "Contact",
+        "nickname": "@:newbro.common.nickname",
+        "contact": "@:welfareApproval.contact",
         "product": "Product",
         "quantity": "Qty",
         "totalPrice": "Total",
@@ -1809,7 +1828,7 @@
     },
     "redeem": {
       "productIdPlaceholder": "Product ID",
-      "statusPlaceholder": "Status",
+      "statusPlaceholder": "@:common.status",
       "status": {
         "unused": "Unused",
         "used": "Used",
@@ -1819,8 +1838,8 @@
         "productId": "Product ID",
         "userId": "User ID",
         "orderId": "Order ID",
-        "code": "Redeem Code",
-        "createdAt": "Created At",
+        "code": "@:shop.redeemCode",
+        "createdAt": "@:common.createdAt",
         "expiresAt": "Expires At"
       }
     }
@@ -1836,8 +1855,8 @@
     "fields": {
       "targetUserId": "Target User ID",
       "action": "Action",
-      "amount": "Amount",
-      "reason": "Reason"
+      "amount": "@:common.amount",
+      "reason": "@:common.reason"
     },
     "placeholders": {
       "reason": "Explain the reason for this adjustment (required)",
@@ -1884,7 +1903,7 @@
     "transactions": {
       "userId": "User ID",
       "characterName": "Main Character",
-      "amount": "Amount",
+      "amount": "@:common.amount",
       "balanceAfter": "Balance",
       "operator": "Operator"
     },
@@ -1896,7 +1915,7 @@
     }
   },
   "dashboardConsole": {
-    "alliancePapTitle": "Alliance PAP",
+    "alliancePapTitle": "@:console.alliancePap",
     "internalPapTitle": "Internal PAP",
     "cards": {
       "eveWalletBalance": "EVE Wallet Balance",
@@ -1944,12 +1963,12 @@
   },
   "table": {
     "form": {
-      "reset": "Reset",
+      "reset": "@:common.reset",
       "submit": "Submit"
     },
     "searchBar": {
-      "reset": "Reset",
-      "search": "Search",
+      "reset": "@:common.reset",
+      "search": "@:common.search",
       "expand": "Expand",
       "collapse": "Collapse",
       "searchInputPlaceholder": "Please enter",
@@ -1978,7 +1997,7 @@
       "url": "Webhook URL",
       "urlPlaceholder": "https://discord.com/api/webhooks/...",
       "obUrlPlaceholder": "http://127.0.0.1:5700",
-      "type": "Type",
+      "type": "@:common.type",
       "template": "Message Template",
       "templatePlaceholder": "Enter message template with variable placeholders",
       "templateHint": "Available variables",
@@ -1993,7 +2012,7 @@
     "test": {
       "title": "Test",
       "url": "Test URL",
-      "type": "Type",
+      "type": "@:common.type",
       "content": "Test Content",
       "contentPlaceholder": "Leave blank for default test message",
       "sendBtn": "Send Test",
@@ -2002,8 +2021,8 @@
   },
   "system": {
     "basicConfig": {
-      "title": "Basic Config",
-      "save": "Save",
+      "title": "@:setting.basics.title",
+      "save": "@:common.save",
       "saveSuccess": "Configuration saved",
       "allowCorporations": "Allowed Corporations",
       "allowCorporationsLabel": "Corporation ID List",
