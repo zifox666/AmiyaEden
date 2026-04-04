@@ -47,6 +47,9 @@ func (r *AlliancePAPRepository) UpsertSummary(s *model.AlliancePAPSummary) error
 	}
 	s.ID = existing.ID
 	s.CreatedAt = existing.CreatedAt
+	// 保留已结算状态，避免 FetchAndStore 刷新 PAP 数据时覆盖
+	s.IsRedeemed = existing.IsRedeemed
+	s.WalletIssued = existing.WalletIssued
 	return global.DB.Save(s).Error
 }
 

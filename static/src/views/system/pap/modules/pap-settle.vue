@@ -36,6 +36,7 @@
           format="YYYY-MM"
           value-format="YYYY-MM"
           :clearable="false"
+          :disabled-date="disabledSettleMonth"
           style="width: 180px"
         />
       </ElFormItem>
@@ -123,7 +124,16 @@
   const settleResult = ref<SettleMonthResult | null>(null)
 
   const now = new Date()
-  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  // 默认上一个月
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const defaultMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`
+
+  // 禁用当月及未来月份
+  function disabledSettleMonth(date: Date) {
+    const d = new Date(date.getFullYear(), date.getMonth(), 1)
+    const cur = new Date(now.getFullYear(), now.getMonth(), 1)
+    return d >= cur
+  }
 
   const form = reactive({
     enabled: true,

@@ -214,6 +214,12 @@ func (h *AlliancePAPHandler) SettleMonth(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
 		return
 	}
+	// 不允许结算当月或未来月份
+	now := time.Now()
+	if req.Year > now.Year() || (req.Year == now.Year() && req.Month >= int(now.Month())) {
+		response.Fail(c, response.CodeParamError, "不允许结算当月或未来月份，请选择已结束的月份")
+		return
+	}
 	operatorID := middleware.GetUserID(c)
 	result, err := h.svc.SettleMonth(req.Year, req.Month, req.WalletConvert, operatorID, getAllowCorpFilter(c))
 	if err != nil {
