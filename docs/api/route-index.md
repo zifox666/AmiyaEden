@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-04-08
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -329,9 +329,9 @@ source_of_truth:
 | POST | `/system/welfare/delete` | 删除福利 | `RequireRole(admin)` |
 | POST | `/system/welfare/reorder` | 调整福利排序 | `RequireRole(admin)` |
 | POST | `/system/welfare/import` | 导入历史福利记录 | `RequireRole(admin)` |
-| POST | `/system/welfare/applications` | 福利申请列表（审批端） | `RequireRole(admin)` |
+| POST | `/system/welfare/applications` | 福利申请列表（审批端） | `RequireRole(admin, welfare)` |
 | POST | `/system/welfare/applications/delete` | 删除单条福利申请记录 | `RequireRole(admin)` |
-| POST | `/system/welfare/review` | 审批仍处于 `requested` 的福利申请（发放/拒绝；若当前福利配置 `pay_by_fuxi_coin > 0`，同步写入 `welfare_payout` 钱包流水；发放成功后尽力发送一封以发放福利官主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin)` |
+| POST | `/system/welfare/review` | 审批仍处于 `requested` 的福利申请（发放/拒绝；若当前福利配置 `pay_by_fuxi_coin > 0`，同步写入 `welfare_payout` 钱包流水；发放成功后尽力发送一封以发放福利官主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin, welfare)` |
 
 ### Newbro Admin
 
@@ -354,9 +354,9 @@ source_of_truth:
 | POST | `/system/shop/product/add` | 新增商品 | `RequireRole(admin)` |
 | POST | `/system/shop/product/edit` | 编辑商品 | `RequireRole(admin)` |
 | POST | `/system/shop/product/delete` | 删除商品 | `RequireRole(admin)` |
-| POST | `/system/shop/order/list` | 订单列表 | `RequireRole(admin, welfare)` |
-| POST | `/system/shop/order/deliver` | 发放订单（成功后尽力发送一封以执行发放官员主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin, welfare)` |
-| POST | `/system/shop/order/reject` | 驳回订单 | `RequireRole(admin, welfare)` |
+| POST | `/system/shop/order/list` | 订单列表 | `RequireRole(admin)` |
+| POST | `/system/shop/order/deliver` | 发放订单（成功后尽力发送一封以执行发放官员主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin)` |
+| POST | `/system/shop/order/reject` | 驳回订单 | `RequireRole(admin)` |
 | POST | `/system/shop/redeem/list` | 兑换码列表 | `RequireRole(admin)` |
 
 ### Auto Role / Webhook

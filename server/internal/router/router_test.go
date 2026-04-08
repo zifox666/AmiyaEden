@@ -146,6 +146,76 @@ func TestAutoRoleRequiresSuperAdmin(t *testing.T) {
 	assertRouteStatus(t, superAdminRouter, http.MethodPost, "/system/auto-role/sync", http.StatusNoContent)
 }
 
+func TestShopOrderRoutesRequireAdmin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	if containsRoleCode(shopOrderManageRoles, model.RoleWelfare) {
+		t.Fatalf("expected shopOrderManageRoles to exclude welfare, got %v", shopOrderManageRoles)
+	}
+	if !containsRoleCode(shopOrderManageRoles, model.RoleAdmin) {
+		t.Fatalf("expected shopOrderManageRoles to include admin, got %v", shopOrderManageRoles)
+	}
+
+	welfareRouter := newShopOrderPermissionTestRouter([]string{model.RoleWelfare})
+	assertRouteStatus(t, welfareRouter, http.MethodPost, "/system/shop/order/list", http.StatusForbidden)
+	assertRouteStatus(t, welfareRouter, http.MethodPost, "/system/shop/order/deliver", http.StatusForbidden)
+	assertRouteStatus(t, welfareRouter, http.MethodPost, "/system/shop/order/reject", http.StatusForbidden)
+
+	adminRouter := newShopOrderPermissionTestRouter([]string{model.RoleAdmin})
+	assertRouteStatus(t, adminRouter, http.MethodPost, "/system/shop/order/list", http.StatusNoContent)
+	assertRouteStatus(t, adminRouter, http.MethodPost, "/system/shop/order/deliver", http.StatusNoContent)
+	assertRouteStatus(t, adminRouter, http.MethodPost, "/system/shop/order/reject", http.StatusNoContent)
+
+	superAdminRouter := newShopOrderPermissionTestRouter([]string{model.RoleSuperAdmin})
+	assertRouteStatus(t, superAdminRouter, http.MethodPost, "/system/shop/order/list", http.StatusNoContent)
+	assertRouteStatus(t, superAdminRouter, http.MethodPost, "/system/shop/order/deliver", http.StatusNoContent)
+	assertRouteStatus(t, superAdminRouter, http.MethodPost, "/system/shop/order/reject", http.StatusNoContent)
+}
+
+func TestWelfareApprovalRoutesAllowWelfareWhileDeleteStaysAdminOnly(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	if !containsRoleCode(welfareApprovalRoles, model.RoleWelfare) {
+		t.Fatalf("expected welfareApprovalRoles to include welfare, got %v", welfareApprovalRoles)
+	}
+	if !containsRoleCode(welfareApprovalRoles, model.RoleAdmin) {
+		t.Fatalf("expected welfareApprovalRoles to include admin, got %v", welfareApprovalRoles)
+	}
+
+	welfareRouter := newWelfareApprovalPermissionTestRouter([]string{model.RoleWelfare})
+	assertRouteStatus(t, welfareRouter, http.MethodPost, "/system/welfare/applications", http.StatusNoContent)
+	assertRouteStatus(t, welfareRouter, http.MethodPost, "/system/welfare/review", http.StatusNoContent)
+	assertRouteStatus(
+		t,
+		welfareRouter,
+		http.MethodPost,
+		"/system/welfare/applications/delete",
+		http.StatusForbidden,
+	)
+
+	adminRouter := newWelfareApprovalPermissionTestRouter([]string{model.RoleAdmin})
+	assertRouteStatus(t, adminRouter, http.MethodPost, "/system/welfare/applications", http.StatusNoContent)
+	assertRouteStatus(t, adminRouter, http.MethodPost, "/system/welfare/review", http.StatusNoContent)
+	assertRouteStatus(
+		t,
+		adminRouter,
+		http.MethodPost,
+		"/system/welfare/applications/delete",
+		http.StatusNoContent,
+	)
+
+	superAdminRouter := newWelfareApprovalPermissionTestRouter([]string{model.RoleSuperAdmin})
+	assertRouteStatus(t, superAdminRouter, http.MethodPost, "/system/welfare/applications", http.StatusNoContent)
+	assertRouteStatus(t, superAdminRouter, http.MethodPost, "/system/welfare/review", http.StatusNoContent)
+	assertRouteStatus(
+		t,
+		superAdminRouter,
+		http.MethodPost,
+		"/system/welfare/applications/delete",
+		http.StatusNoContent,
+	)
+}
+
 func newSkillPlanPermissionTestRouter(roles []string) *gin.Engine {
 	r := gin.New()
 	injectRoles := func(c *gin.Context) {
@@ -198,6 +268,42 @@ func newSystemWebhookPermissionTestRouter(roles []string) *gin.Engine {
 	webhook.GET("/config", func(c *gin.Context) { c.Status(http.StatusNoContent) })
 	webhook.PUT("/config", func(c *gin.Context) { c.Status(http.StatusNoContent) })
 	webhook.POST("/test", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+
+	return r
+}
+
+func newShopOrderPermissionTestRouter(roles []string) *gin.Engine {
+	r := gin.New()
+	injectRoles := func(c *gin.Context) {
+		c.Set("roles", roles)
+		c.Next()
+	}
+
+	shopOrder := r.Group("/system/shop/order", injectRoles, middleware.RequireRole(shopOrderManageRoles...))
+	shopOrder.POST("/list", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	shopOrder.POST("/deliver", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	shopOrder.POST("/reject", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+
+	return r
+}
+
+func newWelfareApprovalPermissionTestRouter(roles []string) *gin.Engine {
+	r := gin.New()
+	injectRoles := func(c *gin.Context) {
+		c.Set("roles", roles)
+		c.Next()
+	}
+
+	approval := r.Group(
+		"/system/welfare",
+		injectRoles,
+		middleware.RequireRole(welfareApprovalRoles...),
+	)
+	approval.POST("/applications", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	approval.POST("/review", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+
+	deleteOnly := r.Group("/system/welfare", injectRoles, middleware.RequireRole(model.RoleAdmin))
+	deleteOnly.POST("/applications/delete", func(c *gin.Context) { c.Status(http.StatusNoContent) })
 
 	return r
 }

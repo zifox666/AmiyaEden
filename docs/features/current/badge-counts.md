@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-03-31
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/badge.go
@@ -36,7 +36,7 @@ source_of_truth:
 | `welfare_eligible` | 任意已登录产品用户 | 当前用户现在可申请的福利数量；`per_character` 福利按福利项计数，不按人物条目重复计数 |
 | `srp_pending` | `super_admin` / `admin` / `srp` / `fc` | `review_status IN ('submitted', 'approved') AND payout_status = 'notpaid'` 的 SRP 申请数 |
 | `welfare_pending` | `super_admin` / `admin` / `welfare` | `status = 'requested'` 的福利申请数 |
-| `order_pending` | `super_admin` / `admin` / `welfare` | `status = 'requested'` 的商店订单数 |
+| `order_pending` | `super_admin` / `admin` | `status = 'requested'` 的商店订单数 |
 
 ## 前端映射
 

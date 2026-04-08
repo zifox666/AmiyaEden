@@ -41,7 +41,7 @@ export const shopRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.shop.orderManage',
         keepAlive: true,
-        roles: ['super_admin', 'admin', 'welfare'],
+        roles: ['super_admin', 'admin'],
         authList: [{ title: '审批订单', authMark: 'approve_order' }]
       }
     },

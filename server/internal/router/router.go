@@ -12,6 +12,8 @@ var (
 	srpPriceManageRoles          = []string{model.RoleAdmin, model.RoleSeniorFC}
 	srpManageRoles               = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
 	srpPayoutRoles               = []string{model.RoleSRP, model.RoleAdmin}
+	shopOrderManageRoles         = []string{model.RoleAdmin}
+	welfareApprovalRoles         = []string{model.RoleAdmin, model.RoleWelfare}
 	skillPlanManageRoles         = []string{model.RoleAdmin, model.RoleSeniorFC}
 	autoRoleManageRoles          = []string{model.RoleSuperAdmin}
 	systemBasicConfigManageRoles = []string{model.RoleSuperAdmin}
@@ -406,8 +408,8 @@ func RegisterRoutes(r *gin.Engine) {
 		adminShopRedeem.POST("/list", adminShopH.AdminListRedeemCodes)
 	}
 
-	// 商店订单（管理员 / 福利官）
-	shopOrder := login.Group("/system/shop/order", middleware.RequireRole(model.RoleAdmin, model.RoleWelfare))
+	// 商店订单（仅管理员）
+	shopOrder := login.Group("/system/shop/order", middleware.RequireRole(shopOrderManageRoles...))
 	{
 		shopOrder.POST("/list", adminShopH.AdminListOrders)
 		shopOrder.POST("/deliver", adminShopH.AdminDeliverOrder)
@@ -418,6 +420,12 @@ func RegisterRoutes(r *gin.Engine) {
 	welfareListGroup := login.Group("/system/welfare", middleware.RequireRole(model.RoleAdmin, model.RoleWelfare))
 	welfareListGroup.POST("/list", welfareH.AdminListWelfares)
 
+	welfareApproval := login.Group("/system/welfare", middleware.RequireRole(welfareApprovalRoles...))
+	{
+		welfareApproval.POST("/applications", welfareH.AdminListApplications)
+		welfareApproval.POST("/review", welfareH.AdminReviewApplication)
+	}
+
 	adminWelfare := admin.Group("/welfare")
 	{
 		adminWelfare.GET("/settings", welfareH.AdminGetSettings)
@@ -425,9 +433,7 @@ func RegisterRoutes(r *gin.Engine) {
 		adminWelfare.POST("/add", welfareH.AdminCreateWelfare)
 		adminWelfare.POST("/edit", welfareH.AdminUpdateWelfare)
 		adminWelfare.POST("/delete", welfareH.AdminDeleteWelfare)
-		adminWelfare.POST("/applications", welfareH.AdminListApplications)
 		adminWelfare.POST("/applications/delete", welfareH.AdminDeleteApplication)
-		adminWelfare.POST("/review", welfareH.AdminReviewApplication)
 		adminWelfare.POST("/import", welfareH.AdminImportRecords)
 		adminWelfare.POST("/reorder", welfareH.AdminReorderWelfares)
 	}

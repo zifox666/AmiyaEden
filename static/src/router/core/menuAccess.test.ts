@@ -4,6 +4,7 @@ import type { AppRouteRecord } from '../../types/router'
 import { dashboardRoutes } from '../modules/dashboard'
 import { newbroRoutes as actualNewbroRoutes } from '../modules/newbro'
 import { skillPlanningRoutes } from '../modules/skill-planning'
+import { shopRoutes } from '../modules/shop'
 import { srpRoutes } from '../modules/srp'
 import { systemRoutes } from '../modules/system'
 import { applyMenuAccessFilter, pruneEmptyMenus } from './menuAccess'
@@ -171,5 +172,14 @@ test('applyMenuAccessFilter keeps SRP prices for SRP, admin, senior fc, and supe
   assert.equal(
     superAdminSrpMenu.children?.some((route) => route.name === 'SrpPrices'),
     true
+  )
+})
+
+test('applyMenuAccessFilter hides ShopOrderManage from welfare officers', () => {
+  const welfareShopMenu = applyMenuAccessFilter([shopRoutes], ['welfare'])[0]
+
+  assert.equal(
+    welfareShopMenu.children?.some((route) => route.name === 'ShopOrderManage'),
+    false
   )
 })

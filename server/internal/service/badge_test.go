@@ -123,12 +123,11 @@ func TestBadgeServiceGetBadgeCountsReturnsOnlyPermittedNonZeroFields(t *testing.
 			},
 		},
 		{
-			name:  "welfare officer sees welfare and order pending counts",
+			name:  "welfare officer sees welfare pending count but not shop order count",
 			roles: []string{model.RoleWelfare},
 			want: BadgeCounts{
 				BadgeCountWelfareEligible: 1,
 				BadgeCountWelfarePending:  1,
-				BadgeCountOrderPending:    1,
 			},
 		},
 		{

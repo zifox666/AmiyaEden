@@ -49,7 +49,7 @@ func TestBadgeHandlerGetBadgeCountsOmitsUnauthorizedFields(t *testing.T) {
 	}
 }
 
-func TestBadgeHandlerGetBadgeCountsIncludesOrderPendingForWelfareRole(t *testing.T) {
+func TestBadgeHandlerGetBadgeCountsOmitsOrderPendingForWelfareRole(t *testing.T) {
 	db := newBadgeHandlerTestDB(t)
 	userID := seedBadgeHandlerTestData(t, db)
 
@@ -61,8 +61,8 @@ func TestBadgeHandlerGetBadgeCountsIncludesOrderPendingForWelfareRole(t *testing
 	if response.Code != 200 {
 		t.Fatalf("expected success code, got %d", response.Code)
 	}
-	if response.Data["order_pending"] != 1 {
-		t.Fatalf("expected welfare role to receive order_pending badge, got %#v", response.Data)
+	if _, exists := response.Data["order_pending"]; exists {
+		t.Fatalf("expected welfare role to omit order_pending badge, got %#v", response.Data)
 	}
 	if response.Data["welfare_pending"] != 1 {
 		t.Fatalf("expected welfare role to receive welfare_pending badge, got %#v", response.Data)
