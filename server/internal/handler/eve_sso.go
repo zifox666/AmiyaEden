@@ -35,6 +35,11 @@ func (h *EveSSOHandler) Login(c *gin.Context) {
 		}
 	}
 
+	if err := service.ValidateExtraScopes(extraScopes, nil); err != nil {
+		response.Fail(c, response.CodeForbidden, err.Error())
+		return
+	}
+
 	authURL, err := h.svc.GetAuthURL(c.Request.Context(), extraScopes, redirectURL)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, "生成授权 URL 失败: "+err.Error())
@@ -138,6 +143,11 @@ func (h *EveSSOHandler) BindLogin(c *gin.Context) {
 				extraScopes = append(extraScopes, s)
 			}
 		}
+	}
+
+	if err := service.ValidateExtraScopes(extraScopes, middleware.GetUserRoles(c)); err != nil {
+		response.Fail(c, response.CodeForbidden, err.Error())
+		return
 	}
 
 	authURL, err := h.svc.GetBindAuthURL(c.Request.Context(), userID, extraScopes, redirectURL)

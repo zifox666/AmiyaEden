@@ -162,7 +162,7 @@
               {{ $t('characters.unbind') }}
             </ElButton>
             <!-- 军团KM监控（管理员可见） -->
-            <template v-if="isAdmin">
+            <template v-if="canManageCorpKm">
               <ElTag v-if="hasCorpKmScope(char)" type="success" size="small" effect="light">
                 {{ $t('characters.corpKm.enabled') }}
               </ElTag>
@@ -205,9 +205,9 @@
 
   const CORP_KM_SCOPE = 'esi-killmails.read_corporation_killmails.v1'
 
-  const isAdmin = computed(() => {
+  const canManageCorpKm = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
-    return roles.some((r) => ['super_admin', 'admin', 'srp'].includes(r))
+    return roles.some((r) => ['super_admin', 'admin'].includes(r))
   })
 
   const hasCorpKmScope = (char: Api.Auth.EveCharacter) =>

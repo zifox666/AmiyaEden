@@ -16,3 +16,8 @@ test('corp km enable button calls the zero-argument handler without passing a ch
   assert.doesNotMatch(source, /@click="handleEnableCorpKm\(char\)"/)
   assert.match(source, /@click="handleEnableCorpKm"/)
 })
+
+test('corp km controls stay limited to admin roles', () => {
+  assert.match(source, /const canManageCorpKm = computed\(\(\) => \{/)
+  assert.match(source, /roles\.some\(\(r\) => \['super_admin', 'admin'\]\.includes\(r\)\)/)
+})

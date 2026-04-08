@@ -94,6 +94,24 @@ func buildLoginScopes(extraScopes []string) []string {
 	return scopes
 }
 
+func ValidateExtraScopes(extraScopes []string, userRoles []string) error {
+	return validateExtraScopes(extraScopes, userRoles)
+}
+
+func validateExtraScopes(extraScopes []string, userRoles []string) error {
+	for _, scope := range extraScopes {
+		switch strings.TrimSpace(scope) {
+		case "":
+			continue
+		case corpKillmailScope:
+			if !model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin) {
+				return fmt.Errorf("scope %s 仅管理员可申请", scope)
+			}
+		}
+	}
+	return nil
+}
+
 // ─────────────────────────────────────────────
 //  SSO Service
 // ─────────────────────────────────────────────
@@ -102,6 +120,7 @@ const (
 	stateCachePrefix            = "eve:sso:state:"
 	stateCacheTTL               = 10 * time.Minute
 	affiliationResponseMaxBytes = 1 << 20
+	corpKillmailScope           = "esi-killmails.read_corporation_killmails.v1"
 )
 
 // OnNewCharacterFunc 新人物首次出现时触发的钩子（由 jobs 层注入以避免循环依赖）
@@ -359,16 +378,24 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	} else {
 		_ = cache.Del(ctx, stateCachePrefix+state)
 	}
+	if sd.BindToUserID > 0 {
+		if err := s.authorizeBindExtraScopes(ctx, sd.BindToUserID, sd.ExtraScopes); err != nil {
+			return nil, err
+		}
+	}
 
 	// 1. 用授权码换取 Token
 	tokenResp, err := s.eveClient.ExchangeCode(ctx, code)
 	if err != nil {
 		return nil, err
 	}
-
 	// 2. 解析 JWT access_token 获取人物信息
 	claims, err := eve.ParseAccessToken(tokenResp.AccessToken)
 	if err != nil {
+		return nil, err
+	}
+	grantedScopes := claims.GetScopes()
+	if err := s.authorizeCallbackScopes(ctx, sd.BindToUserID, grantedScopes); err != nil {
 		return nil, err
 	}
 	characterID, err := claims.GetCharacterID()
@@ -377,7 +404,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	}
 
 	tokenExpiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
-	scopesStr := strings.Join(claims.GetScopes(), " ")
+	scopesStr := strings.Join(grantedScopes, " ")
 	portraitURL := s.eveClient.PortraitURL(characterID)
 	initialRole, affiliation := s.resolveInitialSSOState(ctx, characterID)
 
@@ -627,12 +654,27 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	return &CallbackResult{Token: jwtToken, User: user, Character: char, RedirectURL: sd.RedirectURL}, nil
 }
 
+func (s *EveSSOService) authorizeBindExtraScopes(ctx context.Context, userID uint, extraScopes []string) error {
+	userRoles, err := s.roleSvc.GetUserRoleNames(ctx, userID)
+	if err != nil {
+		return err
+	}
+	return ValidateExtraScopes(extraScopes, userRoles)
+}
+
+func (s *EveSSOService) authorizeCallbackScopes(ctx context.Context, bindToUserID uint, grantedScopes []string) error {
+	if bindToUserID > 0 {
+		return s.authorizeBindExtraScopes(ctx, bindToUserID, grantedScopes)
+	}
+	return ValidateExtraScopes(grantedScopes, nil)
+}
+
 // ─────────────────────────────────────────────
 //  Token 刷新并发控制
 // ─────────────────────────────────────────────
 
 // tokenRefreshLocks 每个 characterID 一把锁，防止并发刷新同一人物的 token。
-// 使用 sync.Map 避免显式清理：条目随 GC 自然回收，不会无限增长。
+// 使用 sync.Map 避免额外的全局锁；条目会随进程中见过的人物 ID 集合增长，并在进程重启后重置。
 var tokenRefreshLocks sync.Map
 
 // getCharacterLock 返回指定人物的互斥锁（懒初始化）
