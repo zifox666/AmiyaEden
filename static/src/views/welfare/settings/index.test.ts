@@ -19,5 +19,7 @@ test('welfare settings wires the Fuxi Legion tenure threshold through the form p
   assert.match(source, /t\('welfareSettings\.minimumFuxiLegionYears'\)/)
   assert.match(source, /v-model="formData\.minimum_fuxi_legion_years"/)
   assert.match(source, /minimum_fuxi_legion_years:\s*row\.minimum_fuxi_legion_years \?\? undefined/)
-  assert.match(source, /minimum_fuxi_legion_years:\s*formData\.minimum_fuxi_legion_years \|\| null/)
+  assert.match(source, /minimum_fuxi_legion_years:\s*formData\.minimum_fuxi_legion_years \?\? null/)
+  assert.match(source, /max_char_age_months:\s*formData\.max_char_age_months \?\? null/)
+  assert.match(source, /minimum_pap:\s*formData\.minimum_pap \?\? null/)
 })

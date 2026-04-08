@@ -676,9 +676,9 @@
         ...formData,
         skill_plan_ids: formData.require_skill_plan ? formData.skill_plan_ids : [],
         pay_by_fuxi_coin: formData.pay_by_fuxi_coin ?? null,
-        max_char_age_months: formData.max_char_age_months || null,
-        minimum_pap: formData.minimum_pap || null,
-        minimum_fuxi_legion_years: formData.minimum_fuxi_legion_years || null,
+        max_char_age_months: formData.max_char_age_months ?? null,
+        minimum_pap: formData.minimum_pap ?? null,
+        minimum_fuxi_legion_years: formData.minimum_fuxi_legion_years ?? null,
         example_evidence: formData.require_evidence ? formData.example_evidence : ''
       }
       if (editingItem.value) {
