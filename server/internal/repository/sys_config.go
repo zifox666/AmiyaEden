@@ -35,6 +35,10 @@ func NewSysConfigRepository() *SysConfigRepository {
 
 func cacheKey(key string) string { return sysConfigCachePrefix + key }
 
+func sysConfigCacheAvailable() bool {
+	return global.Redis != nil
+}
+
 func buildSysConfigBatchUpsertQuery(db *gorm.DB, items []SysConfigUpsertItem) *gorm.DB {
 	rows := make([]model.SystemConfig, 0, len(items))
 	for _, item := range items {
@@ -56,8 +60,10 @@ func (r *SysConfigRepository) Get(key, defaultVal string) (string, error) {
 	ctx := context.Background()
 
 	// 1. 先查缓存
-	if val, err := cache.GetString(ctx, cacheKey(key)); err == nil {
-		return val, nil
+	if sysConfigCacheAvailable() {
+		if val, err := cache.GetString(ctx, cacheKey(key)); err == nil {
+			return val, nil
+		}
 	}
 
 	// 2. 查数据库
@@ -75,7 +81,9 @@ func (r *SysConfigRepository) Get(key, defaultVal string) (string, error) {
 	}
 
 	// 3. 回写缓存
-	_ = cache.SetString(ctx, cacheKey(key), cfg.Value, sysConfigCacheTTL)
+	if sysConfigCacheAvailable() {
+		_ = cache.SetString(ctx, cacheKey(key), cfg.Value, sysConfigCacheTTL)
+	}
 	return cfg.Value, nil
 }
 
@@ -100,8 +108,10 @@ func (r *SysConfigRepository) SetMany(items []SysConfigUpsertItem) error {
 	}
 
 	ctx := context.Background()
-	for _, item := range items {
-		_ = cache.SetString(ctx, cacheKey(item.Key), item.Value, sysConfigCacheTTL)
+	if sysConfigCacheAvailable() {
+		for _, item := range items {
+			_ = cache.SetString(ctx, cacheKey(item.Key), item.Value, sysConfigCacheTTL)
+		}
 	}
 	return nil
 }
@@ -164,6 +174,10 @@ func (r *SysConfigRepository) GetBool(key string, defaultVal bool) bool {
 
 // Invalidate 手动使某个 key 的缓存失效
 func (r *SysConfigRepository) Invalidate(keys ...string) {
+	if !sysConfigCacheAvailable() {
+		return
+	}
+
 	cacheKeys := make([]string, len(keys))
 	for i, k := range keys {
 		cacheKeys[i] = cacheKey(k)

@@ -28,6 +28,7 @@ type WelfareService struct {
 	fleetRepo *repository.FleetRepository
 	skillRepo *repository.EveSkillRepository
 	planRepo  *repository.SkillPlanRepository
+	cfgRepo   welfareSettingsConfigStore
 	ssoSvc    *EveSSOService
 	esiClient *esi.Client
 
@@ -42,6 +43,7 @@ func NewWelfareService() *WelfareService {
 		fleetRepo: repository.NewFleetRepository(),
 		skillRepo: repository.NewEveSkillRepository(),
 		planRepo:  repository.NewSkillPlanRepository(),
+		cfgRepo:   repository.NewSysConfigRepository(),
 		ssoSvc:    newConfiguredEveSSOService(),
 		esiClient: newConfiguredESIClient(),
 	}
@@ -611,8 +613,65 @@ type ApplyForWelfareRequest struct {
 	EvidenceImage string `json:"evidence_image"`
 }
 
-func initialWelfareApplicationRequestedStatus() string {
-	return model.WelfareAppStatusRequested
+func (s *WelfareService) autoApproveFuxiCoinThreshold() int {
+	if s.cfgRepo == nil {
+		return model.SysConfigDefaultWelfareAutoApproveFuxiCoinThreshold
+	}
+
+	return s.cfgRepo.GetInt(
+		model.SysConfigWelfareAutoApproveFuxiCoinThreshold,
+		model.SysConfigDefaultWelfareAutoApproveFuxiCoinThreshold,
+	)
+}
+
+func (s *WelfareService) shouldAutoDeliverWelfareApplication(welfare *model.Welfare) bool {
+	if welfare == nil || welfare.PayByFuxiCoin == nil {
+		return false
+	}
+
+	threshold := s.autoApproveFuxiCoinThreshold()
+	return threshold > 0 && *welfare.PayByFuxiCoin > 0 && *welfare.PayByFuxiCoin < threshold
+}
+
+func markWelfareApplicationDelivered(app *model.WelfareApplication, reviewerID uint) {
+	if app == nil {
+		return
+	}
+
+	now := time.Now()
+	app.Status = model.WelfareAppStatusDelivered
+	app.ReviewedBy = reviewerID
+	app.ReviewedAt = &now
+}
+
+func (s *WelfareService) applyDeliveredWelfareEffectsTx(
+	tx *gorm.DB,
+	welfare *model.Welfare,
+	app *model.WelfareApplication,
+	reviewerID uint,
+) error {
+	if welfare == nil || app == nil {
+		return nil
+	}
+
+	if welfare.PayByFuxiCoin == nil || *welfare.PayByFuxiCoin <= 0 {
+		return nil
+	}
+	if app.UserID == nil || *app.UserID == 0 {
+		return errors.New("该福利配置了伏羲币发放，但申请记录缺少用户信息")
+	}
+
+	reason := fmt.Sprintf("Welfare#%d Application#%d %s", welfare.ID, app.ID, welfare.Name)
+	refID := fmt.Sprintf("welfare_application:%d", app.ID)
+	return NewSysWalletService().ApplyWalletDeltaByOperatorTx(
+		tx,
+		*app.UserID,
+		reviewerID,
+		float64(*welfare.PayByFuxiCoin),
+		reason,
+		model.WalletRefWelfarePayout,
+		refID,
+	)
 }
 
 // ApplyForWelfare 申请福利
@@ -749,10 +808,25 @@ func (s *WelfareService) ApplyForWelfare(userID uint, req *ApplyForWelfareReques
 		QQ:            user.QQ,
 		DiscordID:     user.DiscordID,
 		EvidenceImage: req.EvidenceImage,
-		Status:        initialWelfareApplicationRequestedStatus(),
+		Status:        model.WelfareAppStatusRequested,
 	}
 
-	if err := s.repo.CreateApplication(app); err != nil {
+	autoDeliver := s.shouldAutoDeliverWelfareApplication(welfare)
+	if autoDeliver {
+		markWelfareApplicationDelivered(app, 0)
+	}
+
+	if err := global.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.repo.CreateApplicationTx(tx, app); err != nil {
+			return err
+		}
+		if autoDeliver {
+			if err := s.applyDeliveredWelfareEffectsTx(tx, welfare, app, 0); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return nil, errors.New("申请失败")
 	}
 	return app, nil
@@ -925,23 +999,8 @@ func (s *WelfareService) AdminReviewApplication(appID uint, reviewerID uint, req
 			if err != nil {
 				return errors.New("福利不存在")
 			}
-			if welfare.PayByFuxiCoin != nil && *welfare.PayByFuxiCoin > 0 {
-				if app.UserID == nil || *app.UserID == 0 {
-					return errors.New("该福利配置了伏羲币发放，但申请记录缺少用户信息")
-				}
-				reason := fmt.Sprintf("Welfare#%d Application#%d %s", welfare.ID, app.ID, welfare.Name)
-				refID := fmt.Sprintf("welfare_application:%d", app.ID)
-				if err := NewSysWalletService().ApplyWalletDeltaByOperatorTx(
-					tx,
-					*app.UserID,
-					reviewerID,
-					float64(*welfare.PayByFuxiCoin),
-					reason,
-					model.WalletRefWelfarePayout,
-					refID,
-				); err != nil {
-					return err
-				}
+			if err := s.applyDeliveredWelfareEffectsTx(tx, welfare, app, reviewerID); err != nil {
+				return err
 			}
 
 			appCopy := *app

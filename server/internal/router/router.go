@@ -420,6 +420,8 @@ func RegisterRoutes(r *gin.Engine) {
 
 	adminWelfare := admin.Group("/welfare")
 	{
+		adminWelfare.GET("/settings", welfareH.AdminGetSettings)
+		adminWelfare.PUT("/settings", welfareH.AdminUpdateSettings)
 		adminWelfare.POST("/add", welfareH.AdminCreateWelfare)
 		adminWelfare.POST("/edit", welfareH.AdminUpdateWelfare)
 		adminWelfare.POST("/delete", welfareH.AdminDeleteWelfare)

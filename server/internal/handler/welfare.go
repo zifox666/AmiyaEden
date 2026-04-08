@@ -29,11 +29,20 @@ func (h *WelfareHandler) UploadEvidence(c *gin.Context) {
 
 // WelfareHandler 福利 HTTP 处理器
 type WelfareHandler struct {
-	svc *service.WelfareService
+	svc         *service.WelfareService
+	settingsSvc welfareSettingsService
+}
+
+type welfareSettingsService interface {
+	GetSettings() service.WelfareSettings
+	UpdateSettings(cfg service.WelfareSettings) (service.WelfareSettings, error)
 }
 
 func NewWelfareHandler() *WelfareHandler {
-	return &WelfareHandler{svc: service.NewWelfareService()}
+	return &WelfareHandler{
+		svc:         service.NewWelfareService(),
+		settingsSvc: service.NewWelfareSettingsService(),
+	}
 }
 
 // ─────────────────────────────────────────────
@@ -157,6 +166,34 @@ func (h *WelfareHandler) AdminListWelfares(c *gin.Context) {
 		return
 	}
 	response.OKWithPage(c, list, total, req.Current, req.Size)
+}
+
+type updateWelfareSettingsRequest struct {
+	AutoApproveFuxiCoinThreshold int `json:"auto_approve_fuxi_coin_threshold" binding:"required,gte=0"`
+}
+
+// AdminGetSettings GET /system/welfare/settings
+func (h *WelfareHandler) AdminGetSettings(c *gin.Context) {
+	response.OK(c, h.settingsSvc.GetSettings())
+}
+
+// AdminUpdateSettings PUT /system/welfare/settings
+func (h *WelfareHandler) AdminUpdateSettings(c *gin.Context) {
+	var req updateWelfareSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+
+	updated, err := h.settingsSvc.UpdateSettings(service.WelfareSettings{
+		AutoApproveFuxiCoinThreshold: req.AutoApproveFuxiCoinThreshold,
+	})
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+
+	response.OK(c, updated)
 }
 
 // adminWelfareReorderRequest 福利排序请求

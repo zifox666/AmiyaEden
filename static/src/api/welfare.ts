@@ -40,6 +40,21 @@ export function adminReorderWelfares(ids: number[]) {
   })
 }
 
+/** 管理员获取福利模块设置 */
+export function fetchWelfareAutoApproveConfig() {
+  return request.get<Api.Welfare.AutoApproveConfig>({
+    url: '/api/v1/system/welfare/settings'
+  })
+}
+
+/** 管理员更新福利模块自动审批设置 */
+export function updateWelfareAutoApproveConfig(data: Api.Welfare.UpdateAutoApproveConfigParams) {
+  return request.put<Api.Welfare.AutoApproveConfig>({
+    url: '/api/v1/system/welfare/settings',
+    data
+  })
+}
+
 /** 管理员删除福利 */
 export function adminDeleteWelfare(id: number) {
   return request.post({

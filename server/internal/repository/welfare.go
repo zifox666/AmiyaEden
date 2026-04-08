@@ -207,6 +207,11 @@ func (r *WelfareRepository) CreateApplication(app *model.WelfareApplication) err
 	return global.DB.Create(app).Error
 }
 
+// CreateApplicationTx 在事务中创建福利申请
+func (r *WelfareRepository) CreateApplicationTx(tx *gorm.DB, app *model.WelfareApplication) error {
+	return tx.Create(app).Error
+}
+
 // BulkCreateApplications 批量创建福利申请记录
 func (r *WelfareRepository) BulkCreateApplications(apps []model.WelfareApplication) error {
 	if len(apps) == 0 {

@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-04-02
+last_reviewed: 2026-04-08
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -196,7 +196,7 @@ source_of_truth:
 | Method | Path | 说明 | 权限 |
 | --- | --- | --- | --- |
 | POST | `/welfare/eligible` | 可申请福利列表 | Login |
-| POST | `/welfare/apply` | 申请福利 | Login |
+| POST | `/welfare/apply` | 申请福利；若 `0 < pay_by_fuxi_coin < 当前自动审批阈值` 且资格校验通过，申请会直接自动发放并同步写入 `welfare_payout` 钱包流水。该阈值默认 `500`，由管理员在 `/welfare/settings` 配置，设为 `0` 时关闭自动审批 | Login |
 | POST | `/welfare/my-applications` | 我的福利申请 | Login |
 | POST | `/welfare/upload-evidence` | 上传福利申请凭证 | Login |
 
@@ -251,6 +251,13 @@ source_of_truth:
 | PUT | `/system/basic-config/allow-corporations` | 更新允许军团列表 | `RequireRole(super_admin)` |
 | GET | `/system/basic-config/character-esi-restriction` | 获取任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(super_admin)` |
 | PUT | `/system/basic-config/character-esi-restriction` | 更新任一绑定人物 ESI 失效时是否强制停留人物页的配置 | `RequireRole(super_admin)` |
+
+### Welfare Config
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/system/welfare/settings` | 获取福利自动审批伏羲币阈值配置 | `RequireRole(admin)` |
+| PUT | `/system/welfare/settings` | 更新福利自动审批伏羲币阈值配置；`0` 表示关闭自动审批 | `RequireRole(admin)` |
 
 ### SDE Config
 
@@ -324,7 +331,7 @@ source_of_truth:
 | POST | `/system/welfare/import` | 导入历史福利记录 | `RequireRole(admin)` |
 | POST | `/system/welfare/applications` | 福利申请列表（审批端） | `RequireRole(admin)` |
 | POST | `/system/welfare/applications/delete` | 删除单条福利申请记录 | `RequireRole(admin)` |
-| POST | `/system/welfare/review` | 审批福利申请（发放/拒绝；若当前福利配置 `pay_by_fuxi_coin > 0`，同步写入 `welfare_payout` 钱包流水；发放成功后尽力发送一封以发放福利官主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin)` |
+| POST | `/system/welfare/review` | 审批仍处于 `requested` 的福利申请（发放/拒绝；若当前福利配置 `pay_by_fuxi_coin > 0`，同步写入 `welfare_payout` 钱包流水；发放成功后尽力发送一封以发放福利官主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin)` |
 
 ### Newbro Admin
 

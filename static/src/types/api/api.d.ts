@@ -1102,6 +1102,14 @@ declare namespace Api {
       name: string
     }>
 
+    interface AutoApproveConfig {
+      auto_approve_fuxi_coin_threshold: number
+    }
+
+    interface UpdateAutoApproveConfigParams {
+      auto_approve_fuxi_coin_threshold: number
+    }
+
     /** 可申请人物 */
     interface EligibleCharacter {
       character_id: number

@@ -2,48 +2,101 @@
 <template>
   <div class="welfare-settings-page art-full-height">
     <ElCard class="art-table-card" shadow="never">
-      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
-        <template #left>
-          <div class="flex items-center gap-2">
-            <ElButton v-if="canManage" type="success" :icon="Plus" @click="openCreateDialog">{{
-              t('welfareSettings.create')
-            }}</ElButton>
-            <ElTag v-if="reorderSaving" type="info" size="small">{{
-              t('welfareSettings.reorderSaving')
-            }}</ElTag>
-            <ElInput
-              v-model="nameFilter"
-              :placeholder="t('welfareSettings.filterName')"
-              clearable
-              style="width: 160px"
-              @keyup.enter="handleSearch"
-            />
-            <ElSelect
-              v-model="statusFilter"
-              :placeholder="t('welfareSettings.filterStatus')"
-              clearable
-              style="width: 120px"
-              @change="handleSearch"
-            >
-              <ElOption :label="t('welfareSettings.statusActive')" :value="1" />
-              <ElOption :label="t('welfareSettings.statusDisabled')" :value="0" />
-            </ElSelect>
-            <ElButton type="primary" @click="handleSearch">{{ t('common.search') }}</ElButton>
-            <ElButton @click="handleReset">{{ t('common.reset') }}</ElButton>
-          </div>
-        </template>
-      </ArtTableHeader>
+      <ElTabs v-model="activeTab" @tab-change="handleSettingsTabChange">
+        <ElTabPane :label="t('welfareSettings.welfareListTab')" name="welfares">
+          <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+            <template #left>
+              <div class="flex items-center gap-2">
+                <ElButton v-if="canManage" type="success" :icon="Plus" @click="openCreateDialog">{{
+                  t('welfareSettings.create')
+                }}</ElButton>
+                <ElTag v-if="reorderSaving" type="info" size="small">{{
+                  t('welfareSettings.reorderSaving')
+                }}</ElTag>
+                <ElInput
+                  v-model="nameFilter"
+                  :placeholder="t('welfareSettings.filterName')"
+                  clearable
+                  style="width: 160px"
+                  @keyup.enter="handleSearch"
+                />
+                <ElSelect
+                  v-model="statusFilter"
+                  :placeholder="t('welfareSettings.filterStatus')"
+                  clearable
+                  style="width: 120px"
+                  @change="handleSearch"
+                >
+                  <ElOption :label="t('welfareSettings.statusActive')" :value="1" />
+                  <ElOption :label="t('welfareSettings.statusDisabled')" :value="0" />
+                </ElSelect>
+                <ElButton type="primary" @click="handleSearch">{{ t('common.search') }}</ElButton>
+                <ElButton @click="handleReset">{{ t('common.reset') }}</ElButton>
+              </div>
+            </template>
+          </ArtTableHeader>
 
-      <ArtTable
-        ref="tableRef"
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        row-key="id"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
-      />
+          <ArtTable
+            ref="tableRef"
+            :loading="loading"
+            :data="data"
+            :columns="columns"
+            :pagination="pagination"
+            row-key="id"
+            @pagination:size-change="handleSizeChange"
+            @pagination:current-change="handleCurrentChange"
+          />
+        </ElTabPane>
+
+        <ElTabPane
+          v-if="canManage"
+          :label="t('welfareSettings.autoApproveConfigTab')"
+          name="autoApproveConfig"
+        >
+          <ElAlert
+            class="mb-4"
+            :title="t('welfareSettings.autoApproveThresholdHint')"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+
+          <ElForm
+            label-width="180px"
+            style="max-width: 640px"
+            v-loading="configLoading"
+            @submit.prevent
+          >
+            <ElFormItem :label="t('welfareSettings.autoApproveThreshold')">
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <ElInputNumber
+                    v-model="autoApproveConfig.auto_approve_fuxi_coin_threshold"
+                    :min="0"
+                    :step="1"
+                    :precision="0"
+                    :placeholder="t('welfareSettings.autoApproveThresholdPlaceholder')"
+                    controls-position="right"
+                    style="width: 220px"
+                  />
+                  <span class="text-xs text-gray-400">
+                    {{ t('welfareSettings.payByFuxiCoin') }}
+                  </span>
+                </div>
+                <div class="text-xs text-gray-400">
+                  {{ t('welfareSettings.autoApproveThresholdDetail') }}
+                </div>
+              </div>
+            </ElFormItem>
+
+            <ElFormItem>
+              <ElButton type="primary" :loading="configSaving" @click="handleSaveAutoApproveConfig">
+                {{ t('common.save') }}
+              </ElButton>
+            </ElFormItem>
+          </ElForm>
+        </ElTabPane>
+      </ElTabs>
     </ElCard>
 
     <!-- 导入历史记录对话框 -->
@@ -241,6 +294,8 @@
     adminDeleteWelfare,
     adminImportWelfareRecords,
     adminReorderWelfares,
+    fetchWelfareAutoApproveConfig,
+    updateWelfareAutoApproveConfig,
     uploadWelfareEvidence
   } from '@/api/welfare'
   import { fetchSkillPlanList } from '@/api/skill-plan'
@@ -258,6 +313,9 @@
   })
 
   type WelfareItem = Api.Welfare.WelfareItem
+  type WelfareAutoApproveConfig = Api.Welfare.AutoApproveConfig
+
+  const activeTab = ref<'welfares' | 'autoApproveConfig'>('welfares')
 
   // ─── 状态/模式映射 ───
   const STATUS_CONFIG = computed(
@@ -427,6 +485,49 @@
     nameFilter.value = ''
     statusFilter.value = undefined
     resetSearchParams()
+  }
+
+  // ─── 自动审批阈值配置 ───
+  const configLoading = ref(false)
+  const configSaving = ref(false)
+  const configLoaded = ref(false)
+  const autoApproveConfig = reactive<WelfareAutoApproveConfig>({
+    auto_approve_fuxi_coin_threshold: 500
+  })
+
+  async function loadAutoApproveConfig() {
+    configLoading.value = true
+    try {
+      const config = await fetchWelfareAutoApproveConfig()
+      autoApproveConfig.auto_approve_fuxi_coin_threshold = config.auto_approve_fuxi_coin_threshold
+      configLoaded.value = true
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('welfareSettings.loadConfigFailed'))
+    } finally {
+      configLoading.value = false
+    }
+  }
+
+  async function handleSaveAutoApproveConfig() {
+    configSaving.value = true
+    try {
+      const config = await updateWelfareAutoApproveConfig({
+        auto_approve_fuxi_coin_threshold: autoApproveConfig.auto_approve_fuxi_coin_threshold
+      })
+      autoApproveConfig.auto_approve_fuxi_coin_threshold = config.auto_approve_fuxi_coin_threshold
+      configLoaded.value = true
+      ElMessage.success(t('welfareSettings.saveConfigSuccess'))
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('welfareSettings.saveConfigFailed'))
+    } finally {
+      configSaving.value = false
+    }
+  }
+
+  function handleSettingsTabChange(tab: string | number) {
+    if (tab === 'autoApproveConfig' && canManage.value && !configLoaded.value) {
+      loadAutoApproveConfig()
+    }
   }
 
   // ─── 技能计划列表 ───

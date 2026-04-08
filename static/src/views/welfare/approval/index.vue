@@ -98,6 +98,7 @@
     adminReviewApplication,
     adminDeleteApplication
   } from '@/api/welfare'
+  import { formatWelfareHistoryReviewerName } from '../reviewerName'
   import { useUserStore } from '@/store/modules/user'
   import { showMailAttemptMessage } from '@/utils/mailAttempt'
 
@@ -202,7 +203,23 @@
       width: 130,
       showOverflowTooltip: true,
       formatter: (row: AppRow) =>
-        h('span', { class: row.reviewer_name ? '' : 'text-gray-400' }, row.reviewer_name || '-')
+        h(
+          'span',
+          {
+            class:
+              row.reviewer_name ||
+              (row.reviewed_by === 0 && row.status === 'delivered' && row.reviewed_at)
+                ? ''
+                : 'text-gray-400'
+          },
+          formatWelfareHistoryReviewerName({
+            reviewerName: row.reviewer_name,
+            reviewedBy: row.reviewed_by,
+            status: row.status,
+            reviewedAt: row.reviewed_at,
+            systemLabel: t('welfareApproval.systemReviewer')
+          })
+        )
     },
     {
       prop: 'created_at',

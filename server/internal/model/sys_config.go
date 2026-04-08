@@ -45,6 +45,8 @@ const (
 	SysConfigMenteeMaxCharacterSP    = "mentor.mentee_max_character_sp"
 	SysConfigMenteeMaxAccountAgeDays = "mentor.mentee_max_account_age_days"
 
+	SysConfigWelfareAutoApproveFuxiCoinThreshold = "welfare.auto_approve_fuxi_coin_threshold"
+
 	SysConfigDefaultSDEAPIKey      = "modify_your_api_key"
 	SysConfigDefaultSDEProxy       = ""
 	SysConfigDefaultSDEDownloadURL = "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"
@@ -56,6 +58,7 @@ const (
 	SysConfigDefaultNewbroBonusRate                float64 = 20
 	SysConfigDefaultMenteeMaxCharacterSP           int64   = 4_000_000
 	SysConfigDefaultMenteeMaxAccountAgeDays                = 7
+	SysConfigDefaultWelfareAutoApproveFuxiCoinThreshold    = 500
 	SysConfigDefaultPAPFCSalary                    float64 = 400
 	SysConfigDefaultPAPFCSalaryLimit               int     = 5
 	SysConfigDefaultEnforceCharacterESIRestriction         = true

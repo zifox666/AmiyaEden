@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-31
+last_reviewed: 2026-04-08
 source_of_truth:
   - server/bootstrap/db.go
   - server/internal/model
@@ -388,7 +388,8 @@ ESI 头衔到系统职权的映射表。
 说明：
 
 - `pay_by_fuxi_coin` 是福利定义上的可选整数配置，不会在申请时冻结到 `welfare_application`
-- 审批发放时，服务层会重新读取当前 `welfare` 行来决定是否发放伏羲币
+- 发放时，服务层会重新读取当前 `welfare` 行来决定是否发放伏羲币；若 `0 < pay_by_fuxi_coin < system_config.welfare.auto_approve_fuxi_coin_threshold`，该发放会在申请提交事务内直接发生
+- `system_config.welfare.auto_approve_fuxi_coin_threshold` 默认值为 `500`；管理员可在 `/welfare/settings` 调整，设置为 `0` 时关闭自动审批
 - 技能计划关联当前通过 `welfare_skill_plans` 关系表维护，不直接内嵌在 `welfare` 表列里
 
 ### `welfare_application`
@@ -408,14 +409,15 @@ ESI 头衔到系统职权的映射表。
 
 说明：
 
-- 正常审批路径会在事务内重新读取并锁定申请行，再执行 `requested -> delivered / rejected`
+- 常规人工审批路径会在事务内重新读取并锁定申请行，再执行 `requested -> delivered / rejected`
+- 若当前 `welfare.pay_by_fuxi_coin` 满足 `0 < value < system_config.welfare.auto_approve_fuxi_coin_threshold` 且申请资格校验通过，申请会直接以 `delivered` 状态写入，并同步写入 `reviewed_at`；此时 `reviewed_by = 0`
 - 历史导入允许 `user_id` 为空并直接写入 `delivered` 记录
 
 ### `wallet_transaction`
 
 与福利模块相关的当前约定：
 
-- 当 `welfare.pay_by_fuxi_coin > 0` 且福利申请从 `requested` 发放为 `delivered` 时，系统会写入一条钱包流水
+- 当 `welfare.pay_by_fuxi_coin > 0` 且福利申请被发放为 `delivered` 时，系统会写入一条钱包流水；这既包括人工审批的 `requested -> delivered`，也包括小额伏羲币福利在申请时的自动发放
 - 该流水使用 `ref_type = welfare_payout`
 - `ref_id` 当前按 `welfare_application:<application_id>` 生成，用于追踪该次福利发放
 - 导入历史福利记录不会补写 `welfare_payout` 钱包流水

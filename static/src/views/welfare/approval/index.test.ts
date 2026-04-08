@@ -40,3 +40,14 @@ test('welfare approval character rows use the shared copy button instead of page
   )
   assert.doesNotMatch(source, /const copyText = async \(text: string\)/)
 })
+
+test('welfare approval history shows a localized system reviewer label for auto-delivered claims', () => {
+  assert.match(
+    source,
+    /import\s+\{\s*formatWelfareHistoryReviewerName\s*\}\s+from '\.\.\/reviewerName'/
+  )
+  assert.match(
+    source,
+    /formatWelfareHistoryReviewerName\(\{[\s\S]*systemLabel:\s*t\('welfareApproval\.systemReviewer'\)/
+  )
+})
