@@ -30,6 +30,18 @@ test('manage order history renders shared copy buttons for order number and main
   )
 })
 
+test('manage order history adds the compact isk total column before quantity', () => {
+  assert.match(source, /formatIskSmart/)
+  assert.match(source, /resolveOrderIskTotal/)
+  assert.match(source, /prop:\s*'product_name'[\s\S]*prop:\s*'isk_total'[\s\S]*prop:\s*'quantity'/)
+  assert.match(
+    source,
+    /prop:\s*'isk_total'[\s\S]*label:\s*t\('shopAdmin\.orders\.table\.iskTotal'\)/
+  )
+  assert.match(source, /prop:\s*'isk_total'[\s\S]*formatIskSmart\(iskTotal\)/)
+  assert.match(source, /prop:\s*'isk_total'[\s\S]*h\(ArtCopyButton,\s*\{\s*text:\s*iskTotal\s*\}\)/)
+})
+
 test('shop order views label reviewer fields as operator', () => {
   assert.match(source, /shopAdmin\.orders\.table\.reviewerName/)
   assert.match(ordersSource, /shop\.reviewerName/)
@@ -39,4 +51,13 @@ test('shop order views label reviewer fields as operator', () => {
   assert.equal(enLocale.shopAdmin.orders.table.reviewerName, 'Operator')
   assert.match(docSource, /展示操作人与发放备注/)
   assert.match(docSource, /展示订单状态，以及在已发放\/已拒绝时展示操作人/)
+})
+
+test('commerce docs describe the isk total order column', () => {
+  assert.equal(zhLocale.shopAdmin.orders.table.iskTotal, 'ISK总和')
+  assert.equal(enLocale.shopAdmin.orders.table.iskTotal, 'ISK Total')
+  assert.match(docSource, /ISK总和/)
+  assert.match(docSource, /total_price\s*\*\s*1,000,000/)
+  assert.match(docSource, /compact 风格显示/)
+  assert.match(docSource, /复制原始 ISK 数值/)
 })

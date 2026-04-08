@@ -32,10 +32,11 @@
 <script setup lang="ts">
   import { ElTag, ElButton, ElInput } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { formatFuxiCoinWhole, formatTime } from '@utils/common'
+  import { formatFuxiCoinWhole, formatIskSmart, formatTime } from '@utils/common'
   import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { adminListOrderHistory } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
+  import { resolveOrderIskTotal } from './order-isk'
 
   defineOptions({ name: 'ManageOrderHistory' })
   const { t } = useI18n()
@@ -112,6 +113,20 @@
           label: t('shopAdmin.orders.table.product'),
           minWidth: 140,
           showOverflowTooltip: true
+        },
+        {
+          prop: 'isk_total',
+          label: t('shopAdmin.orders.table.iskTotal'),
+          minWidth: 140,
+          formatter: (row: Order) => {
+            const iskTotal = resolveOrderIskTotal(row)
+            if (iskTotal == null) return h('span', { class: 'text-gray-400' }, '-')
+
+            return h('div', { class: 'flex items-center gap-1 min-w-0' }, [
+              h('span', { class: 'truncate font-medium text-blue-600' }, formatIskSmart(iskTotal)),
+              h(ArtCopyButton, { text: iskTotal })
+            ])
+          }
         },
         {
           prop: 'quantity',

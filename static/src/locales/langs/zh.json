@@ -1824,6 +1824,7 @@
         "nickname": "@:newbro.common.nickname",
         "contact": "@:welfareApproval.contact",
         "product": "商品",
+        "iskTotal": "ISK总和",
         "quantity": "数量",
         "totalPrice": "总价",
         "reviewerName": "操作人",

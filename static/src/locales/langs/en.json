@@ -1824,6 +1824,7 @@
         "nickname": "@:newbro.common.nickname",
         "contact": "@:welfareApproval.contact",
         "product": "Product",
+        "iskTotal": "ISK Total",
         "quantity": "Qty",
         "totalPrice": "Total",
         "reviewerName": "Operator",
