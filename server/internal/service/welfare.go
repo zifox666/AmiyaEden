@@ -650,10 +650,6 @@ func (s *WelfareService) applyDeliveredWelfareEffectsTx(
 	app *model.WelfareApplication,
 	reviewerID uint,
 ) error {
-	if welfare == nil || app == nil {
-		return nil
-	}
-
 	if welfare.PayByFuxiCoin == nil || *welfare.PayByFuxiCoin <= 0 {
 		return nil
 	}

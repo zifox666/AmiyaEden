@@ -689,6 +689,7 @@ func TestApplyForWelfareUsesConfiguredAutoApproveThreshold(t *testing.T) {
 	}
 
 	svc := NewWelfareService()
+	// fakeWelfareSettingsConfigStore is defined in welfare_settings_test.go (same package).
 	svc.cfgRepo = &fakeWelfareSettingsConfigStore{threshold: 300, hasThreshold: true}
 
 	app, err := svc.ApplyForWelfare(user.ID, &ApplyForWelfareRequest{WelfareID: welfare.ID})

@@ -44,7 +44,12 @@ func newAutoSrpSchedulerTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func TestFleetAutoSrpSchedulerScheduleAfterPAPIssuedPersistsOneOffRun(t *testing.T) {
+// TestFleetAutoSrpSchedulerScheduleAfterPAPIssuedPreservesExistingDBSchedule verifies
+// that ScheduleAfterPAPIssued does not accidentally clear a pre-existing
+// auto_srp_scheduled_for value that was persisted by the fleet service.
+// ScheduleAfterPAPIssued itself only sets an in-memory timer; the DB write
+// happens inside the fleet service transaction.
+func TestFleetAutoSrpSchedulerScheduleAfterPAPIssuedPreservesExistingDBSchedule(t *testing.T) {
 	db := newAutoSrpSchedulerTestDB(t)
 	oldDB := global.DB
 	global.DB = db
@@ -56,7 +61,7 @@ func TestFleetAutoSrpSchedulerScheduleAfterPAPIssuedPersistsOneOffRun(t *testing
 
 	runner := &fakeAutoSrpRunner{}
 	scheduler := newFleetAutoSrpScheduler(repository.NewFleetRepository(), runner)
-	issuedAt := time.Date(2026, time.April, 8, 12, 0, 0, 123456789, time.UTC)
+	issuedAt := time.Now().UTC()
 
 	scheduledFor := model.NormalizeFleetAutoSrpScheduledFor(issuedAt.Add(model.FleetAutoSrpDelay))
 	if err := db.Model(&model.Fleet{}).Where("id = ?", "fleet-1").Update("auto_srp_scheduled_for", scheduledFor).Error; err != nil {
@@ -71,7 +76,7 @@ func TestFleetAutoSrpSchedulerScheduleAfterPAPIssuedPersistsOneOffRun(t *testing
 		t.Fatalf("reload fleet: %v", err)
 	}
 	if stored.AutoSrpScheduledFor == nil {
-		t.Fatalf("expected auto SRP schedule to be persisted")
+		t.Fatalf("expected pre-existing DB schedule to survive")
 	}
 	want := model.NormalizeFleetAutoSrpScheduledFor(issuedAt.Add(model.FleetAutoSrpDelay))
 	if !stored.AutoSrpScheduledFor.Equal(want) {
@@ -80,7 +85,11 @@ func TestFleetAutoSrpSchedulerScheduleAfterPAPIssuedPersistsOneOffRun(t *testing
 	if len(runner.fleetIDs) != 0 {
 		t.Fatalf("expected no auto SRP run during scheduling, got %v", runner.fleetIDs)
 	}
-	if timer, ok := scheduler.timers["fleet-1"]; !ok || timer == nil {
+
+	scheduler.mu.Lock()
+	timer := scheduler.timers["fleet-1"]
+	scheduler.mu.Unlock()
+	if timer == nil {
 		t.Fatalf("expected in-memory timer to be created")
 	}
 }

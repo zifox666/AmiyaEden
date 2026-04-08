@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const autoSrpTriggerDelay = model.FleetAutoSrpDelay
-
 type autoSrpRunner interface {
 	ProcessAutoSRP(fleetID string) error
 }
@@ -78,7 +76,7 @@ func (s *fleetAutoSrpScheduler) ScheduleAfterPAPIssued(fleetID string, issuedAt 
 		return nil
 	}
 
-	scheduledFor := model.NormalizeFleetAutoSrpScheduledFor(issuedAt.Add(autoSrpTriggerDelay))
+	scheduledFor := model.NormalizeFleetAutoSrpScheduledFor(issuedAt.Add(model.FleetAutoSrpDelay))
 	s.scheduleTimer(fleetID, scheduledFor)
 	return nil
 }

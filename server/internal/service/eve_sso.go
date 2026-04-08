@@ -631,22 +631,14 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 //  Token 刷新并发控制
 // ─────────────────────────────────────────────
 
-// tokenRefreshMu 保护 tokenRefreshLocks map 的读写
-var tokenRefreshMu sync.Mutex
-
-// tokenRefreshLocks 每个 characterID 一把锁，防止并发刷新同一人物的 token
-var tokenRefreshLocks = make(map[int64]*sync.Mutex)
+// tokenRefreshLocks 每个 characterID 一把锁，防止并发刷新同一人物的 token。
+// 使用 sync.Map 避免显式清理：条目随 GC 自然回收，不会无限增长。
+var tokenRefreshLocks sync.Map
 
 // getCharacterLock 返回指定人物的互斥锁（懒初始化）
 func getCharacterLock(characterID int64) *sync.Mutex {
-	tokenRefreshMu.Lock()
-	defer tokenRefreshMu.Unlock()
-	mu, ok := tokenRefreshLocks[characterID]
-	if !ok {
-		mu = &sync.Mutex{}
-		tokenRefreshLocks[characterID] = mu
-	}
-	return mu
+	mu, _ := tokenRefreshLocks.LoadOrStore(characterID, &sync.Mutex{})
+	return mu.(*sync.Mutex)
 }
 
 // isTokenErrorPermanent 判断 ESI token 刷新错误是否为不可恢复错误。
