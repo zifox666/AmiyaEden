@@ -213,8 +213,24 @@ func newbroCustomIndexStatements() []string {
 	}
 }
 
+func badgeCountIndexStatements() []string {
+	return []string{
+		// Badge count queries: SRP pending
+		`CREATE INDEX IF NOT EXISTS idx_srp_application_review_payout ON srp_application (review_status, payout_status) WHERE deleted_at IS NULL`,
+		// Badge count queries: welfare pending
+		`CREATE INDEX IF NOT EXISTS idx_welfare_application_status ON welfare_application (status) WHERE deleted_at IS NULL`,
+		// Badge count queries: shop orders pending
+		`CREATE INDEX IF NOT EXISTS idx_shop_order_status ON shop_order (status) WHERE deleted_at IS NULL`,
+		// Badge count queries: mentor pending by mentor
+		`CREATE INDEX IF NOT EXISTS idx_mentor_rel_mentor_status ON mentor_mentee_relationship (mentor_user_id, status) WHERE deleted_at IS NULL`,
+		// Dashboard: alliance PAP summary lookup
+		`CREATE INDEX IF NOT EXISTS idx_alliance_pap_summary_main_char ON alliance_pap_summary (main_character, year, month) WHERE deleted_at IS NULL`,
+	}
+}
+
 func ensureCustomIndexes(db *gorm.DB) {
-	for _, stmt := range newbroCustomIndexStatements() {
+	allStatements := append(newbroCustomIndexStatements(), badgeCountIndexStatements()...)
+	for _, stmt := range allStatements {
 		if err := db.Exec(stmt).Error; err != nil {
 			global.Logger.Warn("创建自定义索引失败", zap.String("statement", stmt), zap.Error(err))
 		}

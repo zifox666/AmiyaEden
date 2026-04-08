@@ -4,6 +4,7 @@ import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"errors"
+	"sync"
 )
 
 const (
@@ -36,53 +37,112 @@ func NewBadgeService() *BadgeService {
 
 func (s *BadgeService) GetBadgeCounts(userID uint, userRoles []string) (BadgeCounts, error) {
 	counts := BadgeCounts{}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	var firstErr error
 
-	welfareEligible, err := s.countEligibleWelfares(userID)
-	if err != nil {
-		return nil, errors.New("获取可申请福利数量失败")
-	}
-	if welfareEligible > 0 {
-		counts[BadgeCountWelfareEligible] = welfareEligible
-	}
+	// 1. 可申请福利
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		welfareEligible, err := s.countEligibleWelfares(userID)
+		mu.Lock()
+		defer mu.Unlock()
+		if err != nil {
+			if firstErr == nil {
+				firstErr = errors.New("获取可申请福利数量失败")
+			}
+			return
+		}
+		if welfareEligible > 0 {
+			counts[BadgeCountWelfareEligible] = welfareEligible
+		}
+	}()
 
+	// 2. SRP 待审批
 	if model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleSRP, model.RoleFC) {
-		pending, err := s.srpRepo.CountPendingBadgeApplications()
-		if err != nil {
-			return nil, errors.New("获取补损待审批数量失败")
-		}
-		if pending > 0 {
-			counts[BadgeCountSrpPending] = pending
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			pending, err := s.srpRepo.CountPendingBadgeApplications()
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				if firstErr == nil {
+					firstErr = errors.New("获取补损待审批数量失败")
+				}
+				return
+			}
+			if pending > 0 {
+				counts[BadgeCountSrpPending] = pending
+			}
+		}()
 	}
 
+	// 3. 福利待审批
 	if model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleWelfare) {
-		pending, err := s.welfareRepo.CountPendingBadgeApplications()
-		if err != nil {
-			return nil, errors.New("获取福利待审批数量失败")
-		}
-		if pending > 0 {
-			counts[BadgeCountWelfarePending] = pending
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			pending, err := s.welfareRepo.CountPendingBadgeApplications()
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				if firstErr == nil {
+					firstErr = errors.New("获取福利待审批数量失败")
+				}
+				return
+			}
+			if pending > 0 {
+				counts[BadgeCountWelfarePending] = pending
+			}
+		}()
 	}
 
+	// 4. 商店订单
 	if model.ContainsAnyRole(userRoles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleWelfare) {
-		pending, err := s.shopRepo.CountPendingOrders()
-		if err != nil {
-			return nil, errors.New("获取商店订单待处理数量失败")
-		}
-		if pending > 0 {
-			counts[BadgeCountOrderPending] = pending
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			pending, err := s.shopRepo.CountPendingOrders()
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				if firstErr == nil {
+					firstErr = errors.New("获取商店订单待处理数量失败")
+				}
+				return
+			}
+			if pending > 0 {
+				counts[BadgeCountOrderPending] = pending
+			}
+		}()
 	}
 
+	// 5. 导师待处理
 	if model.ContainsAnyRole(userRoles, model.RoleMentor) {
-		pending, err := s.mentorRepo.CountPendingByMentorUserID(userID)
-		if err != nil {
-			return nil, errors.New("获取导师待处理申请数量失败")
-		}
-		if pending > 0 {
-			counts[BadgeCountMentorPendingApplications] = pending
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			pending, err := s.mentorRepo.CountPendingByMentorUserID(userID)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				if firstErr == nil {
+					firstErr = errors.New("获取导师待处理申请数量失败")
+				}
+				return
+			}
+			if pending > 0 {
+				counts[BadgeCountMentorPendingApplications] = pending
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
 	}
 
 	return counts, nil

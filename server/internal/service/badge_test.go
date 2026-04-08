@@ -3,11 +3,14 @@ package service
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"context"
 	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -279,6 +282,66 @@ func TestBadgeServiceGetBadgeCountsCountsPendingMentorApplicationsForCurrentMent
 
 	if got[BadgeCountMentorPendingApplications] != 1 {
 		t.Fatalf("expected mentor pending applications badge count to be 1, got %#v", got)
+	}
+}
+
+func TestBadgeServiceGetBadgeCountsDoesNotLeakCachedPrivilegedFields(t *testing.T) {
+	db := newBadgeServiceTestDB(t)
+	originalDB := global.DB
+	global.DB = db
+	defer func() { global.DB = originalDB }()
+
+	mini := miniredis.RunT(t)
+	originalRedis := global.Redis
+	global.Redis = redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	defer func() {
+		if global.Redis != nil {
+			_ = global.Redis.Close()
+		}
+		global.Redis = originalRedis
+	}()
+
+	if err := global.Redis.Ping(context.Background()).Err(); err != nil {
+		t.Fatalf("ping redis: %v", err)
+	}
+
+	user := model.User{Nickname: "Pilot Cache", QQ: "22222"}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	if err := db.Create(&model.SrpApplication{
+		UserID:            user.ID,
+		CharacterID:       5010,
+		CharacterName:     "Pilot Cache",
+		KillmailID:        8010,
+		ShipTypeID:        100,
+		SolarSystemID:     30000142,
+		KillmailTime:      time.Unix(1_700_000_000, 0).UTC(),
+		ReviewStatus:      model.SrpReviewSubmitted,
+		PayoutStatus:      model.SrpPayoutNotPaid,
+		FinalAmount:       10,
+		RecommendedAmount: 10,
+	}).Error; err != nil {
+		t.Fatalf("create submitted srp application: %v", err)
+	}
+
+	svc := NewBadgeService()
+
+	adminCounts, err := svc.GetBadgeCounts(user.ID, []string{model.RoleAdmin})
+	if err != nil {
+		t.Fatalf("admin GetBadgeCounts() error = %v", err)
+	}
+	if adminCounts[BadgeCountSrpPending] != 1 {
+		t.Fatalf("expected admin cache seed to include srp_pending, got %#v", adminCounts)
+	}
+
+	userCounts, err := svc.GetBadgeCounts(user.ID, []string{model.RoleUser})
+	if err != nil {
+		t.Fatalf("user GetBadgeCounts() error = %v", err)
+	}
+	if _, exists := userCounts[BadgeCountSrpPending]; exists {
+		t.Fatalf("expected cached privileged fields to stay hidden, got %#v", userCounts)
 	}
 }
 

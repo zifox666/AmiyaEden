@@ -3,6 +3,7 @@ package service
 import (
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"sync"
 	"time"
 )
 
@@ -116,42 +117,114 @@ func (s *DashboardService) GetDashboard(userID uint) (*DashboardResult, error) {
 		return nil, err
 	}
 
-	// ── 卡片数据 ──
-
-	// 1. EVE 钱包余额汇总
-	walletBalance, _ := s.walletRepo.SumBalanceByCharacterIDs(characterIDs)
-	result.Cards.EveWalletBalance = walletBalance
-
-	// 2. EVE 技能点汇总
-	skillPoints, _ := s.skillRepo.SumTotalSPByCharacterIDs(characterIDs)
-	result.Cards.EveSkillPoints = skillPoints
-
-	// 3. 系统内部钱包余额
-	sysWallet, err := s.sysWalletRepo.GetOrCreateWallet(userID)
-	if err == nil {
-		result.Cards.SystemWalletBalance = sysWallet.Balance
-	}
-
-	// 4. 当月联盟 PAP
+	// 获取主人物名称（后续多个查询依赖）
 	var mainCharName string
 	if user.PrimaryCharacterID != 0 {
 		if primaryChar, err := s.charRepo.GetByCharacterID(user.PrimaryCharacterID); err == nil {
 			mainCharName = primaryChar.CharacterName
 		}
 	}
-	if mainCharName != "" {
-		now := time.Now()
-		if summary, err := s.papRepo.GetSummary(mainCharName, now.Year(), int(now.Month())); err == nil {
-			result.Cards.AlliancePap = summary.TotalPap
+
+	// ── 并行获取所有数据 ──
+
+	var (
+		wg              sync.WaitGroup
+		walletBalance   float64
+		skillPoints     int64
+		sysWalletBal    float64
+		alliancePap     float64
+		internalFleets  []model.Fleet
+		allianceRecords []model.AlliancePAPRecord
+		allianceSums    []model.AlliancePAPSummary
+		internalStats   []repository.MonthlyPapStat
+		srpApps         []model.SrpApplication
+	)
+
+	// 1. EVE 钱包余额
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		walletBalance, _ = s.walletRepo.SumBalanceByCharacterIDs(characterIDs)
+	}()
+
+	// 2. EVE 技能点
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		skillPoints, _ = s.skillRepo.SumTotalSPByCharacterIDs(characterIDs)
+	}()
+
+	// 3. 系统钱包余额
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if w, err := s.sysWalletRepo.GetOrCreateWallet(userID); err == nil {
+			sysWalletBal = w.Balance
 		}
-	}
+	}()
 
-	// ── 参与的舰队（内部 + 联盟） ──
+	// 4. 当月联盟 PAP
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if mainCharName != "" {
+			now := time.Now()
+			if summary, err := s.papRepo.GetSummary(mainCharName, now.Year(), int(now.Month())); err == nil {
+				alliancePap = summary.TotalPap
+			}
+		}
+	}()
 
-	fleets := make([]DashboardFleetItem, 0)
+	// 5. 内部舰队
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		internalFleets, _ = s.fleetRepo.ListFleetsByMemberUserID(userID, 20)
+	}()
 
-	// 内部舰队
-	internalFleets, _ := s.fleetRepo.ListFleetsByMemberUserID(userID, 20)
+	// 6. 联盟 PAP 记录
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if mainCharName != "" {
+			allianceRecords, _ = s.papRepo.ListRecentRecordsByMainChar(mainCharName, 20)
+		}
+	}()
+
+	// 7. 联盟 PAP 月度汇总
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if mainCharName != "" {
+			allianceSums, _ = s.papRepo.ListSummariesByMainChar(mainCharName, 12)
+		}
+	}()
+
+	// 8. 内部 PAP 月度统计
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		internalStats, _ = s.fleetRepo.SumPapByUserGroupedByMonth(userID)
+	}()
+
+	// 9. SRP 列表
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		srpApps, _, _ = s.srpRepo.ListMyApplications(userID, 1, 10)
+	}()
+
+	wg.Wait()
+
+	// ── 组装响应 ──
+
+	result.Cards.EveWalletBalance = walletBalance
+	result.Cards.EveSkillPoints = skillPoints
+	result.Cards.SystemWalletBalance = sysWalletBal
+	result.Cards.AlliancePap = alliancePap
+
+	// 舰队列表
+	fleets := make([]DashboardFleetItem, 0, len(internalFleets)+len(allianceRecords))
 	for _, f := range internalFleets {
 		endAt := f.EndAt
 		fleets = append(fleets, DashboardFleetItem{
@@ -164,45 +237,33 @@ func (s *DashboardService) GetDashboard(userID uint) (*DashboardResult, error) {
 			PapCount:   f.PapCount,
 		})
 	}
-
-	// 联盟 PAP 舰队记录
-	if mainCharName != "" {
-		allianceRecords, _ := s.papRepo.ListRecentRecordsByMainChar(mainCharName, 20)
-		for _, r := range allianceRecords {
-			fleets = append(fleets, DashboardFleetItem{
-				Source:        "alliance",
-				ID:            r.FleetID,
-				Title:         r.Title,
-				StartAt:       r.StartAt,
-				EndAt:         r.EndAt,
-				PapCount:      r.Pap,
-				ShipTypeName:  r.ShipTypeName,
-				CharacterName: r.CharacterName,
-			})
-		}
+	for _, r := range allianceRecords {
+		fleets = append(fleets, DashboardFleetItem{
+			Source:        "alliance",
+			ID:            r.FleetID,
+			Title:         r.Title,
+			StartAt:       r.StartAt,
+			EndAt:         r.EndAt,
+			PapCount:      r.Pap,
+			ShipTypeName:  r.ShipTypeName,
+			CharacterName: r.CharacterName,
+		})
 	}
-
 	result.Fleets = fleets
 
-	// ── 月度 PAP 统计 ──
-
-	// 联盟 PAP 月度汇总
-	alliancePapStats := make([]DashboardPapMonthly, 0)
-	if mainCharName != "" {
-		summaries, _ := s.papRepo.ListSummariesByMainChar(mainCharName, 12)
-		for _, s := range summaries {
-			alliancePapStats = append(alliancePapStats, DashboardPapMonthly{
-				Year:     s.Year,
-				Month:    s.Month,
-				TotalPap: s.TotalPap,
-			})
-		}
+	// 联盟 PAP 月度
+	alliancePapStats := make([]DashboardPapMonthly, 0, len(allianceSums))
+	for _, s := range allianceSums {
+		alliancePapStats = append(alliancePapStats, DashboardPapMonthly{
+			Year:     s.Year,
+			Month:    s.Month,
+			TotalPap: s.TotalPap,
+		})
 	}
 	result.PapStats.Alliance = alliancePapStats
 
-	// 内部 PAP 月度汇总
-	internalPapStats := make([]DashboardPapMonthly, 0)
-	internalStats, _ := s.fleetRepo.SumPapByUserGroupedByMonth(userID)
+	// 内部 PAP 月度
+	internalPapStats := make([]DashboardPapMonthly, 0, len(internalStats))
 	for _, stat := range internalStats {
 		internalPapStats = append(internalPapStats, DashboardPapMonthly{
 			Year:     stat.Year,
@@ -212,9 +273,7 @@ func (s *DashboardService) GetDashboard(userID uint) (*DashboardResult, error) {
 	}
 	result.PapStats.Internal = internalPapStats
 
-	// ── 补损列表（最多 10 条） ──
-
-	srpApps, _, _ := s.srpRepo.ListMyApplications(userID, 1, 10)
+	// SRP 列表
 	srpList := make([]DashboardSrpItem, 0, len(srpApps))
 	for _, app := range srpApps {
 		srpList = append(srpList, DashboardSrpItem{
