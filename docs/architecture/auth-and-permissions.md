@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-04-03
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/middleware/auth.go
@@ -25,7 +25,8 @@ source_of_truth:
 - 当前用户
 - 绑定人物
 - 职权列表
-- 按钮权限列表
+- 资料完成状态 `profile_complete`
+- 失效人物 ESI 限制开关 `enforce_character_esi_restriction`
 - 当前新人资格快照 `is_currently_newbro`
 - 当前导师学员资格快照 `is_mentor_mentee_eligible`
 
@@ -111,18 +112,15 @@ source_of_truth:
 `JWTAuth()` 当前会：
 
 - 从 `Authorization: Bearer <token>` 或 `?token=` 提取 JWT
-- 解析 `userID`、`characterID`、兼容字段 `userRole`
-- 从职权服务加载 `roles`
-- 从职权服务加载 `permissions`
+- 解析 `userID`、`characterID`
+- 从职权服务加载 `roles`（带 Redis 缓存）
 - 写入 Gin Context
 
 上下文键包括：
 
 - `userID`
 - `characterID`
-- `userRole`
 - `roles`
-- `permissions`
 
 ## 权限检查
 
@@ -158,12 +156,6 @@ source_of_truth:
 - 让 guest 在准入完成前仍能查看自己的基础信息或自助完成资料
 
 `/api/v1/info/*` 当前不再属于 JWT-only 自助能力，而是 `RequireLoginUser()` 边界。
-
-### RequirePermission
-
-- 判断用户是否拥有指定权限之一
-- `super_admin` 自动通过
-- 支持父权限前缀命中，例如持有 `srp` 时可满足 `srp:review`
 
 ## 前端路由模式
 

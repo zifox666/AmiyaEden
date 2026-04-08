@@ -2,7 +2,7 @@
 status: active
 doc_type: agent-rules
 owner: engineering
-last_reviewed: 2026-03-26
+last_reviewed: 2026-04-09
 source_of_truth:
   - AGENTS.md
   - CLAUDE.md
@@ -63,7 +63,7 @@ If code and docs conflict:
 - Go backend in `server/`
 - Vue 3 + TypeScript frontend in `static/`
 - RBAC roles, menus, and button permissions
-- dynamic menu and routing support
+- static frontend routing with role-based page access
 - ESI / SSO integrations
 - typed frontend API contracts
 
@@ -141,7 +141,6 @@ If no feature spec exists, use the current code and standards as the source of t
 When changing roles, menus, routes, or button permissions, keep the following aligned:
 
 - backend route protection
-- menu seeds in `server/internal/model/menu.go`
 - frontend route metadata
 - button permission usage such as `v-auth`
 

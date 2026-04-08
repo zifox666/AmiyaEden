@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-26
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/main.go
   - server/bootstrap
@@ -39,9 +39,8 @@ SDE 检查更新当前行为：
 数据库初始化不仅建立连接，还会执行：
 
 - `AutoMigrate`
-- 系统职权种子初始化
-- 系统菜单种子初始化
-- 历史 `user.role` 到 `user_role` 的迁移
+- 自定义索引补齐
+- schema 规范化与兼容处理
 
 ## 运行时提示
 

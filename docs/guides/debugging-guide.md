@@ -2,7 +2,7 @@
 status: active
 doc_type: guide
 owner: engineering
-last_reviewed: 2026-03-23
+last_reviewed: 2026-04-09
 source_of_truth:
   - docs/ai/repo-rules.md
   - docs/architecture/module-map.md
@@ -28,7 +28,7 @@ Before investigating, classify the issue:
 | Test failure | `go test` or `pnpm test:unit` fails | test output, recent changes to tested code |
 | Runtime backend | HTTP 500, wrong response, panic | server logs, handler → service → repository |
 | Runtime frontend | wrong data displayed, missing UI | browser console, API response vs type |
-| Permission error | 403, missing menu/button | route protection, menu seeds, role assignments |
+| Permission error | 403, page/button missing | route protection, route meta, role assignments |
 | Data inconsistency | wrong values in UI | repository query, join conditions, fallbacks |
 
 ### Step 2: Locate the Layer
@@ -106,12 +106,11 @@ After fixing, add a test that would have caught this bug. See `docs/standards/re
 **Investigation:**
 
 1. Check backend route protection in `router.go`
-2. Check menu seeds in `model/menu.go`
-3. Check frontend route meta (`meta.login`, `meta.roles`)
-4. Check `v-auth` directives on buttons
-5. Check user's actual roles via `/api/v1/me`
+2. Check frontend route meta (`meta.login`, `meta.roles`)
+3. Check `v-auth` directives on buttons
+4. Check user's actual roles via `/api/v1/me`
 
-**Prevention:** modify all four permission touchpoints together (see "Routing, Menu, and Permission Changes" in `docs/ai/repo-rules.md`).
+**Prevention:** modify backend route protection, frontend route metadata, and button permission touchpoints together (see "Routing, Menu, and Permission Changes" in `docs/ai/repo-rules.md`).
 
 ### Localization Key Missing
 

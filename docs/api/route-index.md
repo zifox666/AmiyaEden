@@ -44,7 +44,7 @@ source_of_truth:
 | GET | `/sso/eve/bind` | 获取绑定新人物的 SSO 地址 | JWT |
 | PUT | `/sso/eve/primary/:character_id` | 设为主人物 | JWT |
 | DELETE | `/sso/eve/characters/:character_id` | 解绑人物 | JWT |
-| GET | `/me` | 当前用户、人物、权限、绑定人物，并返回 `enforce_character_esi_restriction`；若主人物 ESI 已失效则返回未授权以阻止继续启动登录上下文 | JWT |
+| GET | `/me` | 当前用户、人物、职权、绑定人物，并返回 `enforce_character_esi_restriction`；主人物 ESI 已失效时仍返回启动上下文（含 `token_invalid` 状态），由前端决定是否锁定 | JWT |
 | PUT | `/me` | 更新当前用户昵称 / QQ / Discord ID | JWT |
 | POST | `/dashboard` | Dashboard 聚合数据 | JWT |
 | GET | `/badge-counts` | 导航徽章计数；仅返回当前登录用户可见且非零的计数字段 | Login |

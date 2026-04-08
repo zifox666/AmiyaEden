@@ -2,13 +2,12 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-03
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/newbro_service.go
   - server/internal/service/newbro_report.go
   - server/internal/service/newbro_settings.go
-  - server/internal/service/menu.go
   - server/internal/handler/newbro_admin.go
   - static/src/api/newbro.ts
   - static/src/views/newbro
@@ -120,6 +119,7 @@ source_of_truth:
 
 - `GET /api/v1/newbro/captains`
 - `GET /api/v1/newbro/affiliation/me`
+- `GET /api/v1/newbro/affiliations/history`
 - `POST /api/v1/newbro/affiliation/select`
 - `POST /api/v1/newbro/affiliation/end`
 
@@ -202,7 +202,6 @@ source_of_truth:
 - `server/internal/service/captain_reward_processing.go`
 - `server/internal/service/newbro_settings.go`
 - `server/internal/service/newbro_report.go`
-- `server/internal/service/menu.go`
 - `server/internal/handler/newbro_user.go`
 - `server/internal/handler/newbro_captain.go`
 - `server/internal/handler/newbro_admin.go`

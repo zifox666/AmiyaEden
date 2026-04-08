@@ -2,7 +2,7 @@
 status: active
 doc_type: guide
 owner: backend
-last_reviewed: 2026-03-20
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/jobs/esi_refresh.go
   - server/internal/router/router.go
@@ -27,7 +27,7 @@ source_of_truth:
 8. 编写 `static/src/api/*`
 9. 更新 `static/src/types/api/api.d.ts`
 10. 接入页面、路由、i18n
-11. 如有需要，更新菜单种子与权限
+11. 如有需要，更新前端路由权限元数据与按钮权限
 12. 更新 `docs/api/route-index.md` 与对应 feature doc
 
 ## 必查位置

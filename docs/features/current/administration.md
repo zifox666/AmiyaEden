@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-03
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/model/system_identity.go
   - server/internal/router/router.go
@@ -67,6 +67,8 @@ source_of_truth:
 
 - `/system/*` 默认要求 `admin`
 - `/system/basic-config` 页面及 `/api/v1/system/basic-config*`、`/api/v1/system/sde-config` 接口仅 `super_admin` 可见且可用
+- `/system/auto-role/*` 额外要求 `super_admin`
+- `/system/webhook/*` 额外要求 `super_admin`
 - `/system/user/:id/impersonate` 额外要求 `super_admin`
 - `/system/user/:id/impersonate` 在目标用户主人物 ESI 已失效时拒绝签发模拟登录 token
 - `/system/user/:id` 删除用户时，若目标用户已登记 QQ 或 Discord ID，则仅 `super_admin` 可执行

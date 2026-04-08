@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/router/router.go
   - server/pkg/response/response.go
@@ -87,7 +87,6 @@ source_of_truth:
 - `JWT`: 任意持有有效 JWT 的已认证用户都可访问，包含 `guest`
 - `Login`: 任意已认证且非 `guest` 的产品用户都可访问
 - `RequireRole(...)`: 只有显式列出的职权边界可访问
-- `RequirePermission(...)`: 只有显式列出的权限边界可访问
 
 说明：
 

@@ -2,10 +2,10 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-03-22
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/router/router.go
-  - server/internal/model/menu.go
+  - server/internal/model/role.go
   - static/src/router
 ---
 
@@ -17,7 +17,7 @@ source_of_truth:
 
 - EVE SSO 登录与多人物绑定
 - RBAC 职权、菜单、按钮权限
-- 动态菜单与动态路由
+- 前端静态路由与按钮权限
 - 舰队、PAP、舰队配置、自动 SRP 模式
 - 技能规划、军团技能计划与完成度检查
 - EVE 人物信息查询与 NPC 刷怪报表

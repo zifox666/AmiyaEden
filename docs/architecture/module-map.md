@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-04-02
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal
   - server/pkg
@@ -32,7 +32,7 @@ source_of_truth:
 | `server/internal/handler/` | HTTP 请求解析与响应返回 | `server/internal/service/`、`server/pkg/response/` |
 | `server/internal/service/` | 业务规则、权限判断、跨仓储编排、ESI/SSO 集成 | `server/internal/repository/`、对应 feature doc |
 | `server/internal/repository/` | 数据访问、查询拼接、结果映射 | `server/internal/model/`、`docs/standards/testing-and-verification.md` |
-| `server/internal/model/` | GORM 模型、菜单种子、职权常量 | `docs/architecture/routing-and-menus.md` |
+| `server/internal/model/` | GORM 模型、职权常量 | `docs/architecture/database-schema.md`、`docs/architecture/auth-and-permissions.md` |
 | `server/jobs/` | 定时任务 | `server/bootstrap/`、`docs/architecture/runtime-and-startup.md` |
 | `server/pkg/eve/` | EVE SSO / ESI 基础能力 | `server/internal/service/`、`docs/guides/adding-esi-feature.md` |
 | `server/pkg/response/` | 统一响应封装 | `server/internal/handler/` |
@@ -46,7 +46,7 @@ source_of_truth:
 | `static/src/components/` | 可复用 UI 组件 | `static/src/hooks/`、`static/src/locales/` |
 | `static/src/hooks/` | 共享逻辑、状态转换、纯 helper | `docs/guides/testing-guide.md` |
 | `static/src/store/` | Pinia 状态 | `static/src/router/`、`static/src/hooks/core/useAuth.ts` |
-| `static/src/router/` | 路由核心、守卫、菜单模式适配 | `server/internal/model/menu.go`、`docs/architecture/routing-and-menus.md` |
+| `static/src/router/` | 路由核心、静态路由模块、守卫 | `docs/architecture/routing-and-menus.md`、`docs/architecture/auth-and-permissions.md` |
 | `static/src/types/` | TS 类型、导入声明、契约类型 | `static/src/api/`、`server/internal/model/` |
 | `static/src/locales/` | i18n 文案 | `docs/ai/repo-rules.md`「Non-Negotiable Rules」第 3 条 |
 
@@ -79,11 +79,12 @@ source_of_truth:
 
 通常需要一起看：
 
-1. `server/internal/model/menu.go`
-2. `server/internal/router/`
+1. `server/internal/router/`
+2. `server/internal/middleware/`
 3. `static/src/router/`
 4. 页面里的 `v-auth`
 5. `docs/architecture/routing-and-menus.md`
+6. `docs/architecture/auth-and-permissions.md`
 
 ### 修改 ESI / SSO 行为
 

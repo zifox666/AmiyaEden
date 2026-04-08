@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-04-08
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/bootstrap/db.go
   - server/internal/model
@@ -19,8 +19,8 @@ source_of_truth:
 它回答的是：
 
 - 当前应用把哪些业务数据持久化到 PostgreSQL
-- 用户、职权、菜单、职权绑定等核心表如何关联
-- 哪些列是当前设计的一部分，哪些只是兼容历史实现
+- 用户、职权关联、自动权限映射等核心表如何关联
+- 哪些列是当前权威关系的一部分，哪些只是兼容字段
 
 它不试图替代代码中的完整字段定义。
 精确字段类型、索引与 GORM tag 仍以 `server/internal/model/*` 和 `server/bootstrap/db.go` 为准。
@@ -31,7 +31,7 @@ source_of_truth:
 
 1. `server/bootstrap/db.go` 中注册到 `AutoMigrate` 的模型
 2. `server/internal/model/*` 中的 GORM 模型定义
-3. `dropObsoleteSchema()` 中显式清理的历史列 / 历史表
+3. `server/bootstrap/db.go` 中的启动期 schema 规范化逻辑
 
 `docs/reference/sde-schema.sql` 只是历史 SDE 参考资产，不代表本应用当前 live schema。
 
@@ -40,10 +40,7 @@ source_of_truth:
 应用启动初始化数据库时，当前会执行：
 
 - `AutoMigrate`
-- 历史遗留列 / 表清理
-- 系统职权种子初始化
-- 系统菜单种子初始化
-- 历史 `user.role` 到 `user_role` 的迁移
+- 必要的 schema 规范化与兼容处理
 
 因此，当前 schema 不是通过单独的 SQL migration 目录维护，而是通过 GORM 模型 + 启动时补偿逻辑维护。
 
@@ -52,7 +49,7 @@ source_of_truth:
 当前应用表大致分为这些分组：
 
 - 认证与用户：`user`、`eve_character`
-- RBAC：`role`、`menu`、`role_menu`、`user_role`
+- RBAC：`user_role`
 - 自动权限映射：`esi_role_mapping`、`esi_title_mapping`、`eve_character_corp_role`
 - ESI 快照：资产、通知、技能、合同、装配、结构、钱包等 `eve_*` / `esi_*` 相关表
 - 业务模块：`fleet*`、`srp*`、`shop*`、`skill_plan*`、`welfare*`、`newbro_player_state`、`newbro_captain_affiliation`、`captain_bounty_attribution`、`captain_bounty_sync_state`、`alliance_pap*`、`system_wallet*`、`wallet_log`、`wallet_transaction`
@@ -109,94 +106,38 @@ source_of_truth:
 - 一个 `user` 可以绑定多个 `eve_character`
 - `user.primary_character_id` 记录主人物的 EVE `character_id`
 
-## 职权、菜单与权限
+## 职权关联与权限数据
 
-### 当前权威 RBAC 表
+### 当前权威 RBAC 持久化表
 
-当前职权与菜单权限模型基于：
+当前数据库里与 RBAC 直接相关的持久化表基于：
 
-- `role`
-- `menu`
-- `role_menu`
 - `user_role`
 
-这是当前实现的权威权限模型。
+这是当前用户职权分配的权威 schema。
 
-### `role`
+当前实现中：
 
-职权表承载系统职权和自定义职权。
+- canonical 系统职权编码定义在代码常量与 `SystemRoleDefinitions` 中，不存储在独立 `role` 表
+- 路由级权限边界通过后端中间件 `RequireRole` / `RequireLoginUser` 实现，不依赖数据库权限表
+- 前端路由 / 菜单元数据属于代码与前端配置，不属于当前数据库 schema
 
-关键列包括：
-
-- `id`
-- `code`
-- `name`
-- `description`
-- `is_system`
-- `sort`
-- `status`
-
-当前 canonical 职权编码见代码常量：
-
-- `super_admin`
-- `admin`
-- `srp`
-- `fc`
-- `captain`
-- `welfare`
-- `user`
-- `guest`
-
-### `menu`
-
-菜单表同时承载目录、页面与按钮节点。
-
-关键列包括：
-
-- `parent_id`
-- `type`
-- `name`
-- `path`
-- `component`
-- `permission`
-- `title`
-- `icon`
-- `sort`
-- `is_hide`
-- `keep_alive`
-- `is_hide_tab`
-- `fixed_tab`
-- `status`
-
-`type` 当前支持：
-
-- `dir`
-- `menu`
-- `button`
-
-### `role_menu`
-
-`role_menu` 是职权和菜单的多对多关联表：
-
-- `role_id`
-- `menu_id`
-
-它决定某个职权可见哪些菜单、拥有哪些按钮权限。
+如需查看 canonical 职权编码与权限边界，见 `docs/architecture/auth-and-permissions.md`。
 
 ### `user_role`
 
 `user_role` 是用户和职权的多对多关联表：
 
 - `user_id`
-- `role_id`
+- `role_code`
 
 它是当前用户职权分配的权威来源。
 
-## 兼容历史设计的列与迁移
+## 兼容字段
 
 ### `user.role` 的当前定位
 
-`user.role` 是当前 schema 中最重要的历史兼容列。
+`user.role` 是当前 schema 中保留的兼容字段。
 
 它仍然存在的原因是：
 
@@ -209,11 +150,9 @@ source_of_truth:
 - 职权真实分配以 `user_role` 为准
 - `user.role` 只是镜像 / fallback / 兼容字段
 
-### 启动时的兼容行为
+### 运行时同步行为
 
-当前启动逻辑会把历史 `user.role` 数据迁移到 `user_role`。
-
-同时，在用户职权被重新分配时，服务层会把 `user.role` 同步为最高优先级职权，以降低旧消费者漂移风险。
+用户职权被重新分配时，服务层会把 `user.role` 同步为最高优先级职权，以降低旧消费者漂移风险。
 
 ### 文档约束
 
@@ -232,7 +171,7 @@ ESI 军团职权到系统职权的映射表。
 关键列：
 
 - `esi_role`
-- `role_id`
+- `role_code`
 
 ### `esi_title_mapping`
 
@@ -243,7 +182,7 @@ ESI 头衔到系统职权的映射表。
 - `corporation_id`
 - `title_id`
 - `title_name`
-- `role_id`
+- `role_code`
 
 ### `eve_character_corp_role`
 
@@ -428,7 +367,7 @@ ESI 头衔到系统职权的映射表。
 
 - 用户名 / 密码 / 盐值认证表
 - 以单个 `user.role` 作为唯一职权来源
-- 独立维护一套与 `menu` / `role_menu` 无关的前端权限表
+- 把历史 `role` / `menu` / `role_menu` 继续当作当前权威 RBAC schema
 - 把历史 `docs/reference/sde-schema.sql` 当作应用业务表定义
 
 仓库里可能仍有旧页面、旧文案或历史兼容逻辑，但它们不应被重新解释成当前数据库设计要求。
@@ -448,7 +387,7 @@ ESI 头衔到系统职权的映射表。
 
 - 职权模型
 - 用户资料字段
-- 菜单 / 权限关联
+- 前端路由 / 菜单权限边界
 - 自动权限映射表
 
 应优先检查 `docs/architecture/auth-and-permissions.md` 与 `docs/features/current/administration.md` 是否也需要更新。

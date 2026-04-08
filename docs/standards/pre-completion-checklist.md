@@ -2,7 +2,7 @@
 status: active
 doc_type: standard
 owner: engineering
-last_reviewed: 2026-03-26
+last_reviewed: 2026-04-09
 source_of_truth:
   - docs/ai/repo-rules.md
   - docs/standards/dependency-layering.md
@@ -63,10 +63,9 @@ Use this checklist before marking work complete. Skip only items that do not app
 
 - [ ] All applicable items from Cross-Contract Change were completed
 - [ ] Backend route protection was updated where required
-- [ ] `server/internal/model/menu.go` was updated if menu seeds changed
 - [ ] Frontend route metadata was updated where required
 - [ ] Button permission usage such as `v-auth` was aligned
-- [ ] Changes were validated against both frontend and backend menu modes if applicable
+- [ ] `docs/architecture/routing-and-menus.md` was updated if the routing or page-access model changed
 - [ ] `docs/architecture/auth-and-permissions.md` was updated if the permission model or behavior changed
 
 ### Documentation-Only Change
@@ -83,7 +82,7 @@ Use this checklist before marking work complete. Skip only items that do not app
 - [ ] A feature doc was created under `docs/features/current/` if the feature has durable behavior
 - [ ] Any relevant feature index was updated
 - [ ] Localization was completed in both `zh.json` and `en.json`
-- [ ] Menu seeds were added if required
+- [ ] Frontend routes and page access metadata were added if required
 - [ ] Backend and frontend routes were registered if required
 - [ ] The change follows the existing module structure pattern
 - [ ] At least one regression test covers key behavior, unless explicitly justified otherwise
