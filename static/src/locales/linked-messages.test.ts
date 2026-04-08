@@ -13,6 +13,8 @@ const zhMessages = JSON.parse(
   readFileSync(new URL('./langs/zh.json', import.meta.url), 'utf8')
 ) as LocaleTree
 
+// MAINTENANCE: when new shared locale copy is introduced via @:canonical links,
+// add the canonical key and its aliases here so the test enforces the link.
 const linkedMessages = {
   'common.status': [
     'welfareSettings.filterStatus',

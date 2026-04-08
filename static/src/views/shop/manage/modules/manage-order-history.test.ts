@@ -57,6 +57,7 @@ test('commerce docs describe the isk total order column', () => {
   assert.equal(zhLocale.shopAdmin.orders.table.iskTotal, 'ISK总和')
   assert.equal(enLocale.shopAdmin.orders.table.iskTotal, 'ISK Total')
   assert.match(docSource, /ISK总和/)
+  assert.match(docSource, /独立单词 `ISK`/)
   assert.match(docSource, /total_price\s*\*\s*1,000,000/)
   assert.match(docSource, /compact 风格显示/)
   assert.match(docSource, /复制原始 ISK 数值/)

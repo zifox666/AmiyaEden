@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-03
+last_reviewed: 2026-04-09
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/service/shop.go
@@ -105,7 +105,7 @@ source_of_truth:
 - **订单历史**（`shop/order-manage` → 订单历史 Tab）：展示 `delivered` + `rejected` 订单，支持相同关键字搜索，只读，并展示操作人与发放备注。
 - **我的订单**（`shop/browse` → 我的订单 Tab）：展示订单状态，以及在已发放/已拒绝时展示操作人。
 - 两个 Tab 都为 `订单号` 与 `主人物` 提供共享内联复制按钮，便于发放时复制合同描述或转账备注所需文本。
-- 若商品名包含 `ISK`，订单管理与订单历史会在数量前展示 `ISK总和` 列，按 `total_price * 1,000,000` 计算，使用 compact 风格显示，并提供复制原始 ISK 数值的内联按钮。
+- 若商品名包含独立单词 `ISK`（不匹配 `Risk` 这类仅包含 `isk` 子串的名称），订单管理与订单历史会在数量前展示 `ISK总和` 列，按 `total_price * 1,000,000` 计算，使用 compact 风格显示，并提供复制原始 ISK 数值的内联按钮。
 
 `/shop/manage` 仍保留为管理员专用的商品管理入口。
 
