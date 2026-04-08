@@ -955,6 +955,8 @@ func (s *WelfareService) refreshEligibleWelfareBadgeCacheAfterApply(
 
 	contributionAfterApply := int64(0)
 
+	// The user already passed PAP and legion tenure checks to apply,
+	// so both blocker flags are false for the badge recount.
 	resp, stillVisible := s.buildEligibleWelfareResp(
 		user,
 		characters,

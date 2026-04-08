@@ -317,6 +317,12 @@ func TestWelfareFuxiLegionYearsRestrictionFailed(t *testing.T) {
 			want:         false,
 		},
 		{
+			name:         "zero minimum never blocks",
+			characters:   []model.EveCharacter{{CorporationID: model.SystemCorporationID}},
+			minimumYears: func() *int { v := 0; return &v }(),
+			want:         false,
+		},
+		{
 			name: "character with enough cumulative legion tenure passes",
 			characters: []model.EveCharacter{{
 				CorporationID:        model.SystemCorporationID,
