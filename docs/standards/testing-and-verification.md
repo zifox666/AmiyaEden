@@ -2,7 +2,7 @@
 status: active
 doc_type: standard
 owner: engineering
-last_reviewed: 2026-03-24
+last_reviewed: 2026-04-09
 source_of_truth:
   - docs/ai/repo-rules.md
   - docs/standards/regression-test-plan.md
@@ -81,6 +81,11 @@ Tests may be omitted only if the reason is stated explicitly and one of these ap
 - bug fix -> add or update regression coverage unless explicitly justified
 - existing feature behavior change -> review and update existing tests where needed, and add coverage for new or changed behavior unless an allowed exception is stated explicitly
 - documentation-only change -> no code-level verification is required unless commands or executable examples changed
+
+## Backend Settings Rules
+
+- Settings and configuration structs must treat `0` as a valid configured value, not as absent or unset, unless the field is explicitly typed as a pointer or optional.
+- Regression tests for settings paths must include a zero-value case when the business logic could plausibly gate on `== 0`.
 
 ## Repository Notes
 

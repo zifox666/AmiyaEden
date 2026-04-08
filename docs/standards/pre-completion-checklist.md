@@ -43,6 +43,7 @@ Use this checklist before marking work complete. Skip only items that do not app
 - [ ] No direct HTTP calls were added to views
 - [ ] All new user-facing strings were added to both `zh.json` and `en.json`
 - [ ] If behavior changed, the relevant feature doc was updated
+- [ ] Event handlers bound with `@click` / `@change` etc. have typed signatures that match their template call sites; vue-tsc catches mismatches only when handler types are explicit
 
 ### Cross-Contract Change
 
@@ -67,6 +68,7 @@ Use this checklist before marking work complete. Skip only items that do not app
 - [ ] Button permission usage such as `v-auth` was aligned
 - [ ] `docs/architecture/routing-and-menus.md` was updated if the routing or page-access model changed
 - [ ] `docs/architecture/auth-and-permissions.md` was updated if the permission model or behavior changed
+- [ ] Badge-count field visibility in `docs/features/current/badge-counts.md` still matches the updated role boundaries; update if not
 
 ### Documentation-Only Change
 
