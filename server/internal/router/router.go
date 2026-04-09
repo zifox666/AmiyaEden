@@ -10,8 +10,8 @@ import (
 
 var (
 	srpPriceManageRoles          = []string{model.RoleAdmin, model.RoleSeniorFC}
-	srpManageRoles               = []string{model.RoleSRP, model.RoleFC, model.RoleAdmin}
-	srpPayoutRoles               = []string{model.RoleSRP, model.RoleAdmin}
+	srpManageRoles               = []string{model.RoleSRP, model.RoleSeniorFC, model.RoleAdmin}
+	srpPayoutRoles               = []string{model.RoleSRP, model.RoleSeniorFC, model.RoleAdmin}
 	shopOrderManageRoles         = []string{model.RoleAdmin}
 	welfareApprovalRoles         = []string{model.RoleAdmin, model.RoleWelfare}
 	skillPlanManageRoles         = []string{model.RoleAdmin, model.RoleSeniorFC}
@@ -274,7 +274,7 @@ func RegisterRoutes(r *gin.Engine) {
 		srp.POST("/killmails/detail", srpH.GetKillmailDetail)
 		srp.POST("/open-info-window", srpH.OpenInfoWindow)
 
-		// 审核（srp / fc / admin 可查看列表 / 详情 / 审批；发放和自动审批允许 srp / admin）
+		// 管理端操作（srp / senior_fc / admin 可查看列表 / 详情 / 审批 / 发放 / 自动审批）
 		reviewSRP := middleware.RequireRole(srpManageRoles...)
 		payoutSRP := middleware.RequireRole(srpPayoutRoles...)
 		srp.GET("/applications", reviewSRP, srpH.ListApplications)
