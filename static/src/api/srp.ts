@@ -1,5 +1,22 @@
 import request from '@/utils/http'
 
+// ─── SRP 配置 ───
+
+/** 获取 SRP 配置 */
+export function fetchSrpConfig() {
+  return request.get<Api.Srp.SrpConfig>({
+    url: '/api/v1/srp/config'
+  })
+}
+
+/** 更新 SRP 配置 */
+export function updateSrpConfig(data: Api.Srp.SrpConfig) {
+  return request.put({
+    url: '/api/v1/srp/config',
+    data
+  })
+}
+
 // ─── 舰船价格表 ───
 
 /** 获取舰船价格列表 */

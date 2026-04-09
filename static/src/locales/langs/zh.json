@@ -1581,6 +1581,13 @@
         "action": "操作"
       }
     },
+    "config": {
+      "tabTitle": "补损配置",
+      "amountLimitLabel": "单笔金额上限",
+      "amountLimitHint": "仅持有 srp 职权的用户受此限制，admin / senior_fc 不受限",
+      "amountLimitValid": "金额不能为负",
+      "updateSuccess": "配置已更新"
+    },
     "status": {
       "submitted": "待审批",
       "approved": "已批准",

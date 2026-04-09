@@ -66,8 +66,9 @@ source_of_truth:
 
 - 价格表查看要求 `Login`
 - 价格新增 / 更新 / 删除要求 `admin` 或 `senior_fc`
-- 审核列表、详情、审批（approve/reject）要求 `srp`、`fc` 或 `admin`
-- 发放、批量发放、自动审批要求 `srp` 或 `admin`
+- 审核列表、详情、审批（approve/reject）、发放、批量发放、自动审批要求 `srp`、`senior_fc` 或 `admin`
+- 仅持有 `srp` 职权（不兼任 `admin` 或 `senior_fc`）的用户，单笔审批或发放金额不得超过系统配置上限（默认 6 亿 ISK），管理员可在补损价格页「补损配置」标签修改
+- SRP 配置读取 / 修改要求 `admin`
 - 其余个人能力默认要求 `Login`
 
 ## 计算 SRP 推荐金额

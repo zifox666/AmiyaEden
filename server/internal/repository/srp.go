@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"errors"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -236,6 +237,22 @@ func buildApprovedUnpaidBatchPayoutApplicationsQuery(db *gorm.DB, userID uint) *
 		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where("user_id = ? AND payout_status = ? AND review_status = ?", userID, model.SrpPayoutNotPaid, model.SrpReviewApproved).
 		Order("id ASC")
+}
+
+// CheckMaxApprovedUnpaidAmount 检查某用户待发放申请中是否存在超过上限的单笔金额
+func (r *SrpRepository) CheckMaxApprovedUnpaidAmount(userID uint, limitISK float64) error {
+	var maxAmount float64
+	err := global.DB.Model(&model.SrpApplication{}).
+		Where("user_id = ? AND payout_status = ? AND review_status = ?", userID, model.SrpPayoutNotPaid, model.SrpReviewApproved).
+		Select("COALESCE(MAX(final_amount), 0)").
+		Scan(&maxAmount).Error
+	if err != nil {
+		return err
+	}
+	if maxAmount > limitISK {
+		return fmt.Errorf("该用户存在单笔金额 %.0f ISK 超过 SRP 职权上限 6 亿 ISK 的待发放申请", maxAmount)
+	}
+	return nil
 }
 
 func buildApprovedUnpaidApplicationsForUpdateQuery(db *gorm.DB) *gorm.DB {

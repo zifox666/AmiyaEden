@@ -266,6 +266,10 @@ func RegisterRoutes(r *gin.Engine) {
 		srp.POST("/prices", middleware.RequireRole(srpPriceManageRoles...), srpH.UpsertShipPrice)
 		srp.DELETE("/prices/:id", middleware.RequireRole(srpPriceManageRoles...), srpH.DeleteShipPrice)
 
+		// SRP 配置（仅 admin）
+		srp.GET("/config", middleware.RequireRole(model.RoleAdmin), srpH.GetSrpConfig)
+		srp.PUT("/config", middleware.RequireRole(model.RoleAdmin), srpH.UpdateSrpConfig)
+
 		// 个人申请
 		srp.POST("/applications", srpH.SubmitApplication)
 		srp.GET("/applications/me", srpH.ListMyApplications)

@@ -219,14 +219,16 @@ source_of_truth:
 | GET | `/srp/killmails/fleet/:fleet_id` | 指定舰队 KM | Login |
 | POST | `/srp/killmails/detail` | KM 详情 | Login |
 | POST | `/srp/open-info-window` | 打开游戏内信息窗口 | Login |
-| GET | `/srp/applications` | 审核列表 | `RequireRole(srp, fc, admin)` |
-| GET | `/srp/applications/:id` | 审核详情 | `RequireRole(srp, fc, admin)` |
-| PUT | `/srp/applications/:id/review` | 审核申请 | `RequireRole(srp, fc, admin)` |
-| PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequireRole(srp, admin)` |
-| GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequireRole(srp, admin)` |
-| PUT | `/srp/applications/fuxi-payout` | 将全部已批准未发放的申请按 1,000,000 ISK : 1 伏羲币批量发放并结案 | `RequireRole(srp, admin)` |
-| PUT | `/srp/applications/:id/payout` | 发放补损 | `RequireRole(srp, admin)` |
-| PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequireRole(srp, admin)` |
+| GET | `/srp/config` | 获取 SRP 配置 | `RequireRole(admin)` |
+| PUT | `/srp/config` | 更新 SRP 配置 | `RequireRole(admin)` |
+| GET | `/srp/applications` | 审核列表 | `RequireRole(srp, senior_fc, admin)` |
+| GET | `/srp/applications/:id` | 审核详情 | `RequireRole(srp, senior_fc, admin)` |
+| PUT | `/srp/applications/:id/review` | 审核申请 | `RequireRole(srp, senior_fc, admin)` |
+| PUT | `/srp/applications/auto-approve` | 对指定 `fleet_id` 自动审批符合规则的待审批申请 | `RequireRole(srp, senior_fc, admin)` |
+| GET | `/srp/applications/batch-payout-summary` | 批量发放汇总 | `RequireRole(srp, senior_fc, admin)` |
+| PUT | `/srp/applications/fuxi-payout` | 将全部已批准未发放的申请按 1,000,000 ISK : 1 伏羲币批量发放并结案 | `RequireRole(srp, senior_fc, admin)` |
+| PUT | `/srp/applications/:id/payout` | 发放补损 | `RequireRole(srp, senior_fc, admin)` |
+| PUT | `/srp/applications/users/:user_id/payout` | 按用户批量发放补损 | `RequireRole(srp, senior_fc, admin)` |
 
 ## ESI Refresh
 

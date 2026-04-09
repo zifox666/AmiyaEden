@@ -2,9 +2,11 @@ package handler
 
 import (
 	"amiya-eden/internal/middleware"
+	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -12,11 +14,15 @@ import (
 
 // SrpHandler 补损 HTTP 处理器
 type SrpHandler struct {
-	svc *service.SrpService
+	svc           *service.SrpService
+	sysConfigRepo *repository.SysConfigRepository
 }
 
 func NewSrpHandler() *SrpHandler {
-	return &SrpHandler{svc: service.NewSrpService()}
+	return &SrpHandler{
+		svc:           service.NewSrpService(),
+		sysConfigRepo: repository.NewSysConfigRepository(),
+	}
 }
 
 // ─────────────────────────────────────────────
@@ -58,6 +64,47 @@ func (h *SrpHandler) DeleteShipPrice(c *gin.Context) {
 	}
 	if err := h.svc.DeleteShipPrice(id); err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, nil)
+}
+
+// ─────────────────────────────────────────────
+//  SRP 配置（仅 admin）
+// ─────────────────────────────────────────────
+
+// SrpConfigResponse SRP 配置响应
+type SrpConfigResponse struct {
+	AmountLimit float64 `json:"amount_limit"` // SRP 职权单笔上限（ISK）
+}
+
+// UpdateSrpConfigRequest 更新 SRP 配置请求
+type UpdateSrpConfigRequest struct {
+	AmountLimit *float64 `json:"amount_limit" binding:"required,min=0"`
+}
+
+// GetSrpConfig GET /srp/config
+func (h *SrpHandler) GetSrpConfig(c *gin.Context) {
+	amountLimit := h.sysConfigRepo.GetFloat(
+		model.SysConfigSRPAmountLimit,
+		model.SysConfigDefaultSRPAmountLimit,
+	)
+	response.OK(c, SrpConfigResponse{AmountLimit: amountLimit})
+}
+
+// UpdateSrpConfig PUT /srp/config
+func (h *SrpHandler) UpdateSrpConfig(c *gin.Context) {
+	var req UpdateSrpConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误: "+err.Error())
+		return
+	}
+	if err := h.sysConfigRepo.Set(
+		model.SysConfigSRPAmountLimit,
+		fmt.Sprintf("%g", *req.AmountLimit),
+		"SRP 职权单笔审批/发放上限（ISK）",
+	); err != nil {
+		response.Fail(c, response.CodeBizError, "更新 SRP 配置失败")
 		return
 	}
 	response.OK(c, nil)
@@ -186,7 +233,8 @@ func (h *SrpHandler) RunFleetAutoApproval(c *gin.Context) {
 		return
 	}
 	reviewerID := middleware.GetUserID(c)
-	result, err := h.svc.RunFleetAutoApproval(reviewerID, req.FleetID)
+	callerRoles := middleware.GetUserRoles(c)
+	result, err := h.svc.RunFleetAutoApproval(reviewerID, callerRoles, req.FleetID)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -220,7 +268,8 @@ func (h *SrpHandler) ReviewApplication(c *gin.Context) {
 		return
 	}
 	reviewerID := middleware.GetUserID(c)
-	app, err := h.svc.ReviewApplication(reviewerID, id, &req)
+	callerRoles := middleware.GetUserRoles(c)
+	app, err := h.svc.ReviewApplication(reviewerID, callerRoles, id, &req)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -240,7 +289,8 @@ func (h *SrpHandler) Payout(c *gin.Context) {
 		return
 	}
 	payerID := middleware.GetUserID(c)
-	app, mailSummary, err := h.svc.Payout(payerID, id, &req)
+	callerRoles := middleware.GetUserRoles(c)
+	app, mailSummary, err := h.svc.Payout(payerID, callerRoles, id, &req)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -258,7 +308,8 @@ func (h *SrpHandler) BatchPayoutByUser(c *gin.Context) {
 		return
 	}
 	payerID := middleware.GetUserID(c)
-	result, mailSummary, err := h.svc.BatchPayoutByUser(payerID, userID)
+	callerRoles := middleware.GetUserRoles(c)
+	result, mailSummary, err := h.svc.BatchPayoutByUser(payerID, callerRoles, userID)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -272,7 +323,8 @@ func (h *SrpHandler) BatchPayoutByUser(c *gin.Context) {
 // BatchPayoutAsFuxiCoin PUT /srp/applications/fuxi-payout
 func (h *SrpHandler) BatchPayoutAsFuxiCoin(c *gin.Context) {
 	payerID := middleware.GetUserID(c)
-	result, mailSummary, err := h.svc.BatchPayoutAsFuxiCoin(payerID)
+	callerRoles := middleware.GetUserRoles(c)
+	result, mailSummary, err := h.svc.BatchPayoutAsFuxiCoin(payerID, callerRoles)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

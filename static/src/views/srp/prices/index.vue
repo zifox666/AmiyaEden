@@ -1,36 +1,80 @@
-<!-- SRP 舰船补损价格表管理 -->
+<!-- SRP 舰船补损价格表管理 & 配置 -->
 <template>
   <div class="srp-prices-page art-full-height">
-    <ElCard class="art-table-card" shadow="never">
-      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="loadPrices">
-        <template #left>
-          <ElInput
-            v-model="keyword"
-            :placeholder="$t('srp.prices.searchPlaceholder')"
-            clearable
-            style="width: 200px"
-            @keyup.enter="loadPrices"
-            @clear="loadPrices"
-          />
-          <ElButton v-if="canManagePrices" type="primary" :icon="Plus" @click="openAddDialog">
-            {{ $t('srp.prices.addPrice') }}
-          </ElButton>
-          <ArtExcelExport
-            :data="exportPricesData"
-            :headers="pricesExportHeaders"
-            :filename="`srp-prices_${new Date().toLocaleDateString()}`"
-            sheet-name="SRP价格表"
-            :button-text="$t('srp.prices.exportBtn')"
-            type="success"
-          />
-          <ArtExcelImport v-if="canManagePrices" @import-success="handleImport">
-            {{ $t('srp.prices.importBtn') }}
-          </ArtExcelImport>
-        </template>
-      </ArtTableHeader>
+    <ElTabs v-model="activeTab">
+      <ElTabPane :label="$t('srp.prices.title')" name="prices">
+        <ElCard class="art-table-card" shadow="never">
+          <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="loadPrices">
+            <template #left>
+              <ElInput
+                v-model="keyword"
+                :placeholder="$t('srp.prices.searchPlaceholder')"
+                clearable
+                style="width: 200px"
+                @keyup.enter="loadPrices"
+                @clear="loadPrices"
+              />
+              <ElButton
+                v-if="canManagePrices"
+                type="primary"
+                :icon="Plus"
+                @click="openAddDialog"
+              >
+                {{ $t('srp.prices.addPrice') }}
+              </ElButton>
+              <ArtExcelExport
+                :data="exportPricesData"
+                :headers="pricesExportHeaders"
+                :filename="`srp-prices_${new Date().toLocaleDateString()}`"
+                sheet-name="SRP价格表"
+                :button-text="$t('srp.prices.exportBtn')"
+                type="success"
+              />
+              <ArtExcelImport v-if="canManagePrices" @import-success="handleImport">
+                {{ $t('srp.prices.importBtn') }}
+              </ArtExcelImport>
+            </template>
+          </ArtTableHeader>
 
-      <ArtTable :loading="loading" :data="prices" :columns="columns" />
-    </ElCard>
+          <ArtTable :loading="loading" :data="prices" :columns="columns" />
+        </ElCard>
+      </ElTabPane>
+
+      <ElTabPane v-if="canConfigSrp" :label="$t('srp.config.tabTitle')" name="config">
+        <ElCard shadow="never" style="max-width: 520px">
+          <ElForm
+            ref="configFormRef"
+            :model="configForm"
+            :rules="configRules"
+            label-width="200px"
+          >
+            <ElFormItem :label="$t('srp.config.amountLimitLabel')" prop="amount_limit">
+              <div class="million-isk-input" style="width: 100%">
+                <ElInputNumber
+                  :model-value="iskToMillionInput(configForm.amount_limit)"
+                  :min="0"
+                  :precision="2"
+                  :step="10"
+                  class="million-isk-input__control"
+                  @update:model-value="
+                    (v) => (configForm.amount_limit = millionInputToIsk(v))
+                  "
+                />
+                <span class="million-isk-input__suffix">{{ $t('common.millionIsk') }}</span>
+              </div>
+              <div class="el-form-item__description" style="margin-top: 4px">
+                {{ $t('srp.config.amountLimitHint') }}
+              </div>
+            </ElFormItem>
+            <ElFormItem>
+              <ElButton type="primary" :loading="configSaving" @click="handleSaveConfig">
+                {{ $t('common.save') }}
+              </ElButton>
+            </ElFormItem>
+          </ElForm>
+        </ElCard>
+      </ElTabPane>
+    </ElTabs>
 
     <ElDialog
       v-if="canManagePrices"
@@ -88,6 +132,8 @@
     ElFormItem,
     ElMessage,
     ElMessageBox,
+    ElTabs,
+    ElTabPane,
     type FormInstance,
     type FormRules
   } from 'element-plus'
@@ -96,7 +142,13 @@
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
   import ArtExcelImport from '@/components/core/forms/art-excel-import/index.vue'
   import { useUserStore } from '@/store/modules/user'
-  import { fetchShipPrices, upsertShipPrice, deleteShipPrice } from '@/api/srp'
+  import {
+    fetchShipPrices,
+    upsertShipPrice,
+    deleteShipPrice,
+    fetchSrpConfig,
+    updateSrpConfig
+  } from '@/api/srp'
   import SdeSearchSelect from '@/components/business/SdeSearchSelect.vue'
   import type { ColumnOption } from '@/types/component'
 
@@ -105,10 +157,17 @@
   const { t } = useI18n()
   const userStore = useUserStore()
 
+  const activeTab = ref('prices')
+
   type ShipPrice = Api.Srp.ShipPrice
   const canManagePrices = computed(() => {
     const roles = userStore.getUserInfo?.roles ?? []
     return roles.some((role) => ['super_admin', 'admin', 'senior_fc'].includes(role))
+  })
+
+  const canConfigSrp = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((role) => ['super_admin', 'admin'].includes(role))
   })
 
   const actionColumn: ColumnOption<ShipPrice>[] = canManagePrices.value
@@ -322,6 +381,48 @@
   }
 
   onMounted(loadPrices)
+
+  // ─── SRP 配置 ───
+  const configFormRef = ref<FormInstance>()
+  const configSaving = ref(false)
+  const configForm = reactive<Api.Srp.SrpConfig>({ amount_limit: 0 })
+
+  const configRules: FormRules = {
+    amount_limit: [
+      {
+        required: true,
+        validator: (_r, v, cb) =>
+          v >= 0 ? cb() : cb(new Error(t('srp.config.amountLimitValid'))),
+        trigger: 'change'
+      }
+    ]
+  }
+
+  const loadConfig = async () => {
+    try {
+      const data = await fetchSrpConfig()
+      configForm.amount_limit = data?.amount_limit ?? 0
+    } catch {
+      /* handled */
+    }
+  }
+
+  const handleSaveConfig = async () => {
+    await configFormRef.value?.validate()
+    configSaving.value = true
+    try {
+      await updateSrpConfig({ amount_limit: configForm.amount_limit })
+      ElMessage.success(t('srp.config.updateSuccess'))
+    } catch {
+      /* handled */
+    } finally {
+      configSaving.value = false
+    }
+  }
+
+  watch(activeTab, (tab) => {
+    if (tab === 'config' && canConfigSrp.value) loadConfig()
+  })
 </script>
 
 <style scoped>

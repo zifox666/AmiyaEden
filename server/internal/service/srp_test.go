@@ -272,7 +272,7 @@ func TestPayoutFuxiCoinModeCreditsWalletAndMarksApplicationPaid(t *testing.T) {
 			MailRecipientCharacterName: "Pilot Main",
 		}, errors.New("mail failed")
 	}
-	paidApp, mailSummary, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin})
+	paidApp, mailSummary, err := svc.Payout(77, []string{model.RoleAdmin}, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin})
 	if err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
@@ -366,7 +366,7 @@ func TestPayoutManualTransferIgnoresPayoutMailErrors(t *testing.T) {
 		}, errors.New("mail failed")
 	}
 
-	paidApp, mailSummary, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeManualTransfer})
+	paidApp, mailSummary, err := svc.Payout(77, []string{model.RoleAdmin}, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeManualTransfer})
 	if err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
@@ -495,7 +495,7 @@ func TestBatchPayoutAsFuxiCoinCreditsApprovedRequestsAcrossUsers(t *testing.T) {
 			MailRecipientCharacterName: "Pilot A Main",
 		}, errors.New("mail failed")
 	}
-	summary, mailSummary, err := svc.BatchPayoutAsFuxiCoin(88)
+	summary, mailSummary, err := svc.BatchPayoutAsFuxiCoin(88, []string{model.RoleAdmin})
 	if err != nil {
 		t.Fatalf("BatchPayoutAsFuxiCoin() error = %v", err)
 	}
@@ -655,7 +655,7 @@ func TestBatchPayoutByUserIgnoresPayoutMailErrors(t *testing.T) {
 		}, errors.New("mail failed")
 	}
 
-	summary, mailSummary, err := svc.BatchPayoutByUser(88, 201)
+	summary, mailSummary, err := svc.BatchPayoutByUser(88, []string{model.RoleAdmin}, 201)
 	if err != nil {
 		t.Fatalf("BatchPayoutByUser() error = %v", err)
 	}
@@ -724,7 +724,7 @@ func TestPayoutAsFuxiCoinStoresPayerAsWalletOperator(t *testing.T) {
 	}
 
 	svc := newSrpServiceForTests()
-	if _, _, err := svc.Payout(77, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin}); err != nil {
+	if _, _, err := svc.Payout(77, []string{model.RoleAdmin}, app.ID, &SrpPayoutRequest{Mode: SrpPayoutModeFuxiCoin}); err != nil {
 		t.Fatalf("Payout() error = %v", err)
 	}
 

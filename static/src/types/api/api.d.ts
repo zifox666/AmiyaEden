@@ -872,6 +872,11 @@ declare namespace Api {
   namespace Srp {
     type PayoutMode = 'manual_transfer' | 'fuxi_coin'
 
+    /** SRP 配置 */
+    interface SrpConfig {
+      amount_limit: number
+    }
+
     /** 舰船标准补损金额 */
     interface ShipPrice {
       id: number

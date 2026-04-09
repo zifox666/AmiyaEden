@@ -46,27 +46,31 @@ const (
 	SysConfigMenteeMaxAccountAgeDays = "mentor.mentee_max_account_age_days"
 
 	SysConfigWelfareAutoApproveFuxiCoinThreshold = "welfare.auto_approve_fuxi_coin_threshold"
-	SysConfigMulticharFullRewardCount    = "multichar.full_reward_count"    // 获得 100% 奖励的人物数（int）
-	SysConfigMulticharReducedRewardCount = "multichar.reduced_reward_count" // 获得折扣奖励的人物数（int）
-	SysConfigMulticharReducedRewardPct   = "multichar.reduced_reward_pct"   // 折扣奖励百分比（int, 0-100）
+	SysConfigMulticharFullRewardCount            = "multichar.full_reward_count"    // 获得 100% 奖励的人物数（int）
+	SysConfigMulticharReducedRewardCount         = "multichar.reduced_reward_count" // 获得折扣奖励的人物数（int）
+	SysConfigMulticharReducedRewardPct           = "multichar.reduced_reward_pct"   // 折扣奖励百分比（int, 0-100）
+
+	SysConfigSRPAmountLimit = "srp.amount_limit" // SRP 职权单笔审批/发放上限（ISK）
 
 	SysConfigDefaultSDEAPIKey      = "modify_your_api_key"
 	SysConfigDefaultSDEProxy       = ""
 	SysConfigDefaultSDEDownloadURL = "https://api.github.com/repos/garveen/eve-sde-converter/releases/latest"
 
-	SysConfigDefaultNewbroMaxCharacterSP           int64   = 20_000_000
-	SysConfigDefaultNewbroMultiCharacterSP         int64   = 10_000_000
-	SysConfigDefaultNewbroMultiCharacterThreshold          = 3
-	SysConfigDefaultNewbroRefreshIntervalDays              = 7
-	SysConfigDefaultNewbroBonusRate                float64 = 20
-	SysConfigDefaultMenteeMaxCharacterSP           int64   = 4_000_000
-	SysConfigDefaultMenteeMaxAccountAgeDays                = 7
-	SysConfigDefaultWelfareAutoApproveFuxiCoinThreshold    = 500
-	SysConfigDefaultPAPFCSalary                    float64 = 400
-	SysConfigDefaultPAPFCSalaryLimit               int     = 5
-	SysConfigDefaultEnforceCharacterESIRestriction         = true
+	SysConfigDefaultNewbroMaxCharacterSP                int64   = 20_000_000
+	SysConfigDefaultNewbroMultiCharacterSP              int64   = 10_000_000
+	SysConfigDefaultNewbroMultiCharacterThreshold               = 3
+	SysConfigDefaultNewbroRefreshIntervalDays                   = 7
+	SysConfigDefaultNewbroBonusRate                     float64 = 20
+	SysConfigDefaultMenteeMaxCharacterSP                int64   = 4_000_000
+	SysConfigDefaultMenteeMaxAccountAgeDays                     = 7
+	SysConfigDefaultWelfareAutoApproveFuxiCoinThreshold         = 500
+	SysConfigDefaultPAPFCSalary                         float64 = 400
+	SysConfigDefaultPAPFCSalaryLimit                    int     = 5
+	SysConfigDefaultEnforceCharacterESIRestriction              = true
 
 	SysConfigDefaultMulticharFullRewardCount    = 3
 	SysConfigDefaultMulticharReducedRewardCount = 3
 	SysConfigDefaultMulticharReducedRewardPct   = 50
+
+	SysConfigDefaultSRPAmountLimit float64 = 600_000_000 // 6 亿 ISK
 )

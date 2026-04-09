@@ -1581,6 +1581,13 @@
         "action": "Action"
       }
     },
+    "config": {
+      "tabTitle": "SRP Settings",
+      "amountLimitLabel": "Per-Application Limit",
+      "amountLimitHint": "Only users with srp role only are limited; admin / senior_fc are exempt",
+      "amountLimitValid": "Amount must not be negative",
+      "updateSuccess": "Configuration updated"
+    },
     "status": {
       "submitted": "Submitted",
       "approved": "Approved",

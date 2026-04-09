@@ -25,30 +25,32 @@ func slotCategory(flagName string) string {
 type srpPayoutMailSender func(ctx context.Context, payerID uint, apps []*model.SrpApplication) (MailAttemptSummary, error)
 
 type SrpService struct {
-	repo      *repository.SrpRepository
-	fleetRepo *repository.FleetRepository
-	charRepo  *repository.EveCharacterRepository
-	userRepo  *repository.UserRepository
-	sdeRepo   *repository.SdeRepository
-	kmRepo    *repository.KillmailRepository
-	ssoSvc    *EveSSOService
-	walletSvc *SysWalletService
-	esiClient *esi.Client
+	repo          *repository.SrpRepository
+	fleetRepo     *repository.FleetRepository
+	charRepo      *repository.EveCharacterRepository
+	userRepo      *repository.UserRepository
+	sdeRepo       *repository.SdeRepository
+	kmRepo        *repository.KillmailRepository
+	ssoSvc        *EveSSOService
+	walletSvc     *SysWalletService
+	esiClient     *esi.Client
+	sysConfigRepo *repository.SysConfigRepository
 
 	payoutMailSender srpPayoutMailSender
 }
 
 func NewSrpService() *SrpService {
 	svc := &SrpService{
-		repo:      repository.NewSrpRepository(),
-		fleetRepo: repository.NewFleetRepository(),
-		charRepo:  repository.NewEveCharacterRepository(),
-		userRepo:  repository.NewUserRepository(),
-		sdeRepo:   repository.NewSdeRepository(),
-		kmRepo:    repository.NewKillmailRepository(),
-		ssoSvc:    NewEveSSOService(),
-		walletSvc: NewSysWalletService(),
-		esiClient: esi.NewClientWithConfig(global.Config.EveSSO.ESIBaseURL, global.Config.EveSSO.ESIAPIPrefix),
+		repo:          repository.NewSrpRepository(),
+		fleetRepo:     repository.NewFleetRepository(),
+		charRepo:      repository.NewEveCharacterRepository(),
+		userRepo:      repository.NewUserRepository(),
+		sdeRepo:       repository.NewSdeRepository(),
+		kmRepo:        repository.NewKillmailRepository(),
+		ssoSvc:        NewEveSSOService(),
+		walletSvc:     NewSysWalletService(),
+		esiClient:     esi.NewClientWithConfig(global.Config.EveSSO.ESIBaseURL, global.Config.EveSSO.ESIAPIPrefix),
+		sysConfigRepo: repository.NewSysConfigRepository(),
 	}
 	svc.payoutMailSender = svc.sendPayoutMails
 	return svc
@@ -508,9 +510,31 @@ func applyAutoApprovalToApplication(
 	app.ReviewedAt = &reviewedAt
 }
 
-// ReviewApplication 审批补损申请（srp/fc/admin 可操作）
+// srpAmountLimit 从系统配置读取 SRP 职权单笔上限（ISK），10 分钟 Redis 缓存
+func (s *SrpService) srpAmountLimit() float64 {
+	return s.sysConfigRepo.GetFloat(model.SysConfigSRPAmountLimit, model.SysConfigDefaultSRPAmountLimit)
+}
+
+// srpCallerHasAmountLimit 判断调用者是否受 SRP 单笔上限约束
+// admin / senior_fc / super_admin 不受限
+func srpCallerHasAmountLimit(roles []string) bool {
+	return !model.ContainsAnyRole(roles, model.RoleSuperAdmin, model.RoleAdmin, model.RoleSeniorFC)
+}
+
+func (s *SrpService) validateSrpAmountWithinLimit(roles []string, amount float64) error {
+	if !srpCallerHasAmountLimit(roles) {
+		return nil
+	}
+	limit := s.srpAmountLimit()
+	if limit > 0 && amount > limit {
+		return fmt.Errorf("补损金额 %.0f ISK 超过 SRP 职权单笔上限 %.0f ISK", amount, limit)
+	}
+	return nil
+}
+
+// ReviewApplication 审批补损申请（srp/senior_fc/admin 可操作）
 // 支持对已批准/已拒绝的申请重新审批（编辑/重新拒绝）
-func (s *SrpService) ReviewApplication(reviewerID uint, appID uint, req *ReviewApplicationRequest) (*model.SrpApplication, error) {
+func (s *SrpService) ReviewApplication(reviewerID uint, callerRoles []string, appID uint, req *ReviewApplicationRequest) (*model.SrpApplication, error) {
 	app, err := s.repo.GetApplicationByID(appID)
 	if err != nil {
 		return nil, errors.New("申请不存在")
@@ -534,6 +558,9 @@ func (s *SrpService) ReviewApplication(reviewerID uint, appID uint, req *ReviewA
 		if req.FinalAmount > 0 {
 			app.FinalAmount = req.FinalAmount
 		}
+		if err := s.validateSrpAmountWithinLimit(callerRoles, app.FinalAmount); err != nil {
+			return nil, err
+		}
 	case "reject":
 		app.ReviewStatus = model.SrpReviewRejected
 	}
@@ -544,7 +571,7 @@ func (s *SrpService) ReviewApplication(reviewerID uint, appID uint, req *ReviewA
 	return app, nil
 }
 
-func (s *SrpService) RunFleetAutoApproval(reviewerID uint, fleetID string) (*RunFleetAutoApprovalResponse, error) {
+func (s *SrpService) RunFleetAutoApproval(reviewerID uint, callerRoles []string, fleetID string) (*RunFleetAutoApprovalResponse, error) {
 	if fleetID == "" {
 		return nil, errors.New("fleet_id 不能为空")
 	}
@@ -603,6 +630,10 @@ func (s *SrpService) RunFleetAutoApproval(reviewerID uint, fleetID string) (*Run
 			finalAmount,
 			reviewedAt,
 		)
+		if err := s.validateSrpAmountWithinLimit(callerRoles, app.FinalAmount); err != nil {
+			result.SkippedCount++
+			continue
+		}
 		if err := s.repo.UpdateApplication(app); err != nil {
 			return nil, err
 		}
@@ -726,8 +757,8 @@ func applySrpPayoutFinalAmount(app *model.SrpApplication, finalAmount float64) {
 	}
 }
 
-// Payout 发放补损（srp/admin 可操作）
-func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, MailAttemptSummary, error) {
+// Payout 发放补损（srp/senior_fc/admin 可操作）
+func (s *SrpService) Payout(payerID uint, callerRoles []string, appID uint, req *SrpPayoutRequest) (*model.SrpApplication, MailAttemptSummary, error) {
 	if req == nil {
 		req = &SrpPayoutRequest{}
 	}
@@ -745,6 +776,9 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 		return nil, MailAttemptSummary{}, err
 	}
 	applySrpPayoutFinalAmount(app, req.FinalAmount)
+	if err := s.validateSrpAmountWithinLimit(callerRoles, app.FinalAmount); err != nil {
+		return nil, MailAttemptSummary{}, err
+	}
 
 	if mode == SrpPayoutModeFuxiCoin {
 		err := global.DB.Transaction(func(tx *gorm.DB) error {
@@ -778,7 +812,13 @@ func (s *SrpService) Payout(payerID uint, appID uint, req *SrpPayoutRequest) (*m
 }
 
 // BatchPayoutByUser 批量发放某用户所有已批准且未发放的 SRP
-func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayoutSummaryResponse, MailAttemptSummary, error) {
+func (s *SrpService) BatchPayoutByUser(payerID uint, callerRoles []string, userID uint) (*SrpBatchPayoutSummaryResponse, MailAttemptSummary, error) {
+	if srpCallerHasAmountLimit(callerRoles) {
+		if err := s.repo.CheckMaxApprovedUnpaidAmount(userID, s.srpAmountLimit()); err != nil {
+			return nil, MailAttemptSummary{}, err
+		}
+	}
+
 	now := time.Now()
 	summary, apps, err := s.repo.BatchPayoutApplicationsByUser(userID, payerID, now)
 	if err != nil {
@@ -800,7 +840,9 @@ func (s *SrpService) BatchPayoutByUser(payerID uint, userID uint) (*SrpBatchPayo
 }
 
 // BatchPayoutAsFuxiCoin 将全部已批准未发放的申请换算为伏羲币并发放到伏羲币账户
-func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSummary, MailAttemptSummary, error) {
+func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint, callerRoles []string) (*SrpBatchFuxiPayoutSummary, MailAttemptSummary, error) {
+	hasLimit := srpCallerHasAmountLimit(callerRoles)
+	amountLimit := s.srpAmountLimit()
 	summary := &SrpBatchFuxiPayoutSummary{}
 	userIDs := make(map[uint]struct{})
 	var paidApps []model.SrpApplication
@@ -816,6 +858,9 @@ func (s *SrpService) BatchPayoutAsFuxiCoin(payerID uint) (*SrpBatchFuxiPayoutSum
 
 		for i := range apps {
 			app := &apps[i]
+			if hasLimit && amountLimit > 0 && app.FinalAmount > amountLimit {
+				return fmt.Errorf("申请 #%d 金额 %.0f ISK 超过 SRP 职权单笔上限 %.0f ISK", app.ID, app.FinalAmount, amountLimit)
+			}
 			fuxiCoinAmount, _, _, buildErr := s.buildSrpWalletPayoutData(app)
 			if buildErr != nil {
 				return buildErr
