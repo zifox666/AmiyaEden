@@ -4,6 +4,7 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -161,4 +162,12 @@ func (r *TaskRepository) GetLastExecutions(taskNames []string) (map[string]*mode
 	}
 
 	return result, nil
+}
+
+func (r *TaskRepository) DeleteExecutionsOlderThan(cutoff time.Time) (int64, error) {
+	result := r.dbOrGlobal().Where("started_at < ?", cutoff).Delete(&model.TaskExecution{})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return result.RowsAffected, nil
 }

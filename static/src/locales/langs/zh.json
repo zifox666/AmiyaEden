@@ -514,6 +514,10 @@
         "name": "导师奖励处理",
         "description": "处理导师奖励结算"
       },
+      "task_execution_history_cleanup": {
+        "name": "执行历史清理",
+        "description": "清理 3 个月前的任务执行历史"
+      },
       "auto_srp": {
         "name": "自动 SRP",
         "description": "跟踪事件触发的自动 SRP 处理"

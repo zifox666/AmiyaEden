@@ -340,3 +340,40 @@ func TestTaskRepository_GetLastExecutions(t *testing.T) {
 		t.Fatalf("empty input result size = %d, want 0", len(empty))
 	}
 }
+
+func TestTaskRepository_DeleteExecutionsOlderThan(t *testing.T) {
+	db := newTaskTestDB(t)
+	repo := &TaskRepository{db: db}
+	cutoff := time.Date(2026, time.April, 1, 0, 0, 0, 0, time.UTC)
+
+	fixtures := []model.TaskExecution{
+		{TaskName: "task-old-1", Trigger: "cron", Status: "success", StartedAt: cutoff.Add(-48 * time.Hour)},
+		{TaskName: "task-old-2", Trigger: "manual", Status: "failed", StartedAt: cutoff.Add(-time.Hour)},
+		{TaskName: "task-new", Trigger: "cron", Status: "success", StartedAt: cutoff.Add(time.Hour)},
+	}
+	for _, exec := range fixtures {
+		exec := exec
+		if err := repo.CreateExecution(&exec); err != nil {
+			t.Fatalf("create execution for %s: %v", exec.TaskName, err)
+		}
+	}
+
+	deleted, err := repo.DeleteExecutionsOlderThan(cutoff)
+	if err != nil {
+		t.Fatalf("DeleteExecutionsOlderThan returned error: %v", err)
+	}
+	if deleted != 2 {
+		t.Fatalf("deleted = %d, want 2", deleted)
+	}
+
+	remaining, total, err := repo.ListExecutions("", "", 1, 10)
+	if err != nil {
+		t.Fatalf("list executions after cleanup: %v", err)
+	}
+	if total != 1 || len(remaining) != 1 {
+		t.Fatalf("remaining executions = %d/%d, want 1/1", len(remaining), total)
+	}
+	if remaining[0].TaskName != "task-new" {
+		t.Fatalf("remaining task = %q, want task-new", remaining[0].TaskName)
+	}
+}

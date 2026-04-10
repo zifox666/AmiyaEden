@@ -514,6 +514,10 @@
         "name": "Mentor Reward Processing",
         "description": "Process mentor reward settlements"
       },
+      "task_execution_history_cleanup": {
+        "name": "Execution History Cleanup",
+        "description": "Remove task execution history older than three months"
+      },
       "auto_srp": {
         "name": "Automatic SRP",
         "description": "Track event-driven automatic SRP processing"
