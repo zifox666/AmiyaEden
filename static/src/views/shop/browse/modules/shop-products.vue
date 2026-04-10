@@ -39,7 +39,15 @@
         </div>
         <div class="product-info">
           <h3 class="product-name">{{ item.name }}</h3>
-          <p v-if="item.description" class="product-desc">{{ item.description }}</p>
+          <ElTooltip
+            v-if="item.description"
+            :content="item.description"
+            placement="top"
+            :show-after="200"
+            popper-class="product-desc-tooltip"
+          >
+            <p class="product-desc">{{ item.description }}</p>
+          </ElTooltip>
           <div class="product-meta">
             <div class="price">
               {{ formatFuxiCoinAmount(item.price) }} {{ $t('shop.currency') }}
@@ -92,7 +100,16 @@
 
 <script setup lang="ts">
   import { Refresh, ShoppingBag } from '@element-plus/icons-vue'
-  import { ElCard, ElTag, ElButton, ElSelect, ElOption, ElPagination, ElEmpty } from 'element-plus'
+  import {
+    ElCard,
+    ElTag,
+    ElButton,
+    ElSelect,
+    ElOption,
+    ElPagination,
+    ElEmpty,
+    ElTooltip
+  } from 'element-plus'
   import { formatFuxiCoinAmount } from '@utils/common'
   import { fetchProducts } from '@/api/shop'
   import { useTable } from '@/hooks/core/useTable'
@@ -222,5 +239,14 @@
     justify-content: flex-end;
     margin-top: 16px;
     padding: 8px 0;
+  }
+</style>
+
+<style>
+  .product-desc-tooltip {
+    max-width: 300px !important;
+    line-height: 1.6;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
   }
 </style>
