@@ -464,6 +464,28 @@ func RegisterRoutes(r *gin.Engine) {
 		adminWebhook.PUT("/config", webhookH.SetConfig)
 		adminWebhook.POST("/test", webhookH.TestWebhook)
 	}
+
+	// ─── 名人堂 ───
+	hofH := handler.NewHallOfFameHandler()
+
+	// 公开端点（登录用户）
+	hallOfFame := login.Group("/hall-of-fame")
+	{
+		hallOfFame.GET("/temple", hofH.GetTemple)
+	}
+
+	// 管理端点（admin group 已要求 RoleAdmin）
+	adminHof := admin.Group("/hall-of-fame")
+	{
+		adminHof.GET("/config", hofH.GetConfig)
+		adminHof.PUT("/config", hofH.UpdateConfig)
+		adminHof.POST("/upload-background", hofH.UploadBackground)
+		adminHof.GET("/cards", hofH.ListCards)
+		adminHof.POST("/cards", hofH.CreateCard)
+		adminHof.PUT("/cards/batch-layout", hofH.BatchUpdateLayout)
+		adminHof.PUT("/cards/:id", hofH.UpdateCard)
+		adminHof.DELETE("/cards/:id", hofH.DeleteCard)
+	}
 }
 
 func registerAdminAutoRoleRoutes(admin *gin.RouterGroup, autoRoleH *handler.AutoRoleHandler) {

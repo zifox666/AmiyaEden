@@ -137,6 +137,9 @@ func autoMigrate(db *gorm.DB) {
 		&model.PAPTypeRate{},
 		// 系统配置表
 		&model.SystemConfig{},
+		// 名人堂相关表
+		&model.HallOfFameConfig{},
+		&model.HallOfFameCard{},
 		// RBAC 权限相关表
 		&model.UserRole{},
 		// ESI 自动权限映射表
