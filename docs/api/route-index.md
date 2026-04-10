@@ -145,6 +145,14 @@ source_of_truth:
 | POST | `/shop/orders` | 我的订单 | Login |
 | POST | `/shop/redeem/list` | 我的兑换码 | Login |
 
+## Hall of Fame
+
+### Temple
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/hall-of-fame/temple` | 获取圣殿画布配置与全部可见英雄卡片 | Login |
+
 ## Newbro Support
 
 ### Newbro User Side
@@ -334,6 +342,19 @@ source_of_truth:
 | POST | `/system/welfare/applications` | 福利申请列表（审批端） | `RequireRole(admin, welfare)` |
 | POST | `/system/welfare/applications/delete` | 删除单条福利申请记录 | `RequireRole(admin)` |
 | POST | `/system/welfare/review` | 审批仍处于 `requested` 的福利申请（发放/拒绝；若当前福利配置 `pay_by_fuxi_coin > 0`，同步写入 `welfare_payout` 钱包流水；发放成功后尽力发送一封以发放福利官主人物名义发出的双语游戏内邮件，失败不回滚） | `RequireRole(admin, welfare)` |
+
+### Hall of Fame Admin
+
+| Method | Path | 说明 | 权限 |
+| --- | --- | --- | --- |
+| GET | `/system/hall-of-fame/config` | 获取名人堂画布配置（单例） | `RequireRole(admin)` |
+| PUT | `/system/hall-of-fame/config` | 更新名人堂画布尺寸与背景图 | `RequireRole(admin)` |
+| POST | `/system/hall-of-fame/upload-background` | 上传名人堂背景图（base64 data URL，最大 5MB，仅支持 jpeg/png/webp） | `RequireRole(admin)` |
+| GET | `/system/hall-of-fame/cards` | 获取全部英雄卡片（含隐藏卡片） | `RequireRole(admin)` |
+| POST | `/system/hall-of-fame/cards` | 创建英雄卡片 | `RequireRole(admin)` |
+| PUT | `/system/hall-of-fame/cards/batch-layout` | 批量保存卡片坐标、尺寸与层级 | `RequireRole(admin)` |
+| PUT | `/system/hall-of-fame/cards/:id` | 更新单张英雄卡片内容、样式或显示状态 | `RequireRole(admin)` |
+| DELETE | `/system/hall-of-fame/cards/:id` | 删除英雄卡片 | `RequireRole(admin)` |
 
 ### Newbro Admin
 
