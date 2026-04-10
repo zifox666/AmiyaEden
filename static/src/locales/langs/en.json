@@ -780,6 +780,17 @@
     },
     "unnamed": "Unnamed",
     "impersonate": "Impersonate",
+    "manageDialog": {
+      "title": "Edit user",
+      "saveSuccess": "User updated",
+      "saveFailed": "Failed to update user"
+    },
+    "roleManageTitle": "Manage roles",
+    "profileDialog": {
+      "title": "Edit user profile",
+      "saveSuccess": "User profile updated",
+      "saveFailed": "Failed to update user profile"
+    },
     "editProtectedDenied": "Admins cannot edit super admins or other admins.",
     "deleteConfirm": "Are you sure you want to delete user \"{name}\"? This cannot be undone.",
     "deleteProtectedDenied": "Admins cannot delete super admins or other admins.",

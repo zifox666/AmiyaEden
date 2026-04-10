@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-02
+last_reviewed: 2026-04-10
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/handler/eve_sso.go
@@ -68,7 +68,7 @@ source_of_truth:
 - `/api/v1/me` 是前端启动权限上下文的关键接口
 - `/api/v1/me` 不是"非 guest 才可访问"的业务接口，而是登录后立即可用的自助上下文接口
 - 当前登录后必须完成昵称与联系方式资料，才允许继续访问其他业务页面
-- QQ / Discord ID 的管理入口是 `/api/v1/me`；管理员侧 `/api/v1/system/user/:id` 不提供联系方式修改
+- QQ / Discord ID 的默认管理入口是 `/api/v1/me`；管理员侧 `/api/v1/system/user/:id` 仅允许 `super_admin` 维护非 `super_admin` 用户的联系方式
 - 当前登录后若系统配置 `auth.enforce_character_esi_restriction = true`，则还必须保证所有已绑定人物的 ESI 有效，才允许离开 `/dashboard/characters`
 - 无论系统配置是否开启，主人物 ESI 已失效都会强制前端停留在 `/dashboard/characters`，直到主人物重新授权；不会自动退出登录
 - 用户仍被锁定在 `/dashboard/characters` 时，尝试导航到其他页面会弹出警告消息框，说明资料未完成、主人物 ESI 失效或其他绑定人物 ESI 失效等原因

@@ -34,3 +34,11 @@ test('system user expanded character rows render shared copy buttons beside char
     /user-character-name-row[\s\S]*h\(ArtCopyButton,[\s\S]*text:\s*character\.character_name/
   )
 })
+
+test('system user page uses one edit dialog instead of separate profile and role popups', () => {
+  assert.match(source, /import UserManageDialog from '\.\/modules\/user-manage-dialog\.vue'/)
+  assert.match(source, /type: 'edit'[\s\S]*showManageDialog/)
+  assert.doesNotMatch(source, /<UserRoleDialog/)
+  assert.doesNotMatch(source, /<UserProfileDialog/)
+  assert.doesNotMatch(source, /icon: 'ri:shield-user-line'/)
+})

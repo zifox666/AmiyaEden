@@ -57,10 +57,12 @@
       >
       </ArtTable>
 
-      <!-- 职权分配弹窗 -->
-      <UserRoleDialog
-        v-model:visible="dialogVisible"
+      <UserManageDialog
+        v-model:visible="manageDialogVisible"
         :user-data="currentUserData"
+        :can-edit-profile="currentUserCanEditProfile"
+        :can-edit-contacts="currentUserCanEditContacts"
+        :can-edit-roles="currentUserCanEditRoles"
         @saved="refreshData"
       />
     </ElCard>
@@ -81,7 +83,7 @@
   } from '@/api/sys-config'
   import { useUserStore } from '@/store/modules/user'
   import UserSearch from './modules/user-search.vue'
-  import UserRoleDialog from './modules/user-role-dialog.vue'
+  import UserManageDialog from './modules/user-manage-dialog.vue'
   import { ElTag, ElMessage, ElMessageBox, ElAvatar, ElEmpty } from 'element-plus'
   import type { TableColumnCtx } from 'element-plus'
 
@@ -97,7 +99,7 @@
   const currentUserId = computed(() => userStore.info?.userId)
 
   // 弹窗相关
-  const dialogVisible = ref(false)
+  const manageDialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
   const characterEsiRestrictionLoading = ref(false)
   const characterEsiRestrictionSaving = ref(false)
@@ -135,7 +137,7 @@
   const getRoleConfig = (role: string) => ROLE_CONFIG[role] || { type: 'info', text: role }
   const getStatusConfig = (status: number) =>
     STATUS_CONFIG[status] || { type: 'info', text: t('userAdmin.status.unknown') }
-  const getDisplayRoles = (row: UserListItem) => {
+  const getDisplayRoles = (row: Partial<UserListItem>) => {
     return row.roles?.length ? row.roles : ['guest']
   }
   const getContactEntries = (row: UserListItem) => {
@@ -156,12 +158,16 @@
 
     return contacts.filter((entry): entry is { label: string; value: string } => entry !== null)
   }
-  const isSuperAdminUser = (row: UserListItem) => getDisplayRoles(row).includes('super_admin')
-  const isSelfUser = (row: UserListItem) =>
+  const isSuperAdminUser = (row: Partial<UserListItem>) =>
+    getDisplayRoles(row).includes('super_admin')
+  const isSelfUser = (row: Partial<UserListItem>) =>
     currentUserId.value != null && row.id === currentUserId.value
-  const isProtectedUser = (row: UserListItem) =>
+  const isProtectedUser = (row: Partial<UserListItem>) =>
     getDisplayRoles(row).some((role) => ['super_admin', 'admin'].includes(role))
-  const canEditRoles = (row: UserListItem) => {
+  const canEditProfile = (row: Partial<UserListItem>) => isSuperAdmin.value || !isProtectedUser(row)
+  const canEditContacts = (row: Partial<UserListItem>) =>
+    isSuperAdmin.value && !isSuperAdminUser(row)
+  const canEditRoles = (row: Partial<UserListItem>) => {
     if (isSuperAdmin.value) {
       return true
     }
@@ -176,6 +182,10 @@
 
     return true
   }
+  const canManageUser = (row: Partial<UserListItem>) => canEditProfile(row) || canEditRoles(row)
+  const currentUserCanEditProfile = computed(() => canEditProfile(currentUserData.value))
+  const currentUserCanEditContacts = computed(() => canEditContacts(currentUserData.value))
+  const currentUserCanEditRoles = computed(() => canEditRoles(currentUserData.value))
   const canDeleteUser = (row: UserListItem) => isSuperAdmin.value || !isProtectedUser(row)
   const formatSkillPoints = (value: number) => skillPointFormatter.format(value ?? 0)
   const getUserRowKey = (row: Record<string, any>) => String(row.id)
@@ -397,10 +407,11 @@
                   title: t('userAdmin.impersonate'),
                   onClick: () => impersonateUser(row)
                 }),
-              canEditRoles(row) &&
+              canManageUser(row) &&
                 h(ArtButtonTable, {
                   type: 'edit',
-                  onClick: () => showRoleDialog(row)
+                  title: t('userAdmin.manageDialog.title'),
+                  onClick: () => showManageDialog(row)
                 }),
               canDeleteUser(row) &&
                 h(ArtButtonTable, {
@@ -501,15 +512,15 @@
     getData()
   }
 
-  /** 打开职权编辑弹窗 */
-  const showRoleDialog = (row: UserListItem): void => {
-    if (!canEditRoles(row)) {
+  /** 打开用户编辑弹窗 */
+  const showManageDialog = (row: UserListItem): void => {
+    if (!canManageUser(row)) {
       ElMessage.error(t('userAdmin.editProtectedDenied'))
       return
     }
     currentUserData.value = row
     nextTick(() => {
-      dialogVisible.value = true
+      manageDialogVisible.value = true
     })
   }
 

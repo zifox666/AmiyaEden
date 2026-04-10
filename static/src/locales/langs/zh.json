@@ -781,6 +781,17 @@
     },
     "unnamed": "未命名",
     "impersonate": "模拟登录",
+    "manageDialog": {
+      "title": "编辑用户",
+      "saveSuccess": "用户信息已更新",
+      "saveFailed": "更新用户信息失败"
+    },
+    "roleManageTitle": "管理职权",
+    "profileDialog": {
+      "title": "编辑用户资料",
+      "saveSuccess": "用户资料已更新",
+      "saveFailed": "更新用户资料失败"
+    },
     "editProtectedDenied": "管理员不能编辑超级管理员或其他管理员。",
     "deleteConfirm": "确定要删除用户「{name}」吗？此操作不可恢复。",
     "deleteProtectedDenied": "管理员不能删除超级管理员或其他管理员。",

@@ -15,7 +15,10 @@ export function fetchGetUser(id: number) {
   })
 }
 
-export function fetchUpdateUser(id: number, data: { nickname?: string; status?: number }) {
+export function fetchUpdateUser(
+  id: number,
+  data: { nickname?: string; qq?: string; discord_id?: string; status?: number }
+) {
   return request.put({
     url: `/api/v1/system/user/${id}`,
     data

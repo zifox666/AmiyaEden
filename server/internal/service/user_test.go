@@ -207,7 +207,7 @@ func TestDeleteUser(t *testing.T) {
 }
 
 func TestUpdateUserByAdmin(t *testing.T) {
-	t.Run("rejects qq updates from system user management", func(t *testing.T) {
+	t.Run("admin cannot update contacts from system user management", func(t *testing.T) {
 		db := newUserDeletionTestDB(t)
 		seedUserForDeletion(t, db, model.User{
 			BaseModel: model.BaseModel{ID: 1},
@@ -224,6 +224,67 @@ func TestUpdateUserByAdmin(t *testing.T) {
 		err := NewUserService().UpdateUserByAdmin(1, []string{model.RoleAdmin}, UserPatch{QQ: &qq})
 		if err == nil || !strings.Contains(err.Error(), "QQ") {
 			t.Fatalf("expected admin qq edit to be rejected, got %v", err)
+		}
+	})
+
+	t.Run("super admin can update nickname and contacts of non super admin user", func(t *testing.T) {
+		db := newUserDeletionTestDB(t)
+		seedUserForDeletion(t, db, model.User{
+			BaseModel: model.BaseModel{ID: 1},
+			Nickname:  "Amiya",
+			QQ:        "12345",
+			DiscordID: "old-discord",
+			Role:      model.RoleUser,
+		}, []string{model.RoleUser})
+
+		originalDB := global.DB
+		global.DB = db
+		defer func() { global.DB = originalDB }()
+
+		nickname := "Doctor"
+		qq := "54321"
+		discordID := "doctor-1001"
+		err := NewUserService().UpdateUserByAdmin(1, []string{model.RoleSuperAdmin}, UserPatch{
+			Nickname:  &nickname,
+			QQ:        &qq,
+			DiscordID: &discordID,
+		})
+		if err != nil {
+			t.Fatalf("expected super admin contact edit to pass, got %v", err)
+		}
+
+		updated, err := NewUserService().GetUserByID(1)
+		if err != nil {
+			t.Fatalf("reload updated user: %v", err)
+		}
+		if updated.Nickname != nickname {
+			t.Fatalf("expected nickname %q, got %q", nickname, updated.Nickname)
+		}
+		if updated.QQ != qq {
+			t.Fatalf("expected qq %q, got %q", qq, updated.QQ)
+		}
+		if updated.DiscordID != discordID {
+			t.Fatalf("expected discord id %q, got %q", discordID, updated.DiscordID)
+		}
+	})
+
+	t.Run("super admin cannot update contacts of another super admin", func(t *testing.T) {
+		db := newUserDeletionTestDB(t)
+		seedUserForDeletion(t, db, model.User{
+			BaseModel: model.BaseModel{ID: 1},
+			Nickname:  "Amiya",
+			QQ:        "12345",
+			Role:      model.RoleSuperAdmin,
+		}, []string{model.RoleSuperAdmin})
+
+		originalDB := global.DB
+		global.DB = db
+		defer func() { global.DB = originalDB }()
+
+		qq := "54321"
+		err := NewUserService().UpdateUserByAdmin(1, []string{model.RoleSuperAdmin}, UserPatch{QQ: &qq})
+		if err == nil || !strings.Contains(err.Error(), "超级管理员") {
+			t.Fatalf("expected super admin contact edit on protected target to be rejected, got %v", err)
 		}
 	})
 }

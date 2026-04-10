@@ -2,7 +2,7 @@
 status: active
 doc_type: architecture
 owner: engineering
-last_reviewed: 2026-04-09
+last_reviewed: 2026-04-10
 source_of_truth:
   - server/internal/router/router.go
   - server/internal/middleware/auth.go
@@ -104,7 +104,7 @@ source_of_truth:
 
 补充规则：
 
-- `PUT /api/v1/system/user/:id` 仅允许维护昵称与状态；`QQ` / `Discord ID` 只能由用户本人通过 `/api/v1/me` 维护
+- `PUT /api/v1/system/user/:id` 允许维护昵称与状态；当操作者为 `super_admin` 且目标不是 `super_admin` 时，还允许维护 `QQ` / `Discord ID`
 - 删除已登记 `QQ` 或 `Discord ID` 的用户属于更高敏感度操作；`DELETE /api/v1/system/user/:id` 仅 `super_admin` 可执行
 
 ## JWT 中间件行为

@@ -2,7 +2,7 @@
 status: active
 doc_type: api
 owner: engineering
-last_reviewed: 2026-04-09
+last_reviewed: 2026-04-10
 source_of_truth:
   - server/internal/router/router.go
 ---
@@ -305,7 +305,7 @@ source_of_truth:
 | GET | `/system/role/definitions` | 系统职权定义列表（只读） | `RequireRole(admin)` |
 | GET | `/system/user` | 用户列表；默认按 `last_login_at` 倒序，关键字支持昵称 / QQ / 已绑定人物名；职权字段仅返回有序 `roles[]`，不再返回历史单值 `role`，并附带已绑定人物与每个人物的 `total_sp`、`token_invalid` 快照 | `RequireRole(admin)` |
 | GET | `/system/user/:id` | 用户详情 | `RequireRole(admin)` |
-| PUT | `/system/user/:id` | 更新用户昵称 / 状态；不允许通过该接口修改 QQ / Discord ID，`admin` 也不可编辑其他 `admin` | `RequireRole(admin)` |
+| PUT | `/system/user/:id` | 更新用户昵称 / 状态；当操作者为 `super_admin` 且目标不是 `super_admin` 时，还可更新 QQ / Discord ID；`admin` 也不可编辑其他 `admin` | `RequireRole(admin)` |
 | DELETE | `/system/user/:id` | 删除用户；`super_admin` 用户不可删除；`admin` 不可删除其他 `admin`，且已登记 QQ / Discord ID 的用户仅 `super_admin` 可删除 | `RequireRole(admin)` |
 | GET | `/system/user/:id/roles` | 获取用户职权 | `RequireRole(admin)` |
 | PUT | `/system/user/:id/roles` | 设置用户职权；`super_admin` 职权不可通过 API 分配或修改（仅通过配置文件管理）；仅 `super_admin` 可分配 `admin` | `RequireRole(admin)` |

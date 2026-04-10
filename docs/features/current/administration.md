@@ -2,7 +2,7 @@
 status: active
 doc_type: feature
 owner: engineering
-last_reviewed: 2026-04-09
+last_reviewed: 2026-04-10
 source_of_truth:
   - server/internal/model/system_identity.go
   - server/internal/router/router.go
@@ -27,8 +27,8 @@ source_of_truth:
 - 固定系统标识读取
 - 系统职权定义只读查询
 - 用户管理、用户职权分配
-- 管理员可维护用户昵称与状态
-- 用户 QQ / Discord ID 在管理端只读展示，仍由用户本人通过 `/api/v1/me` 维护
+- 管理员可维护普通用户昵称与状态
+- `super_admin` 可在管理端维护非 `super_admin` 用户的 QQ / Discord ID；其他场景下联系方式仍由用户本人通过 `/api/v1/me` 维护
 - 用户管理列表默认按最后登录时间倒序，并支持按昵称、QQ、任意已绑定人物名搜索
 - 用户管理列表可展开每个用户行，查看该用户全部已绑定人物的头像、人物 ID、人物名、ESI 状态与人物总技能点
 - 用户管理展开人物列表在人物名右侧提供共享内联复制按钮，便于复制已绑定人物名
@@ -71,6 +71,7 @@ source_of_truth:
 - `/system/webhook/*` 额外要求 `super_admin`
 - `/system/user/:id/impersonate` 额外要求 `super_admin`
 - `/system/user/:id/impersonate` 在目标用户主人物 ESI 已失效时拒绝签发模拟登录 token
+- `/system/user/:id` 仅 `super_admin` 可修改非 `super_admin` 目标的 QQ / Discord ID；`admin` 仍不可编辑其他 `admin`
 - `/system/user/:id` 删除用户时，若目标用户已登记 QQ 或 Discord ID，则仅 `super_admin` 可执行
 - `GET /system/role/definitions` 仅用于前端加载系统职权定义，属于只读数据源
 - `GET /system/basic-config` 仅返回固定系统标识，不提供写接口

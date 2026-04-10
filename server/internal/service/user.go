@@ -67,7 +67,7 @@ func (s *UserService) UpdateUserByAdmin(id uint, operatorRoles []string, patch U
 	if err := validateManageUserPermission(operatorRoles, targetRoles); err != nil {
 		return err
 	}
-	if err := validateAdminContactEditPermission(patch); err != nil {
+	if err := validateAdminContactEditPermission(operatorRoles, targetRoles, patch); err != nil {
 		return err
 	}
 	next, updates, err := buildUserPatchUpdates(current, patch, false)
@@ -230,9 +230,15 @@ func validateContactOwner(currentUserID uint, owner *model.User, label string) e
 	return nil
 }
 
-func validateAdminContactEditPermission(patch UserPatch) error {
-	if patch.QQ != nil || patch.DiscordID != nil {
-		return errors.New("系统用户管理不可修改 QQ 或 Discord ID，请用户自行维护")
+func validateAdminContactEditPermission(operatorRoles, targetRoles []string, patch UserPatch) error {
+	if patch.QQ == nil && patch.DiscordID == nil {
+		return nil
+	}
+	if !model.IsSuperAdmin(operatorRoles) {
+		return errors.New("仅超级管理员可在系统用户管理中修改 QQ 或 Discord ID")
+	}
+	if model.ContainsAnyRole(targetRoles, model.RoleSuperAdmin) {
+		return errors.New("系统用户管理不可修改超级管理员的 QQ 或 Discord ID，请用户自行维护")
 	}
 	return nil
 }
