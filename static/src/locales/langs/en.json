@@ -1350,6 +1350,15 @@
       "title": "You cannot continue while the primary character ESI is expired, or when policy requires all characters to be valid and any bound character is expired",
       "requiredHint": "Refresh the primary character ESI first. If all-character enforcement is enabled, you must also refresh or unbind any other expired characters before leaving this page."
     },
+    "lockoutWarning": {
+      "title": "You cannot leave the characters page yet",
+      "summary": "Resolve the following issues before accessing other pages:",
+      "reasons": {
+        "profile_incomplete": "Set a nickname and provide at least one contact method (QQ number or Discord ID).",
+        "primary_character_token_invalid": "The primary character ESI is expired. Re-authorize the primary character first.",
+        "character_token_invalid": "All-character ESI enforcement is enabled, and another bound character still has an expired authorization. Re-authorize or unbind it before continuing."
+      }
+    },
     "bindFailed": "Failed to get bind URL",
     "setPrimarySuccess": "{name} is now the primary character",
     "setPrimaryFailed": "Failed to set primary character",

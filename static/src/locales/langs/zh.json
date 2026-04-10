@@ -1350,6 +1350,15 @@
       "title": "主人物 ESI 已过期，或系统要求校验全部人物且存在已过期 ESI 时，无法继续访问其他页面",
       "requiredHint": "请先重新授权主人物 ESI；如果当前启用了全人物校验，还需要处理其他已过期人物，然后再离开本页面。"
     },
+    "lockoutWarning": {
+      "title": "暂时无法离开人物管理页",
+      "summary": "请先处理以下问题，处理完成后才能继续访问其他页面：",
+      "reasons": {
+        "profile_incomplete": "请填写昵称，并至少提供一个联系方式（QQ 或 Discord ID）。",
+        "primary_character_token_invalid": "主人物 ESI 已失效，请重新授权主人物。",
+        "character_token_invalid": "系统当前启用了全人物 ESI 校验，仍有其他已绑定人物授权失效，请重新授权或解绑后再继续。"
+      }
+    },
     "bindFailed": "获取绑定链接失败",
     "setPrimarySuccess": "已将 {name} 设为主人物",
     "setPrimaryFailed": "设置主人物失败",

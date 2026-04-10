@@ -36,8 +36,10 @@
  * @author Art Design Pro Team
  */
 import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
-import { nextTick } from 'vue'
+import { h, nextTick } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import NProgress from 'nprogress'
+import { $t } from '@/locales'
 import { useSettingStore } from '@/store/modules/setting'
 import { useUserStore } from '@/store/modules/user'
 import { useBadgeStore } from '@/store/modules/badge'
@@ -55,9 +57,11 @@ import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
 import { loadBadgeCounts } from './badge'
 import {
+  applyCharactersGateTransition,
+  type CharactersGateReason,
   PROFILE_SETUP_PATH,
-  refreshCharactersGateState,
-  shouldRedirectToCharactersPage
+  resolveCharactersGateTransition,
+  refreshCharactersGateState
 } from './charactersGate'
 
 // 路由注册器实例
@@ -75,6 +79,9 @@ let routeInitFailed = false
 
 // 路由初始化进行中标记，防止并发请求
 let routeInitInProgress = false
+
+// 角色绑定页锁定提醒，防止重复弹窗
+let activeCharactersGateWarning: Promise<unknown> | null = null
 
 /**
  * 获取 pendingLoading 状态
@@ -144,6 +151,32 @@ function closeLoading(): void {
       pendingLoading = false
     })
   }
+}
+
+function notifyCharactersGateRedirect(reasons: CharactersGateReason[]): void {
+  if (reasons.length === 0 || activeCharactersGateWarning) {
+    return
+  }
+
+  const content = h('div', { class: 'space-y-3' }, [
+    h('p', { class: 'text-sm leading-6' }, $t('characters.lockoutWarning.summary')),
+    h(
+      'ul',
+      { class: 'list-disc pl-5 text-sm leading-6' },
+      reasons.map((reason) =>
+        h('li', { key: reason }, $t(`characters.lockoutWarning.reasons.${reason}`))
+      )
+    )
+  ])
+
+  activeCharactersGateWarning = ElMessageBox.alert(content, $t('characters.lockoutWarning.title'), {
+    type: 'warning',
+    confirmButtonText: $t('common.confirm')
+  })
+    .catch(() => undefined)
+    .finally(() => {
+      activeCharactersGateWarning = null
+    })
 }
 
 /**
@@ -309,16 +342,20 @@ async function handleDynamicRoutes(
 
     // 8. 验证目标路径权限
     const { homePath } = useCommon()
-    const targetPath = shouldRedirectToCharactersPage(
+    const gateTransition = resolveCharactersGateTransition(
       { isLogin: userStore.isLogin, path: to.path },
       userStore.getUserInfo
     )
-      ? PROFILE_SETUP_PATH
-      : to.path
+    const targetPath = gateTransition.redirectPath ?? to.path
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
       targetPath,
       menuList,
       homePath.value || '/'
+    )
+    const warningTransition = resolveCharactersGateTransition(
+      { isLogin: userStore.isLogin, path: to.path },
+      userStore.getUserInfo,
+      validatedPath
     )
 
     // 初始化成功，重置进行中标记
@@ -326,25 +363,46 @@ async function handleDynamicRoutes(
 
     // 9. 重新导航到目标路由
     if (!hasPermission) {
-      // 无权限访问，跳转到首页
-      closeLoading()
+      const redirected = applyCharactersGateTransition(
+        { ...warningTransition, redirectPath: validatedPath },
+        () => {
+          // 无权限访问，跳转到首页
+          closeLoading()
 
-      // 输出警告信息
-      console.warn(`[RouteGuard] 用户无权限访问路径: ${to.path}，已跳转到首页`)
+          // 输出警告信息
+          console.warn(`[RouteGuard] 用户无权限访问路径: ${to.path}，已跳转到首页`)
 
-      // 直接跳转到首页
-      next({
-        path: validatedPath,
-        replace: true
-      })
+          // 直接跳转到首页
+          next({
+            path: validatedPath,
+            replace: true
+          })
+        },
+        notifyCharactersGateRedirect
+      )
+
+      if (!redirected) {
+        closeLoading()
+        console.warn(`[RouteGuard] 用户无权限访问路径: ${to.path}，已跳转到首页`)
+        next({
+          path: validatedPath,
+          replace: true
+        })
+      }
     } else {
-      // 有权限，正常导航
-      next({
-        path: validatedPath,
-        query: validatedPath === to.path ? to.query : undefined,
-        hash: validatedPath === to.path ? to.hash : undefined,
-        replace: true
-      })
+      applyCharactersGateTransition(
+        { ...warningTransition, redirectPath: validatedPath },
+        () => {
+          // 有权限，正常导航
+          next({
+            path: validatedPath,
+            query: validatedPath === to.path ? to.query : undefined,
+            hash: validatedPath === to.path ? to.hash : undefined,
+            replace: true
+          })
+        },
+        notifyCharactersGateRedirect
+      )
     }
   } catch (error) {
     console.error('[RouteGuard] 动态路由注册失败:', error)
@@ -396,11 +454,23 @@ async function handleProfileSetupRedirect(
 
   const userInfo = await getCharactersGateUserInfo(to.path, userStore)
 
-  if (!shouldRedirectToCharactersPage({ isLogin: userStore.isLogin, path: to.path }, userInfo)) {
+  const gateTransition = resolveCharactersGateTransition(
+    { isLogin: userStore.isLogin, path: to.path },
+    userInfo
+  )
+
+  if (
+    !applyCharactersGateTransition(
+      gateTransition,
+      () => {
+        next({ path: gateTransition.redirectPath!, replace: true })
+      },
+      notifyCharactersGateRedirect
+    )
+  ) {
     return false
   }
 
-  next({ path: PROFILE_SETUP_PATH, replace: true })
   return true
 }
 

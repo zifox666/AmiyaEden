@@ -26,9 +26,9 @@ source_of_truth:
 - 解绑人物
 - 通过 `/api/v1/me` 获取当前用户、职权、权限与绑定人物信息
 - 通过 `/api/v1/me` 维护昵称、QQ、Discord ID 资料
-- 未填写昵称或未提供 QQ / Discord 任一联系方式时，前端强制停留在 `/dashboard/characters`
-- 可选启用：任一已绑定人物 ESI 失效时，前端强制停留在 `/dashboard/characters`
-- 主人物 ESI 已失效时，`/api/v1/me` 仍返回启动上下文，前端强制停留在 `/dashboard/characters` 直到主人物重新授权
+- 未填写昵称或未提供 QQ / Discord 任一联系方式时，前端强制停留在 `/dashboard/characters`，且尝试访问其他页面时弹出原因提示
+- 可选启用：任一已绑定人物 ESI 失效时，前端强制停留在 `/dashboard/characters`，且尝试访问其他页面时弹出原因提示
+- 主人物 ESI 已失效时，`/api/v1/me` 仍返回启动上下文，前端强制停留在 `/dashboard/characters` 直到主人物重新授权，且尝试访问其他页面时弹出原因提示
 
 ## 入口
 
@@ -71,6 +71,7 @@ source_of_truth:
 - QQ / Discord ID 的管理入口是 `/api/v1/me`；管理员侧 `/api/v1/system/user/:id` 不提供联系方式修改
 - 当前登录后若系统配置 `auth.enforce_character_esi_restriction = true`，则还必须保证所有已绑定人物的 ESI 有效，才允许离开 `/dashboard/characters`
 - 无论系统配置是否开启，主人物 ESI 已失效都会强制前端停留在 `/dashboard/characters`，直到主人物重新授权；不会自动退出登录
+- 用户仍被锁定在 `/dashboard/characters` 时，尝试导航到其他页面会弹出警告消息框，说明资料未完成、主人物 ESI 失效或其他绑定人物 ESI 失效等原因
 - 重新绑定已存在人物会沿用当前 SSO 回调流程刷新该人物 token 并清除 `token_invalid`
 - QQ / Discord ID 的唯一性由后端校验
 - 职权编码与权限列表必须与后端返回保持一致，不做前端别名映射

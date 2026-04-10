@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict'
 import test, { afterEach } from 'node:test'
 import { readFileSync } from 'node:fs'
-import {
+import * as charactersGate from './charactersGate'
+
+const {
+  applyCharactersGateTransition,
+  getCharactersGateReasons,
   refreshCharactersGateState,
   resetCharactersGateStateRefreshForTest,
+  resolveCharactersGateTransition,
   shouldRedirectToCharactersPage
-} from './charactersGate'
+} = charactersGate
 
 const source = readFileSync(new URL('./beforeEach.ts', import.meta.url), 'utf8')
 
@@ -78,6 +83,130 @@ test('invalid primary character still redirects when enforcement is disabled', (
     ),
     true
   )
+})
+
+test('characters gate reports every active lock reason in priority order', () => {
+  assert.equal(typeof getCharactersGateReasons, 'function')
+  assert.deepEqual(
+    getCharactersGateReasons(
+      { isLogin: true, path: '/system/user' },
+      {
+        profileComplete: false,
+        enforceCharacterESIRestriction: true,
+        primaryCharacterId: 9001,
+        characters: [
+          { character_id: 9001, token_invalid: true } as Api.Auth.EveCharacter,
+          { character_id: 9002, token_invalid: true } as Api.Auth.EveCharacter
+        ]
+      }
+    ),
+    ['profile_incomplete', 'primary_character_token_invalid', 'character_token_invalid']
+  )
+})
+
+test('primary-character lock reason is not duplicated as all-character enforcement', () => {
+  assert.equal(typeof getCharactersGateReasons, 'function')
+  assert.deepEqual(
+    getCharactersGateReasons(
+      { isLogin: true, path: '/system/user' },
+      {
+        profileComplete: true,
+        enforceCharacterESIRestriction: true,
+        primaryCharacterId: 9001,
+        characters: [{ character_id: 9001, token_invalid: true } as Api.Auth.EveCharacter]
+      }
+    ),
+    ['primary_character_token_invalid']
+  )
+})
+
+test('characters gate transition warns when locked navigation lands on characters page', () => {
+  const transition = resolveCharactersGateTransition(
+    { isLogin: true, path: '/system/user' },
+    {
+      profileComplete: false,
+      enforceCharacterESIRestriction: true,
+      primaryCharacterId: 9001,
+      characters: [{ character_id: 9001, token_invalid: false } as Api.Auth.EveCharacter]
+    }
+  )
+
+  let redirectCalls = 0
+  const warningCalls: string[][] = []
+
+  assert.equal(
+    applyCharactersGateTransition(
+      transition,
+      () => {
+        redirectCalls += 1
+      },
+      (reasons) => {
+        warningCalls.push([...reasons])
+      }
+    ),
+    true
+  )
+  assert.equal(redirectCalls, 1)
+  assert.deepEqual(warningCalls, [['profile_incomplete']])
+})
+
+test('characters gate transition suppresses warning when permission fallback avoids characters page', () => {
+  const transition = resolveCharactersGateTransition(
+    { isLogin: true, path: '/system/user' },
+    {
+      profileComplete: true,
+      enforceCharacterESIRestriction: true,
+      primaryCharacterId: 9001,
+      characters: [{ character_id: 9001, token_invalid: true } as Api.Auth.EveCharacter]
+    },
+    '/dashboard'
+  )
+
+  let redirectCalls = 0
+  let warningCalls = 0
+
+  assert.equal(
+    applyCharactersGateTransition(
+      transition,
+      () => {
+        redirectCalls += 1
+      },
+      () => {
+        warningCalls += 1
+      }
+    ),
+    true
+  )
+  assert.equal(redirectCalls, 1)
+  assert.equal(warningCalls, 0)
+})
+
+test('characters gate transition does nothing when the user is not locked out', () => {
+  let redirectCalls = 0
+  let warningCalls = 0
+
+  assert.equal(
+    applyCharactersGateTransition(
+      resolveCharactersGateTransition(
+        { isLogin: true, path: '/system/user' },
+        {
+          profileComplete: true,
+          enforceCharacterESIRestriction: true,
+          primaryCharacterId: 9001,
+          characters: [{ character_id: 9001, token_invalid: false } as Api.Auth.EveCharacter]
+        }
+      ),
+      () => {
+        redirectCalls += 1
+      },
+      () => {
+        warningCalls += 1
+      }
+    ),
+    false
+  )
+  assert.equal(redirectCalls, 0)
+  assert.equal(warningCalls, 0)
 })
 
 test('guard refresh stores authoritative user info before redirect evaluation', async () => {
