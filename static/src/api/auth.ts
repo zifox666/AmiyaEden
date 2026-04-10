@@ -104,6 +104,7 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
   // 主人物：根据 primary_character_id 查找，找不到则用第一个，再 fallback 到用户信息
   const primaryChar =
     characters?.find((c) => c.character_id === user.primary_character_id) ?? characters?.[0]
+  const primaryCharacterId = primaryChar?.character_id ?? user.primary_character_id ?? 0
 
   // 直接使用后端职权编码，回退到 user.role
   const roles = backendRoles && backendRoles.length > 0 ? backendRoles : [user.role ?? 'user']
@@ -111,7 +112,6 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
   return {
     userId: user.id,
     userName: primaryChar?.character_name ?? user.nickname ?? `Capsuleer#${user.id}`,
-    avatar: primaryChar?.portrait_url ?? user.avatar ?? '',
     nickname: user.nickname ?? '',
     qq: user.qq ?? '',
     discordId: user.discord_id ?? '',
@@ -131,6 +131,6 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
         : undefined,
     roles,
     characters: characters ?? [],
-    primaryCharacterId: user.primary_character_id ?? 0
+    primaryCharacterId
   }
 }

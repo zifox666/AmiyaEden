@@ -21,29 +21,27 @@ const (
 
 // Client EVE SSO OAuth 客户端
 type Client struct {
-	ClientID      string
-	ClientSecret  string
-	CallbackURL   string
-	AuthorizeURL  string
-	TokenURL      string
-	ImagesBaseURL string
-	HTTPClient    *http.Client
+	ClientID     string
+	ClientSecret string
+	CallbackURL  string
+	AuthorizeURL string
+	TokenURL     string
+	HTTPClient   *http.Client
 }
 
 // NewClient 创建 EVE SSO 客户端
 func NewClient(clientID, clientSecret, callbackURL string) *Client {
-	return NewClientWithEndpoints(clientID, clientSecret, callbackURL, AuthorizeURL, TokenURL, config.DefaultEVEImagesBaseURL)
+	return NewClientWithEndpoints(clientID, clientSecret, callbackURL, AuthorizeURL, TokenURL)
 }
 
-func NewClientWithEndpoints(clientID, clientSecret, callbackURL, authorizeURL, tokenURL, imagesBaseURL string) *Client {
+func NewClientWithEndpoints(clientID, clientSecret, callbackURL, authorizeURL, tokenURL string) *Client {
 	return &Client{
-		ClientID:      clientID,
-		ClientSecret:  clientSecret,
-		CallbackURL:   callbackURL,
-		AuthorizeURL:  strings.TrimRight(authorizeURL, "/"),
-		TokenURL:      strings.TrimRight(tokenURL, "/"),
-		ImagesBaseURL: strings.TrimRight(imagesBaseURL, "/"),
-		HTTPClient:    &http.Client{Timeout: 30 * time.Second},
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		CallbackURL:  callbackURL,
+		AuthorizeURL: strings.TrimRight(authorizeURL, "/"),
+		TokenURL:     strings.TrimRight(tokenURL, "/"),
+		HTTPClient:   &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -113,10 +111,6 @@ func (c *Client) doTokenRequest(ctx context.Context, data url.Values) (*TokenRes
 		return nil, fmt.Errorf("parse token response: %w", err)
 	}
 	return &tokenResp, nil
-}
-
-func (c *Client) PortraitURL(characterID int64) string {
-	return fmt.Sprintf("%s/characters/%d/portrait?size=128", c.ImagesBaseURL, characterID)
 }
 
 // JWTClaims EVE SSO v2 JWT access_token 解析后的载荷
@@ -193,9 +187,4 @@ func (c *JWTClaims) GetScopes() []string {
 		return scopes
 	}
 	return nil
-}
-
-// PortraitURL 生成人物头像 URL
-func PortraitURL(characterID int64) string {
-	return fmt.Sprintf("%s/characters/%d/portrait?size=128", config.DefaultEVEImagesBaseURL, characterID)
 }

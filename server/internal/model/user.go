@@ -11,7 +11,6 @@ type User struct {
 	Nickname           string     `gorm:"size:128"               json:"nickname"`
 	QQ                 string     `gorm:"size:20"                json:"qq"`
 	DiscordID          string     `gorm:"size:20"                json:"discord_id"`
-	Avatar             string     `gorm:"size:512"               json:"avatar"`
 	Status             int8       `gorm:"default:1"              json:"status"` // 1:正常 0:禁用
 	Role               string     `gorm:"size:32;default:'user'" json:"role"`
 	PrimaryCharacterID int64      `gorm:"default:0"              json:"primary_character_id"` // 主人物 EVE Character ID

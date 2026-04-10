@@ -8,16 +8,17 @@ import (
 func TestNewUserListItem(t *testing.T) {
 	t.Run("omits legacy role field from json", func(t *testing.T) {
 		item := NewUserListItem(User{
-			BaseModel: BaseModel{ID: 7},
-			Nickname:  "Capsuleer",
-			Role:      RoleGuest,
-		}, []string{RoleSuperAdmin, RoleAdmin}, []UserListCharacter{{
-			CharacterID:   9001,
-			CharacterName: "Amiya Prime",
-			PortraitURL:   "portrait.png",
-			TotalSP:       123456,
-			TokenInvalid:  true,
-		}})
+			BaseModel:          BaseModel{ID: 7},
+			Nickname:           "Capsuleer",
+			Role:               RoleGuest,
+			PrimaryCharacterID: 9001,
+		}, []string{RoleSuperAdmin, RoleAdmin}, []UserListCharacter{
+			NewUserListCharacter(EveCharacter{
+				CharacterID:   9001,
+				CharacterName: "Amiya Prime",
+				TokenInvalid:  true,
+			}, 123456),
+		})
 
 		payload, err := json.Marshal(item)
 		if err != nil {
@@ -31,6 +32,12 @@ func TestNewUserListItem(t *testing.T) {
 
 		if _, exists := got["role"]; exists {
 			t.Fatalf("expected user list payload to omit legacy role field, got %v", got["role"])
+		}
+		if _, exists := got["avatar"]; exists {
+			t.Fatalf("expected user list payload to omit avatar, got %#v", got["avatar"])
+		}
+		if got["primary_character_id"] != float64(9001) {
+			t.Fatalf("expected primary_character_id to be serialized, got %#v", got["primary_character_id"])
 		}
 
 		rawRoles, ok := got["roles"].([]any)
@@ -55,6 +62,9 @@ func TestNewUserListItem(t *testing.T) {
 		}
 		if firstCharacter["character_id"] != float64(9001) {
 			t.Fatalf("unexpected character id payload: %#v", firstCharacter)
+		}
+		if _, exists := firstCharacter["portrait_url"]; exists {
+			t.Fatalf("expected character payload to omit portrait_url, got %#v", firstCharacter["portrait_url"])
 		}
 		if firstCharacter["total_sp"] != float64(123456) {
 			t.Fatalf("unexpected character total_sp payload: %#v", firstCharacter)

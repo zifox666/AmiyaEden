@@ -34,7 +34,7 @@
               >
                 <div class="flex items-center gap-2">
                   <img
-                    :src="c.portrait_url"
+                    :src="buildEveCharacterPortraitUrl(c.character_id, 24)"
                     :alt="c.character_name"
                     class="w-6 h-6 rounded-full object-cover"
                   />
@@ -77,6 +77,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { fetchMyCharacters } from '@/api/auth'
   import { joinFleet } from '@/api/fleet'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
 
   defineOptions({ name: 'JoinFleet' })
 

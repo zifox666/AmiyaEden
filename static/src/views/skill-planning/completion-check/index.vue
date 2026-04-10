@@ -86,7 +86,10 @@
             <template #title>
               <div class="character-header">
                 <div class="character-header__identity">
-                  <ElAvatar :src="character.portrait_url" :size="34" />
+                  <ElAvatar
+                    :src="buildEveCharacterPortraitUrl(character.character_id, 34)"
+                    :size="34"
+                  />
                   <div>
                     <div class="character-header__name">{{ character.character_name }}</div>
                     <div class="character-header__meta">
@@ -252,7 +255,10 @@
             class="character-option"
           >
             <div class="character-option__content">
-              <ElAvatar :src="character.portrait_url" :size="32" />
+              <ElAvatar
+                :src="buildEveCharacterPortraitUrl(character.character_id, 32)"
+                :size="32"
+              />
               <span>{{ character.character_name }}</span>
             </div>
           </ElCheckbox>
@@ -315,6 +321,7 @@
   import { ElMessage } from 'element-plus'
   import ArtCopyButton from '@/components/core/forms/art-copy-button/index.vue'
   import { fetchMyCharacters } from '@/api/auth'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
   import {
     fetchSkillPlanCheckSelection,
     fetchSkillPlanCheckPlanSelection,

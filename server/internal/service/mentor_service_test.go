@@ -2,6 +2,7 @@ package service
 
 import (
 	"amiya-eden/internal/model"
+	"encoding/json"
 	"testing"
 	"time"
 )
@@ -57,7 +58,6 @@ func TestBuildMentorCandidateIncludesContact(t *testing.T) {
 	primaryChar := model.EveCharacter{
 		CharacterID:   777,
 		CharacterName: "Helpful Mentor",
-		PortraitURL:   "https://example.com/portrait.png",
 	}
 
 	got := buildMentorCandidate(user, primaryChar, 3)
@@ -70,6 +70,17 @@ func TestBuildMentorCandidateIncludesContact(t *testing.T) {
 	}
 	if got.ActiveMenteeCount != 3 {
 		t.Fatalf("expected active mentee count to be preserved, got %d", got.ActiveMenteeCount)
+	}
+	payload, err := json.Marshal(got)
+	if err != nil {
+		t.Fatalf("marshal mentor candidate: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(payload, &raw); err != nil {
+		t.Fatalf("unmarshal mentor candidate: %v", err)
+	}
+	if _, exists := raw["mentor_portrait_url"]; exists {
+		t.Fatalf("expected mentor candidate to omit mentor_portrait_url, got %#v", raw["mentor_portrait_url"])
 	}
 }
 
@@ -98,12 +109,10 @@ func TestBuildMentorRelationshipViewIncludesMentorContact(t *testing.T) {
 	mentorChar := model.EveCharacter{
 		CharacterID:   91,
 		CharacterName: "Helpful Mentor",
-		PortraitURL:   "https://example.com/mentor.png",
 	}
 	menteeChar := model.EveCharacter{
 		CharacterID:   71,
 		CharacterName: "Curious Mentee",
-		PortraitURL:   "https://example.com/mentee.png",
 	}
 
 	got := buildMentorRelationshipView(rel, mentorUser, menteeUser, mentorChar, menteeChar)
@@ -116,5 +125,19 @@ func TestBuildMentorRelationshipViewIncludesMentorContact(t *testing.T) {
 	}
 	if got.MentorCharacterName != "Helpful Mentor" {
 		t.Fatalf("expected mentor name to be preserved, got %q", got.MentorCharacterName)
+	}
+	payload, err := json.Marshal(got)
+	if err != nil {
+		t.Fatalf("marshal mentor relationship view: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(payload, &raw); err != nil {
+		t.Fatalf("unmarshal mentor relationship view: %v", err)
+	}
+	if _, exists := raw["mentor_portrait_url"]; exists {
+		t.Fatalf("expected relationship view to omit mentor_portrait_url, got %#v", raw["mentor_portrait_url"])
+	}
+	if _, exists := raw["mentee_portrait_url"]; exists {
+		t.Fatalf("expected relationship view to omit mentee_portrait_url, got %#v", raw["mentee_portrait_url"])
 	}
 }

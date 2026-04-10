@@ -175,17 +175,33 @@ func autoMigrate(db *gorm.DB) {
 }
 
 // dropObsoleteSchema 删除历史遗留的已被移除的列和表
+type obsoleteColumnDrop struct {
+	table string
+	col   string
+}
+
+func obsoleteColumnDrops() []obsoleteColumnDrop {
+	return []obsoleteColumnDrop{
+		{table: "fleet_config_fitting", col: "eft"},
+		{table: "fleet_config_fitting", col: "ship_name"},
+		{table: "user", col: "avatar"},
+		{table: "eve_character", col: "portrait_url"},
+		{table: "hall_of_fame_card", col: "avatar"},
+	}
+}
+
+func obsoleteTables() []string {
+	return []string{
+		"shop_lottery_record",
+		"shop_lottery_prize",
+		"shop_lottery_activity",
+		"srp_payout_mail_log",
+	}
+}
+
 func dropObsoleteSchema(db *gorm.DB) {
 	migrator := db.Migrator()
-	type colDrop struct {
-		table string
-		col   string
-	}
-	drops := []colDrop{
-		{"fleet_config_fitting", "eft"},
-		{"fleet_config_fitting", "ship_name"},
-	}
-	for _, d := range drops {
+	for _, d := range obsoleteColumnDrops() {
 		if migrator.HasColumn(d.table, d.col) {
 			if err := migrator.DropColumn(d.table, d.col); err != nil {
 				global.Logger.Warn("删除旧列失败", zap.String("table", d.table), zap.String("col", d.col), zap.Error(err))
@@ -195,13 +211,7 @@ func dropObsoleteSchema(db *gorm.DB) {
 		}
 	}
 
-	obsoleteTables := []string{
-		"shop_lottery_record",
-		"shop_lottery_prize",
-		"shop_lottery_activity",
-		"srp_payout_mail_log",
-	}
-	for _, table := range obsoleteTables {
+	for _, table := range obsoleteTables() {
 		if migrator.HasTable(table) {
 			if err := migrator.DropTable(table); err != nil {
 				global.Logger.Warn("删除旧表失败", zap.String("table", table), zap.Error(err))

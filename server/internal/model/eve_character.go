@@ -1,13 +1,14 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 // EveCharacter EVE 人物模型，一个 User 可绑定多个人物
 type EveCharacter struct {
 	BaseModel
 	CharacterID   int64     `gorm:"uniqueIndex;not null"   json:"character_id"`
 	CharacterName string    `gorm:"size:128;not null"      json:"character_name"`
-	PortraitURL   string    `gorm:"size:512"               json:"portrait_url"`
 	UserID        uint      `gorm:"not null;index"         json:"user_id"`
 	AccessToken   string    `gorm:"type:text"              json:"-"`
 	RefreshToken  string    `gorm:"type:text"              json:"-"`

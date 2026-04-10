@@ -491,7 +491,6 @@ func buildCaptainPlayerListItems(
 			PlayerCharacterID:     characterID,
 			PlayerCharacterName:   char.CharacterName,
 			PlayerNickname:        user.Nickname,
-			PlayerPortraitURL:     char.PortraitURL,
 			StartedAt:             row.StartedAt,
 			EndedAt:               row.EndedAt,
 			AttributedBountyTotal: bountyTotal,

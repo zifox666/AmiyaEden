@@ -27,3 +27,17 @@ func TestCustomIndexStatementsIncludeActiveAffiliationUniqueness(t *testing.T) {
 		t.Fatalf("expected active affiliation uniqueness statement, got %v", stmts)
 	}
 }
+
+func TestObsoleteColumnDropsIncludeLegacyPortraitColumns(t *testing.T) {
+	drops := obsoleteColumnDrops()
+	joined := make([]string, 0, len(drops))
+	for _, drop := range drops {
+		joined = append(joined, drop.table+"."+drop.col)
+	}
+
+	for _, expected := range []string{"user.avatar", "eve_character.portrait_url", "hall_of_fame_card.avatar"} {
+		if !strings.Contains(strings.Join(joined, "\n"), expected) {
+			t.Fatalf("expected obsolete column drop %q, got %v", expected, joined)
+		}
+	}
+}

@@ -23,7 +23,6 @@ type NewbroCaptainCandidate struct {
 	CaptainCharacterID   int64      `json:"captain_character_id"`
 	CaptainCharacterName string     `json:"captain_character_name"`
 	CaptainNickname      string     `json:"captain_nickname"`
-	CaptainPortraitURL   string     `json:"captain_portrait_url"`
 	ActiveNewbroCount    int64      `json:"active_newbro_count"`
 	LastOnlineAt         *time.Time `json:"last_online_at"`
 }
@@ -33,7 +32,6 @@ type NewbroAffiliationSummary struct {
 	CaptainUserID        uint       `json:"captain_user_id"`
 	CaptainCharacterID   int64      `json:"captain_character_id"`
 	CaptainCharacterName string     `json:"captain_character_name"`
-	CaptainPortraitURL   string     `json:"captain_portrait_url"`
 	StartedAt            time.Time  `json:"started_at"`
 	EndedAt              *time.Time `json:"ended_at"`
 }
@@ -67,7 +65,6 @@ type CaptainEligiblePlayerListItem struct {
 	PlayerCharacterID   int64                                    `json:"player_character_id"`
 	PlayerCharacterName string                                   `json:"player_character_name"`
 	PlayerNickname      string                                   `json:"player_nickname"`
-	PlayerPortraitURL   string                                   `json:"player_portrait_url"`
 	CurrentAffiliation  *CaptainEligiblePlayerCurrentAffiliation `json:"current_affiliation"`
 }
 
@@ -87,7 +84,6 @@ type CaptainPlayerListItem struct {
 	PlayerCharacterID     int64      `json:"player_character_id"`
 	PlayerCharacterName   string     `json:"player_character_name"`
 	PlayerNickname        string     `json:"player_nickname"`
-	PlayerPortraitURL     string     `json:"player_portrait_url"`
 	StartedAt             time.Time  `json:"started_at"`
 	EndedAt               *time.Time `json:"ended_at"`
 	AttributedBountyTotal float64    `json:"attributed_bounty_total"`
@@ -324,7 +320,6 @@ func (s *NewbroAffiliationService) ListCaptainCandidates(userID uint) ([]NewbroC
 			CaptainCharacterID:   primaryChar.CharacterID,
 			CaptainCharacterName: primaryChar.CharacterName,
 			CaptainNickname:      user.Nickname,
-			CaptainPortraitURL:   primaryChar.PortraitURL,
 			ActiveNewbroCount:    activeCounts[user.ID],
 			LastOnlineAt:         user.LastLoginAt,
 		})
@@ -593,7 +588,6 @@ func (s *NewbroAffiliationService) ListCaptainEligiblePlayers(
 			PlayerCharacterID:   char.CharacterID,
 			PlayerCharacterName: char.CharacterName,
 			PlayerNickname:      user.Nickname,
-			PlayerPortraitURL:   char.PortraitURL,
 		}
 		if currentAffiliation, ok := activeAffByPlayer[user.ID]; ok {
 			profile := currentCaptainProfiles[currentAffiliation.CaptainUserID]
@@ -663,7 +657,6 @@ func buildNewbroAffiliationSummary(
 		CaptainUserID:        row.CaptainUserID,
 		CaptainCharacterID:   char.CharacterID,
 		CaptainCharacterName: char.CharacterName,
-		CaptainPortraitURL:   char.PortraitURL,
 		StartedAt:            row.StartedAt,
 		EndedAt:              row.EndedAt,
 	}

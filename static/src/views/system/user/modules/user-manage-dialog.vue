@@ -9,7 +9,10 @@
     <ElForm ref="formRef" :model="form" :rules="rules" label-position="top" class="grid gap-4">
       <ElFormItem :label="$t('common.user')">
         <div class="flex items-center gap-2">
-          <ElAvatar :size="32" :src="userData?.avatar" />
+          <ElAvatar
+            :size="32"
+            :src="buildEveCharacterPortraitUrl(userData?.primary_character_id ?? 0, 32)"
+          />
           <span>{{ userData?.nickname || $t('userAdmin.unnamed') }}</span>
         </div>
       </ElFormItem>
@@ -105,6 +108,7 @@
     validateQQInput,
     type UserManageDialogValidationError
   } from './user-manage-dialog.helpers'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
 
   interface Props {
     visible: boolean

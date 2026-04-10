@@ -45,9 +45,23 @@ func TestMeHandlerGetMeAllowsInvalidPrimaryCharacterTokenForRefreshFlow(t *testi
 	if err := json.Unmarshal(result.Data, &payload); err != nil {
 		t.Fatalf("decode payload: %v", err)
 	}
+	userPayload, ok := payload["user"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected user payload object, got %#v", payload["user"])
+	}
+	if _, exists := userPayload["avatar"]; exists {
+		t.Fatalf("expected user payload to omit avatar, got %#v", userPayload["avatar"])
+	}
 	characters, ok := payload["characters"].([]any)
 	if !ok || len(characters) != 2 {
 		t.Fatalf("expected two characters in payload, got %#v", payload["characters"])
+	}
+	firstCharacter, ok := characters[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected first character payload object, got %#v", characters[0])
+	}
+	if _, exists := firstCharacter["portrait_url"]; exists {
+		t.Fatalf("expected first character payload to omit portrait_url, got %#v", firstCharacter["portrait_url"])
 	}
 }
 
@@ -86,6 +100,13 @@ func TestMeHandlerGetMeReturnsCharacterRestrictionToggleWhenPrimaryIsHealthy(t *
 	characters, ok := payload["characters"].([]any)
 	if !ok || len(characters) != 2 {
 		t.Fatalf("expected two characters in payload, got %#v", payload["characters"])
+	}
+	secondCharacter, ok := characters[1].(map[string]any)
+	if !ok {
+		t.Fatalf("expected second character payload object, got %#v", characters[1])
+	}
+	if _, exists := secondCharacter["portrait_url"]; exists {
+		t.Fatalf("expected second character payload to omit portrait_url, got %#v", secondCharacter["portrait_url"])
 	}
 }
 
@@ -185,14 +206,12 @@ func seedMeHandlerUser(t *testing.T, db *gorm.DB, primaryTokenInvalid bool) {
 		{
 			CharacterID:   9001,
 			CharacterName: "Amiya Prime",
-			PortraitURL:   "portrait.png",
 			UserID:        user.ID,
 			TokenInvalid:  primaryTokenInvalid,
 		},
 		{
 			CharacterID:   9002,
 			CharacterName: "Amiya Alt",
-			PortraitURL:   "portrait-alt.png",
 			UserID:        user.ID,
 			TokenInvalid:  true,
 		},

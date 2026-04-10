@@ -67,7 +67,6 @@ source_of_truth:
 - `nickname`
 - `qq`
 - `discord_id`
-- `avatar`
 - `status`
 - `role`
 - `primary_character_id`
@@ -80,6 +79,7 @@ source_of_truth:
 - 当前产品认证入口是 EVE SSO，不是账号密码
 - `qq` 与 `discord_id` 是当前资料补全与唯一性校验的一部分
 - `primary_character_id` 指向用户当前主人物的 EVE `character_id`
+- 用户头像 URL 不再持久化，接口与前端都在读取时根据 `primary_character_id` 推导
 - `role` 仍然保留，但它不是当前 RBAC 的权威来源
 
 ### `eve_character`
@@ -90,7 +90,6 @@ source_of_truth:
 
 - `character_id`
 - `character_name`
-- `portrait_url`
 - `user_id`
 - `access_token`
 - `refresh_token`
@@ -107,6 +106,7 @@ source_of_truth:
 
 - 一个 `user` 可以绑定多个 `eve_character`
 - `user.primary_character_id` 记录主人物的 EVE `character_id`
+- 人物头像 URL 不再持久化，接口与前端都在读取时根据 `character_id` 推导
 - `fuxi_legion_tenure_days` 是从 `character_corporation_history` 推导出的缓存字段，不应再视为 request-time ESI 读取结果
 
 ### `character_corporation_history`

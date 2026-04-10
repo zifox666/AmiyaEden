@@ -30,7 +30,6 @@ type HallOfFameCard struct {
 	Title             string  `gorm:"size:512"                  json:"title"`
 	Description       string  `gorm:"type:text"                 json:"description"`
 	CharacterID       int64   `gorm:"default:0;index"           json:"character_id"` // EVE character ID for portrait URL
-	Avatar            string  `gorm:"type:text"                 json:"-"`            // legacy portrait storage, kept only for migration fallback
 	BadgeImage        string  `gorm:"type:text"                 json:"badge_image"`
 	PosX              float64 `gorm:"default:10"                json:"pos_x"`  // 0-100 percentage
 	PosY              float64 `gorm:"default:10"                json:"pos_y"`  // 0-100 percentage

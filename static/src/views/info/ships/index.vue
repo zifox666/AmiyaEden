@@ -18,7 +18,7 @@
               :label="char.character_name"
             >
               <div class="flex items-center gap-2">
-                <ElAvatar :src="char.portrait_url" :size="24" />
+                <ElAvatar :src="buildEveCharacterPortraitUrl(char.character_id, 24)" :size="24" />
                 <span>{{ char.character_name }}</span>
               </div>
             </ElOption>
@@ -176,6 +176,7 @@
   import { fetchMyCharacters } from '@/api/auth'
   import { fetchInfoShips } from '@/api/eve-info'
   import { useUserStore } from '@/store/modules/user'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
 
   defineOptions({ name: 'EveInfoShips' })
 

@@ -39,7 +39,6 @@ eve_sso:
   esi_api_prefix: "/latest"               # ESI API 前缀
   sso_authorize_url: "https://login.eveonline.com/v2/oauth/authorize" # EVE SSO 授权地址
   sso_token_url: "https://login.eveonline.com/v2/oauth/token"          # EVE SSO Token 地址
-  eve_images_base_url: "https://images.evetech.net"                    # EVE 图片服务根地址
 
 sde:
   api_key: "change_me_sde_api_key"  # 用于保护 SDE 数据查询接口的 API Key

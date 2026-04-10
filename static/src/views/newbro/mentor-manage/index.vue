@@ -45,7 +45,10 @@
             <ElTableColumn :label="t('newbro.mentorManage.mentorColumn')" min-width="240">
               <template #default="{ row }">
                 <div class="flex items-center gap-3">
-                  <ElAvatar :src="row.mentor_portrait_url" :size="40" />
+                  <ElAvatar
+                    :src="buildEveCharacterPortraitUrl(row.mentor_character_id, 40)"
+                    :size="40"
+                  />
                   <div>
                     <div class="font-medium">{{ row.mentor_character_name }}</div>
                     <div class="text-sm text-gray-500">
@@ -59,7 +62,10 @@
             <ElTableColumn :label="t('newbro.mentorManage.menteeColumn')" min-width="240">
               <template #default="{ row }">
                 <div class="flex items-center gap-3">
-                  <ElAvatar :src="row.mentee_portrait_url" :size="40" />
+                  <ElAvatar
+                    :src="buildEveCharacterPortraitUrl(row.mentee_character_id, 40)"
+                    :size="40"
+                  />
                   <div>
                     <div class="font-medium">{{ row.mentee_character_name }}</div>
                     <div class="text-sm text-gray-500">
@@ -187,6 +193,7 @@
     fetchAdminMentorRewardDistributions,
     revokeMentorRelationship
   } from '@/api/mentor'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
   import { useEnterSearch } from '@/hooks/core/useEnterSearch'
   import { useNewbroFormatters } from '@/hooks/newbro/useNewbroFormatters'
 

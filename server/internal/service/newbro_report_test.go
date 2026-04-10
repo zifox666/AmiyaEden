@@ -3,6 +3,7 @@ package service
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -29,8 +30,8 @@ func TestBuildCaptainPlayerListItemsUsesCurrentPrimaryCharacterAndNickname(t *te
 		},
 	}
 	chars := map[int64]model.EveCharacter{
-		9001: {CharacterID: 9001, CharacterName: "Old Main", PortraitURL: "old.png"},
-		9002: {CharacterID: 9002, CharacterName: "Current Main", PortraitURL: "current.png"},
+		9001: {CharacterID: 9001, CharacterName: "Old Main"},
+		9002: {CharacterID: 9002, CharacterName: "Current Main"},
 	}
 
 	items, err := buildCaptainPlayerListItems(rows, users, chars, 3001, func(captainUserID, playerUserID uint) (float64, error) {
@@ -56,8 +57,16 @@ func TestBuildCaptainPlayerListItemsUsesCurrentPrimaryCharacterAndNickname(t *te
 	if item.PlayerCharacterName != "Current Main" {
 		t.Fatalf("expected current primary character name, got %q", item.PlayerCharacterName)
 	}
-	if item.PlayerPortraitURL != "current.png" {
-		t.Fatalf("expected current primary portrait URL, got %q", item.PlayerPortraitURL)
+	payload, err := json.Marshal(item)
+	if err != nil {
+		t.Fatalf("marshal captain player item: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(payload, &raw); err != nil {
+		t.Fatalf("unmarshal captain player item: %v", err)
+	}
+	if _, exists := raw["player_portrait_url"]; exists {
+		t.Fatalf("expected captain player item to omit player_portrait_url, got %#v", raw["player_portrait_url"])
 	}
 	if item.PlayerNickname != "Little Bee" {
 		t.Fatalf("expected nickname to be returned, got %q", item.PlayerNickname)

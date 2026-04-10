@@ -51,7 +51,10 @@
 
         <div v-else class="flex items-center justify-between gap-4 flex-wrap">
           <div class="flex items-center gap-3">
-            <ElAvatar :src="currentRelationship.mentor_portrait_url" :size="48" />
+            <ElAvatar
+              :src="buildEveCharacterPortraitUrl(currentRelationship.mentor_character_id, 48)"
+              :size="48"
+            />
             <div>
               <div class="font-medium">{{ currentRelationship.mentor_character_name }}</div>
               <div class="text-sm text-gray-500">
@@ -97,7 +100,10 @@
         <ElCard v-for="mentor in mentors" :key="mentor.mentor_user_id" shadow="hover">
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 min-w-0">
-              <ElAvatar :src="mentor.mentor_portrait_url" :size="44" />
+              <ElAvatar
+                :src="buildEveCharacterPortraitUrl(mentor.mentor_character_id, 44)"
+                :size="44"
+              />
               <div class="min-w-0">
                 <div class="font-medium truncate">{{ mentor.mentor_character_name }}</div>
                 <div class="text-sm text-gray-500 truncate">
@@ -144,6 +150,7 @@
   import { applyForMentor, fetchMentorCandidates, fetchMyMentorStatus } from '@/api/mentor'
   import { useNewbroFormatters } from '@/hooks/newbro/useNewbroFormatters'
   import { useMenuStore } from '@/store/modules/menu'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
   import MentorResponsibilitiesCard from '../components/mentor-responsibilities-card.vue'
 
   defineOptions({ name: 'NewbroSelectMentor' })

@@ -18,7 +18,7 @@
               :label="char.character_name"
             >
               <div class="flex items-center gap-2">
-                <ElAvatar :src="char.portrait_url" :size="24" />
+                <ElAvatar :src="buildEveCharacterPortraitUrl(char.character_id, 24)" :size="24" />
                 <span>{{ char.character_name }}</span>
               </div>
             </ElOption>
@@ -79,6 +79,7 @@
   import { fetchMyCharacters } from '@/api/auth'
   import { fetchInfoWallet } from '@/api/eve-info'
   import { formatIskPlain } from '@/utils/common'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
   import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'EveInfoWallet' })

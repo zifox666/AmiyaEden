@@ -46,7 +46,6 @@ type MentorCandidate struct {
 	MentorNickname      string     `json:"mentor_nickname"`
 	MentorQQ            string     `json:"qq"`
 	MentorDiscordID     string     `json:"discord_id"`
-	MentorPortraitURL   string     `json:"mentor_portrait_url"`
 	ActiveMenteeCount   int64      `json:"active_mentee_count"`
 	LastOnlineAt        *time.Time `json:"last_online_at"`
 }
@@ -59,7 +58,6 @@ func buildMentorCandidate(user model.User, primaryChar model.EveCharacter, activ
 		MentorNickname:      user.Nickname,
 		MentorQQ:            user.QQ,
 		MentorDiscordID:     user.DiscordID,
-		MentorPortraitURL:   primaryChar.PortraitURL,
 		ActiveMenteeCount:   activeMenteeCount,
 		LastOnlineAt:        user.LastLoginAt,
 	}
@@ -85,11 +83,9 @@ type MentorRelationshipView struct {
 	MentorNickname      string     `json:"mentor_nickname"`
 	MentorQQ            string     `json:"mentor_qq"`
 	MentorDiscordID     string     `json:"mentor_discord_id"`
-	MentorPortraitURL   string     `json:"mentor_portrait_url"`
 	MenteeCharacterID   int64      `json:"mentee_character_id"`
 	MenteeCharacterName string     `json:"mentee_character_name"`
 	MenteeNickname      string     `json:"mentee_nickname"`
-	MenteePortraitURL   string     `json:"mentee_portrait_url"`
 }
 
 func buildMentorRelationshipView(
@@ -113,11 +109,9 @@ func buildMentorRelationshipView(
 		MentorNickname:      mentorUser.Nickname,
 		MentorQQ:            mentorUser.QQ,
 		MentorDiscordID:     mentorUser.DiscordID,
-		MentorPortraitURL:   mentorChar.PortraitURL,
 		MenteeCharacterID:   menteeChar.CharacterID,
 		MenteeCharacterName: menteeChar.CharacterName,
 		MenteeNickname:      menteeUser.Nickname,
-		MenteePortraitURL:   menteeChar.PortraitURL,
 	}
 }
 
@@ -127,7 +121,6 @@ type MentorMenteeListItem struct {
 	MenteeCharacterID       int64      `json:"mentee_character_id"`
 	MenteeCharacterName     string     `json:"mentee_character_name"`
 	MenteeNickname          string     `json:"mentee_nickname"`
-	MenteePortraitURL       string     `json:"mentee_portrait_url"`
 	MenteeQQ                string     `json:"mentee_qq"`
 	MenteeDiscordID         string     `json:"mentee_discord_id"`
 	MenteeTotalSP           int64      `json:"mentee_total_sp"`
@@ -524,7 +517,6 @@ func (s *MentorService) enrichMenteeListItems(rows []model.MentorMenteeRelations
 			MenteeCharacterID:       primaryChar.CharacterID,
 			MenteeCharacterName:     primaryChar.CharacterName,
 			MenteeNickname:          user.Nickname,
-			MenteePortraitURL:       primaryChar.PortraitURL,
 			MenteeQQ:                user.QQ,
 			MenteeDiscordID:         user.DiscordID,
 			MenteeTotalSP:           totalSPByUserID[row.MenteeUserID],

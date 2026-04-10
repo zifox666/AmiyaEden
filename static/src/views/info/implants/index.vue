@@ -18,7 +18,7 @@
               :label="char.character_name"
             >
               <div class="flex items-center gap-2">
-                <ElAvatar :src="char.portrait_url" :size="24" />
+                <ElAvatar :src="buildEveCharacterPortraitUrl(char.character_id, 24)" :size="24" />
                 <span>{{ char.character_name }}</span>
               </div>
             </ElOption>
@@ -158,13 +158,14 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, computed, onMounted, h } from 'vue'
   import { Refresh, HomeFilled, Location, Connection } from '@element-plus/icons-vue'
   import { ElCard, ElSelect, ElOption, ElAvatar, ElButton, ElEmpty, ElTag } from 'element-plus'
   import { fetchMyCharacters } from '@/api/auth'
   import { fetchInfoImplants } from '@/api/eve-info'
   import { formatTime } from '@utils/common'
   import { useUserStore } from '@/store/modules/user'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
 
   // Cpu icon (Element Plus doesn't have Cpu, use Monitor as substitute)
   const Cpu = {
@@ -182,9 +183,6 @@
       ])
     }
   }
-
-  import { h } from 'vue'
-
   defineOptions({ name: 'EveInfoImplants' })
 
   const userStore = useUserStore()

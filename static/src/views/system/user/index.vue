@@ -77,6 +77,7 @@
   import { formatTime } from '@utils/common'
   import { fetchGetUserList, fetchDeleteUser, fetchImpersonateUser } from '@/api/system-manage'
   import { fetchGetUserInfo } from '@/api/auth'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
   import {
     fetchCharacterESIRestrictionConfig,
     updateCharacterESIRestrictionConfig
@@ -240,7 +241,7 @@
         return h('div', { key: character.character_id, class: 'user-characters-panel__row' }, [
           h('div', { class: 'user-characters-panel__avatar-cell' }, [
             h(ElAvatar, {
-              src: character.portrait_url,
+              src: buildEveCharacterPortraitUrl(character.character_id, 30),
               size: 30,
               class: 'user-character-avatar'
             })
@@ -319,7 +320,7 @@
             return h('div', { class: 'flex items-center gap-2' }, [
               h(ElAvatar, {
                 size: 36,
-                src: row.avatar,
+                src: buildEveCharacterPortraitUrl(row.primary_character_id, 36),
                 class: 'flex-shrink-0'
               }),
               h('div', {}, [

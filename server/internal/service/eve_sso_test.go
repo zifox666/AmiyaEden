@@ -88,16 +88,13 @@ func TestGetRegisteredScopesReturnsCopy(t *testing.T) {
 
 func TestBuildDefaultSSOUser(t *testing.T) {
 	now := time.Date(2026, time.March, 22, 10, 11, 12, 0, time.UTC)
-	user := buildDefaultSSOUser("https://example.com/avatar.png", 90000001, "127.0.0.1", now, model.RoleUser)
+	user := buildDefaultSSOUser(90000001, "127.0.0.1", now, model.RoleUser)
 
 	if user.Role != model.RoleUser {
 		t.Fatalf("expected role %q, got %q", model.RoleUser, user.Role)
 	}
 	if user.PrimaryCharacterID != 90000001 {
 		t.Fatalf("expected primary character 90000001, got %d", user.PrimaryCharacterID)
-	}
-	if user.Avatar != "https://example.com/avatar.png" {
-		t.Fatalf("expected avatar to be copied, got %q", user.Avatar)
 	}
 	if user.LastLoginIP != "127.0.0.1" {
 		t.Fatalf("expected last login ip to be copied, got %q", user.LastLoginIP)
@@ -112,7 +109,7 @@ func TestBuildDefaultSSOUser(t *testing.T) {
 
 func TestBuildDefaultSSOUserFallsBackToGuestRole(t *testing.T) {
 	now := time.Date(2026, time.March, 22, 10, 11, 12, 0, time.UTC)
-	user := buildDefaultSSOUser("https://example.com/avatar.png", 90000001, "127.0.0.1", now, "")
+	user := buildDefaultSSOUser(90000001, "127.0.0.1", now, "")
 
 	if user.Role != model.RoleGuest {
 		t.Fatalf("expected fallback role %q, got %q", model.RoleGuest, user.Role)

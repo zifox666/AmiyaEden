@@ -164,7 +164,6 @@ func NewEveSSOService() *EveSSOService {
 			cfg.CallbackURL,
 			cfg.SSOAuthorizeURL,
 			cfg.SSOTokenURL,
-			cfg.EVEImagesBaseURL,
 		),
 		esiClient: esi.NewClientWithConfig(cfg.ESIBaseURL, cfg.ESIAPIPrefix),
 	}
@@ -199,20 +198,20 @@ func resolveInitialSSORole(corporationID int64, allowCorporations []int64) strin
 	return model.RoleGuest
 }
 
-func buildDefaultSSOUser(portraitURL string, primaryCharacterID int64, clientIP string, now time.Time, role string) *model.User {
+func buildDefaultSSOUser(primaryCharacterID int64, clientIP string, now time.Time, role string) *model.User {
 	if role == "" {
 		role = model.RoleGuest
 	}
 
-	return &model.User{
+	user := &model.User{
 		Nickname:           "",
-		Avatar:             portraitURL,
 		Status:             1,
 		Role:               role,
 		PrimaryCharacterID: primaryCharacterID,
 		LastLoginAt:        &now,
 		LastLoginIP:        clientIP,
 	}
+	return user
 }
 
 func (s *EveSSOService) fetchCharacterAffiliation(ctx context.Context, characterID int64) (*characterAffiliationSnapshot, error) {
@@ -238,7 +237,7 @@ func (s *EveSSOService) resolveInitialSSOState(ctx context.Context, characterID 
 	return resolveInitialSSORole(affiliation.CorporationID, utils.GetAllowCorporations()), affiliation
 }
 
-func (s *EveSSOService) createDefaultSSOUser(ctx context.Context, portraitURL string, primaryCharacterID int64, clientIP string, now time.Time, initialRole string) (*model.User, error) {
+func (s *EveSSOService) createDefaultSSOUser(ctx context.Context, primaryCharacterID int64, clientIP string, now time.Time, initialRole string) (*model.User, error) {
 	finalRole := initialRole
 	for _, adminCharID := range global.Config.App.SuperAdmins {
 		if adminCharID == primaryCharacterID {
@@ -249,7 +248,7 @@ func (s *EveSSOService) createDefaultSSOUser(ctx context.Context, portraitURL st
 		}
 	}
 
-	user := buildDefaultSSOUser(portraitURL, primaryCharacterID, clientIP, now, finalRole)
+	user := buildDefaultSSOUser(primaryCharacterID, clientIP, now, finalRole)
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, err
 	}
@@ -405,7 +404,6 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 
 	tokenExpiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 	scopesStr := strings.Join(grantedScopes, " ")
-	portraitURL := s.eveClient.PortraitURL(characterID)
 	initialRole, affiliation := s.resolveInitialSSOState(ctx, characterID)
 
 	// 3. 查找或创建 EveCharacter
@@ -429,7 +427,6 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 			char = &model.EveCharacter{
 				CharacterID:   characterID,
 				CharacterName: claims.Name,
-				PortraitURL:   portraitURL,
 				UserID:        user.ID,
 				AccessToken:   tokenResp.AccessToken,
 				RefreshToken:  tokenResp.RefreshToken,
@@ -466,7 +463,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		}
 
 		// ── 登录流程：首次登录，创建新用户 + 新人物 ──
-		user, err := s.createDefaultSSOUser(ctx, portraitURL, characterID, clientIP, now, initialRole)
+		user, err := s.createDefaultSSOUser(ctx, characterID, clientIP, now, initialRole)
 		if err != nil {
 			return nil, err
 		}
@@ -474,7 +471,6 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		char = &model.EveCharacter{
 			CharacterID:   characterID,
 			CharacterName: claims.Name,
-			PortraitURL:   portraitURL,
 			UserID:        user.ID,
 			AccessToken:   tokenResp.AccessToken,
 			RefreshToken:  tokenResp.RefreshToken,
@@ -521,7 +517,6 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 				char.TokenExpiry = tokenExpiry
 				char.Scopes = scopesStr
 				char.CharacterName = claims.Name
-				char.PortraitURL = portraitURL
 				char.TokenInvalid = false
 				if err := s.charRepo.Update(char); err != nil {
 					return nil, err
@@ -567,7 +562,6 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		char.TokenExpiry = tokenExpiry
 		char.Scopes = scopesStr
 		char.CharacterName = claims.Name
-		char.PortraitURL = portraitURL
 		char.TokenInvalid = false
 		if err := s.charRepo.Update(char); err != nil {
 			return nil, err
@@ -593,7 +587,6 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	char.TokenExpiry = tokenExpiry
 	char.Scopes = scopesStr
 	char.CharacterName = claims.Name
-	char.PortraitURL = portraitURL
 	char.TokenInvalid = false
 	applyAffiliationToCharacter(char, affiliation)
 	if err := s.charRepo.Update(char); err != nil {
@@ -612,7 +605,7 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 		if affiliation == nil {
 			orphanInitialRole = resolveInitialSSORole(char.CorporationID, utils.GetAllowCorporations())
 		}
-		user, err = s.createDefaultSSOUser(ctx, portraitURL, characterID, clientIP, now, orphanInitialRole)
+		user, err = s.createDefaultSSOUser(ctx, characterID, clientIP, now, orphanInitialRole)
 		if err != nil {
 			return nil, err
 		}
@@ -633,8 +626,6 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 	if user.PrimaryCharacterID == 0 {
 		user.PrimaryCharacterID = characterID
 	}
-	// 同步头像为当前登录人物，但保留用户自行填写的昵称
-	user.Avatar = portraitURL
 	if err := s.userRepo.Update(user); err != nil {
 		return nil, err
 	}
@@ -805,7 +796,6 @@ func (s *EveSSOService) SetPrimaryCharacter(userID uint, characterID int64) erro
 	}
 
 	user.PrimaryCharacterID = characterID
-	user.Avatar = char.PortraitURL
 	return s.userRepo.Update(user)
 }
 
@@ -837,7 +827,6 @@ func (s *EveSSOService) UnbindCharacter(userID uint, characterID int64) error {
 		for _, c := range chars {
 			if c.CharacterID != characterID {
 				user.PrimaryCharacterID = c.CharacterID
-				user.Avatar = c.PortraitURL
 				break
 			}
 		}

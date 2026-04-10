@@ -5,8 +5,6 @@ import (
 	"amiya-eden/internal/repository"
 	"errors"
 	"math"
-	"regexp"
-	"strconv"
 )
 
 // HallOfFameService 名人堂业务逻辑层
@@ -93,7 +91,6 @@ func (s *HallOfFameService) GetTemple() (*TempleResponse, error) {
 	if cards == nil {
 		cards = []model.HallOfFameCard{}
 	}
-	normalizeHallOfFameCards(cards)
 	return &TempleResponse{Config: *cfg, Cards: cards}, nil
 }
 
@@ -108,7 +105,6 @@ func (s *HallOfFameService) ListAllCards() ([]model.HallOfFameCard, error) {
 	if cards == nil {
 		cards = []model.HallOfFameCard{}
 	}
-	normalizeHallOfFameCards(cards)
 	return cards, nil
 }
 
@@ -166,7 +162,6 @@ func (s *HallOfFameService) CreateCard(req *CreateCardRequest) (*model.HallOfFam
 		Title:             req.Title,
 		Description:       req.Description,
 		CharacterID:       req.CharacterID,
-		Avatar:            "",
 		BadgeImage:        req.BadgeImage,
 		PosX:              clampPercent(req.PosX),
 		PosY:              clampPercent(req.PosY),
@@ -242,7 +237,6 @@ func (s *HallOfFameService) UpdateCard(id uint, req *UpdateCardRequest) (*model.
 	if err != nil {
 		return nil, err
 	}
-	normalizeHallOfFameCard(nextCard)
 	return nextCard, nil
 }
 
@@ -309,7 +303,6 @@ func buildHallOfFameCardUpdateMap(req *UpdateCardRequest) (map[string]interface{
 	}
 	if req.CharacterID != nil {
 		updates["character_id"] = *req.CharacterID
-		updates["avatar"] = ""
 	}
 	if req.BadgeImage != nil {
 		updates["badge_image"] = *req.BadgeImage
@@ -346,36 +339,6 @@ func buildHallOfFameCardUpdateMap(req *UpdateCardRequest) (map[string]interface{
 	}
 
 	return updates, nil
-}
-
-var legacyHallOfFamePortraitPattern = regexp.MustCompile(`/characters/(\d+)/portrait`)
-
-func normalizeHallOfFameCards(cards []model.HallOfFameCard) {
-	for index := range cards {
-		normalizeHallOfFameCard(&cards[index])
-	}
-}
-
-func normalizeHallOfFameCard(card *model.HallOfFameCard) {
-	if card == nil {
-		return
-	}
-
-	if card.CharacterID > 0 || card.Avatar == "" {
-		return
-	}
-
-	match := legacyHallOfFamePortraitPattern.FindStringSubmatch(card.Avatar)
-	if len(match) != 2 {
-		return
-	}
-
-	characterID, err := strconv.ParseInt(match[1], 10, 64)
-	if err != nil {
-		return
-	}
-
-	card.CharacterID = characterID
 }
 
 func buildHallOfFameLayoutUpdates(requests []CardLayoutUpdateRequest) ([]model.CardLayoutUpdate, error) {

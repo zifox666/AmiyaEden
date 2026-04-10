@@ -148,7 +148,10 @@
             >
               <template #default="{ row }">
                 <div class="flex items-center gap-3">
-                  <ElAvatar :src="row.player_portrait_url" :size="40" />
+                  <ElAvatar
+                    :src="buildEveCharacterPortraitUrl(row.player_character_id, 40)"
+                    :size="40"
+                  />
                   <div>
                     <div class="font-medium">{{ row.player_character_name }}</div>
                     <div class="text-sm text-gray-500">
@@ -374,6 +377,7 @@
     fetchCaptainPlayers,
     fetchCaptainRewardSettlements
   } from '@/api/newbro'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
   import { useNewbroFormatters } from '@/hooks/newbro/useNewbroFormatters'
 
   defineOptions({ name: 'NewbroCaptainDashboard' })

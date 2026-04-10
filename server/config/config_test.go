@@ -18,19 +18,15 @@ func TestApplyDefaults(t *testing.T) {
 		if cfg.EveSSO.SSOTokenURL != DefaultSSOTokenURL {
 			t.Fatalf("expected SSOTokenURL %q, got %q", DefaultSSOTokenURL, cfg.EveSSO.SSOTokenURL)
 		}
-		if cfg.EveSSO.EVEImagesBaseURL != DefaultEVEImagesBaseURL {
-			t.Fatalf("expected EVEImagesBaseURL %q, got %q", DefaultEVEImagesBaseURL, cfg.EveSSO.EVEImagesBaseURL)
-		}
 	})
 
 	t.Run("eve endpoint explicit values are normalized", func(t *testing.T) {
 		cfg := &Config{
 			EveSSO: EveSSOConfig{
-				ESIBaseURL:       "https://esi.evetech.net///",
-				ESIAPIPrefix:     "latest/",
-				SSOAuthorizeURL:  "https://login.eveonline.com/v2/oauth/authorize/",
-				SSOTokenURL:      "https://login.eveonline.com/v2/oauth/token/",
-				EVEImagesBaseURL: "https://images.evetech.net/",
+				ESIBaseURL:      "https://esi.evetech.net///",
+				ESIAPIPrefix:    "latest/",
+				SSOAuthorizeURL: "https://login.eveonline.com/v2/oauth/authorize/",
+				SSOTokenURL:     "https://login.eveonline.com/v2/oauth/token/",
 			},
 		}
 		ApplyDefaults(cfg)
@@ -45,9 +41,6 @@ func TestApplyDefaults(t *testing.T) {
 		}
 		if cfg.EveSSO.SSOTokenURL != "https://login.eveonline.com/v2/oauth/token" {
 			t.Fatalf("expected normalized SSOTokenURL, got %q", cfg.EveSSO.SSOTokenURL)
-		}
-		if cfg.EveSSO.EVEImagesBaseURL != "https://images.evetech.net" {
-			t.Fatalf("expected normalized EVEImagesBaseURL, got %q", cfg.EveSSO.EVEImagesBaseURL)
 		}
 	})
 }

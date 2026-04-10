@@ -30,7 +30,15 @@
 
               <div v-else class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex items-center gap-3">
-                  <ElAvatar :src="state.current_affiliation.captain_portrait_url" :size="48" />
+                  <ElAvatar
+                    :src="
+                      buildEveCharacterPortraitUrl(
+                        state.current_affiliation.captain_character_id,
+                        48
+                      )
+                    "
+                    :size="48"
+                  />
                   <div>
                     <div class="font-medium">
                       {{ state.current_affiliation.captain_character_name }}
@@ -73,7 +81,10 @@
                 <ElCard v-for="captain in captains" :key="captain.captain_user_id" shadow="hover">
                   <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
-                      <ElAvatar :src="captain.captain_portrait_url" :size="44" />
+                      <ElAvatar
+                        :src="buildEveCharacterPortraitUrl(captain.captain_character_id, 44)"
+                        :size="44"
+                      />
                       <div>
                         <div class="font-medium">{{ captain.captain_character_name }}</div>
                         <div class="text-sm text-gray-500">
@@ -145,6 +156,7 @@
   import { useTable } from '@/hooks/core/useTable'
   import { useNewbroEligibility } from '@/hooks/newbro/useNewbroEligibility'
   import { useNewbroFormatters } from '@/hooks/newbro/useNewbroFormatters'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
 
   defineOptions({ name: 'NewbroSelectCaptain' })
 

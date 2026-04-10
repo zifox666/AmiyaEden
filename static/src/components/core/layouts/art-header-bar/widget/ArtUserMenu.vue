@@ -14,7 +14,7 @@
     <template #reference>
       <img
         class="size-8.5 mr-5 c-p rounded-full max-sm:w-6.5 max-sm:h-6.5 max-sm:mr-[16px]"
-        :src="userInfo.avatar || '@imgs/user/avatar.webp'"
+        :src="userAvatar || '@imgs/user/avatar.webp'"
         alt="avatar"
       />
     </template>
@@ -23,7 +23,7 @@
         <div class="flex-c pb-1 px-0">
           <img
             class="w-10 h-10 mr-3 ml-0 overflow-hidden rounded-full float-left"
-            :src="userInfo.avatar || '@imgs/user/avatar.webp'"
+            :src="userAvatar || '@imgs/user/avatar.webp'"
           />
           <div class="w-[calc(100%-60px)] h-full">
             <span class="block text-sm font-medium text-g-800 truncate">{{
@@ -53,6 +53,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'ArtUserMenu' })
@@ -63,6 +64,9 @@
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
   const userMenuPopover = ref()
+  const userAvatar = computed(() =>
+    buildEveCharacterPortraitUrl(userInfo.value.primaryCharacterId ?? 0)
+  )
 
   /**
    * 页面跳转

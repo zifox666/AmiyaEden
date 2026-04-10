@@ -1,9 +1,6 @@
 package service
 
-import (
-	"amiya-eden/internal/model"
-	"testing"
-)
+import "testing"
 
 func TestBuildHallOfFameCardUpdateMapOnlyIncludesProvidedFields(t *testing.T) {
 	name := "Hero Alpha"
@@ -25,8 +22,8 @@ func TestBuildHallOfFameCardUpdateMapOnlyIncludesProvidedFields(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	if len(updates) != 7 {
-		t.Fatalf("expected 7 fields, got %d (%v)", len(updates), updates)
+	if len(updates) != 6 {
+		t.Fatalf("expected 6 fields, got %d (%v)", len(updates), updates)
 	}
 
 	if updates["name"] != name {
@@ -41,8 +38,8 @@ func TestBuildHallOfFameCardUpdateMapOnlyIncludesProvidedFields(t *testing.T) {
 	if updates["character_id"] != characterID {
 		t.Fatalf("expected character_id %d, got %#v", characterID, updates["character_id"])
 	}
-	if updates["avatar"] != "" {
-		t.Fatalf("expected avatar to be cleared, got %#v", updates["avatar"])
+	if _, exists := updates["avatar"]; exists {
+		t.Fatalf("did not expect legacy avatar update, got %#v", updates["avatar"])
 	}
 	if updates["badge_image"] != badgeImage {
 		t.Fatalf("expected badge_image %q, got %#v", badgeImage, updates["badge_image"])
@@ -150,18 +147,6 @@ func TestBuildHallOfFameLayoutUpdatesClampsCoordinatesAndKeepsSize(t *testing.T)
 	}
 	if updates[0].PosY != 0 {
 		t.Fatalf("expected clamped pos_y 0, got %v", updates[0].PosY)
-	}
-}
-
-func TestNormalizeHallOfFameCardParsesLegacyPortraitURL(t *testing.T) {
-	card := &model.HallOfFameCard{
-		Avatar: "https://images.evetech.net/characters/1387156123/portrait",
-	}
-
-	normalizeHallOfFameCard(card)
-
-	if card.CharacterID != 1387156123 {
-		t.Fatalf("expected character id to be parsed from legacy avatar, got %d", card.CharacterID)
 	}
 }
 

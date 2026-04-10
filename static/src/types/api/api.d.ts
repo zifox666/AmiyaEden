@@ -88,7 +88,6 @@ declare namespace Api {
       id: number
       character_id: number
       character_name: string
-      portrait_url: string
       user_id: number
       scopes: string
       token_expiry: string
@@ -113,7 +112,6 @@ declare namespace Api {
         nickname: string
         qq: string
         discord_id: string
-        avatar: string
         status: number
         role: string
         primary_character_id: number
@@ -136,7 +134,6 @@ declare namespace Api {
       roles: string[]
       userId: number
       userName: string
-      avatar: string
       nickname: string
       qq: string
       discordId: string
@@ -168,7 +165,6 @@ declare namespace Api {
     interface UserListCharacter {
       character_id: number
       character_name: string
-      portrait_url: string
       total_sp: number
       token_invalid: boolean
     }
@@ -179,7 +175,7 @@ declare namespace Api {
       nickname: string
       qq: string
       discord_id: string
-      avatar: string
+      primary_character_id: number
       status: number // 1:正常 0:禁用
       roles: string[]
       characters: UserListCharacter[]
@@ -195,7 +191,6 @@ declare namespace Api {
       nickname: string
       qq: string
       discord_id: string
-      avatar: string
       status: number
       role: string
       primary_character_id: number
@@ -822,7 +817,6 @@ declare namespace Api {
     interface CompletionCharacter {
       character_id: number
       character_name: string
-      portrait_url: string
       completed_plans: number
       total_plans: number
       plans: CompletionPlan[]
@@ -1980,7 +1974,6 @@ declare namespace Api {
       captain_character_id: number
       captain_character_name: string
       captain_nickname: string
-      captain_portrait_url: string
       active_newbro_count: number
       last_online_at: string | null
     }
@@ -1990,7 +1983,6 @@ declare namespace Api {
       captain_user_id: number
       captain_character_id: number
       captain_character_name: string
-      captain_portrait_url: string
       started_at: string
       ended_at: string | null
     }
@@ -2036,7 +2028,6 @@ declare namespace Api {
       player_character_id: number
       player_character_name: string
       player_nickname: string
-      player_portrait_url: string
       started_at: string
       ended_at: string | null
       attributed_bounty_total: number
@@ -2058,7 +2049,6 @@ declare namespace Api {
       player_character_id: number
       player_character_name: string
       player_nickname: string
-      player_portrait_url: string
       current_affiliation: CaptainEligiblePlayerCurrentAffiliation | null
     }
 
@@ -2232,7 +2222,6 @@ declare namespace Api {
       mentor_nickname: string
       qq: string
       discord_id: string
-      mentor_portrait_url: string
       active_mentee_count: number
       last_online_at: string | null
     }
@@ -2253,11 +2242,9 @@ declare namespace Api {
       mentor_nickname: string
       mentor_qq: string
       mentor_discord_id: string
-      mentor_portrait_url: string
       mentee_character_id: number
       mentee_character_name: string
       mentee_nickname: string
-      mentee_portrait_url: string
     }
 
     interface MyStatusResponse {
@@ -2291,7 +2278,6 @@ declare namespace Api {
       mentee_character_id: number
       mentee_character_name: string
       mentee_nickname: string
-      mentee_portrait_url: string
       mentee_qq: string
       mentee_discord_id: string
       mentee_total_sp: number

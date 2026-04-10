@@ -134,7 +134,6 @@ type SkillPlanCheckPlanResp struct {
 type SkillPlanCheckCharacterResp struct {
 	CharacterID    int64                    `json:"character_id"`
 	CharacterName  string                   `json:"character_name"`
-	PortraitURL    string                   `json:"portrait_url"`
 	CompletedPlans int                      `json:"completed_plans"`
 	TotalPlans     int                      `json:"total_plans"`
 	Plans          []SkillPlanCheckPlanResp `json:"plans"`
@@ -526,7 +525,6 @@ func (s *SkillPlanService) RunCompletionCheck(userID uint, req *RunSkillPlanChec
 		charResp := SkillPlanCheckCharacterResp{
 			CharacterID:   characterID,
 			CharacterName: char.CharacterName,
-			PortraitURL:   char.PortraitURL,
 			Plans:         make([]SkillPlanCheckPlanResp, 0, len(plans)),
 			TotalPlans:    len(plans),
 		}

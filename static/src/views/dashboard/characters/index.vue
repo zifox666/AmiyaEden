@@ -118,7 +118,7 @@
 
           <!-- 头像 -->
           <img
-            :src="char.portrait_url"
+            :src="buildEveCharacterPortraitUrl(char.character_id)"
             :alt="char.character_name"
             class="w-14 h-14 rounded-full object-cover border-2"
             :class="[
@@ -197,6 +197,7 @@
   } from '@/api/auth'
   import { fetchGetUserInfo } from '@/api/auth'
   import { useUserStore } from '@/store/modules/user'
+  import { buildEveCharacterPortraitUrl } from '@/utils/eve-image'
 
   defineOptions({ name: 'Characters' })
 

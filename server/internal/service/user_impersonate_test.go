@@ -56,7 +56,6 @@ func seedImpersonationTargetUser(t *testing.T, db *gorm.DB) {
 	if err := db.Create(&model.EveCharacter{
 		CharacterID:   9001,
 		CharacterName: "Amiya Prime",
-		PortraitURL:   "portrait.png",
 		UserID:        user.ID,
 		TokenInvalid:  true,
 	}).Error; err != nil {
