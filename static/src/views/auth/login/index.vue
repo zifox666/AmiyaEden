@@ -22,6 +22,18 @@
                 :class="{ loading: loading }"
               />
             </div>
+
+            <!-- SeAT Login -->
+            <el-button
+              v-if="seatEnabled"
+              type="primary"
+              size="large"
+              class="sso-btn seat-btn"
+              :loading="seatLoading"
+              @click="handleSeatLogin"
+            >
+              {{ $t('login.seatBtnText') }}
+            </el-button>
           </div>
         </div>
       </div>
@@ -30,11 +42,22 @@
 </template>
 
 <script setup lang="ts">
-  import { getEveSSOLoginURL } from '@/api/auth'
+  import { getEveSSOLoginURL, checkSeatEnabled, getSeatLoginURL } from '@/api/auth'
 
   defineOptions({ name: 'Login' })
 
   const loading = ref(false)
+  const seatLoading = ref(false)
+  const seatEnabled = ref(false)
+
+  onMounted(async () => {
+    try {
+      const data = await checkSeatEnabled()
+      seatEnabled.value = data.enabled
+    } catch {
+      // SeAT 不可用时静默忽略
+    }
+  })
 
   const handleEveLogin = async () => {
     loading.value = true
@@ -43,6 +66,16 @@
       window.location.href = url
     } catch {
       loading.value = false
+    }
+  }
+
+  const handleSeatLogin = async () => {
+    seatLoading.value = true
+    try {
+      const url = await getSeatLoginURL()
+      window.location.href = url
+    } catch {
+      seatLoading.value = false
     }
   }
 </script>
@@ -79,6 +112,11 @@
 
     .btn-icon {
       @apply h-5 mr-2 object-contain;
+    }
+
+    &.seat-btn {
+      @apply w-full;
+      max-width: 320px;
     }
   }
 

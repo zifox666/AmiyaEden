@@ -128,6 +128,62 @@ func (h *AutoRoleHandler) DeleteEsiTitleMapping(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+// ─── SeAT Role Mapping ───
+
+// ListSeatRoleMappings 获取所有 SeAT 分组映射
+func (h *AutoRoleHandler) ListSeatRoleMappings(c *gin.Context) {
+	mappings, err := h.svc.ListSeatRoleMappings()
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, mappings)
+}
+
+// GetAllSeatRoles 获取所有 SeAT 分组名列表（供前端选择）
+func (h *AutoRoleHandler) GetAllSeatRoles(c *gin.Context) {
+	roles, err := h.svc.GetAllSeatRoles()
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, roles)
+}
+
+type createSeatRoleMappingRequest struct {
+	SeatRole string `json:"seat_role" binding:"required"`
+	RoleID   uint   `json:"role_id"   binding:"required"`
+}
+
+// CreateSeatRoleMapping 创建 SeAT 分组映射
+func (h *AutoRoleHandler) CreateSeatRoleMapping(c *gin.Context) {
+	var req createSeatRoleMappingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+	mapping, err := h.svc.CreateSeatRoleMapping(req.SeatRole, req.RoleID)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, mapping)
+}
+
+// DeleteSeatRoleMapping 删除 SeAT 分组映射
+func (h *AutoRoleHandler) DeleteSeatRoleMapping(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		response.Fail(c, response.CodeParamError, "无效的映射ID")
+		return
+	}
+	if err := h.svc.DeleteSeatRoleMapping(uint(id)); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, nil)
+}
+
 // ─── 手动同步 ───
 
 // TriggerSync 手动触发自动权限同步

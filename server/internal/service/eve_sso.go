@@ -11,6 +11,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/url"
 	"strings"
 	"sync"
@@ -495,10 +496,21 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 
 // GetValidToken 获取指定角色的有效 access_token（如即将过期则自动刷新）
 // 供其他模块调用，用于发起 ESI 请求
+// 对于 SeAT-only 角色（RefreshToken 为空），自动通过 SeAT passthrough 端点获取 ESI token
 func (s *EveSSOService) GetValidToken(ctx context.Context, characterID int64) (string, error) {
 	char, err := s.charRepo.GetByCharacterID(characterID)
 	if err != nil {
 		return "", err
+	}
+
+	// SeAT-only 角色：没有 EVE SSO token，走 SeAT passthrough 路径
+	if char.RefreshToken == "" {
+		seatSvc := NewSeatSSOService()
+		token, seatErr := seatSvc.GetESITokenForCharacter(ctx, characterID, char.UserID)
+		if seatErr != nil {
+			return "", fmt.Errorf("角色 %d 无 ESI 授权，SeAT passthrough 也失败: %w", characterID, seatErr)
+		}
+		return token, nil
 	}
 
 	// Token 已标记为失效

@@ -171,6 +171,22 @@ func (q *Queue) RunAllForCharacter(ctx context.Context, characterID int64) {
 		return
 	}
 
+	// SeAT-only 角色：首次刷新时 Scopes 为空，先通过 passthrough 获取 token
+	// 这会触发 GetESITokenForCharacter → ParsePassthroughToken → 将 scopes 写入 DB
+	if char.RefreshToken == "" && char.Scopes == "" {
+		if _, tokenErr := q.ssoSvc.GetValidToken(ctx, char.CharacterID); tokenErr != nil {
+			global.Logger.Warn("[ESI Queue] RunAllForCharacter: SeAT passthrough 预取 scopes 失败，跳过",
+				zap.Int64("character_id", characterID),
+				zap.Error(tokenErr),
+			)
+			return
+		}
+		// 重新加载角色，此时 scopes 已由 GetESITokenForCharacter 写入 DB
+		if reloaded, reloadErr := q.charRepo.GetByCharacterID(characterID); reloadErr == nil {
+			char = reloaded
+		}
+	}
+
 	isActive := q.checkSingleActivity(ctx, *char)
 	allTasks := AllTasks()
 	sortedTasks := sortTasksByPriority(allTasks)

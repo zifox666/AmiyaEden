@@ -87,6 +87,44 @@
       <!-- 空状态 -->
       <ElEmpty v-if="!loading && characters.length === 0" :description="$t('characters.empty')" />
     </div>
+
+    <!-- SeAT 绑定 -->
+    <div class="art-card-sm p-6 mt-4">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-lg font-medium">{{ $t('seat.title') }}</h2>
+        </div>
+      </div>
+
+      <div v-loading="seatLoading">
+        <template v-if="seatBinding.bound">
+          <div class="flex items-center gap-4 p-4 rounded-lg border border-primary bg-primary/5">
+            <div class="flex-1">
+              <p class="text-sm">
+                <span class="font-medium">{{ $t('seat.username') }}:</span>
+                {{ seatBinding.seat_username }}
+              </p>
+              <p class="text-xs text-g-500 mt-1">SeAT ID: {{ seatBinding.seat_user_id }}</p>
+            </div>
+            <ElButton
+              type="danger"
+              plain
+              size="small"
+              :loading="seatUnbinding"
+              @click="handleSeatUnbind"
+            >
+              {{ $t('seat.unbind') }}
+            </ElButton>
+          </div>
+        </template>
+
+        <template v-else>
+          <ElButton type="primary" :loading="seatBindLoading" @click="handleSeatBind">
+            {{ $t('seat.bind') }}
+          </ElButton>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -97,7 +135,10 @@
     fetchMyCharacters,
     getEveBindURL,
     setPrimaryCharacter,
-    unbindCharacter
+    unbindCharacter,
+    fetchSeatBinding,
+    getSeatBindURL,
+    unbindSeat
   } from '@/api/auth'
   import { fetchGetUserInfo } from '@/api/auth'
   import { useUserStore } from '@/store/modules/user'
@@ -201,5 +242,62 @@
     }
   }
 
-  onMounted(loadCharacters)
+  // ─── SeAT 绑定 ───
+  const seatLoading = ref(false)
+  const seatBindLoading = ref(false)
+  const seatUnbinding = ref(false)
+  const seatBinding = reactive<Api.Auth.SeatBinding>({ bound: false })
+
+  const loadSeatBinding = async () => {
+    seatLoading.value = true
+    try {
+      const data = await fetchSeatBinding()
+      Object.assign(seatBinding, data)
+    } catch {
+      /* empty */
+    } finally {
+      seatLoading.value = false
+    }
+  }
+
+  const handleSeatBind = async () => {
+    seatBindLoading.value = true
+    try {
+      const url = await getSeatBindURL()
+      window.location.href = url
+    } catch {
+      seatBindLoading.value = false
+      ElMessage.error(t('seat.bindFailed'))
+    }
+  }
+
+  const handleSeatUnbind = async () => {
+    try {
+      await ElMessageBox.confirm(t('seat.unbindConfirm'), t('common.tips'), {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning'
+      })
+    } catch {
+      return
+    }
+
+    seatUnbinding.value = true
+    try {
+      await unbindSeat()
+      ElMessage.success(t('seat.unbindSuccess'))
+      seatBinding.bound = false
+      seatBinding.seat_user_id = undefined
+      seatBinding.seat_username = undefined
+    } catch {
+      ElMessage.error(t('seat.unbindFailed'))
+    } finally {
+      seatUnbinding.value = false
+    }
+  }
+
+  onMounted(() => {
+    loadCharacters()
+    loadSeatBinding()
+  })
 </script>

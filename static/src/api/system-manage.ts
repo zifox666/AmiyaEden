@@ -249,3 +249,34 @@ export function fetchSearchEveEntities(q: string) {
     params: { q }
   })
 }
+
+// ─── SeAT 分组映射 ───
+
+/** 获取所有可用的 SeAT 分组名列表 */
+export function fetchGetAllSeatRoles() {
+  return request.get<string[]>({
+    url: '/api/v1/system/auto-role/seat-roles'
+  })
+}
+
+/** 获取所有 SeAT 分组映射 */
+export function fetchGetSeatRoleMappings() {
+  return request.get<Api.SystemManage.SeatRoleMapping[]>({
+    url: '/api/v1/system/auto-role/seat-role-mappings'
+  })
+}
+
+/** 创建 SeAT 分组映射 */
+export function fetchCreateSeatRoleMapping(data: Api.SystemManage.CreateSeatRoleMappingParams) {
+  return request.post<Api.SystemManage.SeatRoleMapping>({
+    url: '/api/v1/system/auto-role/seat-role-mappings',
+    data
+  })
+}
+
+/** 删除 SeAT 分组映射 */
+export function fetchDeleteSeatRoleMapping(id: number) {
+  return request.del({
+    url: `/api/v1/system/auto-role/seat-role-mappings/${id}`
+  })
+}

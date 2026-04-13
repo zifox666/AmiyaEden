@@ -131,13 +131,16 @@ func autoMigrate(db *gorm.DB) {
 		&model.Menu{},
 		&model.RoleMenu{},
 		&model.UserRole{},
-		// ESI 自动权限映射表
+		// ESI / SeAT 自动权限映射表
+		&model.SeatRoleMapping{},
 		&model.EsiRoleMapping{},
 		&model.EsiTitleMapping{},
 		&model.EveCharacterCorpRole{},
 		&model.AutoRoleLog{},
 		// 准入名单表
 		&model.AllowedEntity{},
+		// SeAT 用户绑定表
+		&model.SeatUser{},
 	); err != nil {
 		global.Logger.Fatal("数据库迁移失败", zap.Error(err))
 	}

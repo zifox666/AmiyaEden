@@ -15,13 +15,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// AutoRoleService ESI 自动权限映射服务
+// AutoRoleService ESI / SeAT 自动权限映射服务
 type AutoRoleService struct {
 	autoRoleRepo *repository.AutoRoleRepository
 	allowRepo    *repository.AllowedEntityRepository
 	roleRepo     *repository.RoleRepository
 	charRepo     *repository.EveCharacterRepository
 	userRepo     *repository.UserRepository
+	seatUserRepo *repository.SeatUserRepository
 	roleSvc      *RoleService
 }
 
@@ -32,6 +33,7 @@ func NewAutoRoleService() *AutoRoleService {
 		roleRepo:     repository.NewRoleRepository(),
 		charRepo:     repository.NewEveCharacterRepository(),
 		userRepo:     repository.NewUserRepository(),
+		seatUserRepo: repository.NewSeatUserRepository(),
 		roleSvc:      NewRoleService(),
 	}
 }
@@ -218,13 +220,60 @@ func (s *AutoRoleService) DeleteEsiTitleMapping(id uint) error {
 	return s.autoRoleRepo.DeleteEsiTitleMapping(id)
 }
 
+// ─── SeAT Role Mapping CRUD ───
+
+// ListSeatRoleMappings 获取所有 SeAT 分组映射（带角色信息）
+func (s *AutoRoleService) ListSeatRoleMappings() ([]model.SeatRoleMapping, error) {
+	mappings, err := s.autoRoleRepo.ListSeatRoleMappings()
+	if err != nil {
+		return nil, err
+	}
+	s.fillSeatRoleInfo(mappings)
+	return mappings, nil
+}
+
+// CreateSeatRoleMapping 创建 SeAT 分组映射
+func (s *AutoRoleService) CreateSeatRoleMapping(seatRole string, roleID uint) (*model.SeatRoleMapping, error) {
+	if seatRole == "" {
+		return nil, errors.New("SeAT 分组名不能为空")
+	}
+	role, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		return nil, errors.New("系统角色不存在")
+	}
+	if role.Code == model.RoleSuperAdmin {
+		return nil, errors.New("不可映射到超级管理员")
+	}
+	mapping := &model.SeatRoleMapping{
+		SeatRole: seatRole,
+		RoleID:   roleID,
+	}
+	if err := s.autoRoleRepo.CreateSeatRoleMapping(mapping); err != nil {
+		return nil, err
+	}
+	mapping.RoleCode = role.Code
+	mapping.RoleName = role.Name
+	return mapping, nil
+}
+
+// DeleteSeatRoleMapping 删除 SeAT 分组映射
+func (s *AutoRoleService) DeleteSeatRoleMapping(id uint) error {
+	return s.autoRoleRepo.DeleteSeatRoleMapping(id)
+}
+
+// GetAllSeatRoles 获取数据库中所有已录入的 SeAT 分组名列表（供前端选择）
+func (s *AutoRoleService) GetAllSeatRoles() ([]string, error) {
+	return s.autoRoleRepo.ListDistinctSeatRoles()
+}
+
 // ─── 自动权限同步 ───
 
-// SyncUserAutoRoles 根据 ESI 军团角色 + 头衔，自动同步用户的系统权限
+// SyncUserAutoRoles 根据 ESI 军团角色 + 头衔 + SeAT 分组，自动同步用户的系统权限
 // 规则：
 //   - Director 始终对应 admin 角色
 //   - 根据 esi_role_mapping 表的配置，将 ESI 角色映射到系统角色
 //   - 根据 esi_title_mapping 表的配置，将 ESI 头衔映射到系统角色
+//   - 根据 seat_role_mapping 表的配置，将 SeAT 分组映射到系统角色
 //   - super_admin 不受影响
 //   - 保留用户手动分配的角色，仅补充自动映射的角色
 func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) error {
@@ -362,6 +411,22 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		for _, m := range titleMappings {
 			autoRoleIDs[m.RoleID] = struct{}{}
+		}
+	}
+
+	// 查找 SeAT 分组映射
+	seatUser, seatErr := s.seatUserRepo.GetByUserID(userID)
+	if seatErr == nil && seatUser.Groups != "" {
+		var seatGroups []string
+		if jsonErr := json.Unmarshal([]byte(seatUser.Groups), &seatGroups); jsonErr == nil && len(seatGroups) > 0 {
+			seatMappings, mapErr := s.autoRoleRepo.GetSeatRoleMappingsBySeatRoles(seatGroups)
+			if mapErr != nil {
+				global.Logger.Warn("[AutoRole] 查询 SeAT 分组映射失败", zap.Error(mapErr))
+			} else {
+				for _, m := range seatMappings {
+					autoRoleIDs[m.RoleID] = struct{}{}
+				}
+			}
 		}
 	}
 
@@ -503,6 +568,16 @@ func (s *AutoRoleService) fillRoleInfo(mappings []model.EsiRoleMapping) {
 }
 
 func (s *AutoRoleService) fillTitleRoleInfo(mappings []model.EsiTitleMapping) {
+	for i, m := range mappings {
+		role, err := s.roleRepo.GetByID(m.RoleID)
+		if err == nil {
+			mappings[i].RoleCode = role.Code
+			mappings[i].RoleName = role.Name
+		}
+	}
+}
+
+func (s *AutoRoleService) fillSeatRoleInfo(mappings []model.SeatRoleMapping) {
 	for i, m := range mappings {
 		role, err := s.roleRepo.GetByID(m.RoleID)
 		if err == nil {

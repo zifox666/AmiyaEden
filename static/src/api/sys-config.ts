@@ -12,3 +12,18 @@ export function updateBasicConfig(data: Api.SysConfig.UpdateBasicConfigParams) {
     data
   })
 }
+
+// ─── SeAT 配置 ───
+
+export function fetchSeatConfig() {
+  return request.get<Api.SysConfig.SeatConfig>({
+    url: '/api/v1/system/seat-config'
+  })
+}
+
+export function updateSeatConfig(data: Api.SysConfig.UpdateSeatConfigParams) {
+  return request.put({
+    url: '/api/v1/system/seat-config',
+    data
+  })
+}

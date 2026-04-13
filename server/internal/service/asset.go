@@ -388,6 +388,9 @@ func (s *AssetService) fetchAndCacheStructure(characterID, structureID int64, ac
 	}
 
 	var detail structureDetail
+	if structureID == 2004 {
+		return fmt.Sprintf("Structure-%d", structureID)
+	}
 	path := fmt.Sprintf("/universe/structures/%d/", structureID)
 	if err := s.esiGet(context.Background(), path, accessToken, &detail); err != nil {
 		global.Logger.Warn("[Asset] 获取建筑详情失败",

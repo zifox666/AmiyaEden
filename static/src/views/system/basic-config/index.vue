@@ -38,6 +38,72 @@
         </ElFormItem>
       </ElForm>
     </ElCard>
+
+    <!-- SeAT 配置 -->
+    <ElCard shadow="never" class="mt-4">
+      <template #header>
+        <h2 class="section-title">{{ $t('system.seatConfig.title') }}</h2>
+      </template>
+
+      <ElForm
+        :model="seatForm"
+        label-width="140px"
+        style="max-width: 680px"
+        v-loading="loadingSeat"
+      >
+        <ElFormItem :label="$t('system.seatConfig.enabled')">
+          <ElSwitch v-model="seatForm.enabled" />
+        </ElFormItem>
+
+        <ElFormItem :label="$t('system.seatConfig.baseUrl')">
+          <ElInput
+            v-model="seatForm.base_url"
+            clearable
+            :placeholder="$t('system.seatConfig.baseUrlPlaceholder')"
+          />
+        </ElFormItem>
+
+        <ElFormItem :label="$t('system.seatConfig.clientId')">
+          <ElInput
+            v-model="seatForm.client_id"
+            clearable
+            :placeholder="$t('system.seatConfig.clientIdPlaceholder')"
+          />
+        </ElFormItem>
+
+        <ElFormItem :label="$t('system.seatConfig.clientSecret')">
+          <ElInput
+            v-model="seatForm.client_secret"
+            clearable
+            type="password"
+            show-password
+            :placeholder="$t('system.seatConfig.clientSecretPlaceholder')"
+          />
+        </ElFormItem>
+
+        <ElFormItem :label="$t('system.seatConfig.callbackUrl')">
+          <ElInput
+            v-model="seatForm.callback_url"
+            clearable
+            :placeholder="$t('system.seatConfig.callbackUrlPlaceholder')"
+          />
+        </ElFormItem>
+
+        <ElFormItem :label="$t('system.seatConfig.scopes')">
+          <ElInput
+            v-model="seatForm.scopes"
+            clearable
+            :placeholder="$t('system.seatConfig.scopesPlaceholder')"
+          />
+        </ElFormItem>
+
+        <ElFormItem>
+          <ElButton type="primary" :loading="savingSeat" @click="handleSaveSeat">
+            {{ $t('system.seatConfig.save') }}
+          </ElButton>
+        </ElFormItem>
+      </ElForm>
+    </ElCard>
   </div>
 </template>
 
@@ -50,9 +116,11 @@
     ElInput,
     ElInputNumber,
     ElButton,
+    ElSwitch,
     ElMessage
   } from 'element-plus'
   import { useSysConfigStore } from '@/store/modules/sys-config'
+  import { fetchSeatConfig, updateSeatConfig } from '@/api/sys-config'
 
   defineOptions({ name: 'BasicConfig' })
 
@@ -67,6 +135,18 @@
     site_title: sysConfigStore.config.site_title
   })
 
+  // ─── SeAT 配置 ───
+  const loadingSeat = ref(false)
+  const savingSeat = ref(false)
+  const seatForm = reactive({
+    enabled: false,
+    base_url: '',
+    client_id: '',
+    client_secret: '',
+    callback_url: '',
+    scopes: ''
+  })
+
   const loadConfig = async () => {
     loadingConfig.value = true
     try {
@@ -77,6 +157,23 @@
       /* empty */
     } finally {
       loadingConfig.value = false
+    }
+  }
+
+  const loadSeatConfig = async () => {
+    loadingSeat.value = true
+    try {
+      const data = await fetchSeatConfig()
+      seatForm.enabled = data.enabled
+      seatForm.base_url = data.base_url
+      seatForm.client_id = data.client_id
+      seatForm.client_secret = data.client_secret
+      seatForm.callback_url = data.callback_url
+      seatForm.scopes = data.scopes
+    } catch {
+      /* empty */
+    } finally {
+      loadingSeat.value = false
     }
   }
 
@@ -95,8 +192,28 @@
     }
   }
 
+  const handleSaveSeat = async () => {
+    savingSeat.value = true
+    try {
+      await updateSeatConfig({
+        enabled: seatForm.enabled ? 'true' : 'false',
+        base_url: seatForm.base_url,
+        client_id: seatForm.client_id,
+        client_secret: seatForm.client_secret,
+        callback_url: seatForm.callback_url,
+        scopes: seatForm.scopes
+      })
+      ElMessage.success(t('system.seatConfig.saveSuccess'))
+    } catch {
+      /* empty */
+    } finally {
+      savingSeat.value = false
+    }
+  }
+
   onMounted(() => {
     loadConfig()
+    loadSeatConfig()
   })
 </script>
 

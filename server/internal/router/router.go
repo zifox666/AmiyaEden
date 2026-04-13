@@ -24,6 +24,15 @@ func RegisterRoutes(r *gin.Engine) {
 		sso.GET("/scopes", ssoH.GetScopes)
 	}
 
+	// ─── SeAT SSO（无需认证）───
+	seatH := handler.NewSeatSSOHandler()
+	seatSSO := api.Group("/sso/seat")
+	{
+		seatSSO.GET("/enabled", seatH.Enabled)
+		seatSSO.GET("/login", seatH.Login)
+		seatSSO.GET("/callback", seatH.Callback)
+	}
+
 	// ─── SDE 公开查询（API Key 鉴权）───
 	sdeH := handler.NewSdeHandler()
 	sde := api.Group("/sde")
@@ -46,6 +55,14 @@ func RegisterRoutes(r *gin.Engine) {
 		ssoAuth.POST("/transfer-confirm", ssoH.TransferConfirm)
 		ssoAuth.PUT("/primary/:character_id", ssoH.SetPrimary)
 		ssoAuth.DELETE("/characters/:character_id", ssoH.Unbind)
+	}
+
+	// SeAT 账号管理（绑定/解绑/查看）
+	seatAuth := auth.Group("/sso/seat")
+	{
+		seatAuth.GET("/bind", seatH.Bind)
+		seatAuth.GET("/binding", seatH.GetSeatBinding)
+		seatAuth.DELETE("/binding", seatH.Unbind)
 	}
 
 	// ─── 当前用户 ───
@@ -247,6 +264,10 @@ func RegisterRoutes(r *gin.Engine) {
 	admin.GET("/basic-config", sysConfigH.GetBasicConfig)
 	admin.PUT("/basic-config", sysConfigH.UpdateBasicConfig)
 
+	// SeAT 配置（管理员）
+	admin.GET("/seat-config", seatH.GetSeatConfig)
+	admin.PUT("/seat-config", seatH.UpdateSeatConfig)
+
 	// NPC 刷怪报表（管理员 — 公司级）
 	admin.POST("/npc-kills", npcKillH.GetCorpNpcKills)
 
@@ -368,6 +389,12 @@ func RegisterRoutes(r *gin.Engine) {
 		adminAutoRole.GET("/esi-title-mappings", autoRoleH.ListEsiTitleMappings)
 		adminAutoRole.POST("/esi-title-mappings", autoRoleH.CreateEsiTitleMapping)
 		adminAutoRole.DELETE("/esi-title-mappings/:id", autoRoleH.DeleteEsiTitleMapping)
+
+		// SeAT 分组映射
+		adminAutoRole.GET("/seat-roles", autoRoleH.GetAllSeatRoles)
+		adminAutoRole.GET("/seat-role-mappings", autoRoleH.ListSeatRoleMappings)
+		adminAutoRole.POST("/seat-role-mappings", autoRoleH.CreateSeatRoleMapping)
+		adminAutoRole.DELETE("/seat-role-mappings/:id", autoRoleH.DeleteSeatRoleMapping)
 
 		// 手动触发同步
 		adminAutoRole.POST("/sync", autoRoleH.TriggerSync)

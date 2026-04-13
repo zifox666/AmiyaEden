@@ -186,6 +186,8 @@
     "title": "Welcome",
     "subTitle": "Sign in with your EVE Online identity",
     "btnText": "Sign In with EVE Online",
+    "seatBtnText": "Sign In with SeAT",
+    "seatRedirecting": "Redirecting to SeAT...",
     "redirecting": "Redirecting to EVE Online...",
     "hint": "You will be redirected to the official EVE Online authorization page",
     "callback": {
@@ -985,6 +987,19 @@
     "unbindSuccess": "Successfully unbound {name}",
     "unbindFailed": "Failed to unbind character"
   },
+  "seat": {
+    "title": "SeAT Account",
+    "bound": "Bound",
+    "unbound": "Not Bound",
+    "bind": "Bind SeAT",
+    "unbind": "Unbind SeAT",
+    "username": "SeAT Username",
+    "groups": "Groups",
+    "unbindConfirm": "Are you sure you want to unbind your SeAT account?",
+    "unbindSuccess": "SeAT account unbound",
+    "unbindFailed": "Failed to unbind SeAT",
+    "bindFailed": "Failed to get SeAT bind URL"
+  },
   "srp": {
     "apply": {
       "title": "My SRP Applications",
@@ -1285,16 +1300,19 @@
     "tabs": {
       "esiRole": "Corporation Role Mappings",
       "title": "Corporation Title Mappings",
+      "seatRole": "SeAT Group Mappings",
       "log": "Sync Logs",
       "allowList": "Access Config"
     },
     "descriptions": {
       "esiRole": "Configure the mapping between EVE corporation roles and system roles.",
-      "title": "Configure the mapping between corporation titles and system roles, including the corporation ID."
+      "title": "Configure the mapping between corporation titles and system roles, including the corporation ID.",
+      "seatRole": "Configure the mapping between SeAT groups and system roles. Roles are auto-assigned based on SeAT SSO group membership."
     },
     "columns": {
       "index": "#",
       "esiRole": "EVE Corporation Role",
+      "seatRole": "SeAT Group",
       "mappedRole": "Mapped System Role",
       "corporationId": "Corporation ID",
       "titleId": "Title ID",
@@ -1312,20 +1330,24 @@
     "deleteConfirm": "Delete this mapping?",
     "createEsiRoleTitle": "Add Corporation Role Mapping",
     "createTitleTitle": "Add Corporation Title Mapping",
+    "createSeatRoleTitle": "Add SeAT Group Mapping",
     "fields": {
       "esiRole": "EVE Role",
       "systemRole": "System Role",
-      "title": "Title"
+      "title": "Title",
+      "seatRole": "SeAT Group"
     },
     "placeholders": {
       "esiRole": "Select a corporation role",
       "systemRole": "Select a system role",
-      "title": "Select a corporation title"
+      "title": "Select a corporation title",
+      "seatRole": "Select or type a SeAT group"
     },
     "rules": {
       "esiRole": "Please select an EVE corporation role",
       "systemRole": "Please select a system role",
-      "title": "Please select a title"
+      "title": "Please select a title",
+      "seatRole": "Please select a SeAT group"
     },
     "titleFallback": "Title {id}",
     "corpPrefix": "Corp {id}",
@@ -1678,6 +1700,22 @@
       "corpIdPlaceholder": "Please enter corporation ID",
       "siteTitlePlaceholder": "Please enter site title",
       "saveSuccess": "Configuration saved"
+    },
+    "seatConfig": {
+      "title": "SeAT Configuration",
+      "enabled": "Enable SeAT Login",
+      "baseUrl": "SeAT URL",
+      "baseUrlPlaceholder": "e.g. https://seat.example.com",
+      "clientId": "Client ID",
+      "clientIdPlaceholder": "SeAT OAuth Client ID",
+      "clientSecret": "Client Secret",
+      "clientSecretPlaceholder": "SeAT OAuth Client Secret",
+      "callbackUrl": "Callback URL",
+      "callbackUrlPlaceholder": "OAuth Callback URL",
+      "scopes": "Scopes",
+      "scopesPlaceholder": "Space-separated OAuth scopes",
+      "save": "Save",
+      "saveSuccess": "SeAT configuration saved"
     }
   },
   "skillPlan": {

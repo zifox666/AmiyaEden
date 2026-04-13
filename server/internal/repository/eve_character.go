@@ -41,10 +41,13 @@ func (r *EveCharacterRepository) Update(char *model.EveCharacter) error {
 	return global.DB.Save(char).Error
 }
 
-// ListAllWithToken 查询所有有 refresh_token 且 token 未失效的角色（用于 ESI 数据刷新队列）
+// ListAllWithToken 查询所有有 refresh_token 且 token 未失效的角色，
+// 以及通过 SeAT passthrough 已获取过 scopes 的 SeAT-only 角色（用于 ESI 数据刷新队列）
 func (r *EveCharacterRepository) ListAllWithToken() ([]model.EveCharacter, error) {
 	var chars []model.EveCharacter
-	err := global.DB.Where("refresh_token != '' AND refresh_token IS NOT NULL AND token_invalid = false").Find(&chars).Error
+	err := global.DB.Where(
+		"(refresh_token != '' AND refresh_token IS NOT NULL AND token_invalid = false) OR (scopes != '' AND scopes IS NOT NULL AND (refresh_token = '' OR refresh_token IS NULL))",
+	).Find(&chars).Error
 	return chars, err
 }
 

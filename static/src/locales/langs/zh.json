@@ -186,6 +186,8 @@
     "title": "欢迎登录",
     "subTitle": "使用您的 EVE Online 身份进行登录",
     "btnText": "使用 EVE Online 登录",
+    "seatBtnText": "使用 SeAT 登录",
+    "seatRedirecting": "正在跳转到 SeAT...",
     "redirecting": "正在跳转到 EVE Online...",
     "hint": "登录将跳转到 EVE Online 官方授权页面，授权后自动返回",
     "callback": {
@@ -986,6 +988,19 @@
     "unbindSuccess": "已成功解绑 {name}",
     "unbindFailed": "解绑失败"
   },
+  "seat": {
+    "title": "SeAT 账号",
+    "bound": "已绑定",
+    "unbound": "未绑定",
+    "bind": "绑定 SeAT",
+    "unbind": "解绑 SeAT",
+    "username": "SeAT 用户名",
+    "groups": "所属组",
+    "unbindConfirm": "确定要解绑 SeAT 账号吗？",
+    "unbindSuccess": "已解绑 SeAT 账号",
+    "unbindFailed": "解绑 SeAT 失败",
+    "bindFailed": "获取 SeAT 绑定链接失败"
+  },
   "srp": {
     "apply": {
       "title": "我的补损申请",
@@ -1286,16 +1301,19 @@
     "tabs": {
       "esiRole": "军团职位映射",
       "title": "军团头衔映射",
+      "seatRole": "SeAT 分组映射",
       "log": "同步日志",
       "allowList": "准入配置"
     },
     "descriptions": {
       "esiRole": "配置 EVE 军团职位（Corporation Role）与系统权限的对应关系。",
-      "title": "配置军团头衔（Corporation Title）与系统权限的对应关系，需指定军团 ID。"
+      "title": "配置军团头衔（Corporation Title）与系统权限的对应关系，需指定军团 ID。",
+      "seatRole": "配置 SeAT 分组与系统权限的对应关系，基于 SeAT SSO 登录时的分组信息自动分配角色。"
     },
     "columns": {
       "index": "序号",
       "esiRole": "EVE 军团职位",
+      "seatRole": "SeAT 分组",
       "mappedRole": "映射系统角色",
       "corporationId": "军团 ID",
       "titleId": "头衔 ID",
@@ -1313,20 +1331,24 @@
     "deleteConfirm": "确认删除此映射？",
     "createEsiRoleTitle": "新增军团职位映射",
     "createTitleTitle": "新增军团头衔映射",
+    "createSeatRoleTitle": "新增 SeAT 分组映射",
     "fields": {
       "esiRole": "EVE 职位",
       "systemRole": "系统角色",
-      "title": "选择头衔"
+      "title": "选择头衔",
+      "seatRole": "SeAT 分组"
     },
     "placeholders": {
       "esiRole": "选择军团职位",
       "systemRole": "选择系统角色",
-      "title": "选择军团头衔"
+      "title": "选择军团头衔",
+      "seatRole": "选择或输入 SeAT 分组"
     },
     "rules": {
       "esiRole": "请选择 EVE 军团职位",
       "systemRole": "请选择系统角色",
-      "title": "请选择头衔"
+      "title": "请选择头衔",
+      "seatRole": "请选择 SeAT 分组"
     },
     "titleFallback": "头衔 {id}",
     "corpPrefix": "Corp {id}",
@@ -1679,6 +1701,22 @@
       "corpIdPlaceholder": "请输入军团ID",
       "siteTitlePlaceholder": "请输入网站标题",
       "saveSuccess": "配置已保存"
+    },
+    "seatConfig": {
+      "title": "SeAT 配置",
+      "enabled": "启用 SeAT 登录",
+      "baseUrl": "SeAT 地址",
+      "baseUrlPlaceholder": "例如: https://seat.example.com",
+      "clientId": "Client ID",
+      "clientIdPlaceholder": "SeAT OAuth Client ID",
+      "clientSecret": "Client Secret",
+      "clientSecretPlaceholder": "SeAT OAuth Client Secret",
+      "callbackUrl": "回调地址",
+      "callbackUrlPlaceholder": "OAuth 回调 URL",
+      "scopes": "Scopes",
+      "scopesPlaceholder": "空格分隔的 OAuth scopes",
+      "save": "保存",
+      "saveSuccess": "SeAT 配置已保存"
     }
   },
   "skillPlan": {

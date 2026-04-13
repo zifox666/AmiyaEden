@@ -126,7 +126,59 @@
         </ElTable>
       </ElTabPane>
 
-      <!-- ─── Tab 3：同步日志 ─── -->
+      <!-- ─── Tab 3：SeAT 分组映射 ─── -->
+      <ElTabPane :label="t('autoRolePage.tabs.seatRole')" name="seat-role">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm text-gray-500">
+            {{ t('autoRolePage.descriptions.seatRole') }}
+          </span>
+          <ElButton type="primary" :icon="Plus" @click="openSeatRoleDialog">
+            {{ t('autoRolePage.addMapping') }}
+          </ElButton>
+        </div>
+
+        <ElTable v-loading="seatRoleLoading" :data="seatRoleMappings" border stripe>
+          <ElTableColumn :label="t('autoRolePage.columns.index')" type="index" width="60" />
+          <ElTableColumn
+            :label="t('autoRolePage.columns.seatRole')"
+            prop="seat_role"
+            min-width="200"
+          >
+            <template #default="{ row }">
+              <ElTag size="small" type="success" effect="plain">{{ row.seat_role }}</ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('autoRolePage.columns.mappedRole')" min-width="200">
+            <template #default="{ row }">
+              <ElTag size="small" :type="getRoleTagType(row.role_code)" effect="dark">
+                {{ row.role_name || row.role_code }}
+              </ElTag>
+              <span class="ml-1 text-xs text-gray-400">{{ row.role_code }}</span>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('common.createdAt')" prop="created_at" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('common.operation')" width="100" fixed="right">
+            <template #default="{ row }">
+              <ElPopconfirm
+                :title="t('autoRolePage.deleteConfirm')"
+                :confirm-button-text="t('common.delete')"
+                :cancel-button-text="t('common.cancel')"
+                @confirm="handleDeleteSeatRole(row.id)"
+              >
+                <template #reference>
+                  <ElButton size="small" type="danger" plain>{{ t('common.delete') }}</ElButton>
+                </template>
+              </ElPopconfirm>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+      </ElTabPane>
+
+      <!-- ─── Tab 4：同步日志 ─── -->
       <ElTabPane :label="t('autoRolePage.tabs.log')" name="log">
         <ElTable v-loading="logLoading" :data="logs" border stripe>
           <ElTableColumn :label="t('autoRolePage.columns.index')" type="index" width="60" />
@@ -439,6 +491,57 @@
         }}</ElButton>
       </template>
     </ElDialog>
+
+    <!-- ─── 新增 SeAT 分组映射对话框 ─── -->
+    <ElDialog
+      v-model="seatRoleDialogVisible"
+      :title="t('autoRolePage.createSeatRoleTitle')"
+      width="460px"
+      destroy-on-close
+    >
+      <ElForm
+        ref="seatRoleFormRef"
+        :model="seatRoleForm"
+        :rules="seatRoleFormRules"
+        label-width="110px"
+      >
+        <ElFormItem :label="t('autoRolePage.fields.seatRole')" prop="seat_role">
+          <ElSelect
+            v-model="seatRoleForm.seat_role"
+            :placeholder="t('autoRolePage.placeholders.seatRole')"
+            filterable
+            allow-create
+            style="width: 100%"
+          >
+            <ElOption v-for="role in allSeatRoles" :key="role" :label="role" :value="role" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem :label="t('autoRolePage.fields.systemRole')" prop="role_id">
+          <ElSelect
+            v-model="seatRoleForm.role_id"
+            :placeholder="t('autoRolePage.placeholders.systemRole')"
+            filterable
+            style="width: 100%"
+          >
+            <ElOption
+              v-for="role in allSystemRoles"
+              :key="role.id"
+              :label="role.name"
+              :value="role.id"
+            >
+              <span>{{ role.name }}</span>
+              <span class="ml-2 text-xs text-gray-400">{{ role.code }}</span>
+            </ElOption>
+          </ElSelect>
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="seatRoleDialogVisible = false">{{ t('common.cancel') }}</ElButton>
+        <ElButton type="primary" :loading="seatRoleSubmitting" @click="handleCreateSeatRole">
+          {{ t('common.confirm') }}
+        </ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>
 
@@ -462,7 +565,11 @@
     fetchGetAllowedEntities,
     fetchAddAllowedEntity,
     fetchRemoveAllowedEntity,
-    fetchSearchEveEntities
+    fetchSearchEveEntities,
+    fetchGetAllSeatRoles,
+    fetchGetSeatRoleMappings,
+    fetchCreateSeatRoleMapping,
+    fetchDeleteSeatRoleMapping
   } from '@/api/system-manage'
 
   defineOptions({ name: 'AutoRole' })
@@ -470,6 +577,7 @@
 
   type EsiRoleMapping = Api.SystemManage.EsiRoleMapping
   type EsiTitleMapping = Api.SystemManage.EsiTitleMapping
+  type SeatRoleMapping = Api.SystemManage.SeatRoleMapping
   type RoleItem = Api.SystemManage.RoleItem
   type CorpTitleInfo = Api.SystemManage.CorpTitleInfo
   type AutoRoleLog = Api.SystemManage.AutoRoleLog
@@ -508,17 +616,20 @@
   const allEsiRoles = ref<string[]>([])
   const allSystemRoles = ref<RoleItem[]>([])
   const allCorpTitles = ref<CorpTitleInfo[]>([])
+  const allSeatRoles = ref<string[]>([])
 
   async function loadBaseData() {
-    const [esiRoles, systemRoles, corpTitles] = await Promise.all([
+    const [esiRoles, systemRoles, corpTitles, seatRoles] = await Promise.all([
       fetchGetAllEsiRoles(),
       fetchGetAllRoles(),
-      fetchGetCorpTitles()
+      fetchGetCorpTitles(),
+      fetchGetAllSeatRoles()
     ])
     allEsiRoles.value = esiRoles
     // 过滤掉 super_admin（文档规定不可映射）
     allSystemRoles.value = systemRoles.filter((r) => r.code !== 'super_admin')
     allCorpTitles.value = corpTitles
+    allSeatRoles.value = seatRoles
   }
 
   // ─── ESI 角色映射 ───
@@ -660,6 +771,67 @@
     }
   }
 
+  // ─── SeAT 分组映射 ───
+  const seatRoleMappings = ref<SeatRoleMapping[]>([])
+  const seatRoleLoading = ref(false)
+
+  async function loadSeatRoleMappings() {
+    seatRoleLoading.value = true
+    try {
+      seatRoleMappings.value = await fetchGetSeatRoleMappings()
+    } finally {
+      seatRoleLoading.value = false
+    }
+  }
+
+  async function handleDeleteSeatRole(id: number) {
+    try {
+      await fetchDeleteSeatRoleMapping(id)
+      ElMessage.success(t('autoRolePage.deleteSuccess'))
+      await loadSeatRoleMappings()
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('autoRolePage.deleteFailed'))
+    }
+  }
+
+  // ─── 新增 SeAT 分组映射 ───
+  const seatRoleDialogVisible = ref(false)
+  const seatRoleSubmitting = ref(false)
+  const seatRoleFormRef = ref<FormInstance>()
+  const seatRoleForm = reactive({
+    seat_role: '',
+    role_id: undefined as number | undefined
+  })
+  const seatRoleFormRules: FormRules = {
+    seat_role: [{ required: true, message: t('autoRolePage.rules.seatRole'), trigger: 'change' }],
+    role_id: [{ required: true, message: t('autoRolePage.rules.systemRole'), trigger: 'change' }]
+  }
+
+  function openSeatRoleDialog() {
+    seatRoleForm.seat_role = ''
+    seatRoleForm.role_id = undefined
+    seatRoleDialogVisible.value = true
+  }
+
+  async function handleCreateSeatRole() {
+    if (!seatRoleFormRef.value) return
+    await seatRoleFormRef.value.validate()
+    seatRoleSubmitting.value = true
+    try {
+      await fetchCreateSeatRoleMapping({
+        seat_role: seatRoleForm.seat_role,
+        role_id: seatRoleForm.role_id!
+      })
+      ElMessage.success(t('autoRolePage.mappingCreated'))
+      seatRoleDialogVisible.value = false
+      await loadSeatRoleMappings()
+    } catch (e: any) {
+      ElMessage.error(e?.message ?? t('autoRolePage.createFailed'))
+    } finally {
+      seatRoleSubmitting.value = false
+    }
+  }
+
   // ─── 手动触发同步 ───
   const syncLoading = ref(false)
 
@@ -798,6 +970,7 @@
       loadBaseData(),
       loadEsiRoleMappings(),
       loadTitleMappings(),
+      loadSeatRoleMappings(),
       loadLogs(),
       loadAutoRoleEntities(),
       loadBasicAccessEntities()

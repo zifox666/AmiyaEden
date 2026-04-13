@@ -54,6 +54,17 @@ const (
 	SysConfigCorpID    = "corp.id"    // 军团ID (int64) - 用于获取Logo
 	SysConfigSiteTitle = "site.title" // 网站标题 (string)
 
+	// SeAT OAuth 配置
+	SysConfigSeatEnabled      = "seat.enabled"       // 是否启用 SeAT 登录（bool）
+	SysConfigSeatBaseURL      = "seat.base_url"      // SeAT 基础 URL，如 https://seat.winterco.org
+	SysConfigSeatClientID     = "seat.client_id"     // OAuth Client ID
+	SysConfigSeatClientSecret = "seat.client_secret" // OAuth Client Secret
+	SysConfigSeatCallbackURL  = "seat.callback_url"  // OAuth 回调 URL
+	SysConfigSeatScopes       = "seat.scopes"        // OAuth Scopes（空格分隔）
+
 	SysConfigDefaultCorpID    int64  = 1
 	SysConfigDefaultSiteTitle string = "Amiya eden"
+
+	SysConfigDefaultSeatEnabled = "false"
+	SysConfigDefaultSeatScopes  = "openid accounts groups contacts.qq passthrough"
 )

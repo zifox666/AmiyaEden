@@ -125,6 +125,15 @@ declare namespace Api {
       characters?: EveCharacter[]
       primaryCharacterId?: number
     }
+
+    /** SeAT 绑定信息 */
+    interface SeatBinding {
+      bound: boolean
+      seat_user_id?: string
+      seat_username?: string
+      main_char_id?: number
+      groups?: string
+    }
   }
 
   /** 系统管理类型 */
@@ -290,6 +299,22 @@ declare namespace Api {
       corporation_id: number
       title_id: number
       title_name?: string
+      role_id: number
+    }
+
+    /** SeAT 分组 → 系统角色映射 */
+    interface SeatRoleMapping {
+      id: number
+      seat_role: string
+      role_id: number
+      role_code: string
+      role_name: string
+      created_at: string
+    }
+
+    /** 创建 SeAT 分组映射请求 */
+    interface CreateSeatRoleMappingParams {
+      seat_role: string
       role_id: number
     }
 
@@ -1700,6 +1725,26 @@ declare namespace Api {
     interface UpdateBasicConfigParams {
       corp_id?: number
       site_title?: string
+    }
+
+    /** SeAT 配置 */
+    interface SeatConfig {
+      enabled: boolean
+      base_url: string
+      client_id: string
+      client_secret: string
+      callback_url: string
+      scopes: string
+    }
+
+    /** SeAT 配置更新参数 */
+    interface UpdateSeatConfigParams {
+      enabled?: string
+      base_url?: string
+      client_id?: string
+      client_secret?: string
+      callback_url?: string
+      scopes?: string
     }
   }
 

@@ -84,6 +84,59 @@ export function confirmCharacterTransfer(pendingToken: string) {
   })
 }
 
+// ─── SeAT SSO ───
+
+/**
+ * 检查 SeAT 登录是否启用
+ */
+export function checkSeatEnabled() {
+  return request.get<{ enabled: boolean }>({
+    url: '/api/v1/sso/seat/enabled'
+  })
+}
+
+/**
+ * 获取 SeAT 授权 URL
+ */
+export async function getSeatLoginURL(): Promise<string> {
+  const callbackURL = window.location.origin + '/#/auth/callback'
+  const data = await request.get<{ url: string }>({
+    url: '/api/v1/sso/seat/login',
+    params: { redirect: callbackURL }
+  })
+  return data.url
+}
+
+/**
+ * 获取 SeAT 绑定 URL（已登录用户）
+ */
+export async function getSeatBindURL(): Promise<string> {
+  const callbackURL = window.location.origin + '/#/auth/callback'
+  const data = await request.get<{ url: string }>({
+    url: '/api/v1/sso/seat/bind',
+    params: { redirect: callbackURL }
+  })
+  return data.url
+}
+
+/**
+ * 获取 SeAT 绑定信息
+ */
+export function fetchSeatBinding() {
+  return request.get<Api.Auth.SeatBinding>({
+    url: '/api/v1/sso/seat/binding'
+  })
+}
+
+/**
+ * 解绑 SeAT
+ */
+export function unbindSeat() {
+  return request.del({
+    url: '/api/v1/sso/seat/binding'
+  })
+}
+
 /**
  * 获取当前登录用户信息（从 /me 接口获取并封装成统一格式）
  * @returns 用户信息

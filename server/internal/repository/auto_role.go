@@ -3,6 +3,7 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+	"encoding/json"
 	"regexp"
 	"strings"
 )
@@ -52,6 +53,64 @@ func (r *AutoRoleRepository) DeleteEsiRoleMapping(id uint) error {
 // DeleteEsiRoleMappingsByEsiRole 删除指定 ESI 角色的所有映射
 func (r *AutoRoleRepository) DeleteEsiRoleMappingsByEsiRole(esiRole string) error {
 	return global.DB.Where("esi_role = ?", esiRole).Delete(&model.EsiRoleMapping{}).Error
+}
+
+// ─── SeAT Role Mapping ───
+
+// ListSeatRoleMappings 获取所有 SeAT 分组映射
+func (r *AutoRoleRepository) ListSeatRoleMappings() ([]model.SeatRoleMapping, error) {
+	var mappings []model.SeatRoleMapping
+	err := global.DB.Order("seat_role ASC, role_id ASC").Find(&mappings).Error
+	return mappings, err
+}
+
+// GetSeatRoleMappingsBySeatRoles 根据多个 SeAT 分组名获取映射
+func (r *AutoRoleRepository) GetSeatRoleMappingsBySeatRoles(seatRoles []string) ([]model.SeatRoleMapping, error) {
+	var mappings []model.SeatRoleMapping
+	if len(seatRoles) == 0 {
+		return mappings, nil
+	}
+	err := global.DB.Where("seat_role IN ?", seatRoles).Find(&mappings).Error
+	return mappings, err
+}
+
+// CreateSeatRoleMapping 创建 SeAT 分组映射
+func (r *AutoRoleRepository) CreateSeatRoleMapping(mapping *model.SeatRoleMapping) error {
+	return global.DB.Create(mapping).Error
+}
+
+// DeleteSeatRoleMapping 删除 SeAT 分组映射
+func (r *AutoRoleRepository) DeleteSeatRoleMapping(id uint) error {
+	return global.DB.Delete(&model.SeatRoleMapping{}, id).Error
+}
+
+// ListDistinctSeatRoles 获取所有去重的 SeAT 分组名（从 seat_user.groups JSON 中提取）
+func (r *AutoRoleRepository) ListDistinctSeatRoles() ([]string, error) {
+	var groups []string
+	err := global.DB.Model(&model.SeatUser{}).
+		Where("groups IS NOT NULL AND groups != '' AND groups != '[]'").
+		Pluck("groups", &groups).Error
+	if err != nil {
+		return nil, err
+	}
+
+	uniqueSet := make(map[string]struct{})
+	for _, g := range groups {
+		var arr []string
+		if jsonErr := json.Unmarshal([]byte(g), &arr); jsonErr == nil {
+			for _, role := range arr {
+				if role != "" {
+					uniqueSet[role] = struct{}{}
+				}
+			}
+		}
+	}
+
+	result := make([]string, 0, len(uniqueSet))
+	for r := range uniqueSet {
+		result = append(result, r)
+	}
+	return result, nil
 }
 
 // ─── ESI Title Mapping ───

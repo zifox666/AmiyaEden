@@ -49,7 +49,12 @@
 </template>
 
 <script setup lang="ts">
-  import { Loading, CircleCheckFilled, CircleCloseFilled, WarningFilled } from '@element-plus/icons-vue'
+  import {
+    Loading,
+    CircleCheckFilled,
+    CircleCloseFilled,
+    WarningFilled
+  } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
   import { useUserStore } from '@/store/modules/user'
   import { fetchGetUserInfo, confirmCharacterTransfer } from '@/api/auth'

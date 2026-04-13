@@ -3,8 +3,20 @@ package model
 import "time"
 
 // ─────────────────────────────────────────────
-//  ESI 自动权限映射
+//  ESI / SeAT 自动权限映射
 // ─────────────────────────────────────────────
+
+// SeatRoleMapping SeAT 分组（group） → 系统权限映射
+// 一个 SeAT group 可以映射到多个系统角色，一个系统角色也可被多个 SeAT group 映射
+type SeatRoleMapping struct {
+	BaseModel
+	SeatRole string `gorm:"size:128;not null;index:idx_seat_role_mapping,unique" json:"seat_role"` // SeAT 分组名
+	RoleID   uint   `gorm:"not null;index:idx_seat_role_mapping,unique"          json:"role_id"`   // 系统角色 ID
+	RoleCode string `gorm:"-"                                                    json:"role_code"` // 系统角色编码（仅展示用，不入库）
+	RoleName string `gorm:"-"                                                    json:"role_name"` // 系统角色名称（仅展示用，不入库）
+}
+
+func (SeatRoleMapping) TableName() string { return "seat_role_mapping" }
 
 // EsiRoleMapping ESI 军团角色 → 系统权限映射
 // 一个 ESI role 可以映射到多个系统角色，一个系统角色也可被多个 ESI role 映射
@@ -42,14 +54,14 @@ func (EveCharacterCorpRole) TableName() string { return "eve_character_corp_role
 
 // AutoRoleLog 自动权限同步操作日志
 type AutoRoleLog struct {
-	ID       uint      `gorm:"primarykey"                    json:"id"`
-	UserID   uint      `gorm:"not null;index"                json:"user_id"`
-	Username string    `gorm:"size:128;default:''"           json:"username"`  // 冗余用户名，方便展示
-	RoleID   uint      `gorm:"not null"                      json:"role_id"`
-	RoleName string    `gorm:"size:128;default:''"           json:"role_name"` // 冗余角色名，方便展示
-	RoleCode string    `gorm:"size:64;default:''"            json:"role_code"`
-	Action   string    `gorm:"size:16;not null"              json:"action"`    // "add" | "remove"
-	Reason   string    `gorm:"size:32;not null;default:''"   json:"reason"`    // "esi_role" | "title" | "director"
+	ID        uint      `gorm:"primarykey"                    json:"id"`
+	UserID    uint      `gorm:"not null;index"                json:"user_id"`
+	Username  string    `gorm:"size:128;default:''"           json:"username"` // 冗余用户名，方便展示
+	RoleID    uint      `gorm:"not null"                      json:"role_id"`
+	RoleName  string    `gorm:"size:128;default:''"           json:"role_name"` // 冗余角色名，方便展示
+	RoleCode  string    `gorm:"size:64;default:''"            json:"role_code"`
+	Action    string    `gorm:"size:16;not null"              json:"action"` // "add" | "remove"
+	Reason    string    `gorm:"size:32;not null;default:''"   json:"reason"` // "esi_role" | "title" | "director"
 	CreatedAt time.Time `gorm:"autoCreateTime;index"          json:"created_at"`
 }
 
