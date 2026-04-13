@@ -458,6 +458,21 @@ func (s *RoleService) CheckCorpAccessAndAdjustRole(ctx context.Context, userID u
 		return err
 	}
 
+	// 若开启了"准入仅主角色"，只看主角色的军团/联盟是否在准入名单内
+	configRepo := repository.NewSysConfigRepository()
+	if configRepo.GetBool(model.SysConfigBasicAccessAllowOnlyMainChar, false) {
+		if u, err := s.userRepo.GetByID(userID); err == nil && u.PrimaryCharacterID != 0 {
+			filtered := make([]model.EveCharacter, 0, 1)
+			for _, c := range chars {
+				if c.CharacterID == u.PrimaryCharacterID {
+					filtered = append(filtered, c)
+					break
+				}
+			}
+			chars = filtered
+		}
+	}
+
 	// 检查是否有角色属于允许军团或允许联盟
 	hasAccess := false
 	for _, c := range chars {

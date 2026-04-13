@@ -62,6 +62,11 @@ const (
 	SysConfigSeatCallbackURL  = "seat.callback_url"  // OAuth 回调 URL
 	SysConfigSeatScopes       = "seat.scopes"        // OAuth Scopes（空格分隔）
 
+	// 准入名单"仅主角色"开关
+	// 开启后，检测准入资格时仅验证 primary_character_id 对应角色的军团/联盟
+	SysConfigAutoRoleAllowOnlyMainChar    = "allow.auto_role.only_main_char"    // 自动权限准入（bool）
+	SysConfigBasicAccessAllowOnlyMainChar = "allow.basic_access.only_main_char" // 基础访问准入（bool）
+
 	SysConfigDefaultCorpID    int64  = 1
 	SysConfigDefaultSiteTitle string = "Amiya eden"
 

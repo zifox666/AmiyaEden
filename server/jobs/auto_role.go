@@ -43,7 +43,7 @@ func seatRoleSyncTask() {
 	seatSvc := service.NewSeatSSOService()
 	seatSvc.RefreshAllSeatUserGroups(ctx)
 
-	// 2. 重新同步自动权限（包含 SeAT 分组映射）
+	// 2. 重新同步自动权限
 	autoRoleSvc := service.NewAutoRoleService()
 	autoRoleSvc.SyncAllUsersAutoRoles(ctx)
 }

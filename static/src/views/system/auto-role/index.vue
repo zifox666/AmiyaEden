@@ -49,6 +49,17 @@
               {{ formatDate(row.created_at) }}
             </template>
           </ElTableColumn>
+          <ElTableColumn :label="t('autoRolePage.columns.onlyMainChar')" width="120" align="center">
+            <template #default="{ row }">
+              <ElTag size="small" :type="row.only_main_char ? 'primary' : 'info'" effect="plain">
+                {{
+                  row.only_main_char
+                    ? t('autoRolePage.onlyMainChar.yes')
+                    : t('autoRolePage.onlyMainChar.no')
+                }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
           <ElTableColumn :label="t('common.operation')" width="100" fixed="right">
             <template #default="{ row }">
               <ElPopconfirm
@@ -107,6 +118,17 @@
           <ElTableColumn :label="t('common.createdAt')" prop="created_at" width="180">
             <template #default="{ row }">
               {{ formatDate(row.created_at) }}
+            </template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('autoRolePage.columns.onlyMainChar')" width="120" align="center">
+            <template #default="{ row }">
+              <ElTag size="small" :type="row.only_main_char ? 'primary' : 'info'" effect="plain">
+                {{
+                  row.only_main_char
+                    ? t('autoRolePage.onlyMainChar.yes')
+                    : t('autoRolePage.onlyMainChar.no')
+                }}
+              </ElTag>
             </template>
           </ElTableColumn>
           <ElTableColumn :label="t('common.operation')" width="100" fixed="right">
@@ -233,9 +255,16 @@
           <template #header>
             <div class="flex items-center justify-between">
               <span class="font-semibold">{{ t('autoRolePage.allowList.autoRoleTitle') }}</span>
-              <ElButton type="primary" :icon="Plus" @click="openAllowDialog('auto_role')">
-                {{ t('autoRolePage.allowList.addEntity') }}
-              </ElButton>
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-gray-500">{{ t('autoRolePage.allowList.onlyMainChar') }}</span>
+                <ElSwitch
+                  v-model="allowListConfig.auto_role_only_main_char"
+                  @change="saveAllowListOnlyMainCharConfig"
+                />
+                <ElButton type="primary" :icon="Plus" @click="openAllowDialog('auto_role')">
+                  {{ t('autoRolePage.allowList.addEntity') }}
+                </ElButton>
+              </div>
             </div>
           </template>
           <p class="text-sm text-gray-400 mb-3">{{ t('autoRolePage.allowList.autoRoleDesc') }}</p>
@@ -282,9 +311,16 @@
           <template #header>
             <div class="flex items-center justify-between">
               <span class="font-semibold">{{ t('autoRolePage.allowList.basicAccessTitle') }}</span>
-              <ElButton type="primary" :icon="Plus" @click="openAllowDialog('basic_access')">
-                {{ t('autoRolePage.allowList.addEntity') }}
-              </ElButton>
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-gray-500">{{ t('autoRolePage.allowList.onlyMainChar') }}</span>
+                <ElSwitch
+                  v-model="allowListConfig.basic_access_only_main_char"
+                  @change="saveAllowListOnlyMainCharConfig"
+                />
+                <ElButton type="primary" :icon="Plus" @click="openAllowDialog('basic_access')">
+                  {{ t('autoRolePage.allowList.addEntity') }}
+                </ElButton>
+              </div>
             </div>
           </template>
           <p class="text-sm text-gray-400 mb-3">{{
@@ -423,6 +459,10 @@
             </ElOption>
           </ElSelect>
         </ElFormItem>
+        <ElFormItem :label="t('autoRolePage.fields.onlyMainChar')">
+          <ElSwitch v-model="esiRoleForm.only_main_char" />
+          <span class="ml-2 text-xs text-gray-400">{{ t('autoRolePage.onlyMainChar.hint') }}</span>
+        </ElFormItem>
       </ElForm>
       <template #footer>
         <ElButton @click="esiRoleDialogVisible = false">{{ t('common.cancel') }}</ElButton>
@@ -482,6 +522,10 @@
               <span class="ml-2 text-xs text-gray-400">{{ role.code }}</span>
             </ElOption>
           </ElSelect>
+        </ElFormItem>
+        <ElFormItem :label="t('autoRolePage.fields.onlyMainChar')">
+          <ElSwitch v-model="titleForm.only_main_char" />
+          <span class="ml-2 text-xs text-gray-400">{{ t('autoRolePage.onlyMainChar.hint') }}</span>
         </ElFormItem>
       </ElForm>
       <template #footer>
@@ -566,6 +610,8 @@
     fetchAddAllowedEntity,
     fetchRemoveAllowedEntity,
     fetchSearchEveEntities,
+    fetchGetAllowListOnlyMainCharConfig,
+    fetchUpdateAllowListOnlyMainCharConfig,
     fetchGetAllSeatRoles,
     fetchGetSeatRoleMappings,
     fetchCreateSeatRoleMapping,
@@ -661,7 +707,8 @@
   const esiRoleFormRef = ref<FormInstance>()
   const esiRoleForm = reactive({
     esi_role: '',
-    role_id: undefined as number | undefined
+    role_id: undefined as number | undefined,
+    only_main_char: true
   })
   const esiRoleFormRules: FormRules = {
     esi_role: [{ required: true, message: t('autoRolePage.rules.esiRole'), trigger: 'change' }],
@@ -671,6 +718,7 @@
   function openEsiRoleDialog() {
     esiRoleForm.esi_role = ''
     esiRoleForm.role_id = undefined
+    esiRoleForm.only_main_char = true
     esiRoleDialogVisible.value = true
   }
 
@@ -681,7 +729,8 @@
     try {
       await fetchCreateEsiRoleMapping({
         esi_role: esiRoleForm.esi_role,
-        role_id: esiRoleForm.role_id!
+        role_id: esiRoleForm.role_id!,
+        only_main_char: esiRoleForm.only_main_char
       })
       ElMessage.success(t('autoRolePage.mappingCreated'))
       esiRoleDialogVisible.value = false
@@ -725,7 +774,8 @@
     corporation_id: 0,
     title_id: 0,
     title_name: '',
-    role_id: undefined as number | undefined
+    role_id: undefined as number | undefined,
+    only_main_char: true
   })
   const titleFormRules: FormRules = {
     title_key: [{ required: true, message: t('autoRolePage.rules.title'), trigger: 'change' }],
@@ -747,6 +797,7 @@
     titleForm.title_id = 0
     titleForm.title_name = ''
     titleForm.role_id = undefined
+    titleForm.only_main_char = true
     titleDialogVisible.value = true
   }
 
@@ -759,7 +810,8 @@
         corporation_id: titleForm.corporation_id,
         title_id: titleForm.title_id,
         title_name: titleForm.title_name || undefined,
-        role_id: titleForm.role_id!
+        role_id: titleForm.role_id!,
+        only_main_char: titleForm.only_main_char
       })
       ElMessage.success(t('autoRolePage.mappingCreated'))
       titleDialogVisible.value = false
@@ -876,6 +928,21 @@
   const autoRoleLoading = ref(false)
   const basicAccessLoading = ref(false)
 
+  // 准入名单"仅主角色"配置
+  const allowListConfig = ref<Api.SystemManage.AllowListOnlyMainCharConfig>({
+    auto_role_only_main_char: false,
+    basic_access_only_main_char: false
+  })
+
+  async function loadAllowListOnlyMainCharConfig() {
+    const res = await fetchGetAllowListOnlyMainCharConfig()
+    if (res) allowListConfig.value = res
+  }
+
+  async function saveAllowListOnlyMainCharConfig() {
+    await fetchUpdateAllowListOnlyMainCharConfig(allowListConfig.value)
+  }
+
   // 搜索对话框
   const allowDialogVisible = ref(false)
   const allowDialogListType = ref<'auto_role' | 'basic_access'>('auto_role')
@@ -973,7 +1040,8 @@
       loadSeatRoleMappings(),
       loadLogs(),
       loadAutoRoleEntities(),
-      loadBasicAccessEntities()
+      loadBasicAccessEntities(),
+      loadAllowListOnlyMainCharConfig()
     ])
   })
 </script>

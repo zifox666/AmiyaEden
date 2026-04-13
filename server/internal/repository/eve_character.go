@@ -36,6 +36,16 @@ func (r *EveCharacterRepository) ListByUserID(userID uint) ([]model.EveCharacter
 	return chars, err
 }
 
+// GetMainCharByUserID 获取用户最早绑定的角色（主角色）
+func (r *EveCharacterRepository) GetMainCharByUserID(userID uint) (*model.EveCharacter, error) {
+	var char model.EveCharacter
+	err := global.DB.Where("user_id = ?", userID).Order("created_at ASC").First(&char).Error
+	if err != nil {
+		return nil, err
+	}
+	return &char, nil
+}
+
 // Update 更新角色信息
 func (r *EveCharacterRepository) Update(char *model.EveCharacter) error {
 	return global.DB.Save(char).Error

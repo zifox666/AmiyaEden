@@ -409,6 +409,10 @@ func RegisterRoutes(r *gin.Engine) {
 
 		// EVE 实体模糊搜索（zkillboard autocomplete 代理）
 		adminAutoRole.GET("/eve-search", autoRoleH.SearchEveEntities)
+
+		// 准入名单"仅主角色"开关配置
+		adminAutoRole.GET("/allow-config", autoRoleH.GetAllowListOnlyMainCharConfig)
+		adminAutoRole.PUT("/allow-config", autoRoleH.UpdateAllowListOnlyMainCharConfig)
 	}
 
 	// Webhook 配置（管理员）

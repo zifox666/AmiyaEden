@@ -22,10 +22,11 @@ func (SeatRoleMapping) TableName() string { return "seat_role_mapping" }
 // 一个 ESI role 可以映射到多个系统角色，一个系统角色也可被多个 ESI role 映射
 type EsiRoleMapping struct {
 	BaseModel
-	EsiRole  string `gorm:"size:100;not null;index:idx_esi_role_mapping,unique" json:"esi_role"`  // ESI 军团角色名（如 Director、Accountant）
-	RoleID   uint   `gorm:"not null;index:idx_esi_role_mapping,unique"          json:"role_id"`   // 系统角色 ID
-	RoleCode string `gorm:"-"                                                   json:"role_code"` // 系统角色编码（仅展示用，不入库）
-	RoleName string `gorm:"-"                                                   json:"role_name"` // 系统角色名称（仅展示用，不入库）
+	EsiRole      string `gorm:"size:100;not null;index:idx_esi_role_mapping,unique" json:"esi_role"`       // ESI 军团角色名（如 Director、Accountant）
+	RoleID       uint   `gorm:"not null;index:idx_esi_role_mapping,unique"          json:"role_id"`        // 系统角色 ID
+	OnlyMainChar bool   `gorm:"not null;default:true"                               json:"only_main_char"` // 是否仅检测主角色（primary_character_id）
+	RoleCode     string `gorm:"-"                                                   json:"role_code"`      // 系统角色编码（仅展示用，不入库）
+	RoleName     string `gorm:"-"                                                   json:"role_name"`      // 系统角色名称（仅展示用，不入库）
 }
 
 func (EsiRoleMapping) TableName() string { return "esi_role_mapping" }
@@ -33,12 +34,13 @@ func (EsiRoleMapping) TableName() string { return "esi_role_mapping" }
 // EsiTitleMapping ESI 军团头衔 → 系统权限映射
 type EsiTitleMapping struct {
 	BaseModel
-	CorporationID int64  `gorm:"not null;index:idx_esi_title_mapping,unique"        json:"corporation_id"` // 军团 ID
-	TitleID       int    `gorm:"not null;index:idx_esi_title_mapping,unique"         json:"title_id"`      // ESI 头衔 ID
-	TitleName     string `gorm:"size:256"                                            json:"title_name"`    // 头衔名称（展示用）
-	RoleID        uint   `gorm:"not null;index:idx_esi_title_mapping,unique"         json:"role_id"`       // 系统角色 ID
-	RoleCode      string `gorm:"-"                                                   json:"role_code"`     // 系统角色编码（仅展示用）
-	RoleName      string `gorm:"-"                                                   json:"role_name"`     // 系统角色名称（仅展示用）
+	CorporationID int64  `gorm:"not null;index:idx_esi_title_mapping,unique"        json:"corporation_id"`  // 军团 ID
+	TitleID       int    `gorm:"not null;index:idx_esi_title_mapping,unique"         json:"title_id"`       // ESI 头衔 ID
+	TitleName     string `gorm:"size:256"                                            json:"title_name"`     // 头衔名称（展示用）
+	RoleID        uint   `gorm:"not null;index:idx_esi_title_mapping,unique"         json:"role_id"`        // 系统角色 ID
+	OnlyMainChar  bool   `gorm:"not null;default:true"                               json:"only_main_char"` // 是否仅检测主角色（primary_character_id）
+	RoleCode      string `gorm:"-"                                                   json:"role_code"`      // 系统角色编码（仅展示用）
+	RoleName      string `gorm:"-"                                                   json:"role_name"`      // 系统角色名称（仅展示用）
 }
 
 func (EsiTitleMapping) TableName() string { return "esi_title_mapping" }

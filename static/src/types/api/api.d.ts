@@ -266,6 +266,7 @@ declare namespace Api {
       role_id: number
       role_code: string
       role_name: string
+      only_main_char: boolean
       created_at: string
     }
 
@@ -273,6 +274,7 @@ declare namespace Api {
     interface CreateEsiRoleMappingParams {
       esi_role: string
       role_id: number
+      only_main_char: boolean
     }
 
     /** ESI 头衔 → 系统角色映射 */
@@ -284,6 +286,7 @@ declare namespace Api {
       role_id: number
       role_code: string
       role_name: string
+      only_main_char: boolean
       created_at: string
     }
 
@@ -300,6 +303,7 @@ declare namespace Api {
       title_id: number
       title_name?: string
       role_id: number
+      only_main_char: boolean
     }
 
     /** SeAT 分组 → 系统角色映射 */
@@ -350,6 +354,12 @@ declare namespace Api {
       name: string
       type: 'alliance' | 'corporation'
       image: string
+    }
+
+    /** 准入名单"仅主角色"开关配置 */
+    interface AllowListOnlyMainCharConfig {
+      auto_role_only_main_char: boolean
+      basic_access_only_main_char: boolean
     }
   }
 

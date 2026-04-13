@@ -37,8 +37,9 @@ func (h *AutoRoleHandler) GetAllEsiRoles(c *gin.Context) {
 }
 
 type createEsiRoleMappingRequest struct {
-	EsiRole string `json:"esi_role" binding:"required"`
-	RoleID  uint   `json:"role_id"  binding:"required"`
+	EsiRole      string `json:"esi_role"       binding:"required"`
+	RoleID       uint   `json:"role_id"        binding:"required"`
+	OnlyMainChar bool   `json:"only_main_char"`
 }
 
 // CreateEsiRoleMapping 创建 ESI 角色映射
@@ -48,7 +49,7 @@ func (h *AutoRoleHandler) CreateEsiRoleMapping(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
-	mapping, err := h.svc.CreateEsiRoleMapping(req.EsiRole, req.RoleID)
+	mapping, err := h.svc.CreateEsiRoleMapping(req.EsiRole, req.RoleID, req.OnlyMainChar)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -97,6 +98,7 @@ type createEsiTitleMappingRequest struct {
 	TitleID       int    `json:"title_id"       binding:"required"`
 	TitleName     string `json:"title_name"`
 	RoleID        uint   `json:"role_id"        binding:"required"`
+	OnlyMainChar  bool   `json:"only_main_char"`
 }
 
 // CreateEsiTitleMapping 创建 ESI 头衔映射
@@ -106,7 +108,7 @@ func (h *AutoRoleHandler) CreateEsiTitleMapping(c *gin.Context) {
 		response.Fail(c, response.CodeParamError, "请求参数错误")
 		return
 	}
-	mapping, err := h.svc.CreateEsiTitleMapping(req.CorporationID, req.TitleID, req.TitleName, req.RoleID)
+	mapping, err := h.svc.CreateEsiTitleMapping(req.CorporationID, req.TitleID, req.TitleName, req.RoleID, req.OnlyMainChar)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return
@@ -284,4 +286,35 @@ func (h *AutoRoleHandler) SearchEveEntities(c *gin.Context) {
 		return
 	}
 	response.OK(c, results)
+}
+
+// ─── 准入名单"仅主角色"配置 ───
+
+// GetAllowListOnlyMainCharConfig 获取准入名单的"仅主角色"开关
+// GET /auto-role/allow-config
+func (h *AutoRoleHandler) GetAllowListOnlyMainCharConfig(c *gin.Context) {
+	response.OK(c, h.svc.GetAllowListOnlyMainCharConfig())
+}
+
+type updateAllowListOnlyMainCharConfigRequest struct {
+	AutoRoleOnlyMainChar    bool `json:"auto_role_only_main_char"`
+	BasicAccessOnlyMainChar bool `json:"basic_access_only_main_char"`
+}
+
+// UpdateAllowListOnlyMainCharConfig 更新准入名单的"仅主角色"开关
+// PUT /auto-role/allow-config
+func (h *AutoRoleHandler) UpdateAllowListOnlyMainCharConfig(c *gin.Context) {
+	var req updateAllowListOnlyMainCharConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "请求参数错误")
+		return
+	}
+	if err := h.svc.SetAllowListOnlyMainCharConfig(service.AllowListOnlyMainCharConfig{
+		AutoRoleOnlyMainChar:    req.AutoRoleOnlyMainChar,
+		BasicAccessOnlyMainChar: req.BasicAccessOnlyMainChar,
+	}); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, nil)
 }

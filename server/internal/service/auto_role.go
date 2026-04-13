@@ -23,6 +23,7 @@ type AutoRoleService struct {
 	charRepo     *repository.EveCharacterRepository
 	userRepo     *repository.UserRepository
 	seatUserRepo *repository.SeatUserRepository
+	configRepo   *repository.SysConfigRepository
 	roleSvc      *RoleService
 }
 
@@ -34,6 +35,7 @@ func NewAutoRoleService() *AutoRoleService {
 		charRepo:     repository.NewEveCharacterRepository(),
 		userRepo:     repository.NewUserRepository(),
 		seatUserRepo: repository.NewSeatUserRepository(),
+		configRepo:   repository.NewSysConfigRepository(),
 		roleSvc:      NewRoleService(),
 	}
 }
@@ -51,7 +53,7 @@ func (s *AutoRoleService) ListEsiRoleMappings() ([]model.EsiRoleMapping, error) 
 }
 
 // CreateEsiRoleMapping 创建 ESI 角色映射
-func (s *AutoRoleService) CreateEsiRoleMapping(esiRole string, roleID uint) (*model.EsiRoleMapping, error) {
+func (s *AutoRoleService) CreateEsiRoleMapping(esiRole string, roleID uint, onlyMainChar bool) (*model.EsiRoleMapping, error) {
 	// 验证 ESI 角色名合法性
 	if !isValidEsiRole(esiRole) {
 		return nil, errors.New("无效的 ESI 军团角色名")
@@ -67,8 +69,9 @@ func (s *AutoRoleService) CreateEsiRoleMapping(esiRole string, roleID uint) (*mo
 	}
 
 	mapping := &model.EsiRoleMapping{
-		EsiRole: esiRole,
-		RoleID:  roleID,
+		EsiRole:      esiRole,
+		RoleID:       roleID,
+		OnlyMainChar: onlyMainChar,
 	}
 	if err := s.autoRoleRepo.CreateEsiRoleMapping(mapping); err != nil {
 		return nil, err
@@ -139,6 +142,38 @@ func (s *AutoRoleService) RemoveAllowedEntity(id uint) error {
 	return s.allowRepo.Remove(id)
 }
 
+// ─── 准入名单"仅主角色"配置 ───
+
+// AllowListOnlyMainCharConfig 准入名单"仅主角色"开关配置
+type AllowListOnlyMainCharConfig struct {
+	AutoRoleOnlyMainChar    bool `json:"auto_role_only_main_char"`
+	BasicAccessOnlyMainChar bool `json:"basic_access_only_main_char"`
+}
+
+// GetAllowListOnlyMainCharConfig 读取两个准入名单的"仅主角色"开关（默认 false）
+func (s *AutoRoleService) GetAllowListOnlyMainCharConfig() AllowListOnlyMainCharConfig {
+	return AllowListOnlyMainCharConfig{
+		AutoRoleOnlyMainChar:    s.configRepo.GetBool(model.SysConfigAutoRoleAllowOnlyMainChar, false),
+		BasicAccessOnlyMainChar: s.configRepo.GetBool(model.SysConfigBasicAccessAllowOnlyMainChar, false),
+	}
+}
+
+// SetAllowListOnlyMainCharConfig 更新两个准入名单的"仅主角色"开关
+func (s *AutoRoleService) SetAllowListOnlyMainCharConfig(cfg AllowListOnlyMainCharConfig) error {
+	autoVal := "false"
+	if cfg.AutoRoleOnlyMainChar {
+		autoVal = "true"
+	}
+	basicVal := "false"
+	if cfg.BasicAccessOnlyMainChar {
+		basicVal = "true"
+	}
+	if err := s.configRepo.Set(model.SysConfigAutoRoleAllowOnlyMainChar, autoVal, "自动权限准入仅检测主角色"); err != nil {
+		return err
+	}
+	return s.configRepo.Set(model.SysConfigBasicAccessAllowOnlyMainChar, basicVal, "基础访问准入仅检测主角色")
+}
+
 // ─── zkillboard 实体搜索 ───
 
 // ZkbSearchResult zkillboard 自动补全结果项
@@ -190,7 +225,7 @@ func (s *AutoRoleService) SearchEveEntities(query string) ([]ZkbSearchResult, er
 }
 
 // CreateEsiTitleMapping 创建 ESI 头衔映射
-func (s *AutoRoleService) CreateEsiTitleMapping(corpID int64, titleID int, titleName string, roleID uint) (*model.EsiTitleMapping, error) {
+func (s *AutoRoleService) CreateEsiTitleMapping(corpID int64, titleID int, titleName string, roleID uint, onlyMainChar bool) (*model.EsiTitleMapping, error) {
 	// 验证系统角色存在
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
@@ -206,6 +241,7 @@ func (s *AutoRoleService) CreateEsiTitleMapping(corpID int64, titleID int, title
 		TitleID:       titleID,
 		TitleName:     titleName,
 		RoleID:        roleID,
+		OnlyMainChar:  onlyMainChar,
 	}
 	if err := s.autoRoleRepo.CreateEsiTitleMapping(mapping); err != nil {
 		return nil, err
@@ -295,6 +331,14 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		return nil
 	}
 
+	// 获取用户主角色 ID 和昵称（primaryCharID 供 only_main_char 映射使用，username 供日志冗余）
+	primaryCharID := int64(0)
+	username := ""
+	if u, err := s.userRepo.GetByID(userID); err == nil {
+		primaryCharID = u.PrimaryCharacterID
+		username = u.Nickname
+	}
+
 	// 从 DB 读取 auto_role 准入名单
 	allowCorpIDs, allowAllianceIDs, err := s.allowRepo.GetAllIDs(model.AllowListAutoRole)
 	if err != nil {
@@ -310,8 +354,37 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 	}
 	allowFiltered := len(allowCorpSet)+len(allowAllianceSet) > 0
 
+	// 若开启了"准入仅主角色"，只看主角色的军团/联盟是否在准入名单内
+	if allowFiltered && s.configRepo.GetBool(model.SysConfigAutoRoleAllowOnlyMainChar, false) {
+		primaryQualified := false
+		for _, char := range chars {
+			if char.CharacterID != primaryCharID {
+				continue
+			}
+			if _, ok := allowCorpSet[char.CorporationID]; ok {
+				primaryQualified = true
+				break
+			}
+			if char.AllianceID != nil {
+				if _, ok := allowAllianceSet[*char.AllianceID]; ok {
+					primaryQualified = true
+					break
+				}
+			}
+			break
+		}
+		if !primaryQualified {
+			return nil
+		}
+		// 主角色通过准入，后续不再逐角色过滤
+		allowFiltered = false
+	}
+
 	// 收集所有角色的 ESI 军团角色（仅限允许军团/联盟）
+	// allEsiRoles: 所有允许角色的军团职位集合
+	// primaryEsiRoles: 仅主角色（primary_character_id）的军团职位集合，供 only_main_char 映射使用
 	allEsiRoles := make(map[string]struct{})
+	primaryEsiRoles := make(map[string]struct{})
 	hasDirector := false
 
 	for _, char := range chars {
@@ -340,6 +413,9 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		}
 		for _, r := range corpRoles {
 			allEsiRoles[r] = struct{}{}
+			if char.CharacterID == primaryCharID {
+				primaryEsiRoles[r] = struct{}{}
+			}
 			if r == "Director" {
 				hasDirector = true
 			}
@@ -368,6 +444,12 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 			global.Logger.Warn("[AutoRole] 查询 ESI 角色映射失败", zap.Error(err))
 		} else {
 			for _, m := range mappings {
+				// 若该映射仅限主角色，则只有主角色拥有该职位时才匹配
+				if m.OnlyMainChar {
+					if _, ok := primaryEsiRoles[m.EsiRole]; !ok {
+						continue
+					}
+				}
 				autoRoleIDs[m.RoleID] = struct{}{}
 			}
 		}
@@ -410,6 +492,10 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 			continue
 		}
 		for _, m := range titleMappings {
+			// 若该映射仅限主角色，则只有主角色所在军团头衔匹配时才生效
+			if m.OnlyMainChar && char.CharacterID != primaryCharID {
+				continue
+			}
 			autoRoleIDs[m.RoleID] = struct{}{}
 		}
 	}
@@ -464,12 +550,6 @@ func (s *AutoRoleService) SyncUserAutoRoles(ctx context.Context, userID uint) er
 		if _, shouldHave := autoRoleIDs[rid]; !shouldHave {
 			toRemove = append(toRemove, rid)
 		}
-	}
-
-	// 预先获取用户昵称（用于日志冗余）
-	username := ""
-	if u, err := s.userRepo.GetByID(userID); err == nil {
-		username = u.Nickname
 	}
 
 	changed := false

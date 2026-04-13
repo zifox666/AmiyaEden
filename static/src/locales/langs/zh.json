@@ -1318,6 +1318,7 @@
       "corporationId": "军团 ID",
       "titleId": "头衔 ID",
       "titleName": "头衔名称",
+      "onlyMainChar": "仅主角色",
       "userId": "用户 ID",
       "username": "用户昵称",
       "roleName": "角色",
@@ -1336,7 +1337,8 @@
       "esiRole": "EVE 职位",
       "systemRole": "系统角色",
       "title": "选择头衔",
-      "seatRole": "SeAT 分组"
+      "seatRole": "SeAT 分组",
+      "onlyMainChar": "仅主角色"
     },
     "placeholders": {
       "esiRole": "选择军团职位",
@@ -1352,6 +1354,11 @@
     },
     "titleFallback": "头衔 {id}",
     "corpPrefix": "Corp {id}",
+    "onlyMainChar": {
+      "yes": "仅主角色",
+      "no": "所有角色",
+      "hint": "开启后仅当该用户的主角色（primary_character_id）拥有该职位/头衔时才生效"
+    },
     "mappingCreated": "映射创建成功",
     "createFailed": "创建失败",
     "deleteSuccess": "删除成功",
@@ -1382,7 +1389,8 @@
       "removeSuccess": "已从名单移除",
       "removeFailed": "移除失败",
       "searchFailed": "搜索失败",
-      "noResults": "未找到匹配的联盟或军团"
+      "noResults": "未找到匹配的联盟或军团",
+      "onlyMainChar": "仅检查主角色"
     }
   },
   "shopAdmin": {

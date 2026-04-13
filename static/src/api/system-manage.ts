@@ -250,6 +250,21 @@ export function fetchSearchEveEntities(q: string) {
   })
 }
 
+/** 获取准入名单"仅主角色"开关配置 */
+export function fetchGetAllowListOnlyMainCharConfig() {
+  return request.get<Api.SystemManage.AllowListOnlyMainCharConfig>({
+    url: '/api/v1/system/auto-role/allow-config'
+  })
+}
+
+/** 更新准入名单"仅主角色"开关配置 */
+export function fetchUpdateAllowListOnlyMainCharConfig(data: Api.SystemManage.AllowListOnlyMainCharConfig) {
+  return request.put<null>({
+    url: '/api/v1/system/auto-role/allow-config',
+    data
+  })
+}
+
 // ─── SeAT 分组映射 ───
 
 /** 获取所有可用的 SeAT 分组名列表 */

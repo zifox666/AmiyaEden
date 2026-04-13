@@ -1317,6 +1317,7 @@
       "corporationId": "Corporation ID",
       "titleId": "Title ID",
       "titleName": "Title Name",
+      "onlyMainChar": "Main Char Only",
       "userId": "User ID",
       "username": "Nickname",
       "roleName": "Role",
@@ -1335,7 +1336,8 @@
       "esiRole": "EVE Role",
       "systemRole": "System Role",
       "title": "Title",
-      "seatRole": "SeAT Group"
+      "seatRole": "SeAT Group",
+      "onlyMainChar": "Main Char Only"
     },
     "placeholders": {
       "esiRole": "Select a corporation role",
@@ -1351,6 +1353,11 @@
     },
     "titleFallback": "Title {id}",
     "corpPrefix": "Corp {id}",
+    "onlyMainChar": {
+      "yes": "Main only",
+      "no": "All chars",
+      "hint": "When enabled, only the user's primary character (primary_character_id) is checked for this mapping"
+    },
     "mappingCreated": "Mapping created",
     "createFailed": "Failed to create mapping",
     "deleteSuccess": "Deleted",
@@ -1381,7 +1388,8 @@
       "removeSuccess": "Removed from list",
       "removeFailed": "Failed to remove",
       "searchFailed": "Search failed",
-      "noResults": "No alliances or corporations found"
+      "noResults": "No alliances or corporations found",
+      "onlyMainChar": "Primary character only"
     }
   },
   "shopAdmin": {
