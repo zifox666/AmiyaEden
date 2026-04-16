@@ -24,13 +24,10 @@ import (
 // same container, so this path is directly accessible from Go.
 const staticHtmlDir = "/usr/share/nginx/html"
 
-// currentVersion is set by the handler from main.Version at startup.
+// currentVersion is injected at build time via:
+//
+//	-ldflags "-X amiya-eden/internal/service.currentVersion=v1.2.3"
 var currentVersion = "dev"
-
-// SetCurrentVersion allows main to inject the build-time version.
-func SetCurrentVersion(v string) {
-	currentVersion = v
-}
 
 // ServerUpdateService handles GitHub Release self-upgrade.
 type ServerUpdateService struct{}

@@ -32,7 +32,7 @@ jobs:
           GOARCH: amd64
         run: |
           go build \
-            -ldflags="-s -w -X main.Version=${{ github.ref_name }}" \
+            -ldflags="-s -w -X amiya-eden/internal/service.currentVersion=${{ github.ref_name }}" \
             -o ../dist/amiya-eden-server-linux-amd64 \
             ./main.go
 
@@ -44,7 +44,7 @@ jobs:
           GOARCH: arm64
         run: |
           go build \
-            -ldflags="-s -w -X main.Version=${{ github.ref_name }}" \
+            -ldflags="-s -w -X amiya-eden/internal/service.currentVersion=${{ github.ref_name }}" \
             -o ../dist/amiya-eden-server-linux-arm64 \
             ./main.go
 
@@ -131,3 +131,36 @@ jobs:
             dist/amiya-eden-server-linux-amd64
             dist/amiya-eden-server-linux-arm64
             dist/amiya-eden-frontend-dist.tar.gz
+
+  build-docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs:
+      - build-backend
+      - build-frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            VERSION=${{ github.ref_name }}
+          tags: |
+            newdoublex/amiya-eden:latest
+            newdoublex/amiya-eden:${{ github.ref_name }}

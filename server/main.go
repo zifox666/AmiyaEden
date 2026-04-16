@@ -3,7 +3,6 @@ package main
 import (
 	"amiya-eden/bootstrap"
 	"amiya-eden/global"
-	"amiya-eden/internal/service"
 	"amiya-eden/jobs"
 	"amiya-eden/pkg/jwt"
 	"context"
@@ -16,18 +15,12 @@ import (
 	"go.uber.org/zap"
 )
 
-// Version is injected at build time via -ldflags "-X main.Version=v1.0.0"
-var Version = "dev"
-
 func main() {
 	// 初始化配置
 	bootstrap.InitConfig()
 
 	// 初始化日志
 	bootstrap.InitLogger()
-
-	// 注入构建版本号到升级服务
-	service.SetCurrentVersion(Version)
 
 	// 初始化 JWT 密钥
 	jwt.Init(global.Config.JWT.Secret)

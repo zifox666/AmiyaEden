@@ -43,7 +43,7 @@ COPY server/ .
 
 ARG VERSION=dev
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X main.Version=${VERSION}" \
+    -ldflags="-s -w -X amiya-eden/internal/service.currentVersion=${VERSION}" \
     -o server ./main.go
 
 # ============================================================

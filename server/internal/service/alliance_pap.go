@@ -238,7 +238,7 @@ func (s *AlliancePAPService) FetchAllUsers(year, month int) {
 // ─── 修改接口 ───
 type PAPImportInfo struct {
 	PrimaryCharacterName string  `json:"primary_character_name" binding:"required"`
-	MonthlyPAP           float64 `json:"monthly_pap,default=0" binding:"gte=0"`
+	MonthlyPAP           float64 `json:"monthly_pap" binding:"gte=0"`
 	CalculatedAt         string  `json:"calculated_at" binding:"required"`
 }
 
