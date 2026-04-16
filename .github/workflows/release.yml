@@ -89,7 +89,9 @@ jobs:
         working-directory: static
         # Archive the contents of dist/ directly (no parent directory prefix)
         # so the backend can extract straight into the html root.
-        run: tar -czf ../dist/amiya-eden-frontend-dist.tar.gz -C dist .
+        run: |
+          mkdir -p ../dist
+          tar -czf ../dist/amiya-eden-frontend-dist.tar.gz -C dist .
 
       - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
