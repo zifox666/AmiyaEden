@@ -1803,6 +1803,7 @@
     "title": "建筑管理",
     "selectCorp": "选择军团",
     "corpPrefix": "军团 {id}",
+    "structurePrefix": "建筑",
     "stateFilter": "筛选状态",
     "fuelExpiresFilter": "仅低油量（7天内）",
     "searchPlaceholder": "搜索建筑名称",
@@ -1831,6 +1832,51 @@
       "services": "服务",
       "stateTimerEnd": "出增强时间",
       "unanchorsAt": "解锚时间"
+    },
+    "actions": {
+      "openSettings": "承接配置",
+      "claim": "承接",
+      "settle": "结算贡献",
+      "markIskPaid": "标记ISK已发放"
+    },
+    "taskStatus": {
+      "claimedByOther": "已被承接",
+      "completedWithAmount": "已结算 钱包:{wallet} ISK:{isk}",
+      "notAvailable": "不可承接",
+      "iskPaid": "ISK已发放"
+    },
+    "messages": {
+      "claimSuccess": "承接成功",
+      "settleSuccess": "结算成功，钱包 +{wallet}，ISK +{isk}",
+      "settingSaved": "配置保存成功",
+      "selectCorpFirst": "请先选择军团",
+      "markIskPaidSuccess": "已标记ISK手动发放完成"
+    },
+    "fuelSetting": {
+      "title": "建筑承接与贡献设置",
+      "enabled": "启用承接",
+      "claimMode": "可承接范围模式",
+      "claimModes": {
+        "all": "全部建筑",
+        "manual": "仅手工选择建筑",
+        "condition": "仅满足条件建筑",
+        "mixed": "手工或条件命中均可"
+      },
+      "manualStructures": "手工选择建筑",
+      "conditionFuelHours": "条件：剩余燃料小时数 <= ",
+      "conditionStates": "条件：建筑状态",
+      "walletSection": "系统钱包贡献（自动发放）",
+      "walletEnabled": "启用系统钱包贡献",
+      "walletCalcMode": "系统钱包计算方式",
+      "walletValue": "系统钱包贡献值",
+      "iskSection": "游戏货币贡献（仅统计）",
+      "iskEnabled": "启用游戏货币统计",
+      "iskCalcMode": "游戏货币计算方式",
+      "iskValue": "游戏货币贡献值",
+      "calcModes": {
+        "perHour": "按新增小时计算",
+        "fixed": "固定值"
+      }
     }
   },
   "fleetIncentive": {

@@ -1771,6 +1771,68 @@ declare namespace Api {
 
   /** 军团建筑管理 */
   namespace CorpStructure {
+    type FuelTaskStatus = 'claimed' | 'completed' | 'cancelled' | 'expired'
+    type IskPayoutStatus = 'pending' | 'paid' | 'waived'
+    type FuelClaimMode = 'all' | 'manual' | 'condition' | 'mixed'
+    type FuelCalcMode = 'fixed' | 'per_hour'
+
+    interface FuelTask {
+      id: number
+      status: FuelTaskStatus
+      claimer_user_id: number
+      added_hours: number
+      wallet_amount: number
+      isk_amount: number
+      isk_payout_status: IskPayoutStatus
+      claimed_at: string
+      completed_at?: string | null
+    }
+
+    interface FuelSetting {
+      id: number
+      corporation_id: number
+      enabled: boolean
+      claim_mode: FuelClaimMode
+      manual_structure_ids: number[]
+      condition_fuel_hours_le?: number | null
+      condition_states: string[]
+      contribution_unit: 'hour'
+      wallet_enabled: boolean
+      wallet_calc_mode: FuelCalcMode
+      wallet_value: number
+      isk_enabled: boolean
+      isk_calc_mode: FuelCalcMode
+      isk_value: number
+      updated_by: number
+      created_at: string
+      updated_at: string
+    }
+
+    interface FuelSettingUpdateRequest {
+      corporation_id: number
+      enabled: boolean
+      claim_mode: FuelClaimMode
+      manual_structure_ids: number[]
+      condition_fuel_hours_le?: number | null
+      condition_states: string[]
+      contribution_unit: 'hour'
+      wallet_enabled: boolean
+      wallet_calc_mode: FuelCalcMode
+      wallet_value: number
+      isk_enabled: boolean
+      isk_calc_mode: FuelCalcMode
+      isk_value: number
+    }
+
+    interface FuelSettleResult {
+      task_id: number
+      structure_id: number
+      added_hours: number
+      wallet_amount: number
+      isk_amount: number
+      isk_need_manual: boolean
+    }
+
     /** 建筑服务 */
     interface StructureService {
       name: string
@@ -1795,6 +1857,10 @@ declare namespace Api {
       unanchors_at: string
       services: StructureService[]
       update_at: number
+      fuel_task?: FuelTask
+      can_claim?: boolean
+      can_settle?: boolean
+      claim_denied_reason?: string
     }
 
     /** 建筑列表（分页） */
