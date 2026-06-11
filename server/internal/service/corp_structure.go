@@ -4,12 +4,25 @@ import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
 	"amiya-eden/internal/repository"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
+	"net/http"
+	"strconv"
 	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+const (
+	corpStructureESIBaseURL = "https://esi.evetech.net/latest"
+	taskFilterClaimed       = "claimed"
+	taskFilterClaimable     = "claimable"
 )
 
 type CorpStructureService struct {
@@ -18,6 +31,9 @@ type CorpStructureService struct {
 	settingRepo *repository.CorpStructureFuelSettingRepository
 	taskRepo    *repository.CorpStructureFuelTaskRepository
 	walletSvc   *SysWalletService
+	ssoSvc      *EveSSOService
+	httpClient  *http.Client
+	esiBaseURL  string
 }
 
 func NewCorpStructureService() *CorpStructureService {
@@ -27,17 +43,27 @@ func NewCorpStructureService() *CorpStructureService {
 		settingRepo: repository.NewCorpStructureFuelSettingRepository(),
 		taskRepo:    repository.NewCorpStructureFuelTaskRepository(),
 		walletSvc:   NewSysWalletService(),
+		ssoSvc:      NewEveSSOService(),
+		httpClient:  &http.Client{Timeout: 30 * time.Second},
+		esiBaseURL:  corpStructureESIBaseURL,
 	}
 }
 
-// CorpStructureListRequest 建筑列表请求
 type CorpStructureListRequest struct {
-	Current         int    `json:"current"           binding:"required,min=1"`
-	Size            int    `json:"size"              binding:"required,min=1,max=100"`
+	Current         int    `json:"current" binding:"required,min=1"`
+	Size            int    `json:"size" binding:"required,min=1,max=100"`
 	CorpID          int64  `json:"corp_id"`
 	State           string `json:"state"`
 	FuelExpiresSoon bool   `json:"fuel_expires_soon"`
 	Keyword         string `json:"keyword"`
+	TaskFilter      string `json:"task_filter"`
+}
+
+type FuelTaskListRequest struct {
+	Current     int   `json:"current" binding:"required,min=1"`
+	Size        int   `json:"size" binding:"required,min=1,max=100"`
+	CorpID      int64 `json:"corp_id"`
+	OnlyPending bool  `json:"only_pending"`
 }
 
 type FuelTaskBrief struct {
@@ -85,8 +111,80 @@ type FuelSettleResult struct {
 	IskNeedManual bool    `json:"isk_need_manual"`
 }
 
-// ListCorpStructures 获取用户可见的军团建筑列表
+type corpStructureRefreshResp struct {
+	FuelExpires        string `json:"fuel_expires"`
+	Name               string `json:"name"`
+	NextReinforceApply string `json:"next_reinforce_apply"`
+	NextReinforceHour  int    `json:"next_reinforce_hour"`
+	ProfileID          int64  `json:"profile_id"`
+	ReinforceHour      int    `json:"reinforce_hour"`
+	Services           []struct {
+		Name  string `json:"name"`
+		State string `json:"state"`
+	} `json:"services"`
+	State           string `json:"state"`
+	StateTimerEnd   string `json:"state_timer_end"`
+	StateTimerStart string `json:"state_timer_start"`
+	StructureID     int64  `json:"structure_id"`
+	SystemID        int64  `json:"system_id"`
+	TypeID          int64  `json:"type_id"`
+	UnanchorsAt     string `json:"unanchors_at"`
+}
+
+func (s *CorpStructureService) ListFuelTasks(userID uint, roleCodes []string, req *FuelTaskListRequest) (interface{}, error) {
+	if req.Current < 1 {
+		req.Current = 1
+	}
+	if req.Size < 1 || req.Size > 100 {
+		req.Size = 20
+	}
+
+	corpID, err := s.resolveCorpID(userID, req.CorpID)
+	if err != nil {
+		return nil, err
+	}
+	if corpID == 0 {
+		return map[string]interface{}{
+			"list":     []model.CorpStructureFuelTaskListItem{},
+			"total":    0,
+			"page":     req.Current,
+			"pageSize": req.Size,
+		}, nil
+	}
+
+	filter := repository.FuelTaskListFilter{
+		CorporationID: corpID,
+		Status:        model.FuelTaskStatusCompleted,
+		OnlyPending:   req.OnlyPending,
+	}
+	if !model.ContainsAnyRole(roleCodes, model.RoleAdmin, model.RoleSuperAdmin) {
+		filter.ClaimerUserID = &userID
+	}
+
+	list, total, err := s.taskRepo.ListTasks(req.Current, req.Size, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"list":     list,
+		"total":    total,
+		"page":     req.Current,
+		"pageSize": req.Size,
+	}, nil
+}
+
 func (s *CorpStructureService) ListCorpStructures(userID uint, req *CorpStructureListRequest) (interface{}, error) {
+	if req.Current < 1 {
+		req.Current = 1
+	}
+	if req.Size < 1 || req.Size > 100 {
+		req.Size = 20
+	}
+	if req.TaskFilter != "" && req.TaskFilter != taskFilterClaimed && req.TaskFilter != taskFilterClaimable {
+		return nil, errors.New("无效的承接筛选条件")
+	}
+
 	corpID, err := s.resolveCorpID(userID, req.CorpID)
 	if err != nil {
 		return nil, err
@@ -100,56 +198,32 @@ func (s *CorpStructureService) ListCorpStructures(userID uint, req *CorpStructur
 		}, nil
 	}
 
+	setting, _ := s.GetFuelSetting(corpID)
+	if req.TaskFilter != "" {
+		list, err := s.repo.ListAllByCorpID(corpID, req.State, req.FuelExpiresSoon, req.Keyword)
+		if err != nil {
+			return nil, err
+		}
+
+		rows := s.buildStructureRows(userID, setting, list)
+		rows = filterStructureRows(rows, req.TaskFilter)
+		total := int64(len(rows))
+		rows = paginateStructureRows(rows, req.Current, req.Size)
+
+		return map[string]interface{}{
+			"list":     rows,
+			"total":    total,
+			"page":     req.Current,
+			"pageSize": req.Size,
+		}, nil
+	}
+
 	list, total, err := s.repo.ListByCorpID(corpID, req.Current, req.Size, req.State, req.FuelExpiresSoon, req.Keyword)
 	if err != nil {
 		return nil, err
 	}
 
-	setting, _ := s.GetFuelSetting(corpID)
-
-	structureIDs := make([]int64, 0, len(list))
-	for _, item := range list {
-		structureIDs = append(structureIDs, item.StructureID)
-	}
-	tasks, _ := s.taskRepo.ListLatestByStructureIDs(structureIDs)
-	taskMap := make(map[int64]model.CorpStructureFuelTask, len(tasks))
-	for _, t := range tasks {
-		taskMap[t.StructureID] = t
-	}
-
-	rows := make([]CorpStructureListItem, 0, len(list))
-	for _, item := range list {
-		row := CorpStructureListItem{CorpStructureInfo: item}
-		task, hasTask := taskMap[item.StructureID]
-		if hasTask {
-			row.FuelTask = &FuelTaskBrief{
-				ID:              task.ID,
-				Status:          task.Status,
-				ClaimerUserID:   task.ClaimerUserID,
-				AddedHours:      task.AddedHours,
-				WalletAmount:    task.WalletAmount,
-				IskAmount:       task.IskAmount,
-				IskPayoutStatus: task.IskPayoutStatus,
-				ClaimedAt:       task.ClaimedAt,
-				CompletedAt:     task.CompletedAt,
-			}
-		}
-
-		if hasTask && task.Status == model.FuelTaskStatusClaimed {
-			row.CanSettle = task.ClaimerUserID == userID
-			row.CanClaim = false
-			if task.ClaimerUserID != userID {
-				row.ClaimDeniedReason = "已被其他成员承接"
-			}
-		} else {
-			row.CanClaim = s.isStructureClaimable(setting, &item)
-			if !row.CanClaim {
-				row.ClaimDeniedReason = "当前建筑不在可承接范围内"
-			}
-		}
-		rows = append(rows, row)
-	}
-
+	rows := s.buildStructureRows(userID, setting, list)
 	return map[string]interface{}{
 		"list":     rows,
 		"total":    total,
@@ -158,7 +232,6 @@ func (s *CorpStructureService) ListCorpStructures(userID uint, req *CorpStructur
 	}, nil
 }
 
-// GetUserCorpIDs 获取用户关联的所有军团 ID
 func (s *CorpStructureService) GetUserCorpIDs(userID uint) ([]int64, error) {
 	return s.repo.GetCorpIDsByUserID(userID)
 }
@@ -273,11 +346,32 @@ func (s *CorpStructureService) ClaimFuelTask(userID uint, structureID int64) err
 	return s.taskRepo.Create(task)
 }
 
+func (s *CorpStructureService) CancelFuelTask(userID uint, roleCodes []string, structureID int64) error {
+	task, err := s.taskRepo.GetClaimedByStructureID(structureID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("当前建筑没有进行中的承接任务")
+		}
+		return err
+	}
+
+	if task.ClaimerUserID != userID && !model.ContainsAnyRole(roleCodes, model.RoleAdmin, model.RoleSuperAdmin) {
+		return errors.New("你只能取消自己承接的任务")
+	}
+
+	task.Status = model.FuelTaskStatusCancelled
+	return s.taskRepo.Update(task)
+}
+
 func (s *CorpStructureService) SettleFuelTask(userID uint, structureID int64) (*FuelSettleResult, error) {
 	task, err := s.taskRepo.GetClaimedByStructureAndUser(structureID, userID)
 	if err != nil {
 		return nil, errors.New("未找到你的承接任务")
 	}
+	if err := s.refreshStructureInfo(context.Background(), task.CorporationID, structureID); err != nil {
+		return nil, fmt.Errorf("刷新建筑实时数据失败: %w", err)
+	}
+
 	info, err := s.repo.GetByStructureID(structureID)
 	if err != nil {
 		return nil, errors.New("建筑不存在")
@@ -297,8 +391,8 @@ func (s *CorpStructureService) SettleFuelTask(userID uint, structureID int64) (*
 	if err != nil {
 		return nil, err
 	}
-	walletAmount := calcContribution(setting.WalletEnabled, setting.WalletCalcMode, setting.WalletValue, delta)
-	iskAmount := calcContribution(setting.IskEnabled, setting.IskCalcMode, setting.IskValue, delta)
+	walletAmount := calcContribution(setting.WalletEnabled, setting.WalletCalcMode, setting.WalletValue, delta, 4)
+	iskAmount := calcContribution(setting.IskEnabled, setting.IskCalcMode, setting.IskValue, delta, 2)
 
 	now := time.Now()
 	task.Status = model.FuelTaskStatusCompleted
@@ -347,6 +441,138 @@ func (s *CorpStructureService) SettleFuelTask(userID uint, structureID int64) (*
 	}, nil
 }
 
+func (s *CorpStructureService) refreshStructureInfo(ctx context.Context, corporationID int64, structureID int64) error {
+	if corporationID <= 0 || structureID <= 0 {
+		return errors.New("invalid corporation or structure id")
+	}
+
+	candidates, err := s.charRepo.ListStructureRefreshCandidates(corporationID)
+	if err != nil {
+		return fmt.Errorf("query structure refresh candidates: %w", err)
+	}
+	if len(candidates) == 0 {
+		return errors.New("当前军团没有可用的建筑授权角色")
+	}
+
+	var lastErr error
+	for _, char := range candidates {
+		accessToken, tokenErr := s.ssoSvc.GetValidToken(ctx, char.CharacterID)
+		if tokenErr != nil {
+			lastErr = fmt.Errorf("get token for character %d: %w", char.CharacterID, tokenErr)
+			global.Logger.Warn("[CorpStructure] failed to get token when refreshing structure info",
+				zap.Int64("character_id", char.CharacterID),
+				zap.Int64("corporation_id", corporationID),
+				zap.Int64("structure_id", structureID),
+				zap.Error(tokenErr),
+			)
+			continue
+		}
+
+		structures, fetchErr := s.fetchCorpStructures(ctx, accessToken, corporationID)
+		if fetchErr != nil {
+			lastErr = fmt.Errorf("fetch corp structures by character %d: %w", char.CharacterID, fetchErr)
+			global.Logger.Warn("[CorpStructure] failed to fetch corp structures when refreshing structure info",
+				zap.Int64("character_id", char.CharacterID),
+				zap.Int64("corporation_id", corporationID),
+				zap.Int64("structure_id", structureID),
+				zap.Error(fetchErr),
+			)
+			continue
+		}
+
+		for _, structure := range structures {
+			if structure.StructureID != structureID {
+				continue
+			}
+			if err := s.upsertStructureInfo(corporationID, &structure); err != nil {
+				return fmt.Errorf("save structure %d: %w", structureID, err)
+			}
+			return nil
+		}
+
+		lastErr = fmt.Errorf("structure %d not found in corporation %d", structureID, corporationID)
+	}
+
+	if lastErr != nil {
+		return lastErr
+	}
+	return errors.New("未能获取到目标建筑的最新数据")
+}
+
+func (s *CorpStructureService) fetchCorpStructures(ctx context.Context, accessToken string, corporationID int64) ([]corpStructureRefreshResp, error) {
+	structures := make([]corpStructureRefreshResp, 0)
+	totalPages := 1
+
+	for page := 1; page <= totalPages; page++ {
+		url := fmt.Sprintf("%s/corporations/%d/structures/?page=%d", s.esiBaseURL, corporationID, page)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("build ESI request: %w", err)
+		}
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := s.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("request ESI: %w", err)
+		}
+
+		body, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if readErr != nil {
+			return nil, fmt.Errorf("read ESI response: %w", readErr)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("ESI error %d: %s", resp.StatusCode, string(body))
+		}
+
+		if pages := resp.Header.Get("X-Pages"); pages != "" {
+			if parsed, parseErr := strconv.Atoi(pages); parseErr == nil && parsed > totalPages {
+				totalPages = parsed
+			}
+		}
+
+		var pageItems []corpStructureRefreshResp
+		if err := json.Unmarshal(body, &pageItems); err != nil {
+			return nil, fmt.Errorf("decode ESI response: %w", err)
+		}
+		structures = append(structures, pageItems...)
+	}
+
+	return structures, nil
+}
+
+func (s *CorpStructureService) upsertStructureInfo(corporationID int64, structure *corpStructureRefreshResp) error {
+	services := make(model.CorpStructureServices, 0, len(structure.Services))
+	for _, svc := range structure.Services {
+		services = append(services, model.CorpStructureService{
+			Name:  svc.Name,
+			State: svc.State,
+		})
+	}
+
+	record := model.CorpStructureInfo{
+		CorporationID:      corporationID,
+		StructureID:        structure.StructureID,
+		FuelExpires:        structure.FuelExpires,
+		Name:               structure.Name,
+		NextReinforceApply: structure.NextReinforceApply,
+		NextReinforceHour:  structure.NextReinforceHour,
+		ProfileID:          structure.ProfileID,
+		ReinforceHour:      structure.ReinforceHour,
+		State:              structure.State,
+		StateTimerEnd:      structure.StateTimerEnd,
+		StateTimerStart:    structure.StateTimerStart,
+		SystemID:           structure.SystemID,
+		TypeID:             structure.TypeID,
+		UnanchorsAt:        structure.UnanchorsAt,
+		Services:           services,
+		UpdateAt:           time.Now().Unix(),
+	}
+
+	return global.DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&record).Error
+}
+
 func (s *CorpStructureService) MarkIskPaid(taskID uint, operatorID uint, note string) error {
 	task, err := s.taskRepo.GetByID(taskID)
 	if err != nil {
@@ -362,6 +588,96 @@ func (s *CorpStructureService) MarkIskPaid(taskID uint, operatorID uint, note st
 		return errors.New("该任务不在待发放状态")
 	}
 	return s.taskRepo.MarkIskPaid(taskID, operatorID, note)
+}
+
+func (s *CorpStructureService) buildStructureRows(userID uint, setting *model.CorpStructureFuelSetting, list []model.CorpStructureInfo) []CorpStructureListItem {
+	structureIDs := make([]int64, 0, len(list))
+	for _, item := range list {
+		structureIDs = append(structureIDs, item.StructureID)
+	}
+
+	tasks, _ := s.taskRepo.ListLatestByStructureIDs(structureIDs)
+	taskMap := make(map[int64]model.CorpStructureFuelTask, len(tasks))
+	for _, task := range tasks {
+		taskMap[task.StructureID] = task
+	}
+
+	rows := make([]CorpStructureListItem, 0, len(list))
+	for _, item := range list {
+		row := CorpStructureListItem{CorpStructureInfo: item}
+		task, hasTask := taskMap[item.StructureID]
+		if hasTask {
+			row.FuelTask = &FuelTaskBrief{
+				ID:              task.ID,
+				Status:          task.Status,
+				ClaimerUserID:   task.ClaimerUserID,
+				AddedHours:      task.AddedHours,
+				WalletAmount:    task.WalletAmount,
+				IskAmount:       task.IskAmount,
+				IskPayoutStatus: task.IskPayoutStatus,
+				ClaimedAt:       task.ClaimedAt,
+				CompletedAt:     task.CompletedAt,
+			}
+		}
+
+		if hasTask && task.Status == model.FuelTaskStatusClaimed {
+			row.CanSettle = task.ClaimerUserID == userID
+			row.CanClaim = false
+			if task.ClaimerUserID != userID {
+				row.ClaimDeniedReason = "已被其他成员承接"
+			}
+		} else {
+			row.CanClaim = s.isStructureClaimable(setting, &item)
+			if !row.CanClaim {
+				row.ClaimDeniedReason = "当前建筑不在可承接范围内"
+			}
+		}
+
+		rows = append(rows, row)
+	}
+
+	return rows
+}
+
+func filterStructureRows(rows []CorpStructureListItem, taskFilter string) []CorpStructureListItem {
+	if taskFilter == "" {
+		return rows
+	}
+
+	filtered := make([]CorpStructureListItem, 0, len(rows))
+	for _, row := range rows {
+		switch taskFilter {
+		case taskFilterClaimed:
+			if row.FuelTask != nil && row.FuelTask.Status == model.FuelTaskStatusClaimed {
+				filtered = append(filtered, row)
+			}
+		case taskFilterClaimable:
+			if row.CanClaim {
+				filtered = append(filtered, row)
+			}
+		}
+	}
+	return filtered
+}
+
+func paginateStructureRows(rows []CorpStructureListItem, page, pageSize int) []CorpStructureListItem {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+
+	start := (page - 1) * pageSize
+	if start >= len(rows) {
+		return []CorpStructureListItem{}
+	}
+
+	end := start + pageSize
+	if end > len(rows) {
+		end = len(rows)
+	}
+	return rows[start:end]
 }
 
 func (s *CorpStructureService) resolveCorpID(userID uint, reqCorpID int64) (int64, error) {
@@ -433,22 +749,27 @@ func parseFuelExpires(v string) (time.Time, error) {
 	return time.Time{}, errors.New("invalid format")
 }
 
-func calcContribution(enabled bool, mode string, value float64, deltaHours float64) float64 {
+func calcContribution(enabled bool, mode string, value float64, deltaHours float64, precision int) float64 {
 	if !enabled || value <= 0 {
 		return 0
 	}
 	switch mode {
 	case model.FuelCalcModeFixed:
-		return round2(value)
+		return roundTo(value, precision)
 	case model.FuelCalcModePerHour:
-		return round2(value * deltaHours)
+		return roundTo(value*deltaHours, precision)
 	default:
 		return 0
 	}
 }
 
 func round2(v float64) float64 {
-	return math.Round(v*100) / 100
+	return roundTo(v, 2)
+}
+
+func roundTo(v float64, precision int) float64 {
+	factor := math.Pow10(precision)
+	return math.Round(v*factor) / factor
 }
 
 func containsInt64(list []int64, target int64) bool {

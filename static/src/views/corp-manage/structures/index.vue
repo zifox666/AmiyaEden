@@ -12,6 +12,35 @@
           >
             {{ $t('corpStructure.actions.openSettings') }}
           </ElButton>
+          <ElButton
+            v-if="canOperateFuel"
+            type="warning"
+            style="margin-right: 12px"
+            @click="openPayoutDialog"
+          >
+            {{ $t('corpStructure.actions.openPayouts') }}
+          </ElButton>
+          <span
+            v-if="canOperateFuel"
+            style="display: inline-flex; align-items: center; gap: 6px; margin-right: 12px"
+          >
+            <ElSwitch :model-value="taskFilter === 'claimed'" @change="handleClaimedFilterSwitch" />
+            <span style="font-size: 13px; color: var(--el-text-color-regular)">
+              {{ $t('corpStructure.filters.claimed') }}
+            </span>
+          </span>
+          <span
+            v-if="canOperateFuel"
+            style="display: inline-flex; align-items: center; gap: 6px; margin-right: 12px"
+          >
+            <ElSwitch
+              :model-value="taskFilter === 'claimable'"
+              @change="handleClaimableFilterSwitch"
+            />
+            <span style="font-size: 13px; color: var(--el-text-color-regular)">
+              {{ $t('corpStructure.filters.claimable') }}
+            </span>
+          </span>
 
           <ElInput
             v-model="keyword"
@@ -139,7 +168,10 @@
           </ElFormItem>
           <ElFormItem :label="$t('corpStructure.fuelSetting.walletCalcMode')">
             <ElSelect v-model="fuelSettingForm.wallet_calc_mode" style="width: 240px">
-              <ElOption value="per_hour" :label="$t('corpStructure.fuelSetting.calcModes.perHour')" />
+              <ElOption
+                value="per_hour"
+                :label="$t('corpStructure.fuelSetting.calcModes.perHour')"
+              />
               <ElOption value="fixed" :label="$t('corpStructure.fuelSetting.calcModes.fixed')" />
             </ElSelect>
           </ElFormItem>
@@ -147,8 +179,8 @@
             <ElInputNumber
               v-model="fuelSettingForm.wallet_value"
               :min="0"
-              :precision="2"
-              :step="10"
+              :precision="4"
+              :step="0.0001"
             />
           </ElFormItem>
 
@@ -158,7 +190,10 @@
           </ElFormItem>
           <ElFormItem :label="$t('corpStructure.fuelSetting.iskCalcMode')">
             <ElSelect v-model="fuelSettingForm.isk_calc_mode" style="width: 240px">
-              <ElOption value="per_hour" :label="$t('corpStructure.fuelSetting.calcModes.perHour')" />
+              <ElOption
+                value="per_hour"
+                :label="$t('corpStructure.fuelSetting.calcModes.perHour')"
+              />
               <ElOption value="fixed" :label="$t('corpStructure.fuelSetting.calcModes.fixed')" />
             </ElSelect>
           </ElFormItem>
@@ -180,6 +215,29 @@
         </ElButton>
       </template>
     </ElDialog>
+
+    <ElDialog
+      v-model="payoutDialogVisible"
+      :title="$t('corpStructure.payoutDialog.title')"
+      width="980px"
+      destroy-on-close
+    >
+      <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px">
+        <ElSwitch v-model="payoutPendingOnly" @change="handlePayoutFilterChange" />
+        <span style="font-size: 13px; color: var(--el-text-color-regular)">
+          {{ $t('corpStructure.payoutDialog.pendingOnly') }}
+        </span>
+      </div>
+
+      <ArtTable
+        :loading="payoutLoading"
+        :data="payoutData"
+        :columns="payoutColumns"
+        :pagination="payoutPagination"
+        @pagination:size-change="handlePayoutSizeChange"
+        @pagination:current-change="handlePayoutCurrentChange"
+      />
+    </ElDialog>
   </div>
 </template>
 
@@ -190,7 +248,9 @@
     fetchCorpStructureList,
     fetchCorpIDs,
     claimCorpStructureFuelTask,
+    cancelCorpStructureFuelTask,
     settleCorpStructureFuelTask,
+    fetchCorpStructureFuelTaskList,
     fetchCorpStructureFuelSetting,
     updateCorpStructureFuelSetting,
     markCorpStructureFuelTaskIskPaid
@@ -225,6 +285,7 @@
   const solarSystemNames = ref<Map<number, string>>(new Map())
   const typeNames = ref<Map<number, string>>(new Map())
   const stateFilter = ref<string>('')
+  const taskFilter = ref<Api.CorpStructure.TaskFilter | ''>('')
   const fuelExpiresSoon = ref<boolean>(false)
   const keyword = ref<string>('')
 
@@ -236,10 +297,17 @@
     const roles = userStore.getUserInfo?.roles ?? []
     return roles.some((r) => ['super_admin', 'admin', 'staff'].includes(r))
   })
+  const canManageClaims = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((r) => ['super_admin', 'admin'].includes(r))
+  })
+  const currentUserID = computed(() => userStore.getUserInfo?.userId ?? 0)
 
   const fuelSettingDialogVisible = ref(false)
   const fuelSettingLoading = ref(false)
   const fuelSettingSaving = ref(false)
+  const payoutDialogVisible = ref(false)
+  const payoutPendingOnly = ref(true)
   const fuelSettingForm = reactive<Api.CorpStructure.FuelSettingUpdateRequest>({
     corporation_id: 0,
     enabled: false,
@@ -311,6 +379,78 @@
     return String(hour).padStart(2, '0') + ':00'
   }
 
+  function formatDateTime(value?: string | null): string {
+    return value ? new Date(value).toLocaleString() : '-'
+  }
+
+  function formatNumber(
+    value: number,
+    maximumFractionDigits: number,
+    minimumFractionDigits = 2
+  ): string {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits,
+      maximumFractionDigits
+    }).format(value)
+  }
+
+  function formatWallet(value: number): string {
+    return formatNumber(value, 4, 2)
+  }
+
+  function formatISK(value: number): string {
+    return formatNumber(value, 2, 2)
+  }
+
+  async function fetchStructureTable(params: Api.CorpStructure.ListRequest) {
+    if (!params.task_filter) {
+      return fetchCorpStructureList(params)
+    }
+
+    const pageSize = 100
+    const baseParams: Api.CorpStructure.ListRequest = {
+      ...params,
+      current: 1,
+      size: pageSize,
+      task_filter: undefined
+    }
+
+    const firstPage = await fetchCorpStructureList(baseParams)
+    const mergedList = [...(firstPage?.list ?? [])]
+    const total = firstPage?.total ?? mergedList.length
+    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+    for (let page = 2; page <= totalPages; page += 1) {
+      const pageData = await fetchCorpStructureList({
+        ...baseParams,
+        current: page
+      })
+      mergedList.push(...(pageData?.list ?? []))
+    }
+
+    const filteredList = mergedList.filter((row) => {
+      if (params.task_filter === 'claimed') {
+        return row.fuel_task?.status === 'claimed'
+      }
+      if (params.task_filter === 'claimable') {
+        return !!row.can_claim
+      }
+      return true
+    })
+
+    const current = params.current || 1
+    const size = params.size || 20
+    const start = (current - 1) * size
+    const end = start + size
+
+    return {
+      list: filteredList.slice(start, end),
+      total: filteredList.length,
+      page: current,
+      pageSize: size
+    }
+  }
+
   async function resolveNames(rows: Api.CorpStructure.StructureItem[]) {
     const systemIds = [...new Set(rows.map((r) => r.system_id).filter(Boolean))]
     const typeIds = [...new Set(rows.map((r) => r.type_id).filter(Boolean))]
@@ -334,7 +474,9 @@
         if (raw[String(id)]) typeMap.set(id, raw[String(id)])
       })
       typeNames.value = typeMap
-    } catch {}
+    } catch {
+      // ignore SDE name lookup failures and fall back to numeric IDs
+    }
   }
 
   const {
@@ -349,12 +491,17 @@
     handleCurrentChange
   } = useTable({
     core: {
-      apiFn: fetchCorpStructureList,
+      apiFn: fetchStructureTable,
       apiParams: { current: 1, size: 20 },
       immediate: false,
       columnsFactory: () => [
         { type: 'index', width: 60, label: '#' },
-        { prop: 'name', label: t('corpStructure.fields.name'), minWidth: 200, showOverflowTooltip: true },
+        {
+          prop: 'name',
+          label: t('corpStructure.fields.name'),
+          minWidth: 200,
+          showOverflowTooltip: true
+        },
         {
           prop: 'state',
           label: t('corpStructure.fields.state'),
@@ -402,7 +549,8 @@
           prop: 'reinforce_hour',
           label: t('corpStructure.fields.reinforceHour'),
           width: 110,
-          formatter: (row: Api.CorpStructure.StructureItem) => formatReinforceHour(row.reinforce_hour)
+          formatter: (row: Api.CorpStructure.StructureItem) =>
+            formatReinforceHour(row.reinforce_hour)
         },
         {
           prop: 'services',
@@ -440,7 +588,7 @@
         {
           prop: 'actions',
           label: t('common.operation'),
-          width: 280,
+          width: 360,
           fixed: 'right',
           formatter: (row: Api.CorpStructure.StructureItem) => {
             const ext = row as Api.CorpStructure.StructureItem & {
@@ -451,6 +599,13 @@
             }
 
             const controls: any[] = []
+            const isClaimed = ext.fuel_task?.status === 'claimed'
+            const isSelfClaimed =
+              isClaimed && ext.fuel_task?.claimer_user_id === currentUserID.value
+            const isClaimedByOther = isClaimed && !isSelfClaimed
+            const canCancel =
+              canOperateFuel.value && isClaimed && (isSelfClaimed || canManageClaims.value)
+
             if (canOperateFuel.value && ext.can_claim) {
               controls.push(
                 h(
@@ -479,43 +634,39 @@
                 )
               )
             }
-            if (ext.fuel_task?.status === 'claimed' && !ext.can_settle) {
-              controls.push(h(ElTag, { type: 'warning', size: 'small' }, () => t('corpStructure.taskStatus.claimedByOther')))
-            }
-            if (ext.fuel_task?.status === 'completed') {
-              controls.push(
-                h(
-                  ElTag,
-                  { type: 'success', size: 'small' },
-                  () =>
-                    t('corpStructure.taskStatus.completedWithAmount', {
-                      wallet: ext.fuel_task?.wallet_amount ?? 0,
-                      isk: ext.fuel_task?.isk_amount ?? 0
-                    })
-                )
-              )
-            }
-            if (
-              canManageFuelSetting.value &&
-              ext.fuel_task?.status === 'completed' &&
-              (ext.fuel_task?.isk_amount ?? 0) > 0 &&
-              ext.fuel_task?.isk_payout_status === 'pending'
-            ) {
+            if (isClaimedByOther) {
               controls.push(
                 h(
                   ElButton,
                   {
-                    type: 'warning',
                     size: 'small',
-                    loading: actionLoading.value[row.structure_id] ?? false,
-                    onClick: () => handleMarkIskPaid(ext)
+                    disabled: true
                   },
-                  () => t('corpStructure.actions.markIskPaid')
+                  () => t('corpStructure.taskStatus.claimedByOther')
                 )
               )
             }
-            if (ext.fuel_task?.isk_payout_status === 'paid') {
-              controls.push(h(ElTag, { type: 'info', size: 'small' }, () => t('corpStructure.taskStatus.iskPaid')))
+            if (canCancel) {
+              controls.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'danger',
+                    plain: true,
+                    size: 'small',
+                    loading: actionLoading.value[row.structure_id] ?? false,
+                    onClick: () => handleCancelClaim(ext)
+                  },
+                  () => t('corpStructure.actions.cancelClaim')
+                )
+              )
+            }
+            if (ext.fuel_task?.status === 'completed') {
+              controls.push(
+                h(ElTag, { type: 'success', size: 'small' }, () =>
+                  t('corpStructure.taskStatus.completed')
+                )
+              )
             }
             if (controls.length === 0) {
               controls.push(
@@ -536,24 +687,169 @@
     }
   })
 
+  type FuelTaskListItem = Api.CorpStructure.FuelTaskListItem
+
+  const {
+    columns: payoutColumns,
+    data: payoutData,
+    loading: payoutLoading,
+    pagination: payoutPagination,
+    getData: getPayoutData,
+    handleSizeChange: handlePayoutSizeChange,
+    handleCurrentChange: handlePayoutCurrentChange
+  } = useTable({
+    core: {
+      apiFn: fetchCorpStructureFuelTaskList,
+      apiParams: { current: 1, size: 10 },
+      immediate: false,
+      columnsFactory: () => {
+        const cols: any[] = [
+          { type: 'index', width: 60, label: '#' },
+          {
+            prop: 'structure_name',
+            label: t('corpStructure.fields.name'),
+            minWidth: 200,
+            showOverflowTooltip: true
+          }
+        ]
+
+        if (canManageFuelSetting.value) {
+          cols.push({
+            prop: 'claimer_name',
+            label: t('corpStructure.payoutDialog.claimer'),
+            width: 140,
+            formatter: (row: FuelTaskListItem) => row.claimer_name || `#${row.claimer_user_id}`
+          })
+        }
+
+        cols.push(
+          {
+            prop: 'added_hours',
+            label: t('corpStructure.payoutDialog.addedHours'),
+            width: 110,
+            formatter: (row: FuelTaskListItem) => row.added_hours.toFixed(2)
+          },
+          {
+            prop: 'wallet_amount',
+            label: t('corpStructure.payoutDialog.walletAmount'),
+            width: 130,
+            formatter: (row: FuelTaskListItem) => formatWallet(row.wallet_amount)
+          },
+          {
+            prop: 'isk_amount',
+            label: t('corpStructure.payoutDialog.iskAmount'),
+            width: 130,
+            formatter: (row: FuelTaskListItem) => formatISK(row.isk_amount)
+          },
+          {
+            prop: 'completed_at',
+            label: t('corpStructure.payoutDialog.completedAt'),
+            width: 180,
+            formatter: (row: FuelTaskListItem) => formatDateTime(row.completed_at)
+          },
+          {
+            prop: 'isk_paid_at',
+            label: t('corpStructure.payoutDialog.paidAt'),
+            width: 180,
+            formatter: (row: FuelTaskListItem) => formatDateTime(row.isk_paid_at)
+          },
+          {
+            prop: 'isk_payout_status',
+            label: t('corpStructure.payoutDialog.status'),
+            width: 120,
+            formatter: (row: FuelTaskListItem) => {
+              const keyMap: Record<string, string> = {
+                pending: 'statusPending',
+                paid: 'statusPaid',
+                waived: 'statusWaived'
+              }
+              const typeMap: Record<string, string> = {
+                pending: 'warning',
+                paid: 'success',
+                waived: 'info'
+              }
+              const statusKey = keyMap[row.isk_payout_status] || keyMap.pending
+              return h(
+                ElTag,
+                { type: (typeMap[row.isk_payout_status] || 'warning') as any, size: 'small' },
+                () => t(`corpStructure.payoutDialog.${statusKey}`)
+              )
+            }
+          }
+        )
+
+        if (canManageFuelSetting.value) {
+          cols.push({
+            prop: 'actions',
+            label: t('common.operation'),
+            width: 140,
+            fixed: 'right',
+            formatter: (row: FuelTaskListItem) => {
+              if (row.isk_payout_status !== 'pending') return '-'
+              return h(
+                ElButton,
+                {
+                  type: 'warning',
+                  size: 'small',
+                  loading: actionLoading.value[row.id] ?? false,
+                  onClick: () => handleMarkIskPaidFromDialog(row)
+                },
+                () => t('corpStructure.actions.markIskPaid')
+              )
+            }
+          })
+        }
+
+        return cols
+      }
+    }
+  })
+
+  function refreshStructureList() {
+    const params: Api.CorpStructure.ListRequest = {
+      current: 1,
+      size: pagination.size,
+      corp_id: selectedCorpID.value,
+      state: stateFilter.value || undefined,
+      fuel_expires_soon: fuelExpiresSoon.value || undefined,
+      keyword: keyword.value || undefined,
+      task_filter: taskFilter.value || undefined
+    }
+
+    Object.assign(searchParams, params)
+    pagination.current = 1
+    getData(params)
+  }
+
   function handleCorpChange(corpID: number) {
-    Object.assign(searchParams, { corp_id: corpID })
-    getData()
+    selectedCorpID.value = corpID
+    refreshStructureList()
+    if (payoutDialogVisible.value) {
+      getPayoutData({ corp_id: corpID, only_pending: payoutPendingOnly.value })
+    }
   }
 
   function handleFilterChange() {
-    Object.assign(searchParams, {
-      state: stateFilter.value || undefined,
-      fuel_expires_soon: fuelExpiresSoon.value || undefined
-    })
-    getData()
+    refreshStructureList()
+  }
+
+  function applyTaskFilter(filter: Api.CorpStructure.TaskFilter | '') {
+    taskFilter.value = filter
+    refreshStructureList()
+  }
+
+  function handleClaimedFilterSwitch(value: boolean | string | number) {
+    applyTaskFilter(value ? 'claimed' : '')
+  }
+
+  function handleClaimableFilterSwitch(value: boolean | string | number) {
+    applyTaskFilter(value ? 'claimable' : '')
   }
 
   function handleKeywordInput() {
     if (keywordTimer) clearTimeout(keywordTimer)
     keywordTimer = setTimeout(() => {
-      Object.assign(searchParams, { keyword: keyword.value || undefined })
-      getData()
+      refreshStructureList()
     }, 400)
   }
 
@@ -562,7 +858,20 @@
     try {
       await claimCorpStructureFuelTask(row.structure_id)
       ElMessage.success(t('corpStructure.messages.claimSuccess'))
-      getData()
+      refreshStructureList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('common.error'))
+    } finally {
+      actionLoading.value[row.structure_id] = false
+    }
+  }
+
+  async function handleCancelClaim(row: Api.CorpStructure.StructureItem) {
+    actionLoading.value[row.structure_id] = true
+    try {
+      await cancelCorpStructureFuelTask(row.structure_id)
+      ElMessage.success(t('corpStructure.messages.cancelClaimSuccess'))
+      refreshStructureList()
     } catch (e: any) {
       ElMessage.error(e?.message || t('common.error'))
     } finally {
@@ -576,11 +885,11 @@
       const result = await settleCorpStructureFuelTask(row.structure_id)
       ElMessage.success(
         t('corpStructure.messages.settleSuccess', {
-          wallet: result?.wallet_amount ?? 0,
-          isk: result?.isk_amount ?? 0
+          wallet: formatWallet(result?.wallet_amount ?? 0),
+          isk: formatISK(result?.isk_amount ?? 0)
         })
       )
-      getData()
+      refreshStructureList()
     } catch (e: any) {
       ElMessage.error(e?.message || t('common.error'))
     } finally {
@@ -588,20 +897,40 @@
     }
   }
 
-  async function handleMarkIskPaid(row: Api.CorpStructure.StructureItem) {
-    const ext = row as Api.CorpStructure.StructureItem & { fuel_task?: Api.CorpStructure.FuelTask }
-    const taskID = ext.fuel_task?.id
-    if (!taskID) return
-    actionLoading.value[row.structure_id] = true
+  async function handleMarkIskPaidFromDialog(row: FuelTaskListItem) {
+    actionLoading.value[row.id] = true
     try {
-      await markCorpStructureFuelTaskIskPaid(taskID)
+      await markCorpStructureFuelTaskIskPaid(row.id)
       ElMessage.success(t('corpStructure.messages.markIskPaidSuccess'))
-      getData()
+      getPayoutData({
+        corp_id: selectedCorpID.value,
+        only_pending: payoutPendingOnly.value
+      })
     } catch (e: any) {
       ElMessage.error(e?.message || t('common.error'))
     } finally {
-      actionLoading.value[row.structure_id] = false
+      actionLoading.value[row.id] = false
     }
+  }
+
+  function openPayoutDialog() {
+    if (!selectedCorpID.value) {
+      ElMessage.warning(t('corpStructure.messages.selectCorpFirst'))
+      return
+    }
+    payoutDialogVisible.value = true
+    getPayoutData({
+      corp_id: selectedCorpID.value,
+      only_pending: payoutPendingOnly.value
+    })
+  }
+
+  function handlePayoutFilterChange() {
+    if (!payoutDialogVisible.value) return
+    getPayoutData({
+      corp_id: selectedCorpID.value,
+      only_pending: payoutPendingOnly.value
+    })
   }
 
   async function openFuelSettingDialog() {
@@ -656,7 +985,7 @@
       })
       ElMessage.success(t('corpStructure.messages.settingSaved'))
       fuelSettingDialogVisible.value = false
-      getData()
+      refreshStructureList()
     } catch (e: any) {
       ElMessage.error(e?.message || t('common.error'))
     } finally {
@@ -677,10 +1006,11 @@
             if (name) map.set(id, name)
           })
           corpNames.value = map
-        } catch {}
+        } catch {
+          // ignore corp name lookup failures and fall back to ID labels
+        }
         selectedCorpID.value = corpIDs.value[0]
-        Object.assign(searchParams, { corp_id: corpIDs.value[0] })
-        getData()
+        refreshStructureList()
       }
     } catch {
       corpIDs.value = []

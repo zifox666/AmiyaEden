@@ -152,7 +152,9 @@ func RegisterRoutes(r *gin.Engine) {
 		corpStructure.GET("/corps", corpStructureH.GetCorpIDs)
 		corpStructure.GET("/fuel/settings", middleware.RequireRole(model.RoleStaff, model.RoleAdmin, model.RoleSuperAdmin), corpStructureH.GetFuelSetting)
 		corpStructure.PUT("/fuel/settings", middleware.RequireRole(model.RoleAdmin, model.RoleSuperAdmin), corpStructureH.UpsertFuelSetting)
+		corpStructure.POST("/fuel-tasks/list", middleware.RequireRole(model.RoleStaff, model.RoleAdmin, model.RoleSuperAdmin), corpStructureH.ListFuelTasks)
 		corpStructure.POST("/:id/fuel/claim", middleware.RequireRole(model.RoleStaff, model.RoleAdmin, model.RoleSuperAdmin), corpStructureH.ClaimFuelTask)
+		corpStructure.POST("/:id/fuel/cancel", middleware.RequireRole(model.RoleStaff, model.RoleAdmin, model.RoleSuperAdmin), corpStructureH.CancelFuelTask)
 		corpStructure.POST("/:id/fuel/settle", middleware.RequireRole(model.RoleStaff, model.RoleAdmin, model.RoleSuperAdmin), corpStructureH.SettleFuelTask)
 		corpStructure.POST("/fuel-tasks/:task_id/isk/mark-paid", middleware.RequireRole(model.RoleAdmin, model.RoleSuperAdmin), corpStructureH.MarkFuelTaskIskPaid)
 	}

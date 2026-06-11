@@ -56,7 +56,7 @@
     "createSuccess": "创建成功",
     "updateSuccess": "更新成功",
     "reason": "原因",
-    "type"  : "类型",
+    "type": "类型",
     "actions": "操作"
   },
   "search": {
@@ -69,20 +69,11 @@
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": [
-        "垂直",
-        "水平",
-        "混合",
-        "双列"
-      ]
+      "list": ["垂直", "水平", "混合", "双列"]
     },
     "theme": {
       "title": "主题风格",
-      "list": [
-        "浅色",
-        "深色",
-        "系统"
-      ]
+      "list": ["浅色", "深色", "系统"]
     },
     "menu": {
       "title": "菜单风格"
@@ -92,17 +83,11 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": [
-        "边框",
-        "阴影"
-      ]
+      "list": ["边框", "阴影"]
     },
     "container": {
       "title": "容器宽度",
-      "list": [
-        "铺满",
-        "定宽"
-      ]
+      "list": ["铺满", "定宽"]
     },
     "basics": {
       "title": "基础配置",
@@ -148,14 +133,8 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": [
-      "通知",
-      "消息",
-      "代办"
-    ],
-    "text": [
-      "暂无"
-    ],
+    "bar": ["通知", "消息", "代办"],
+    "text": ["暂无"],
     "viewAll": "查看全部"
   },
   "console": {
@@ -1835,22 +1814,43 @@
     },
     "actions": {
       "openSettings": "承接配置",
+      "openPayouts": "发放记录",
       "claim": "承接",
+      "cancelClaim": "取消承接",
       "settle": "结算贡献",
       "markIskPaid": "标记ISK已发放"
     },
+    "filters": {
+      "claimed": "已被承接",
+      "claimable": "可承接"
+    },
     "taskStatus": {
       "claimedByOther": "已被承接",
-      "completedWithAmount": "已结算 钱包:{wallet} ISK:{isk}",
+      "completed": "已结算",
       "notAvailable": "不可承接",
       "iskPaid": "ISK已发放"
     },
     "messages": {
       "claimSuccess": "承接成功",
       "settleSuccess": "结算成功，钱包 +{wallet}，ISK +{isk}",
+      "cancelClaimSuccess": "取消承接成功",
       "settingSaved": "配置保存成功",
       "selectCorpFirst": "请先选择军团",
       "markIskPaidSuccess": "已标记ISK手动发放完成"
+    },
+    "payoutDialog": {
+      "title": "发放记录",
+      "pendingOnly": "仅看待发放",
+      "claimer": "承接人",
+      "addedHours": "新增小时",
+      "walletAmount": "系统钱包",
+      "iskAmount": "游戏ISK",
+      "completedAt": "结算时间",
+      "paidAt": "发放时间",
+      "status": "发放状态",
+      "statusPending": "待发放",
+      "statusPaid": "已发放",
+      "statusWaived": "无需发放"
     },
     "fuelSetting": {
       "title": "建筑承接与贡献设置",

@@ -131,3 +131,20 @@ type CorpStructureFuelTask struct {
 }
 
 func (CorpStructureFuelTask) TableName() string { return "corp_structure_fuel_task" }
+
+// CorpStructureFuelTaskListItem 建筑燃料贡献发放列表项
+type CorpStructureFuelTaskListItem struct {
+	ID              uint       `json:"id"`
+	CorporationID   int64      `json:"corporation_id"`
+	StructureID     int64      `json:"structure_id"`
+	StructureName   string     `json:"structure_name"`
+	ClaimerUserID   uint       `json:"claimer_user_id"`
+	ClaimerName     string     `json:"claimer_name"`
+	AddedHours      float64    `json:"added_hours"`
+	WalletAmount    float64    `json:"wallet_amount"`
+	IskAmount       float64    `json:"isk_amount"`
+	IskPayoutStatus string     `json:"isk_payout_status"`
+	ClaimedAt       time.Time  `json:"claimed_at"`
+	CompletedAt     *time.Time `json:"completed_at,omitempty"`
+	IskPaidAt       *time.Time `json:"isk_paid_at,omitempty"`
+}

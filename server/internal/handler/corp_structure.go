@@ -104,6 +104,22 @@ func (h *CorpStructureHandler) ClaimFuelTask(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+// CancelFuelTask POST /operation/corp-structures/:id/fuel/cancel
+func (h *CorpStructureHandler) CancelFuelTask(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	roleCodes := middleware.GetUserRoles(c)
+	structureID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || structureID <= 0 {
+		response.Fail(c, response.CodeParamError, "寤虹瓚ID鏃犳晥")
+		return
+	}
+	if err := h.svc.CancelFuelTask(userID, roleCodes, structureID); err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, nil)
+}
+
 // SettleFuelTask POST /operation/corp-structures/:id/fuel/settle
 func (h *CorpStructureHandler) SettleFuelTask(c *gin.Context) {
 	userID := middleware.GetUserID(c)
@@ -113,6 +129,25 @@ func (h *CorpStructureHandler) SettleFuelTask(c *gin.Context) {
 		return
 	}
 	result, err := h.svc.SettleFuelTask(userID, structureID)
+	if err != nil {
+		response.Fail(c, response.CodeBizError, err.Error())
+		return
+	}
+	response.OK(c, result)
+}
+
+// ListFuelTasks POST /operation/corp-structures/fuel-tasks/list
+func (h *CorpStructureHandler) ListFuelTasks(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	roleCodes := middleware.GetUserRoles(c)
+
+	var req service.FuelTaskListRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.CodeParamError, "鍙傛暟閿欒: "+err.Error())
+		return
+	}
+
+	result, err := h.svc.ListFuelTasks(userID, roleCodes, &req)
 	if err != nil {
 		response.Fail(c, response.CodeBizError, err.Error())
 		return

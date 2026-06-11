@@ -56,7 +56,7 @@
     "createSuccess": "Created successfully",
     "updateSuccess": "Updated successfully",
     "reason": "Reason",
-    "type"  : "Type",
+    "type": "Type",
     "actions": "Actions"
   },
   "search": {
@@ -69,20 +69,11 @@
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": [
-        "Vertical",
-        "Horizontal",
-        "Mixed",
-        "Dual"
-      ]
+      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
     },
     "theme": {
       "title": "Theme Style",
-      "list": [
-        "Light",
-        "Dark",
-        "System"
-      ]
+      "list": ["Light", "Dark", "System"]
     },
     "menu": {
       "title": "Menu Style"
@@ -92,17 +83,11 @@
     },
     "box": {
       "title": "Box Style",
-      "list": [
-        "Border",
-        "Shadow"
-      ]
+      "list": ["Border", "Shadow"]
     },
     "container": {
       "title": "Container Width",
-      "list": [
-        "Full",
-        "Boxed"
-      ]
+      "list": ["Full", "Boxed"]
     },
     "basics": {
       "title": "Basic Config",
@@ -148,14 +133,8 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": [
-      "Notice",
-      "Message",
-      "Todo"
-    ],
-    "text": [
-      "No"
-    ],
+    "bar": ["Notice", "Message", "Todo"],
+    "text": ["No"],
     "viewAll": "View all"
   },
   "worktab": {
@@ -1834,22 +1813,43 @@
     },
     "actions": {
       "openSettings": "Fuel Settings",
+      "openPayouts": "Payout Records",
       "claim": "Claim",
+      "cancelClaim": "Cancel Claim",
       "settle": "Settle",
       "markIskPaid": "Mark ISK Paid"
     },
+    "filters": {
+      "claimed": "Claimed",
+      "claimable": "Claimable"
+    },
     "taskStatus": {
       "claimedByOther": "Claimed by Others",
-      "completedWithAmount": "Settled Wallet:{wallet} ISK:{isk}",
+      "completed": "Settled",
       "notAvailable": "Not Claimable",
       "iskPaid": "ISK Paid"
     },
     "messages": {
       "claimSuccess": "Claimed successfully",
       "settleSuccess": "Settled. Wallet +{wallet}, ISK +{isk}",
+      "cancelClaimSuccess": "Claim cancelled",
       "settingSaved": "Settings saved",
       "selectCorpFirst": "Please select a corporation first",
       "markIskPaidSuccess": "ISK payout marked as completed"
+    },
+    "payoutDialog": {
+      "title": "Payout Records",
+      "pendingOnly": "Pending Only",
+      "claimer": "Claimer",
+      "addedHours": "Added Hours",
+      "walletAmount": "System Wallet",
+      "iskAmount": "In-game ISK",
+      "completedAt": "Settled At",
+      "paidAt": "Paid At",
+      "status": "Payout Status",
+      "statusPending": "Pending",
+      "statusPaid": "Paid",
+      "statusWaived": "Waived"
     },
     "fuelSetting": {
       "title": "Fuel Claim & Contribution Settings",

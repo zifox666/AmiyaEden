@@ -1775,6 +1775,7 @@ declare namespace Api {
     type IskPayoutStatus = 'pending' | 'paid' | 'waived'
     type FuelClaimMode = 'all' | 'manual' | 'condition' | 'mixed'
     type FuelCalcMode = 'fixed' | 'per_hour'
+    type TaskFilter = 'claimed' | 'claimable'
 
     interface FuelTask {
       id: number
@@ -1786,6 +1787,22 @@ declare namespace Api {
       isk_payout_status: IskPayoutStatus
       claimed_at: string
       completed_at?: string | null
+    }
+
+    interface FuelTaskListItem {
+      id: number
+      corporation_id: number
+      structure_id: number
+      structure_name: string
+      claimer_user_id: number
+      claimer_name: string
+      added_hours: number
+      wallet_amount: number
+      isk_amount: number
+      isk_payout_status: IskPayoutStatus
+      claimed_at: string
+      completed_at?: string | null
+      isk_paid_at?: string | null
     }
 
     interface FuelSetting {
@@ -1833,6 +1850,15 @@ declare namespace Api {
       isk_need_manual: boolean
     }
 
+    type FuelTaskList = Api.Common.PaginatedResponse<FuelTaskListItem>
+
+    interface FuelTaskListRequest {
+      current: number
+      size: number
+      corp_id?: number
+      only_pending?: boolean
+    }
+
     /** 建筑服务 */
     interface StructureService {
       name: string
@@ -1874,6 +1900,7 @@ declare namespace Api {
       state?: string
       fuel_expires_soon?: boolean
       keyword?: string
+      task_filter?: TaskFilter
     }
   }
 
