@@ -756,17 +756,32 @@ func (s *FleetService) ManualPap(fleetID string, userID uint, userRole string, t
 	var entries []entry
 	seen := make(map[string]bool)
 	for _, line := range lines {
-		fields := strings.Fields(line)
-		if len(fields) == 0 {
+		line = strings.TrimSpace(line)
+		if line == "" {
 			continue
 		}
-		name := fields[0]
+		var name string
+		// EVE名单格式
+		if strings.Contains(line, "<t>") {
+			//单个情况
+			fields := strings.Split(line, "<t>")
+			name = strings.TrimSpace(fields[0])
+		} else if strings.Contains(line, "\t") {
+			//多个情况
+			fields := strings.Split(line, "\t")
+			name = strings.TrimSpace(fields[0])
+		} else {
+			name = line
+		}
 		key := strings.ToLower(name)
 		if seen[key] {
 			continue
 		}
 		seen[key] = true
-		entries = append(entries, entry{orig: name, key: key})
+		entries = append(entries, entry{
+			orig: name,
+			key:  key,
+		})
 	}
 	if len(entries) == 0 {
 		return nil, errors.New("未解析到有效角色名")
