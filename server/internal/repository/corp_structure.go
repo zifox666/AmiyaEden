@@ -3,6 +3,8 @@ package repository
 import (
 	"amiya-eden/global"
 	"amiya-eden/internal/model"
+
+	"gorm.io/gorm"
 )
 
 type CorpStructureRepository struct{}
@@ -11,11 +13,7 @@ func NewCorpStructureRepository() *CorpStructureRepository {
 	return &CorpStructureRepository{}
 }
 
-// ListByCorpID 分页查询军团建筑列表，支持按状态、燃料到期、关键词过滤
-func (r *CorpStructureRepository) ListByCorpID(corpID int64, page, pageSize int, state string, fuelExpiresSoon bool, keyword string) ([]model.CorpStructureInfo, int64, error) {
-	var list []model.CorpStructureInfo
-	var total int64
-
+func (r *CorpStructureRepository) baseListQuery(corpID int64, state string, fuelExpiresSoon bool, keyword string) *gorm.DB {
 	db := global.DB.Model(&model.CorpStructureInfo{}).Where("corporation_id = ?", corpID)
 	if state != "" {
 		db = db.Where("state = ?", state)
@@ -26,6 +24,15 @@ func (r *CorpStructureRepository) ListByCorpID(corpID int64, page, pageSize int,
 	if keyword != "" {
 		db = db.Where("name ILIKE ?", "%"+keyword+"%")
 	}
+	return db
+}
+
+// ListByCorpID 分页查询军团建筑列表，支持按状态、燃料到期、关键词过滤
+func (r *CorpStructureRepository) ListByCorpID(corpID int64, page, pageSize int, state string, fuelExpiresSoon bool, keyword string) ([]model.CorpStructureInfo, int64, error) {
+	var list []model.CorpStructureInfo
+	var total int64
+
+	db := r.baseListQuery(corpID, state, fuelExpiresSoon, keyword)
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -35,6 +42,14 @@ func (r *CorpStructureRepository) ListByCorpID(corpID int64, page, pageSize int,
 		return nil, 0, err
 	}
 	return list, total, nil
+}
+
+func (r *CorpStructureRepository) ListAllByCorpID(corpID int64, state string, fuelExpiresSoon bool, keyword string) ([]model.CorpStructureInfo, error) {
+	var list []model.CorpStructureInfo
+	err := r.baseListQuery(corpID, state, fuelExpiresSoon, keyword).
+		Order("fuel_expires ASC").
+		Find(&list).Error
+	return list, err
 }
 
 // GetByStructureID 根据建筑 ID 获取军团建筑详情

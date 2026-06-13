@@ -61,6 +61,23 @@ func (r *EveCharacterRepository) ListAllWithToken() ([]model.EveCharacter, error
 	return chars, err
 }
 
+// ListStructureRefreshCandidates 查询指定军团下可用于刷新建筑数据的角色
+func (r *EveCharacterRepository) ListStructureRefreshCandidates(corporationID int64) ([]model.EveCharacter, error) {
+	var chars []model.EveCharacter
+	err := global.DB.Table("eve_character AS ec").
+		Distinct("ec.*").
+		Joins("JOIN eve_character_corp_role AS ecr ON ecr.character_id = ec.character_id").
+		Where("ec.corporation_id = ?", corporationID).
+		Where("ecr.corp_role IN ?", []string{"Director", "Station_Manager"}).
+		Where("ec.scopes LIKE ?", "%esi-corporations.read_structures.v1%").
+		Where(
+			"(ec.refresh_token != '' AND ec.refresh_token IS NOT NULL AND ec.token_invalid = false) OR (ec.scopes != '' AND ec.scopes IS NOT NULL AND (ec.refresh_token = '' OR ec.refresh_token IS NULL))",
+		).
+		Order("ec.token_expiry DESC").
+		Find(&chars).Error
+	return chars, err
+}
+
 // Delete 删除角色记录（硬删除）
 func (r *EveCharacterRepository) Delete(id uint) error {
 	return global.DB.Unscoped().Delete(&model.EveCharacter{}, id).Error
