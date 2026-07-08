@@ -56,7 +56,7 @@
     "createSuccess": "创建成功",
     "updateSuccess": "更新成功",
     "reason": "原因",
-    "type"  : "类型",
+    "type": "类型",
     "actions": "操作"
   },
   "search": {
@@ -69,20 +69,11 @@
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": [
-        "垂直",
-        "水平",
-        "混合",
-        "双列"
-      ]
+      "list": ["垂直", "水平", "混合", "双列"]
     },
     "theme": {
       "title": "主题风格",
-      "list": [
-        "浅色",
-        "深色",
-        "系统"
-      ]
+      "list": ["浅色", "深色", "系统"]
     },
     "menu": {
       "title": "菜单风格"
@@ -92,17 +83,11 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": [
-        "边框",
-        "阴影"
-      ]
+      "list": ["边框", "阴影"]
     },
     "container": {
       "title": "容器宽度",
-      "list": [
-        "铺满",
-        "定宽"
-      ]
+      "list": ["铺满", "定宽"]
     },
     "basics": {
       "title": "基础配置",
@@ -148,14 +133,8 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": [
-      "通知",
-      "消息",
-      "代办"
-    ],
-    "text": [
-      "暂无"
-    ],
+    "bar": ["通知", "消息", "代办"],
+    "text": ["暂无"],
     "viewAll": "查看全部"
   },
   "console": {
@@ -292,6 +271,10 @@
       "browse": "浏览商品",
       "manage": "商店管理",
       "wallet": "我的钱包"
+    },
+    "voice": {
+      "title": "语音中心",
+      "mumble": "Mumble"
     },
     "characters": {
       "title": "EVE 角色管理"
@@ -1688,6 +1671,46 @@
       "contentPlaceholder": "留空则使用默认测试文本",
       "sendBtn": "发送测试",
       "success": "测试消息已发送"
+    }
+  },
+  "mumble": {
+    "title": "Mumble 语音认证",
+    "description": "使用 AmiyaEden 用户 ID 登录 Mumble，显示名称由平台账号同步。",
+    "enabled": "已启用",
+    "disabled": "未启用",
+    "username": "账号",
+    "password": "密码",
+    "displayName": "显示名称",
+    "currentGroups": "当前 Groups",
+    "server": "服务器",
+    "quickUrl": "快捷调用链接",
+    "copy": "复制",
+    "copySuccess": "已复制到剪贴板",
+    "resetPassword": "重置密码",
+    "resetConfirm": "重置后旧密码将立即失效，确定继续吗？",
+    "resetSuccess": "Mumble 密码已重置",
+    "openClient": "打开 Mumble",
+    "notConfigured": "Mumble 服务器尚未配置，快捷调用链接暂不可用。",
+    "config": {
+      "title": "Mumble 配置",
+      "enabled": "启用 Mumble",
+      "url": "服务器地址",
+      "urlPlaceholder": "例如: mumble.example.com",
+      "port": "端口",
+      "serverName": "服务器名称",
+      "serverNamePlaceholder": "例如: AmiyaEden Mumble",
+      "authSecret": "ICE 共享密钥",
+      "authSecretPlaceholder": "请输入 ICE Authenticator 共享密钥",
+      "authSecretSetPlaceholder": "已设置，留空则不修改"
+    },
+    "roleGroups": {
+      "title": "角色 Group 映射",
+      "description": "AmiyaEden 只在 Mumble 认证时授予这些 groups；频道 ACL 请继续在 Mumble 管理页面维护。",
+      "role": "平台角色",
+      "group": "Mumble Group",
+      "enabled": "启用",
+      "groupPlaceholder": "例如: amiya_user",
+      "saveSuccess": "角色 Group 映射已保存"
     }
   },
   "system": {

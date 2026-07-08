@@ -36,6 +36,7 @@
 - [10. SRP 补损](#10-srp-补损)
 - [11. ESI 刷新队列](#11-esi-刷新队列)
 - [12. 系统管理（Admin）](#12-系统管理admin)
+- [13. 语音中心 / Mumble](#13-语音中心--mumble)
 
 ---
 
@@ -1063,6 +1064,134 @@ POST /system/pap/settle
 | `POST`   | `/system/auto-role/esi-title-mappings`     | 创建头衔映射              |
 | `DELETE` | `/system/auto-role/esi-title-mappings/:id` | 删除头衔映射              |
 | `POST`   | `/system/auto-role/sync`                   | 手动触发自动角色同步      |
+
+---
+
+## 13. 语音中心 / Mumble
+
+### 13.1 获取当前用户 Mumble 账号
+
+```
+GET /voice/mumble
+```
+
+> 需要 JWT。若当前用户还没有 Mumble 账号，后端会自动创建。Mumble 登录账号固定为 AmiyaEden 用户 ID，密码为 16 位随机字符串。
+
+**响应**：
+
+```json
+{
+  "config": {
+    "enabled": true,
+    "url": "mumble.example.com",
+    "port": 64738,
+    "server_name": "AmiyaEden Mumble",
+    "auth_secret_set": true
+  },
+  "account": {
+    "user_id": 1,
+    "username": "1",
+    "password": "Random16Chars",
+    "display_name": "Character Name",
+    "groups": ["amiya_user"],
+    "quick_url": "mumble://1:Random16Chars@mumble.example.com:64738/?version=1.2.0&title=AmiyaEden%20Mumble"
+  }
+}
+```
+
+### 13.2 重置当前用户 Mumble 密码
+
+```
+POST /voice/mumble/reset-password
+```
+
+> 需要 JWT。用户不能自定义密码，只能重置为新的 16 位随机密码。
+
+**响应**：`account` 对象，字段同 13.1。
+
+### 13.3 Mumble 配置（Admin）
+
+| 方法  | 路径                    | 说明                |
+| ----- | ----------------------- | ------------------- |
+| `GET` | `/system/mumble-config` | 获取 Mumble 配置    |
+| `PUT` | `/system/mumble-config` | 更新 Mumble 配置    |
+
+**更新请求体**：
+
+```json
+{
+  "enabled": true,
+  "url": "mumble.example.com",
+  "port": 64738,
+  "server_name": "AmiyaEden Mumble",
+  "auth_secret": "shared-secret-for-ice-authenticator"
+}
+```
+
+### 13.4 Mumble 角色 Group 映射（Admin）
+
+> AmiyaEden 只负责把平台角色映射为 Mumble groups，并在 ICE 认证时返回 groups。频道 ACL 仍由管理员在 Mumble 管理页面维护。
+
+| 方法  | 路径                         | 说明                    |
+| ----- | ---------------------------- | ----------------------- |
+| `GET` | `/system/mumble-role-groups` | 获取角色与 group 映射   |
+| `PUT` | `/system/mumble-role-groups` | 批量更新角色 group 映射 |
+
+**响应**：
+
+```json
+[
+  {
+    "role_id": 1,
+    "role_code": "user",
+    "role_name": "用户",
+    "group_name": "amiya_user",
+    "enabled": true
+  }
+]
+```
+
+**更新请求体**：
+
+```json
+{
+  "mappings": [
+    {
+      "role_code": "user",
+      "group_name": "amiya_user",
+      "enabled": true
+    }
+  ]
+}
+```
+
+### 13.5 Mumble ICE Authenticator 内部认证桥
+
+```
+POST /voice/mumble/ice-auth
+```
+
+> 不需要 JWT，但必须携带 `X-Mumble-Auth-Secret`。该接口仅供 `server/cmd/mumble-ice-auth` 调用，不应暴露到公网。
+
+**请求体**：
+
+```json
+{
+  "username": "1",
+  "password": "Random16Chars"
+}
+```
+
+**响应**：
+
+```json
+{
+  "allowed": true,
+  "user_id": 1,
+  "display_name": "Character Name",
+  "groups": ["amiya_user"]
+}
+```
 
 ---
 

@@ -1726,6 +1726,56 @@ declare namespace Api {
     }
   }
 
+  /** Mumble 语音中心 */
+  namespace Mumble {
+    interface Config {
+      enabled: boolean
+      url: string
+      port: number
+      server_name: string
+      auth_secret_set: boolean
+      auth_secret?: string
+    }
+
+    interface Account {
+      user_id: number
+      username: string
+      password: string
+      display_name: string
+      groups: string[]
+      quick_url: string
+    }
+
+    interface Profile {
+      config: Config
+      account: Account
+    }
+
+    interface UpdateConfigParams {
+      enabled?: boolean
+      url?: string
+      port?: number
+      server_name?: string
+      auth_secret?: string
+    }
+
+    interface RoleGroupMapping {
+      role_id: number
+      role_code: string
+      role_name: string
+      group_name: string
+      enabled: boolean
+    }
+
+    interface UpdateRoleGroupsParams {
+      mappings: {
+        role_code: string
+        group_name: string
+        enabled: boolean
+      }[]
+    }
+  }
+
   /** 系统配置 */
   namespace SysConfig {
     interface BasicConfig {

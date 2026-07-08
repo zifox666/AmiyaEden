@@ -124,6 +124,10 @@ func GetSystemMenuSeeds() []MenuSeed {
 		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopProductDelete", Permission: "system:shop:product:delete", Title: "删除商品", Sort: 80, Status: 1}},
 		{ParentName: "ShopManage", Menu: Menu{Type: MenuTypeButton, Name: "ShopOrderReview", Permission: "system:shop:order:review", Title: "审批订单", Sort: 70, Status: 1}},
 
+		// ── Voice Center ──
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "VoiceCenter", Path: "/voice", Component: "/index/index", Title: "menus.voice.title", Icon: "ri:mic-line", Sort: 83, Status: 1}},
+		{ParentName: "VoiceCenter", Menu: Menu{Type: MenuTypeMenu, Name: "MumbleCenter", Path: "mumble", Component: "/voice/mumble", Title: "menus.voice.mumble", Sort: 100, KeepAlive: true, Status: 1}},
+
 		// ── EVE 角色信息 ──
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "EveInfo", Path: "/info", Component: "/index/index", Title: "menus.info.title", Icon: "ri:user-star-line", Sort: 88, Status: 1}},
 		{ParentName: "EveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "EveInfoWallet", Path: "wallet", Component: "/info/wallet", Title: "menus.info.wallet", Sort: 100, KeepAlive: true, Status: 1}},
@@ -197,6 +201,7 @@ func DefaultRoleMenuMap() map[string][]string {
 			"Operation", "Fleets", "FleetConfigs", "FleetDetail", "MyPap", "JoinFleet", "UserSkillPlan",
 			"CorpManage", "SkillPlanManage", "SkillPlanCheck", "Structures", "FleetBattleIncentive",
 			"ShopRoot", "Shop", "Wallet",
+			"VoiceCenter", "MumbleCenter",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
 			"System", "User", "RoleManage", "Menus", "ESIRefresh", "SystemWallet", "AlliancePAP", "CorpNpcKillReport", "AutoRole", "UserCenter", "WebhookSettings", "BasicConfig", "SdeManage", "SdeUpdate",
 			"Result", "ResultSuccess", "ResultFail",
@@ -207,6 +212,7 @@ func DefaultRoleMenuMap() map[string][]string {
 			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet", "UserSkillPlan",
 			"CorpManage", "SkillPlanManage", "SkillPlanCheck",
 			"ShopRoot", "Shop",
+			"VoiceCenter", "MumbleCenter",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
 			"Result", "ResultSuccess", "ResultFail",
 		},
@@ -215,6 +221,7 @@ func DefaultRoleMenuMap() map[string][]string {
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
 			"Operation", "MyPap", "Wallet", "JoinFleet",
 			"ShopRoot", "Shop",
+			"VoiceCenter", "MumbleCenter",
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview", "SrpPrices", "SrpPriceAdd", "SrpPriceDelete",
 			"Result", "ResultSuccess", "ResultFail",
 		},
@@ -223,6 +230,7 @@ func DefaultRoleMenuMap() map[string][]string {
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
 			"Operation", "Fleets", "FleetDetail", "MyPap", "Wallet", "JoinFleet", "FleetConfigs", "UserSkillPlan",
 			"ShopRoot", "Shop",
+			"VoiceCenter", "MumbleCenter",
 			"SRP", "SrpApply",
 			"Result", "ResultSuccess", "ResultFail",
 			"UserCenter",

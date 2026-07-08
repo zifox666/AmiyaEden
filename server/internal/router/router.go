@@ -46,6 +46,10 @@ func RegisterRoutes(r *gin.Engine) {
 	// ─── 需要登录 ───
 	auth := api.Group("", middleware.JWTAuth())
 
+	// ─── Mumble ICE Authenticator 内部认证桥（共享密钥鉴权）───
+	mumbleH := handler.NewMumbleHandler()
+	api.POST("/voice/mumble/ice-auth", mumbleH.ICEAuthenticate)
+
 	// SSO 角色管理（绑定/解绑/设主角色）
 	ssoAuth := auth.Group("/sso/eve")
 	{
@@ -198,6 +202,13 @@ func RegisterRoutes(r *gin.Engine) {
 		wallet.POST("/my/transactions", walletH.GetMyTransactions)
 	}
 
+	// ─── 语音中心（用户端）───
+	voice := auth.Group("/voice")
+	{
+		voice.GET("/mumble", mumbleH.GetProfile)
+		voice.POST("/mumble/reset-password", mumbleH.ResetPassword)
+	}
+
 	// ─── 商店（用户端）───
 	shopH := handler.NewShopHandler()
 	shop := auth.Group("/shop")
@@ -276,6 +287,12 @@ func RegisterRoutes(r *gin.Engine) {
 	// SeAT 配置（管理员）
 	admin.GET("/seat-config", seatH.GetSeatConfig)
 	admin.PUT("/seat-config", seatH.UpdateSeatConfig)
+
+	// Mumble 配置（管理员）
+	admin.GET("/mumble-config", mumbleH.GetConfig)
+	admin.PUT("/mumble-config", mumbleH.UpdateConfig)
+	admin.GET("/mumble-role-groups", mumbleH.ListRoleGroups)
+	admin.PUT("/mumble-role-groups", mumbleH.UpdateRoleGroups)
 
 	// NPC 刷怪报表（管理员 — 公司级）
 	admin.POST("/npc-kills", npcKillH.GetCorpNpcKills)

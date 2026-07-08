@@ -56,7 +56,7 @@
     "createSuccess": "Created successfully",
     "updateSuccess": "Updated successfully",
     "reason": "Reason",
-    "type"  : "Type",
+    "type": "Type",
     "actions": "Actions"
   },
   "search": {
@@ -69,20 +69,11 @@
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": [
-        "Vertical",
-        "Horizontal",
-        "Mixed",
-        "Dual"
-      ]
+      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
     },
     "theme": {
       "title": "Theme Style",
-      "list": [
-        "Light",
-        "Dark",
-        "System"
-      ]
+      "list": ["Light", "Dark", "System"]
     },
     "menu": {
       "title": "Menu Style"
@@ -92,17 +83,11 @@
     },
     "box": {
       "title": "Box Style",
-      "list": [
-        "Border",
-        "Shadow"
-      ]
+      "list": ["Border", "Shadow"]
     },
     "container": {
       "title": "Container Width",
-      "list": [
-        "Full",
-        "Boxed"
-      ]
+      "list": ["Full", "Boxed"]
     },
     "basics": {
       "title": "Basic Config",
@@ -148,14 +133,8 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": [
-      "Notice",
-      "Message",
-      "Todo"
-    ],
-    "text": [
-      "No"
-    ],
+    "bar": ["Notice", "Message", "Todo"],
+    "text": ["No"],
     "viewAll": "View all"
   },
   "worktab": {
@@ -317,6 +296,10 @@
       "browse": "Browse Products",
       "manage": "Shop Management",
       "wallet": "My Wallet"
+    },
+    "voice": {
+      "title": "Voice Center",
+      "mumble": "Mumble"
     },
     "characters": {
       "title": "EVE Characters"
@@ -1687,6 +1670,46 @@
       "contentPlaceholder": "Leave blank for default test message",
       "sendBtn": "Send Test",
       "success": "Test message sent"
+    }
+  },
+  "mumble": {
+    "title": "Mumble Voice Auth",
+    "description": "Use your AmiyaEden user ID to log in to Mumble. Your display name is synced from the platform account.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "username": "Username",
+    "password": "Password",
+    "displayName": "Display Name",
+    "currentGroups": "Current Groups",
+    "server": "Server",
+    "quickUrl": "Quick Launch URL",
+    "copy": "Copy",
+    "copySuccess": "Copied to clipboard",
+    "resetPassword": "Reset Password",
+    "resetConfirm": "The old password will stop working immediately. Continue?",
+    "resetSuccess": "Mumble password reset",
+    "openClient": "Open Mumble",
+    "notConfigured": "The Mumble server is not configured yet, so the quick launch URL is unavailable.",
+    "config": {
+      "title": "Mumble Configuration",
+      "enabled": "Enable Mumble",
+      "url": "Server URL",
+      "urlPlaceholder": "e.g. mumble.example.com",
+      "port": "Port",
+      "serverName": "Server Name",
+      "serverNamePlaceholder": "e.g. AmiyaEden Mumble",
+      "authSecret": "ICE Shared Secret",
+      "authSecretPlaceholder": "Enter the ICE Authenticator shared secret",
+      "authSecretSetPlaceholder": "Already set; leave blank to keep unchanged"
+    },
+    "roleGroups": {
+      "title": "Role Group Mapping",
+      "description": "AmiyaEden only grants these groups during Mumble authentication. Keep channel ACLs managed inside Mumble.",
+      "role": "Platform Role",
+      "group": "Mumble Group",
+      "enabled": "Enabled",
+      "groupPlaceholder": "e.g. amiya_user",
+      "saveSuccess": "Role group mapping saved"
     }
   },
   "system": {

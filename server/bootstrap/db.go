@@ -126,6 +126,9 @@ func autoMigrate(db *gorm.DB) {
 		&model.SkillPlanItem{},
 		// 系统配置表
 		&model.SystemConfig{},
+		// Mumble 语音中心
+		&model.MumbleAccount{},
+		&model.VoiceRoleGroupMapping{},
 		// RBAC 权限相关表
 		&model.Role{},
 		&model.Menu{},
