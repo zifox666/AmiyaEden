@@ -81,5 +81,3 @@ RUN mkdir -p logs uploads /usr/share/nginx/html
 EXPOSE 80
 
 ENTRYPOINT ["/entrypoint.sh"]
-
-
