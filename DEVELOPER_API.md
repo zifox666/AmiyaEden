@@ -1205,3 +1205,96 @@ POST /voice/mumble/ice-auth
 | `403` | 权限不足            |
 | `404` | 资源不存在          |
 | `500` | 业务错误            |
+---
+
+## 鍐涘洟寤虹瓚绠＄悊锛堣ˉ鍏咃級
+
+### 寤虹瓚鐕冩枡璐＄尞 / ISK 鍙戞斁璁板綍鍒楄〃
+
+```
+POST /operation/corp-structures/fuel-tasks/list
+```
+
+> 闇€瑕?`staff` / `admin` / `super_admin`
+>
+> 鏉冮檺鑼冨洿锛?
+>
+> - `admin` / `super_admin`锛氬彲鏌ョ湅褰撳墠鍐涘洟鎵€鏈夊凡缁撶畻涓斿叿鏈?`isk_amount > 0` 鐨勮褰?
+> - `staff`锛氬彧鍙湅鑷繁鎵挎帴骞跺凡缁撶畻鐨勮褰?
+
+**璇锋眰浣?*锛?
+
+```json
+{
+  "current": 1,
+  "size": 10,
+  "corp_id": 98000001,
+  "only_pending": true
+}
+```
+
+| 瀛楁           | 绫诲瀷   | 蹇呭～ | 璇存槑                                 |
+| ---------------- | -------- | ---- | ------------------------------------ |
+| `current`        | `int`    | 鏄?  | 褰撳墠椤电爜                             |
+| `size`           | `int`    | 鏄?  | 姣忛〉鏉℃暟                             |
+| `corp_id`        | `int`    | 鍚?  | 鍐涘洟 ID锛屼笉浼犳椂榛樿褰撳墠鍐涘洟           |
+| `only_pending`   | `bool`   | 鍚?  | 鏄惁鍙繑鍥?`pending` 鐨勫彂鏀捐褰? |
+
+**鍝嶅簲**锛?
+
+```json
+{
+  "list": [
+    {
+      "id": 12,
+      "corporation_id": 98000001,
+      "structure_id": 1029384756,
+      "structure_name": "Athanor Alpha",
+      "claimer_user_id": 7,
+      "claimer_name": "Pilot A",
+      "added_hours": 24,
+      "wallet_amount": 120,
+      "isk_amount": 5000000,
+      "isk_payout_status": "pending",
+      "claimed_at": "2026-06-11T10:00:00+08:00",
+      "completed_at": "2026-06-11T10:30:00+08:00",
+      "isk_paid_at": null
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pageSize": 10
+}
+```
+
+---
+
+## Corp Structure Claim Filters
+
+### POST /operation/corp-structures/list
+
+Additional request field:
+
+| Field         | Type                         | Required | Description                                 |
+| ------------- | ---------------------------- | -------- | ------------------------------------------- |
+| `task_filter` | `'claimed' \| 'claimable'` | No       | Filter structure rows by claimed/claimable. |
+
+Example:
+
+```json
+{
+  "current": 1,
+  "size": 20,
+  "corp_id": 98000001,
+  "task_filter": "claimed"
+}
+```
+
+### POST /operation/corp-structures/:id/fuel/cancel
+
+Cancel an active structure fuel claim.
+
+Permissions:
+
+- `staff`: can cancel only their own claim
+- `admin` / `super_admin`: can cancel any active claim

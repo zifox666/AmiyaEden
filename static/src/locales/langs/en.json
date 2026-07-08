@@ -1825,6 +1825,7 @@
     "title": "Structure Management",
     "selectCorp": "Select Corporation",
     "corpPrefix": "Corp {id}",
+    "structurePrefix": "Structure",
     "stateFilter": "Filter State",
     "fuelExpiresFilter": "Low Fuel Only (7 days)",
     "searchPlaceholder": "Search structure name",
@@ -1853,6 +1854,72 @@
       "services": "Services",
       "stateTimerEnd": "State Timer End",
       "unanchorsAt": "Unanchors At"
+    },
+    "actions": {
+      "openSettings": "Fuel Settings",
+      "openPayouts": "Payout Records",
+      "claim": "Claim",
+      "cancelClaim": "Cancel Claim",
+      "settle": "Settle",
+      "markIskPaid": "Mark ISK Paid"
+    },
+    "filters": {
+      "claimed": "Claimed",
+      "claimable": "Claimable"
+    },
+    "taskStatus": {
+      "claimedByOther": "Claimed by Others",
+      "completed": "Settled",
+      "notAvailable": "Not Claimable",
+      "iskPaid": "ISK Paid"
+    },
+    "messages": {
+      "claimSuccess": "Claimed successfully",
+      "settleSuccess": "Settled. Wallet +{wallet}, ISK +{isk}",
+      "cancelClaimSuccess": "Claim cancelled",
+      "settingSaved": "Settings saved",
+      "selectCorpFirst": "Please select a corporation first",
+      "markIskPaidSuccess": "ISK payout marked as completed"
+    },
+    "payoutDialog": {
+      "title": "Payout Records",
+      "pendingOnly": "Pending Only",
+      "claimer": "Claimer",
+      "addedHours": "Added Hours",
+      "walletAmount": "System Wallet",
+      "iskAmount": "In-game ISK",
+      "completedAt": "Settled At",
+      "paidAt": "Paid At",
+      "status": "Payout Status",
+      "statusPending": "Pending",
+      "statusPaid": "Paid",
+      "statusWaived": "Waived"
+    },
+    "fuelSetting": {
+      "title": "Fuel Claim & Contribution Settings",
+      "enabled": "Enable Claim",
+      "claimMode": "Claim Scope Mode",
+      "claimModes": {
+        "all": "All Structures",
+        "manual": "Manual Selection Only",
+        "condition": "Condition Matched Only",
+        "mixed": "Manual Or Condition"
+      },
+      "manualStructures": "Manual Structure Selection",
+      "conditionFuelHours": "Condition: Fuel Hours <= ",
+      "conditionStates": "Condition: Structure States",
+      "walletSection": "System Wallet Contribution (Auto)",
+      "walletEnabled": "Enable Wallet Contribution",
+      "walletCalcMode": "Wallet Calculation Mode",
+      "walletValue": "Wallet Contribution Value",
+      "iskSection": "In-game Currency Contribution (Statistic Only)",
+      "iskEnabled": "Enable ISK Statistics",
+      "iskCalcMode": "ISK Calculation Mode",
+      "iskValue": "ISK Contribution Value",
+      "calcModes": {
+        "perHour": "Per Added Hour",
+        "fixed": "Fixed Value"
+      }
     }
   },
   "fleetIncentive": {

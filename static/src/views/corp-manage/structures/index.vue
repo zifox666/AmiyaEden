@@ -4,7 +4,44 @@
     <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="getData">
         <template #left>
-          <!-- 搜索框 -->
+          <ElButton
+            v-if="canManageFuelSetting"
+            type="primary"
+            style="margin-right: 12px"
+            @click="openFuelSettingDialog"
+          >
+            {{ $t('corpStructure.actions.openSettings') }}
+          </ElButton>
+          <ElButton
+            v-if="canOperateFuel"
+            type="warning"
+            style="margin-right: 12px"
+            @click="openPayoutDialog"
+          >
+            {{ $t('corpStructure.actions.openPayouts') }}
+          </ElButton>
+          <span
+            v-if="canOperateFuel"
+            style="display: inline-flex; align-items: center; gap: 6px; margin-right: 12px"
+          >
+            <ElSwitch :model-value="taskFilter === 'claimed'" @change="handleClaimedFilterSwitch" />
+            <span style="font-size: 13px; color: var(--el-text-color-regular)">
+              {{ $t('corpStructure.filters.claimed') }}
+            </span>
+          </span>
+          <span
+            v-if="canOperateFuel"
+            style="display: inline-flex; align-items: center; gap: 6px; margin-right: 12px"
+          >
+            <ElSwitch
+              :model-value="taskFilter === 'claimable'"
+              @change="handleClaimableFilterSwitch"
+            />
+            <span style="font-size: 13px; color: var(--el-text-color-regular)">
+              {{ $t('corpStructure.filters.claimable') }}
+            </span>
+          </span>
+
           <ElInput
             v-model="keyword"
             :placeholder="$t('corpStructure.searchPlaceholder')"
@@ -15,7 +52,6 @@
             @clear="handleKeywordInput"
           />
 
-          <!-- 军团选择器（多军团时显示）-->
           <ElSelect
             v-if="corpIDs.length > 1"
             v-model="selectedCorpID"
@@ -26,7 +62,6 @@
             <ElOption v-for="id in corpIDs" :key="id" :label="getCorpLabel(id)" :value="id" />
           </ElSelect>
 
-          <!-- 状态筛选 -->
           <ElSelect
             v-model="stateFilter"
             :placeholder="$t('corpStructure.stateFilter')"
@@ -42,7 +77,6 @@
             />
           </ElSelect>
 
-          <!-- 低燃料开关 -->
           <span style="display: inline-flex; align-items: center; gap: 6px">
             <ElSwitch v-model="fuelExpiresSoon" @change="handleFilterChange" />
             <span style="font-size: 13px; color: var(--el-text-color-regular)">
@@ -61,21 +95,189 @@
         @pagination:current-change="handleCurrentChange"
       />
     </ElCard>
+
+    <ElDialog
+      v-model="fuelSettingDialogVisible"
+      :title="$t('corpStructure.fuelSetting.title')"
+      width="760px"
+      destroy-on-close
+    >
+      <div v-loading="fuelSettingLoading">
+        <ElForm :model="fuelSettingForm" label-width="210px">
+          <ElFormItem :label="$t('corpStructure.fuelSetting.enabled')">
+            <ElSwitch v-model="fuelSettingForm.enabled" />
+          </ElFormItem>
+
+          <ElFormItem :label="$t('corpStructure.fuelSetting.claimMode')">
+            <ElSelect v-model="fuelSettingForm.claim_mode" style="width: 240px">
+              <ElOption value="all" :label="$t('corpStructure.fuelSetting.claimModes.all')" />
+              <ElOption value="manual" :label="$t('corpStructure.fuelSetting.claimModes.manual')" />
+              <ElOption
+                value="condition"
+                :label="$t('corpStructure.fuelSetting.claimModes.condition')"
+              />
+              <ElOption value="mixed" :label="$t('corpStructure.fuelSetting.claimModes.mixed')" />
+            </ElSelect>
+          </ElFormItem>
+
+          <ElFormItem :label="$t('corpStructure.fuelSetting.manualStructures')">
+            <ElSelect
+              v-model="fuelSettingForm.manual_structure_ids"
+              multiple
+              filterable
+              clearable
+              style="width: 100%"
+            >
+              <ElOption
+                v-for="opt in manualStructureOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </ElSelect>
+          </ElFormItem>
+
+          <ElFormItem :label="$t('corpStructure.fuelSetting.conditionFuelHours')">
+            <ElInputNumber
+              v-model="fuelSettingForm.condition_fuel_hours_le"
+              :min="0"
+              :precision="1"
+              :step="6"
+            />
+          </ElFormItem>
+
+          <ElFormItem :label="$t('corpStructure.fuelSetting.conditionStates')">
+            <ElSelect
+              v-model="fuelSettingForm.condition_states"
+              multiple
+              clearable
+              style="width: 100%"
+            >
+              <ElOption
+                v-for="opt in stateOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </ElSelect>
+          </ElFormItem>
+
+          <ElDivider>{{ $t('corpStructure.fuelSetting.walletSection') }}</ElDivider>
+          <ElFormItem :label="$t('corpStructure.fuelSetting.walletEnabled')">
+            <ElSwitch v-model="fuelSettingForm.wallet_enabled" />
+          </ElFormItem>
+          <ElFormItem :label="$t('corpStructure.fuelSetting.walletCalcMode')">
+            <ElSelect v-model="fuelSettingForm.wallet_calc_mode" style="width: 240px">
+              <ElOption
+                value="per_hour"
+                :label="$t('corpStructure.fuelSetting.calcModes.perHour')"
+              />
+              <ElOption value="fixed" :label="$t('corpStructure.fuelSetting.calcModes.fixed')" />
+            </ElSelect>
+          </ElFormItem>
+          <ElFormItem :label="$t('corpStructure.fuelSetting.walletValue')">
+            <ElInputNumber
+              v-model="fuelSettingForm.wallet_value"
+              :min="0"
+              :precision="4"
+              :step="0.0001"
+            />
+          </ElFormItem>
+
+          <ElDivider>{{ $t('corpStructure.fuelSetting.iskSection') }}</ElDivider>
+          <ElFormItem :label="$t('corpStructure.fuelSetting.iskEnabled')">
+            <ElSwitch v-model="fuelSettingForm.isk_enabled" />
+          </ElFormItem>
+          <ElFormItem :label="$t('corpStructure.fuelSetting.iskCalcMode')">
+            <ElSelect v-model="fuelSettingForm.isk_calc_mode" style="width: 240px">
+              <ElOption
+                value="per_hour"
+                :label="$t('corpStructure.fuelSetting.calcModes.perHour')"
+              />
+              <ElOption value="fixed" :label="$t('corpStructure.fuelSetting.calcModes.fixed')" />
+            </ElSelect>
+          </ElFormItem>
+          <ElFormItem :label="$t('corpStructure.fuelSetting.iskValue')">
+            <ElInputNumber
+              v-model="fuelSettingForm.isk_value"
+              :min="0"
+              :precision="2"
+              :step="1000000"
+            />
+          </ElFormItem>
+        </ElForm>
+      </div>
+
+      <template #footer>
+        <ElButton @click="fuelSettingDialogVisible = false">{{ $t('common.cancel') }}</ElButton>
+        <ElButton type="primary" :loading="fuelSettingSaving" @click="saveFuelSetting">
+          {{ $t('common.confirm') }}
+        </ElButton>
+      </template>
+    </ElDialog>
+
+    <ElDialog
+      v-model="payoutDialogVisible"
+      :title="$t('corpStructure.payoutDialog.title')"
+      width="980px"
+      destroy-on-close
+    >
+      <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px">
+        <ElSwitch v-model="payoutPendingOnly" @change="handlePayoutFilterChange" />
+        <span style="font-size: 13px; color: var(--el-text-color-regular)">
+          {{ $t('corpStructure.payoutDialog.pendingOnly') }}
+        </span>
+      </div>
+
+      <ArtTable
+        :loading="payoutLoading"
+        :data="payoutData"
+        :columns="payoutColumns"
+        :pagination="payoutPagination"
+        @pagination:size-change="handlePayoutSizeChange"
+        @pagination:current-change="handlePayoutCurrentChange"
+      />
+    </ElDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref, h, onMounted, computed } from 'vue'
+  import { ref, h, onMounted, computed, reactive } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchCorpStructureList, fetchCorpIDs } from '@/api/corp-structure'
+  import {
+    fetchCorpStructureList,
+    fetchCorpIDs,
+    claimCorpStructureFuelTask,
+    cancelCorpStructureFuelTask,
+    settleCorpStructureFuelTask,
+    fetchCorpStructureFuelTaskList,
+    fetchCorpStructureFuelSetting,
+    updateCorpStructureFuelSetting,
+    markCorpStructureFuelTaskIskPaid
+  } from '@/api/corp-structure'
   import { fetchNames } from '@/api/sde'
-  import { ElTag, ElSelect, ElOption, ElSwitch, ElInput } from 'element-plus'
+  import {
+    ElTag,
+    ElSelect,
+    ElOption,
+    ElSwitch,
+    ElInput,
+    ElButton,
+    ElDialog,
+    ElForm,
+    ElFormItem,
+    ElInputNumber,
+    ElMessage,
+    ElDivider
+  } from 'element-plus'
   import { Search } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
+  import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'CorpStructures' })
-
   const { t, locale } = useI18n()
+  const userStore = useUserStore()
+  const actionLoading = ref<Record<number, boolean>>({})
 
   const corpIDs = ref<number[]>([])
   const selectedCorpID = ref<number | undefined>(undefined)
@@ -83,10 +285,45 @@
   const solarSystemNames = ref<Map<number, string>>(new Map())
   const typeNames = ref<Map<number, string>>(new Map())
   const stateFilter = ref<string>('')
+  const taskFilter = ref<Api.CorpStructure.TaskFilter | ''>('')
   const fuelExpiresSoon = ref<boolean>(false)
   const keyword = ref<string>('')
 
-  // 防抖 timer
+  const canManageFuelSetting = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((r) => ['super_admin', 'admin'].includes(r))
+  })
+  const canOperateFuel = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((r) => ['super_admin', 'admin', 'staff'].includes(r))
+  })
+  const canManageClaims = computed(() => {
+    const roles = userStore.getUserInfo?.roles ?? []
+    return roles.some((r) => ['super_admin', 'admin'].includes(r))
+  })
+  const currentUserID = computed(() => userStore.getUserInfo?.userId ?? 0)
+
+  const fuelSettingDialogVisible = ref(false)
+  const fuelSettingLoading = ref(false)
+  const fuelSettingSaving = ref(false)
+  const payoutDialogVisible = ref(false)
+  const payoutPendingOnly = ref(true)
+  const fuelSettingForm = reactive<Api.CorpStructure.FuelSettingUpdateRequest>({
+    corporation_id: 0,
+    enabled: false,
+    claim_mode: 'all',
+    manual_structure_ids: [],
+    condition_fuel_hours_le: null,
+    condition_states: [],
+    contribution_unit: 'hour',
+    wallet_enabled: true,
+    wallet_calc_mode: 'per_hour',
+    wallet_value: 0,
+    isk_enabled: false,
+    isk_calc_mode: 'per_hour',
+    isk_value: 0
+  })
+
   let keywordTimer: ReturnType<typeof setTimeout> | null = null
 
   function getCorpLabel(id: number): string {
@@ -105,7 +342,17 @@
     { value: 'onlining_vulnerable', label: t('corpStructure.stateLabels.onlining_vulnerable') }
   ])
 
-  // 建筑状态颜色映射
+  const manualStructureOptions = computed(() => {
+    const options = new Map<number, string>()
+    ;(data.value as Api.CorpStructure.StructureItem[]).forEach((row) => {
+      options.set(row.structure_id, row.name || String(row.structure_id))
+    })
+    fuelSettingForm.manual_structure_ids.forEach((id) => {
+      if (!options.has(id)) options.set(id, `${t('corpStructure.structurePrefix')} ${id}`)
+    })
+    return Array.from(options.entries()).map(([value, label]) => ({ value, label }))
+  })
+
   const STATE_MAP: Record<string, string> = {
     shield_vulnerable: 'success',
     armor_reinforce: 'warning',
@@ -122,7 +369,6 @@
     unknown: 'info'
   }
 
-  // 服务状态颜色映射
   const SERVICE_STATE_MAP: Record<string, string> = {
     online: 'success',
     offline: 'danger',
@@ -133,18 +379,87 @@
     return String(hour).padStart(2, '0') + ':00'
   }
 
-  // 每次数据加载后解析 system_id 和 type_id 的名称
+  function formatDateTime(value?: string | null): string {
+    return value ? new Date(value).toLocaleString() : '-'
+  }
+
+  function formatNumber(
+    value: number,
+    maximumFractionDigits: number,
+    minimumFractionDigits = 2
+  ): string {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits,
+      maximumFractionDigits
+    }).format(value)
+  }
+
+  function formatWallet(value: number): string {
+    return formatNumber(value, 4, 2)
+  }
+
+  function formatISK(value: number): string {
+    return formatNumber(value, 2, 2)
+  }
+
+  async function fetchStructureTable(params: Api.CorpStructure.ListRequest) {
+    if (!params.task_filter) {
+      return fetchCorpStructureList(params)
+    }
+
+    const pageSize = 100
+    const baseParams: Api.CorpStructure.ListRequest = {
+      ...params,
+      current: 1,
+      size: pageSize,
+      task_filter: undefined
+    }
+
+    const firstPage = await fetchCorpStructureList(baseParams)
+    const mergedList = [...(firstPage?.list ?? [])]
+    const total = firstPage?.total ?? mergedList.length
+    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+    for (let page = 2; page <= totalPages; page += 1) {
+      const pageData = await fetchCorpStructureList({
+        ...baseParams,
+        current: page
+      })
+      mergedList.push(...(pageData?.list ?? []))
+    }
+
+    const filteredList = mergedList.filter((row) => {
+      if (params.task_filter === 'claimed') {
+        return row.fuel_task?.status === 'claimed'
+      }
+      if (params.task_filter === 'claimable') {
+        return !!row.can_claim
+      }
+      return true
+    })
+
+    const current = params.current || 1
+    const size = params.size || 20
+    const start = (current - 1) * size
+    const end = start + size
+
+    return {
+      list: filteredList.slice(start, end),
+      total: filteredList.length,
+      page: current,
+      pageSize: size
+    }
+  }
+
   async function resolveNames(rows: Api.CorpStructure.StructureItem[]) {
     const systemIds = [...new Set(rows.map((r) => r.system_id).filter(Boolean))]
     const typeIds = [...new Set(rows.map((r) => r.type_id).filter(Boolean))]
     if (systemIds.length === 0 && typeIds.length === 0) return
-
     try {
       const lang = locale.value.startsWith('zh') ? 'zh' : 'en'
       const ids: Record<string, number[]> = {}
       if (systemIds.length > 0) ids['solar_system'] = systemIds
       if (typeIds.length > 0) ids['type'] = typeIds
-
       const nameMap = await fetchNames({ language: lang, ids })
       const raw = nameMap as Record<string, string>
 
@@ -160,7 +475,7 @@
       })
       typeNames.value = typeMap
     } catch {
-      // 降级：保留已有缓存，ID 直接显示
+      // ignore SDE name lookup failures and fall back to numeric IDs
     }
   }
 
@@ -176,7 +491,7 @@
     handleCurrentChange
   } = useTable({
     core: {
-      apiFn: fetchCorpStructureList,
+      apiFn: fetchStructureTable,
       apiParams: { current: 1, size: 20 },
       immediate: false,
       columnsFactory: () => [
@@ -227,10 +542,8 @@
           prop: 'fuel_expires',
           label: t('corpStructure.fields.fuelExpires'),
           width: 180,
-          formatter: (row: Api.CorpStructure.StructureItem) => {
-            if (!row.fuel_expires) return '-'
-            return new Date(row.fuel_expires).toLocaleString()
-          }
+          formatter: (row: Api.CorpStructure.StructureItem) =>
+            row.fuel_expires ? new Date(row.fuel_expires).toLocaleString() : '-'
         },
         {
           prop: 'reinforce_hour',
@@ -262,48 +575,422 @@
           prop: 'state_timer_end',
           label: t('corpStructure.fields.stateTimerEnd'),
           width: 180,
-          formatter: (row: Api.CorpStructure.StructureItem) => {
-            if (!row.state_timer_end) return '-'
-            return new Date(row.state_timer_end).toLocaleString()
-          }
+          formatter: (row: Api.CorpStructure.StructureItem) =>
+            row.state_timer_end ? new Date(row.state_timer_end).toLocaleString() : '-'
         },
         {
           prop: 'unanchors_at',
           label: t('corpStructure.fields.unanchorsAt'),
           width: 180,
+          formatter: (row: Api.CorpStructure.StructureItem) =>
+            row.unanchors_at ? new Date(row.unanchors_at).toLocaleString() : '-'
+        },
+        {
+          prop: 'actions',
+          label: t('common.operation'),
+          width: 360,
+          fixed: 'right',
           formatter: (row: Api.CorpStructure.StructureItem) => {
-            if (!row.unanchors_at) return '-'
-            return new Date(row.unanchors_at).toLocaleString()
+            const ext = row as Api.CorpStructure.StructureItem & {
+              fuel_task?: Api.CorpStructure.FuelTask
+              can_claim?: boolean
+              can_settle?: boolean
+              claim_denied_reason?: string
+            }
+
+            const controls: any[] = []
+            const isClaimed = ext.fuel_task?.status === 'claimed'
+            const isSelfClaimed =
+              isClaimed && ext.fuel_task?.claimer_user_id === currentUserID.value
+            const isClaimedByOther = isClaimed && !isSelfClaimed
+            const canCancel =
+              canOperateFuel.value && isClaimed && (isSelfClaimed || canManageClaims.value)
+
+            if (canOperateFuel.value && ext.can_claim) {
+              controls.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'primary',
+                    size: 'small',
+                    loading: actionLoading.value[row.structure_id] ?? false,
+                    onClick: () => handleClaim(ext)
+                  },
+                  () => t('corpStructure.actions.claim')
+                )
+              )
+            }
+            if (canOperateFuel.value && ext.can_settle) {
+              controls.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    loading: actionLoading.value[row.structure_id] ?? false,
+                    onClick: () => handleSettle(ext)
+                  },
+                  () => t('corpStructure.actions.settle')
+                )
+              )
+            }
+            if (isClaimedByOther) {
+              controls.push(
+                h(
+                  ElButton,
+                  {
+                    size: 'small',
+                    disabled: true
+                  },
+                  () => t('corpStructure.taskStatus.claimedByOther')
+                )
+              )
+            }
+            if (canCancel) {
+              controls.push(
+                h(
+                  ElButton,
+                  {
+                    type: 'danger',
+                    plain: true,
+                    size: 'small',
+                    loading: actionLoading.value[row.structure_id] ?? false,
+                    onClick: () => handleCancelClaim(ext)
+                  },
+                  () => t('corpStructure.actions.cancelClaim')
+                )
+              )
+            }
+            if (ext.fuel_task?.status === 'completed') {
+              controls.push(
+                h(ElTag, { type: 'success', size: 'small' }, () =>
+                  t('corpStructure.taskStatus.completed')
+                )
+              )
+            }
+            if (controls.length === 0) {
+              controls.push(
+                h(
+                  'span',
+                  { style: 'color: var(--el-text-color-secondary); font-size: 12px;' },
+                  ext.claim_denied_reason || t('corpStructure.taskStatus.notAvailable')
+                )
+              )
+            }
+            return h('div', { class: 'flex flex-wrap items-center gap-2' }, controls)
           }
         }
       ]
     },
     hooks: {
-      onSuccess: (rows) => {
-        resolveNames(rows as Api.CorpStructure.StructureItem[])
+      onSuccess: (rows) => resolveNames(rows as Api.CorpStructure.StructureItem[])
+    }
+  })
+
+  type FuelTaskListItem = Api.CorpStructure.FuelTaskListItem
+
+  const {
+    columns: payoutColumns,
+    data: payoutData,
+    loading: payoutLoading,
+    pagination: payoutPagination,
+    getData: getPayoutData,
+    handleSizeChange: handlePayoutSizeChange,
+    handleCurrentChange: handlePayoutCurrentChange
+  } = useTable({
+    core: {
+      apiFn: fetchCorpStructureFuelTaskList,
+      apiParams: { current: 1, size: 10 },
+      immediate: false,
+      columnsFactory: () => {
+        const cols: any[] = [
+          { type: 'index', width: 60, label: '#' },
+          {
+            prop: 'structure_name',
+            label: t('corpStructure.fields.name'),
+            minWidth: 200,
+            showOverflowTooltip: true
+          }
+        ]
+
+        if (canManageFuelSetting.value) {
+          cols.push({
+            prop: 'claimer_name',
+            label: t('corpStructure.payoutDialog.claimer'),
+            width: 140,
+            formatter: (row: FuelTaskListItem) => row.claimer_name || `#${row.claimer_user_id}`
+          })
+        }
+
+        cols.push(
+          {
+            prop: 'added_hours',
+            label: t('corpStructure.payoutDialog.addedHours'),
+            width: 110,
+            formatter: (row: FuelTaskListItem) => row.added_hours.toFixed(2)
+          },
+          {
+            prop: 'wallet_amount',
+            label: t('corpStructure.payoutDialog.walletAmount'),
+            width: 130,
+            formatter: (row: FuelTaskListItem) => formatWallet(row.wallet_amount)
+          },
+          {
+            prop: 'isk_amount',
+            label: t('corpStructure.payoutDialog.iskAmount'),
+            width: 130,
+            formatter: (row: FuelTaskListItem) => formatISK(row.isk_amount)
+          },
+          {
+            prop: 'completed_at',
+            label: t('corpStructure.payoutDialog.completedAt'),
+            width: 180,
+            formatter: (row: FuelTaskListItem) => formatDateTime(row.completed_at)
+          },
+          {
+            prop: 'isk_paid_at',
+            label: t('corpStructure.payoutDialog.paidAt'),
+            width: 180,
+            formatter: (row: FuelTaskListItem) => formatDateTime(row.isk_paid_at)
+          },
+          {
+            prop: 'isk_payout_status',
+            label: t('corpStructure.payoutDialog.status'),
+            width: 120,
+            formatter: (row: FuelTaskListItem) => {
+              const keyMap: Record<string, string> = {
+                pending: 'statusPending',
+                paid: 'statusPaid',
+                waived: 'statusWaived'
+              }
+              const typeMap: Record<string, string> = {
+                pending: 'warning',
+                paid: 'success',
+                waived: 'info'
+              }
+              const statusKey = keyMap[row.isk_payout_status] || keyMap.pending
+              return h(
+                ElTag,
+                { type: (typeMap[row.isk_payout_status] || 'warning') as any, size: 'small' },
+                () => t(`corpStructure.payoutDialog.${statusKey}`)
+              )
+            }
+          }
+        )
+
+        if (canManageFuelSetting.value) {
+          cols.push({
+            prop: 'actions',
+            label: t('common.operation'),
+            width: 140,
+            fixed: 'right',
+            formatter: (row: FuelTaskListItem) => {
+              if (row.isk_payout_status !== 'pending') return '-'
+              return h(
+                ElButton,
+                {
+                  type: 'warning',
+                  size: 'small',
+                  loading: actionLoading.value[row.id] ?? false,
+                  onClick: () => handleMarkIskPaidFromDialog(row)
+                },
+                () => t('corpStructure.actions.markIskPaid')
+              )
+            }
+          })
+        }
+
+        return cols
       }
     }
   })
 
+  function refreshStructureList() {
+    const params: Api.CorpStructure.ListRequest = {
+      current: 1,
+      size: pagination.size,
+      corp_id: selectedCorpID.value,
+      state: stateFilter.value || undefined,
+      fuel_expires_soon: fuelExpiresSoon.value || undefined,
+      keyword: keyword.value || undefined,
+      task_filter: taskFilter.value || undefined
+    }
+
+    Object.assign(searchParams, params)
+    pagination.current = 1
+    getData(params)
+  }
+
   function handleCorpChange(corpID: number) {
-    Object.assign(searchParams, { corp_id: corpID })
-    getData()
+    selectedCorpID.value = corpID
+    refreshStructureList()
+    if (payoutDialogVisible.value) {
+      getPayoutData({ corp_id: corpID, only_pending: payoutPendingOnly.value })
+    }
   }
 
   function handleFilterChange() {
-    Object.assign(searchParams, {
-      state: stateFilter.value || undefined,
-      fuel_expires_soon: fuelExpiresSoon.value || undefined
-    })
-    getData()
+    refreshStructureList()
+  }
+
+  function applyTaskFilter(filter: Api.CorpStructure.TaskFilter | '') {
+    taskFilter.value = filter
+    refreshStructureList()
+  }
+
+  function handleClaimedFilterSwitch(value: boolean | string | number) {
+    applyTaskFilter(value ? 'claimed' : '')
+  }
+
+  function handleClaimableFilterSwitch(value: boolean | string | number) {
+    applyTaskFilter(value ? 'claimable' : '')
   }
 
   function handleKeywordInput() {
     if (keywordTimer) clearTimeout(keywordTimer)
     keywordTimer = setTimeout(() => {
-      Object.assign(searchParams, { keyword: keyword.value || undefined })
-      getData()
+      refreshStructureList()
     }, 400)
+  }
+
+  async function handleClaim(row: Api.CorpStructure.StructureItem) {
+    actionLoading.value[row.structure_id] = true
+    try {
+      await claimCorpStructureFuelTask(row.structure_id)
+      ElMessage.success(t('corpStructure.messages.claimSuccess'))
+      refreshStructureList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('common.error'))
+    } finally {
+      actionLoading.value[row.structure_id] = false
+    }
+  }
+
+  async function handleCancelClaim(row: Api.CorpStructure.StructureItem) {
+    actionLoading.value[row.structure_id] = true
+    try {
+      await cancelCorpStructureFuelTask(row.structure_id)
+      ElMessage.success(t('corpStructure.messages.cancelClaimSuccess'))
+      refreshStructureList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('common.error'))
+    } finally {
+      actionLoading.value[row.structure_id] = false
+    }
+  }
+
+  async function handleSettle(row: Api.CorpStructure.StructureItem) {
+    actionLoading.value[row.structure_id] = true
+    try {
+      const result = await settleCorpStructureFuelTask(row.structure_id)
+      ElMessage.success(
+        t('corpStructure.messages.settleSuccess', {
+          wallet: formatWallet(result?.wallet_amount ?? 0),
+          isk: formatISK(result?.isk_amount ?? 0)
+        })
+      )
+      refreshStructureList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('common.error'))
+    } finally {
+      actionLoading.value[row.structure_id] = false
+    }
+  }
+
+  async function handleMarkIskPaidFromDialog(row: FuelTaskListItem) {
+    actionLoading.value[row.id] = true
+    try {
+      await markCorpStructureFuelTaskIskPaid(row.id)
+      ElMessage.success(t('corpStructure.messages.markIskPaidSuccess'))
+      getPayoutData({
+        corp_id: selectedCorpID.value,
+        only_pending: payoutPendingOnly.value
+      })
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('common.error'))
+    } finally {
+      actionLoading.value[row.id] = false
+    }
+  }
+
+  function openPayoutDialog() {
+    if (!selectedCorpID.value) {
+      ElMessage.warning(t('corpStructure.messages.selectCorpFirst'))
+      return
+    }
+    payoutDialogVisible.value = true
+    getPayoutData({
+      corp_id: selectedCorpID.value,
+      only_pending: payoutPendingOnly.value
+    })
+  }
+
+  function handlePayoutFilterChange() {
+    if (!payoutDialogVisible.value) return
+    getPayoutData({
+      corp_id: selectedCorpID.value,
+      only_pending: payoutPendingOnly.value
+    })
+  }
+
+  async function openFuelSettingDialog() {
+    if (!selectedCorpID.value) {
+      ElMessage.warning(t('corpStructure.messages.selectCorpFirst'))
+      return
+    }
+    fuelSettingDialogVisible.value = true
+    await loadFuelSetting(selectedCorpID.value)
+  }
+
+  async function loadFuelSetting(corpID: number) {
+    fuelSettingLoading.value = true
+    try {
+      const setting = await fetchCorpStructureFuelSetting(corpID)
+      Object.assign(fuelSettingForm, {
+        corporation_id: corpID,
+        enabled: setting?.enabled ?? false,
+        claim_mode: setting?.claim_mode ?? 'all',
+        manual_structure_ids: setting?.manual_structure_ids ?? [],
+        condition_fuel_hours_le: setting?.condition_fuel_hours_le ?? null,
+        condition_states: setting?.condition_states ?? [],
+        contribution_unit: 'hour',
+        wallet_enabled: setting?.wallet_enabled ?? true,
+        wallet_calc_mode: setting?.wallet_calc_mode ?? 'per_hour',
+        wallet_value: setting?.wallet_value ?? 0,
+        isk_enabled: setting?.isk_enabled ?? false,
+        isk_calc_mode: setting?.isk_calc_mode ?? 'per_hour',
+        isk_value: setting?.isk_value ?? 0
+      })
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('common.error'))
+    } finally {
+      fuelSettingLoading.value = false
+    }
+  }
+
+  async function saveFuelSetting() {
+    if (!fuelSettingForm.corporation_id) {
+      ElMessage.warning(t('corpStructure.messages.selectCorpFirst'))
+      return
+    }
+    fuelSettingSaving.value = true
+    try {
+      await updateCorpStructureFuelSetting({
+        ...fuelSettingForm,
+        condition_fuel_hours_le:
+          fuelSettingForm.condition_fuel_hours_le === null ||
+          fuelSettingForm.condition_fuel_hours_le === undefined
+            ? null
+            : Number(fuelSettingForm.condition_fuel_hours_le)
+      })
+      ElMessage.success(t('corpStructure.messages.settingSaved'))
+      fuelSettingDialogVisible.value = false
+      refreshStructureList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('common.error'))
+    } finally {
+      fuelSettingSaving.value = false
+    }
   }
 
   async function loadCorpIDs() {
@@ -311,7 +998,6 @@
       const res = await fetchCorpIDs()
       corpIDs.value = res ?? []
       if (corpIDs.value.length > 0) {
-        // 通过 ESI /universe/names 解析军团名称
         try {
           const nameMap = await fetchNames({ esi: corpIDs.value })
           const map = new Map<number, string>()
@@ -321,11 +1007,10 @@
           })
           corpNames.value = map
         } catch {
-          // 解析名称失败，降级显示 ID
+          // ignore corp name lookup failures and fall back to ID labels
         }
         selectedCorpID.value = corpIDs.value[0]
-        Object.assign(searchParams, { corp_id: corpIDs.value[0] })
-        getData()
+        refreshStructureList()
       }
     } catch {
       corpIDs.value = []

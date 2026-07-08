@@ -216,6 +216,9 @@ func DefaultRoleMenuMap() map[string][]string {
 			"SRP", "SrpApply", "SrpManage", "SrpManageReview",
 			"Result", "ResultSuccess", "ResultFail",
 		},
+		RoleStaff: {
+			"CorpManage", "Structures",
+		},
 		RoleSRP: {
 			"Dashboard", "Console", "Characters",
 			"EveInfo", "EveInfoWallet", "EveInfoSkill", "NpcKillReport", "EveInfoShips", "EveInfoImplants", "EveInfoFittings", "EveInfoAssets", "EveInfoContracts",
