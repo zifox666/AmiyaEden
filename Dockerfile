@@ -5,10 +5,11 @@ FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@11.10.0
+ENV HUSKY=0
 
 # 先复制依赖描述文件，利用 Docker 层缓存
-COPY static/package.json static/pnpm-lock.yaml ./
+COPY static/package.json static/pnpm-lock.yaml static/pnpm-workspace.yaml static/.npmrc ./
 RUN pnpm install --frozen-lockfile
 
 # 复制前端源码
@@ -80,3 +81,5 @@ RUN mkdir -p logs uploads /usr/share/nginx/html
 EXPOSE 80
 
 ENTRYPOINT ["/entrypoint.sh"]
+
+
