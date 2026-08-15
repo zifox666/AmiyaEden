@@ -26,6 +26,24 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: 'menus.login.title', isHideTab: true }
   },
   {
+    path: '/recruitment/:token',
+    name: 'RecruitmentApplication',
+    component: () => import('@views/at/recruitment-apply/index.vue'),
+    meta: { title: 'at.recruitment.applyTitle', isHideTab: true }
+  },
+  {
+    path: '/at/matches/:uuid',
+    name: 'ATMatchDetail',
+    component: () => import('@views/at/match-detail/index.vue'),
+    meta: { title: 'menus.at.matchDetail', isHideTab: true }
+  },
+  {
+    path: '/at/br/:roundId',
+    name: 'ATBattleReport',
+    component: () => import('@views/at/br/index.vue'),
+    meta: { title: 'at.br.title', isHideTab: true }
+  },
+  {
     path: '/403',
     name: 'Exception403',
     component: () => import('@views/exception/403/index.vue'),

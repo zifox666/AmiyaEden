@@ -30,6 +30,10 @@ export default ({ mode }: { mode: string }) => {
         '/api': {
           target: VITE_API_PROXY_URL,
           changeOrigin: true
+        },
+        '/uploads': {
+          target: VITE_API_PROXY_URL,
+          changeOrigin: true
         }
       },
       host: true

@@ -46,8 +46,7 @@
     fetchAllAlliancePAP,
     triggerAlliancePAPFetch,
     importAlliancePAP,
-    type AlliancePAPSummary,
-    type PAPImportInfo
+    type AlliancePAPSummary
   } from '@/api/alliance-pap'
   import PapSearch from './modules/pap-search.vue'
   import PapSettle from './modules/pap-settle.vue'

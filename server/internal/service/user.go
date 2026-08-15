@@ -6,18 +6,100 @@ import (
 	"amiya-eden/internal/repository"
 	"amiya-eden/pkg/jwt"
 	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+
+	"gorm.io/gorm"
 )
 
 type UserService struct {
 	repo     *repository.UserRepository
 	roleRepo *repository.RoleRepository
+	seatRepo *repository.SeatUserRepository
+	charRepo *repository.EveCharacterRepository
 }
 
 func NewUserService() *UserService {
 	return &UserService{
 		repo:     repository.NewUserRepository(),
 		roleRepo: repository.NewRoleRepository(),
+		seatRepo: repository.NewSeatUserRepository(),
+		charRepo: repository.NewEveCharacterRepository(),
 	}
+}
+
+func (s *UserService) GetProfile(userID uint) (*model.ProfileDTO, error) {
+	user, err := s.repo.GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	mainID := user.PrimaryCharacterID
+	source := "eve"
+	if seatUser, seatErr := s.seatRepo.GetByUserID(userID); seatErr == nil && seatUser.MainCharID > 0 {
+		mainID = seatUser.MainCharID
+		source = "seat"
+	} else if seatErr != nil && !errors.Is(seatErr, gorm.ErrRecordNotFound) {
+		return nil, seatErr
+	}
+	if mainID == 0 {
+		source = "none"
+	}
+	mainName := ""
+	if mainID > 0 {
+		if character, charErr := s.charRepo.GetByCharacterID(mainID); charErr == nil {
+			mainName = character.CharacterName
+		} else if !errors.Is(charErr, gorm.ErrRecordNotFound) {
+			return nil, charErr
+		}
+	}
+	return &model.ProfileDTO{
+		QQ:                      user.QQ,
+		Nickname:                user.Nickname,
+		TournamentCharacterName: user.TournamentCharName,
+		TournamentCharacterID:   user.TournamentCharID,
+		UILanguage:              languageOrDefault(user.UILanguage, "zh"),
+		GameLanguage:            languageOrDefault(user.GameLanguage, "en"),
+		MainCharacterSource:     source,
+		MainCharacterID:         mainID,
+		MainCharacterName:       mainName,
+	}, nil
+}
+
+var qqPattern = regexp.MustCompile(`^[0-9]{5,20}$`)
+
+func (s *UserService) UpdateProfile(userID uint, req model.UpdateProfileRequest) (*model.ProfileDTO, error) {
+	req.QQ = strings.TrimSpace(req.QQ)
+	req.Nickname = strings.TrimSpace(req.Nickname)
+	req.TournamentCharacterName = strings.TrimSpace(req.TournamentCharacterName)
+	if !qqPattern.MatchString(req.QQ) {
+		return nil, errors.New("QQ 必须为 5 至 20 位数字")
+	}
+	if req.Nickname == "" || len([]rune(req.Nickname)) > 128 {
+		return nil, errors.New("昵称不能为空且不能超过 128 个字符")
+	}
+	if req.TournamentCharacterName == "" || len([]rune(req.TournamentCharacterName)) > 128 {
+		return nil, errors.New("比赛服角色名不能为空且不能超过 128 个字符")
+	}
+	if req.TournamentCharacterID == nil || *req.TournamentCharacterID <= 0 {
+		return nil, errors.New("比赛服角色 ID 必须为正整数")
+	}
+	if !validLanguage(req.UILanguage) || !validLanguage(req.GameLanguage) {
+		return nil, errors.New("语言仅支持 zh 或 en")
+	}
+	if err := s.repo.UpdateProfile(userID, req); err != nil {
+		return nil, fmt.Errorf("保存个人资料失败: %w", err)
+	}
+	return s.GetProfile(userID)
+}
+
+func validLanguage(language string) bool { return language == "zh" || language == "en" }
+
+func languageOrDefault(language, fallback string) string {
+	if validLanguage(language) {
+		return language
+	}
+	return fallback
 }
 
 func (s *UserService) GetUserByID(id uint) (*model.User, error) {

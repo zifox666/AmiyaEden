@@ -40,7 +40,6 @@ func (t *ClonesTask) RequiredScopes() []TaskScope {
 	return []TaskScope{
 		{Scope: "esi-clones.read_clones.v1", Description: "读取克隆体信息"},
 		{Scope: "esi-clones.read_implants.v1", Description: "读取植入体信息"},
-		{Scope: "esi-characters.read_fatigue.v1", Description: "读取跳跃疲劳信息"},
 	}
 }
 
@@ -59,13 +58,6 @@ type CloneInfo struct {
 	} `json:"jump_clones"`
 	LastCloneJumpDate     *time.Time `json:"last_clone_jump_date,omitempty"`
 	LastStationChangeDate *time.Time `json:"last_station_change_date,omitempty"`
-}
-
-// JumpFatigue 跳跃疲劳
-type JumpFatigue struct {
-	JumpFatigueExpireDate *time.Time `json:"jump_fatigue_expire_date,omitempty"`
-	LastJumpDate          *time.Time `json:"last_jump_date,omitempty"`
-	LastUpdateDate        *time.Time `json:"last_update_date,omitempty"`
 }
 
 func (t *ClonesTask) Execute(ctx *TaskContext) error {
@@ -94,23 +86,11 @@ func (t *ClonesTask) Execute(ctx *TaskContext) error {
 		activeImplants = nil
 	}
 
-	// 3. 获取跳跃疲劳
-	fatiguePath := fmt.Sprintf("/characters/%d/fatigue/", ctx.CharacterID)
-	var fatigue JumpFatigue
-	if err := ctx.Client.Get(bgCtx, fatiguePath, ctx.AccessToken, &fatigue); err != nil {
-		global.Logger.Warn("[ESI] 获取跳跃疲劳失败",
-			zap.Int64("character_id", ctx.CharacterID),
-			zap.Error(err),
-		)
-	}
-
-	// 4. Upsert EveCharacterCloneBaseInfo
+	// 3. Upsert EveCharacterCloneBaseInfo
 	baseInfo := model.EveCharacterCloneBaseInfo{
 		CharacterID:           ctx.CharacterID,
 		LastCloneJumpDate:     clones.LastCloneJumpDate,
 		LastStationChangeDate: clones.LastStationChangeDate,
-		JumpFatigueExpire:     fatigue.JumpFatigueExpireDate,
-		LastJumpDate:          fatigue.LastJumpDate,
 	}
 	if clones.HomeLocation != nil {
 		baseInfo.HomeLocationID = clones.HomeLocation.LocationID
@@ -129,7 +109,7 @@ func (t *ClonesTask) Execute(ctx *TaskContext) error {
 		}
 	}
 
-	// 5. 重建植入体记录：先清空旧数据，再批量插入
+	// 4. 重建植入体记录：先清空旧数据，再批量插入
 	if err := global.DB.Where("character_id = ?", ctx.CharacterID).
 		Delete(&model.EveCharacterImplants{}).Error; err != nil {
 		return fmt.Errorf("delete old implants: %w", err)

@@ -33,7 +33,7 @@ type TaskInfoItem struct {
 //
 // GET /api/v1/esi/refresh/tasks
 func (h *ESIRefreshHandler) GetTasks(c *gin.Context) {
-	allTasks := esi.AllTasks()
+	allTasks := esi.ATTasks()
 	items := make([]TaskInfoItem, 0, len(allTasks))
 	for _, t := range allTasks {
 		scopes := make([]string, 0)

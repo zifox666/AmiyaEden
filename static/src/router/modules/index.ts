@@ -7,12 +7,14 @@ import { exceptionRoutes } from './exception'
 import { srpRoutes } from './srp'
 import { shopRoutes } from './shop'
 import { infoRoutes } from './info'
+import { profileRoutes } from './profile'
 import { voiceRoutes } from './voice'
 
 /**
  * 导出所有模块化路由
  */
 export const routeModules: AppRouteRecord[] = [
+  profileRoutes,
   dashboardRoutes,
   infoRoutes,
   operationRoutes,

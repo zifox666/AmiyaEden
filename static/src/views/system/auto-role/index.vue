@@ -256,7 +256,9 @@
             <div class="flex items-center justify-between">
               <span class="font-semibold">{{ t('autoRolePage.allowList.autoRoleTitle') }}</span>
               <div class="flex items-center gap-3">
-                <span class="text-sm text-gray-500">{{ t('autoRolePage.allowList.onlyMainChar') }}</span>
+                <span class="text-sm text-gray-500">{{
+                  t('autoRolePage.allowList.onlyMainChar')
+                }}</span>
                 <ElSwitch
                   v-model="allowListConfig.auto_role_only_main_char"
                   @change="saveAllowListOnlyMainCharConfig"
@@ -312,7 +314,9 @@
             <div class="flex items-center justify-between">
               <span class="font-semibold">{{ t('autoRolePage.allowList.basicAccessTitle') }}</span>
               <div class="flex items-center gap-3">
-                <span class="text-sm text-gray-500">{{ t('autoRolePage.allowList.onlyMainChar') }}</span>
+                <span class="text-sm text-gray-500">{{
+                  t('autoRolePage.allowList.onlyMainChar')
+                }}</span>
                 <ElSwitch
                   v-model="allowListConfig.basic_access_only_main_char"
                   @change="saveAllowListOnlyMainCharConfig"

@@ -9,11 +9,8 @@ import (
 
 // RegisterAll 统一注册所有定时任务
 func RegisterAll(c *cron.Cron) {
+	// AT mode intentionally registers only the SDE updater and the restricted
+	// primary-character ESI queue. Legacy jobs remain in source but are unloaded.
 	registerSdeJob(c)
 	registerESIRefreshJob(c)
-	registerAlliancePAPJob(c)
-	RegisterRoleJobs(c)
-	RegisterAutoRoleJobs(c)
-	// registerCleanupJob(c)
-	// registerReportJob(c)
 }

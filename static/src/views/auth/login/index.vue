@@ -49,8 +49,12 @@
   const loading = ref(false)
   const seatLoading = ref(false)
   const seatEnabled = ref(false)
+  const route = useRoute()
 
   onMounted(async () => {
+    if (typeof route.query.redirect === 'string') {
+      sessionStorage.setItem('auth_return_path', route.query.redirect)
+    }
     try {
       const data = await checkSeatEnabled()
       seatEnabled.value = data.enabled

@@ -27,19 +27,19 @@ func NewSdeRepository() *SdeRepository { return &SdeRepository{} }
 // GetLatestVersion 获取最新已导入的 SDE 版本
 func (r *SdeRepository) GetLatestVersion() (*model.SdeVersion, error) {
 	var v model.SdeVersion
-	err := global.DB.Order("id DESC").First(&v).Error
+	err := global.SDEDB.Order("id DESC").First(&v).Error
 	return &v, err
 }
 
 // CreateVersion 记录新版本
 func (r *SdeRepository) CreateVersion(v *model.SdeVersion) error {
-	return global.DB.Create(v).Error
+	return global.SDEDB.Create(v).Error
 }
 
 // VersionExists 检查某个版本是否已存在
 func (r *SdeRepository) VersionExists(version string) (bool, error) {
 	var count int64
-	err := global.DB.Model(&model.SdeVersion{}).Where("version = ?", version).Count(&count).Error
+	err := global.SDEDB.Model(&model.SdeVersion{}).Where("version = ?", version).Count(&count).Error
 	return count > 0, err
 }
 
@@ -48,7 +48,7 @@ func (r *SdeRepository) VersionExists(version string) (bool, error) {
 // GetTranslation 精确查询翻译
 func (r *SdeRepository) GetTranslation(tcID int, keyID int, languageID string) (*model.TrnTranslation, error) {
 	var t model.TrnTranslation
-	err := global.DB.Where(`"tcID" = ? AND "keyID" = ? AND "languageID" = ?`, tcID, keyID, languageID).First(&t).Error
+	err := global.SDEDB.Where(`"tcID" = ? AND "keyID" = ? AND "languageID" = ?`, tcID, keyID, languageID).First(&t).Error
 	return &t, err
 }
 
@@ -82,7 +82,7 @@ func (r *SdeRepository) GetNames(ids map[string][]int, languageID string) (map[i
 			continue // 忽略不存在的 key
 		}
 		var rows []row
-		if err := global.DB.Table(`"trnTranslations"`).
+		if err := global.SDEDB.Table(`"trnTranslations"`).
 			Select(`"keyID", text`).
 			Where(`"tcID" = ? AND "keyID" IN ? AND "languageID" = ?`, tcID, keyIDs, languageID).
 			Scan(&rows).Error; err != nil {
@@ -100,7 +100,7 @@ func (r *SdeRepository) GetNames(ids map[string][]int, languageID string) (map[i
 func (r *SdeRepository) GetTypes(typeIDs []int, published *bool, languageID string) ([]TypeInfo, error) {
 	var result []TypeInfo
 
-	query := global.DB.Table(`"invTypes" t`).
+	query := global.SDEDB.Table(`"invTypes" t`).
 		Select(`
             t."typeID"        AS type_id,
             t_name.text       AS type_name,
@@ -148,7 +148,7 @@ func (r *SdeRepository) GetTypes(typeIDs []int, published *bool, languageID stri
 func (r *SdeRepository) GetTypesByCategoryID(categoryID int, languageID string) ([]TypeInfo, error) {
 	var result []TypeInfo
 
-	query := global.DB.Table(`"invTypes" t`).
+	query := global.SDEDB.Table(`"invTypes" t`).
 		Select(`
             t."typeID"        AS type_id,
             t_name.text       AS type_name,
@@ -205,7 +205,7 @@ func (r *SdeRepository) GetTypeIDsByNames(names []string) (map[string]int64, err
 		TypeName string `gorm:"column:typeName"`
 	}
 	var rows []row
-	err := global.DB.Table(`"invTypes"`).
+	err := global.SDEDB.Table(`"invTypes"`).
 		Select(`"typeID", "typeName"`).
 		Where(`"typeName" IN ?`, names).
 		Scan(&rows).Error
@@ -229,7 +229,7 @@ func (r *SdeRepository) GetTypeIDsByTranslatedNames(names []string, languageID s
 		Text   string `gorm:"column:text"`
 	}
 	var rows []row
-	err := global.DB.Table(`"trnTranslations"`).
+	err := global.SDEDB.Table(`"trnTranslations"`).
 		Select(`"keyID", text`).
 		Where(`"tcID" = ? AND "languageID" = ? AND text IN ?`, TC_ID["type"], languageID, names).
 		Scan(&rows).Error
@@ -243,8 +243,9 @@ func (r *SdeRepository) GetTypeIDsByTranslatedNames(names []string, languageID s
 	return result, nil
 }
 
-// FuzzySearch 模糊搜索 trnTranslations（物品名称）及成员名称
-func (r *SdeRepository) FuzzySearch(keyword string, languageID string, categoryIDs []int, excludeCategoryIDs []int, limit int, searchMember bool) ([]FuzzySearchItem, error) {
+// FuzzySearch searches static data only. DATA-side character search is merged
+// by SdeService so this repository never performs cross-database queries.
+func (r *SdeRepository) FuzzySearch(keyword string, languageID string, categoryIDs []int, excludeCategoryIDs []int, limit int) ([]FuzzySearchItem, error) {
 	if keyword == "" {
 		return nil, nil
 	}
@@ -259,7 +260,7 @@ func (r *SdeRepository) FuzzySearch(keyword string, languageID string, categoryI
 	pattern := "%" + keyword + "%"
 
 	// 1. 搜索 SDE 物品名称（通过 trnTranslations 的 type 翻译）
-	query := global.DB.Table(`"trnTranslations" tr`).
+	query := global.SDEDB.Table(`"trnTranslations" tr`).
 		Select(`
 			t."typeID"   AS id,
 			tr.text      AS name,
@@ -286,20 +287,6 @@ func (r *SdeRepository) FuzzySearch(keyword string, languageID string, categoryI
 		return nil, err
 	}
 
-	// 2. 搜索成员名称（eve_character 表）
-	if searchMember && limit > len(result) {
-		remaining := limit - len(result)
-		var members []FuzzySearchItem
-		if err := global.DB.Table("eve_character").
-			Select(`character_id AS id, character_name AS name, 0 AS group_id, '' AS group_name, 'character' AS category`).
-			Where("character_name ILIKE ?", pattern).
-			Limit(remaining).
-			Scan(&members).Error; err != nil {
-			return nil, err
-		}
-		result = append(result, members...)
-	}
-
 	return result, nil
 }
 
@@ -309,7 +296,7 @@ func (r *SdeRepository) GetFlags(flagIDs []int) ([]FlagInfo, error) {
 	if len(flagIDs) == 0 {
 		return result, nil
 	}
-	err := global.DB.Table(`"invFlags"`).
+	err := global.SDEDB.Table(`"invFlags"`).
 		Where(`"flagID" IN ?`, flagIDs).
 		Order(`"orderID" ASC`).
 		Scan(&result).Error
@@ -334,7 +321,7 @@ func (r *SdeRepository) GetShipsByCategoryID(languageID string) ([]ShipInfo, err
 	const shipCategoryID = 6
 	var result []ShipInfo
 
-	err := global.DB.Table(`"invTypes" t`).
+	err := global.SDEDB.Table(`"invTypes" t`).
 		Select(`
 			t."typeID"        AS type_id,
 			t_name.text       AS type_name,
@@ -419,7 +406,7 @@ SELECT
 FROM skill_tree
 GROUP BY ship_type_id, skill_type_id`
 
-	err := global.DB.Raw(sql, shipTypeIDs).Scan(&result).Error
+	err := global.SDEDB.Raw(sql, shipTypeIDs).Scan(&result).Error
 	return result, err
 }
 
@@ -432,7 +419,7 @@ type RaceInfo struct {
 // GetAllRaces 获取所有种族
 func (r *SdeRepository) GetAllRaces() ([]RaceInfo, error) {
 	var result []RaceInfo
-	err := global.DB.Table(`"chrRaces"`).
+	err := global.SDEDB.Table(`"chrRaces"`).
 		Select(`"raceID", "raceName"`).
 		Scan(&result).Error
 	return result, err
@@ -447,7 +434,7 @@ type MarketGroupNode struct {
 // GetMarketGroupTree 获取所有市场分组的父子关系
 func (r *SdeRepository) GetMarketGroupTree() ([]MarketGroupNode, error) {
 	var result []MarketGroupNode
-	err := global.DB.Table(`"invMarketGroups"`).
+	err := global.SDEDB.Table(`"invMarketGroups"`).
 		Select(`"marketGroupID", COALESCE("parentGroupID", 0) AS "parentGroupID"`).
 		Scan(&result).Error
 	return result, err

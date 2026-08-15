@@ -12,7 +12,7 @@ import (
 // InitScopes 将 ESI 任务模块声明的 scope 注册到 SSO 服务
 // 必须在 InitCron 之后调用（确保 ESI 任务的 init() 已执行）
 func InitScopes() {
-	tasks := esi.AllTasks()
+	tasks := esi.ATTasks()
 
 	var count int
 	for _, task := range tasks {
@@ -27,10 +27,4 @@ func InitScopes() {
 		zap.Int("scope_count", count),
 	)
 
-	// ── 舰队模块额外 scope（非 ESI Task 驱动） ──
-	service.RegisterScope("fleet", "esi-fleets.read_fleet.v1", "读取舰队信息与成员列表", true)
-	service.RegisterScope("fleet", "esi-fleets.write_fleet.v1", "更新舰队 MOTD、邀请成员", true)
-
-	// ── SRP 补损模块额外 scope ──
-	service.RegisterScope("srp", "esi-ui.open_window.v1", "打开游戏内信息窗口（角色/军团/联盟）", true)
 }

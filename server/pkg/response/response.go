@@ -54,14 +54,24 @@ func OKWithPage(c *gin.Context, list interface{}, total int64, page, pageSize in
 func Fail(c *gin.Context, code int, msg string) {
 	httpStatus := http.StatusOK
 	switch code {
+	case CodeParamError:
+		httpStatus = http.StatusBadRequest
 	case CodeUnauthorized:
 		httpStatus = http.StatusUnauthorized
 	case CodeForbidden:
 		httpStatus = http.StatusForbidden
+	case CodeNotFound:
+		httpStatus = http.StatusNotFound
 	}
 	c.JSON(httpStatus, Response{
 		Code: code,
 		Msg:  msg,
 		Data: nil,
 	})
+}
+
+// Unavailable keeps the unified response envelope while exposing an HTTP 503
+// status for container orchestrators and load balancer health checks.
+func Unavailable(c *gin.Context, msg string, data interface{}) {
+	c.JSON(http.StatusServiceUnavailable, Response{Code: CodeBizError, Msg: msg, Data: data})
 }

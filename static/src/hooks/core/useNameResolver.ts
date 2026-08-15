@@ -43,7 +43,7 @@ export function useNameResolver() {
 
     // 推断当前 i18n 语言
     const userStore = useUserStore()
-    const language = (userStore.language as string) || 'en'
+    const language = (userStore.gameLanguage as string) || 'en'
 
     loading.value = true
     try {

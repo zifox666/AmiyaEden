@@ -102,6 +102,12 @@ type BatchTask interface {
 
 var registry = make(map[string]RefreshTask)
 
+var atAllowedTasks = map[string]struct{}{
+	"character_skill":    {},
+	"character_fittings": {},
+	"character_clones":   {},
+}
+
 // Register 注册一个刷新任务
 // 通常在各任务文件的 init() 中调用
 func Register(task RefreshTask) {
@@ -116,6 +122,23 @@ func Register(task RefreshTask) {
 func GetTask(name string) (RefreshTask, bool) {
 	t, ok := registry[name]
 	return t, ok
+}
+
+// IsATAllowedTask guards every scheduled and manual refresh entry point. The
+// clones task also persists current and jump-clone implants.
+func IsATAllowedTask(name string) bool {
+	_, ok := atAllowedTasks[name]
+	return ok
+}
+
+func ATTasks() map[string]RefreshTask {
+	result := make(map[string]RefreshTask, len(atAllowedTasks))
+	for name := range atAllowedTasks {
+		if task, ok := registry[name]; ok {
+			result[name] = task
+		}
+	}
+	return result
 }
 
 // AllTasks 获取所有已注册的任务（返回副本）

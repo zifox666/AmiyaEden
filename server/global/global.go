@@ -19,6 +19,9 @@ var (
 	// DB 全局数据库连接
 	DB *gorm.DB
 
+	// SDEDB stores only the static EVE data and its import version.
+	SDEDB *gorm.DB
+
 	// Redis 全局 Redis 客户端
 	Redis *redis.Client
 

@@ -4,6 +4,7 @@ import (
 	"amiya-eden/internal/middleware"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
+	"amiya-eden/pkg/utils"
 	"fmt"
 	"net/url"
 
@@ -58,9 +59,11 @@ func (h *EveSSOHandler) Callback(c *gin.Context) {
 	// 错误重定向辅助函数：带 error 参数跳回前端 callback 页面
 	redirectError := func(errMsg string) {
 		if frontendRedirect != "" {
-			target := frontendRedirect + "?error=" + url.QueryEscape(errMsg)
-			c.Redirect(302, target)
-			return
+			target, err := utils.AppendRedirectQuery(frontendRedirect, url.Values{"error": {errMsg}})
+			if err == nil {
+				c.Redirect(302, target)
+				return
+			}
 		}
 		response.Fail(c, response.CodeBizError, errMsg)
 	}
@@ -83,7 +86,12 @@ func (h *EveSSOHandler) Callback(c *gin.Context) {
 		if result.IsRawRedirect {
 			c.Redirect(302, result.RedirectURL)
 		} else {
-			c.Redirect(302, result.RedirectURL+"?token="+result.Token)
+			target, err := utils.AppendRedirectQuery(result.RedirectURL, url.Values{"token": {result.Token}})
+			if err != nil {
+				response.Fail(c, response.CodeBizError, "生成登录回跳地址失败")
+				return
+			}
+			c.Redirect(302, target)
 		}
 		return
 	}

@@ -81,13 +81,13 @@
         <template #label>
           {{ t('shop.manage.productImage') }}
         </template>
-        <div style="display: flex; flex-direction: column; width: 100%;">
+        <div style="display: flex; flex-direction: column; width: 100%">
           <ElRadioGroup v-model="imageSourceType" style="margin-bottom: 15px">
             <ElRadioButton label="upload">{{ t('shop.manage.uploadImage') }}</ElRadioButton>
             <ElRadioButton label="url">{{ t('shop.manage.inputImageUrl') }}</ElRadioButton>
           </ElRadioGroup>
-          
-          <div v-if="imageSourceType === 'upload'" style="margin-top: 10px;">
+
+          <div v-if="imageSourceType === 'upload'" style="margin-top: 10px">
             <div class="image-upload-area">
               <div v-if="formData.image" class="image-preview">
                 <img :src="formData.image" :alt="t('shop.manage.productImage')" />
@@ -116,8 +116,12 @@
               </ElUpload>
             </div>
           </div>
-          
-          <div v-else-if="imageSourceType === 'url'" class="image-url-input" style="margin-top: 10px;">
+
+          <div
+            v-else-if="imageSourceType === 'url'"
+            class="image-url-input"
+            style="margin-top: 10px"
+          >
             <ElInput
               v-model="formData.image"
               :placeholder="t('shop.manage.inputImageUrl')"
@@ -128,7 +132,11 @@
             <div v-if="formData.image" class="image-preview-container">
               <div class="image-preview-label">{{ t('shop.manage.previewImage') }}:</div>
               <div class="image-preview-wrapper">
-                <img :src="formData.image" :alt="t('shop.manage.previewImage')" class="image-preview-small" />
+                <img
+                  :src="formData.image"
+                  :alt="t('shop.manage.previewImage')"
+                  class="image-preview-small"
+                />
               </div>
               <ElButton size="small" type="danger" text @click="formData.image = ''">
                 <el-icon><Delete /></el-icon>
@@ -640,27 +648,27 @@
   .image-url-input {
     width: 100%;
   }
-  
+
   .image-preview-container {
     margin-top: 15px;
     display: flex;
     align-items: center;
     gap: 10px;
   }
-  
+
   .image-preview-label {
     font-size: 14px;
     color: var(--el-text-color-regular);
     white-space: nowrap;
   }
-  
+
   .image-preview-wrapper {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
   }
-  
+
   .image-preview-small {
     max-width: 100px;
     max-height: 100px;

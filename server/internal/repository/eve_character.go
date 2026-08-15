@@ -46,6 +46,20 @@ func (r *EveCharacterRepository) GetMainCharByUserID(userID uint) (*model.EveCha
 	return &char, nil
 }
 
+// GetSelectedPrimaryByUserID returns the only character exposed by AT pages.
+// SeAT main_char_id takes precedence over the EVE SSO primary selection.
+func (r *EveCharacterRepository) GetSelectedPrimaryByUserID(userID uint) (*model.EveCharacter, error) {
+	var char model.EveCharacter
+	err := global.DB.Table("eve_character ec").
+		Select("ec.*").
+		Joins(`JOIN "user" u ON u.id = ec.user_id AND u.deleted_at IS NULL`).
+		Joins("LEFT JOIN seat_user su ON su.user_id = ec.user_id AND su.deleted_at IS NULL").
+		Where("ec.user_id = ?", userID).
+		Where(`ec.character_id = COALESCE(NULLIF(su.main_char_id, 0), NULLIF(u.primary_character_id, 0), (SELECT fallback.character_id FROM eve_character fallback WHERE fallback.user_id = ec.user_id ORDER BY fallback.created_at ASC LIMIT 1))`).
+		First(&char).Error
+	return &char, err
+}
+
 // Update 更新角色信息
 func (r *EveCharacterRepository) Update(char *model.EveCharacter) error {
 	return global.DB.Save(char).Error
@@ -59,6 +73,62 @@ func (r *EveCharacterRepository) ListAllWithToken() ([]model.EveCharacter, error
 		"(refresh_token != '' AND refresh_token IS NOT NULL AND token_invalid = false) OR (scopes != '' AND scopes IS NOT NULL AND (refresh_token = '' OR refresh_token IS NULL))",
 	).Find(&chars).Error
 	return chars, err
+}
+
+// ListRefreshablePrimaryWithToken returns exactly one refreshable main
+// character per user. SeAT main_char_id takes precedence over the EVE SSO
+// primary character; the earliest bound character is a legacy fallback.
+func (r *EveCharacterRepository) ListRefreshablePrimaryWithToken() ([]model.EveCharacter, error) {
+	var chars []model.EveCharacter
+	refreshable := "((ec.refresh_token != '' AND ec.refresh_token IS NOT NULL AND ec.token_invalid = false) OR (ec.scopes != '' AND ec.scopes IS NOT NULL AND (ec.refresh_token = '' OR ec.refresh_token IS NULL)))"
+	mainCharacter := `ec.character_id = COALESCE(
+		NULLIF(su.main_char_id, 0),
+		NULLIF(u.primary_character_id, 0),
+		(SELECT fallback.character_id FROM eve_character fallback WHERE fallback.user_id = ec.user_id ORDER BY fallback.created_at ASC LIMIT 1)
+	)`
+	err := global.DB.Table("eve_character ec").
+		Select("ec.*").
+		Joins(`JOIN "user" u ON u.id = ec.user_id AND u.deleted_at IS NULL`).
+		Joins("LEFT JOIN seat_user su ON su.user_id = ec.user_id AND su.deleted_at IS NULL").
+		Where(refreshable).
+		Where(mainCharacter).
+		Scan(&chars).Error
+	return chars, err
+}
+
+// GetRefreshablePrimaryByCharacterID validates that a requested character is
+// the selected main character before an on-demand refresh can run.
+func (r *EveCharacterRepository) GetRefreshablePrimaryByCharacterID(characterID int64) (*model.EveCharacter, error) {
+	var char model.EveCharacter
+	err := global.DB.Table("eve_character ec").
+		Select("ec.*").
+		Joins(`JOIN "user" u ON u.id = ec.user_id AND u.deleted_at IS NULL`).
+		Joins("LEFT JOIN seat_user su ON su.user_id = ec.user_id AND su.deleted_at IS NULL").
+		Where("ec.character_id = ?", characterID).
+		Where(`ec.character_id = COALESCE(NULLIF(su.main_char_id, 0), NULLIF(u.primary_character_id, 0), (SELECT fallback.character_id FROM eve_character fallback WHERE fallback.user_id = ec.user_id ORDER BY fallback.created_at ASC LIMIT 1))`).
+		First(&char).Error
+	if err != nil {
+		return nil, err
+	}
+	return &char, nil
+}
+
+type CharacterSearchItem struct {
+	CharacterID   int64
+	CharacterName string
+}
+
+func (r *EveCharacterRepository) SearchByName(keyword string, limit int) ([]CharacterSearchItem, error) {
+	if keyword == "" || limit <= 0 {
+		return nil, nil
+	}
+	var result []CharacterSearchItem
+	err := global.DB.Model(&model.EveCharacter{}).
+		Select("character_id, character_name").
+		Where("character_name ILIKE ?", "%"+keyword+"%").
+		Limit(limit).
+		Scan(&result).Error
+	return result, err
 }
 
 // Delete 删除角色记录（硬删除）

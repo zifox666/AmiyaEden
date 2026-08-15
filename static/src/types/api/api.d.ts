@@ -107,6 +107,11 @@ declare namespace Api {
         primary_character_id: number
         last_login_at: string
         last_login_ip: string
+        qq: string
+        tournament_character_name: string
+        tournament_character_id: number | null
+        ui_language: 'zh' | 'en'
+        game_language: 'zh' | 'en'
       }
       characters: EveCharacter[]
       /** 用户所有活跃角色编码列表 */
@@ -124,6 +129,8 @@ declare namespace Api {
       avatar: string
       characters?: EveCharacter[]
       primaryCharacterId?: number
+      uiLanguage?: 'zh' | 'en'
+      gameLanguage?: 'zh' | 'en'
     }
 
     /** SeAT 绑定信息 */
@@ -133,6 +140,361 @@ declare namespace Api {
       seat_username?: string
       main_char_id?: number
       groups?: string
+    }
+  }
+
+  namespace Profile {
+    interface Profile {
+      qq: string
+      nickname: string
+      tournament_character_name: string
+      tournament_character_id: number | null
+      ui_language: 'zh' | 'en'
+      game_language: 'zh' | 'en'
+      main_character_source: 'seat' | 'eve' | 'none'
+      main_character_id: number
+      main_character_name: string
+    }
+
+    type UpdateRequest = Pick<
+      Profile,
+      | 'qq'
+      | 'nickname'
+      | 'tournament_character_name'
+      | 'tournament_character_id'
+      | 'ui_language'
+      | 'game_language'
+    >
+  }
+
+  namespace AT {
+    interface Match {
+      id: number
+      uuid: string
+      season_id: number
+      match_type_id: number
+      format: '7v7' | '10v10'
+      series: 'BO3' | 'BO5'
+      team_a_name: string
+      team_b_name: string
+      set_id: number
+      rule_version_id: number
+      fc_user_id: number
+      allow_self_assign: boolean
+      status: string
+      team_a_wins: number
+      team_b_wins: number
+      contribution_value: number
+      end_reason: string
+      created_at: string
+    }
+    interface MatchCreate {
+      season_id: number
+      match_type_id: number
+      format: '7v7' | '10v10'
+      series: 'BO3' | 'BO5'
+      team_a_name: string
+      team_b_name: string
+      set_id: number
+      allow_self_assign: boolean
+    }
+    interface MatchPositionInput {
+      user_id: number
+      slot_order: number
+      ewar_tags: string[]
+      bonus_tags: string[]
+    }
+    interface MatchRound {
+      id: number
+      match_id: number
+      round_no: number
+      attempt: number
+      status: string
+      result: string
+    }
+    interface RoundRoster {
+      side: 'A' | 'B'
+      slot_order: number
+      user_id: number | null
+      character_name: string
+      ship_type_id: number
+    }
+    interface MatchDetail {
+      match: Match
+      rounds: MatchRound[]
+      registrations: Array<{
+        id: number
+        user_id: number
+        status: string
+        slot_order: number
+        ewar_tags: string[]
+        bonus_tags: string[]
+        user_nickname: string
+        tournament_character_name: string
+      }>
+    }
+    interface Set {
+      id: number
+      name: string
+      format: '7v7' | '10v10'
+      rule_version_id: number
+      created_by: number
+      status: string
+    }
+    interface SetSlot {
+      id?: number
+      set_id?: number
+      slot_order: number
+      fit_id?: number | null
+      ship_type_id: number
+      base_eft: string
+      ewar_tags: string[]
+      bonus_tags: string[]
+    }
+    interface Replacement {
+      tag_type: 'ewar' | 'bonus'
+      tag: string
+      operation: 'replace' | 'add' | 'remove'
+      target_type_id: number
+      replacement_type_id: number
+      quantity: number
+    }
+    interface SetSlotBundle {
+      slot: SetSlot
+      fit?: Fit
+      replacements: Replacement[]
+    }
+    interface Fit {
+      id: number
+      name: string
+      ship_type_id: number
+      ship_name: string
+      base_eft: string
+      base_ewar_tags: string[]
+      base_bonus_tags: string[]
+      created_by: number
+      status: string
+    }
+    interface FitInput {
+      base_eft: string
+      base_ewar_tags: string[]
+      base_bonus_tags: string[]
+      replacements: Replacement[]
+    }
+    interface FitDetail {
+      fit: Fit
+      replacements: Replacement[]
+      parsed: ParsedEFT
+      ewar_tags: string[]
+      bonus_tags: string[]
+    }
+    interface SetInput {
+      name: string
+      format: '7v7' | '10v10'
+      rule_version_id: number
+      status: string
+      slots: SetSlotBundle[]
+    }
+    interface SetDetail {
+      set: Set
+      slots: SetSlotBundle[]
+      score: { total_points: number; max_points: number; valid: boolean; errors: string[] }
+    }
+    interface SetEFT {
+      set_id: number
+      slots: Array<{ slot_id: number; slot_order: number; eft: string }>
+      combined: string
+    }
+    interface ParsedEFTItem {
+      type_id: number
+      type_name: string
+      quantity: number
+      flag: string
+    }
+    interface ParsedEFT {
+      ship_type_id: number
+      ship_name: string
+      fitting_name: string
+      items: ParsedEFTItem[]
+    }
+    interface ScoreRule {
+      id: number
+      version: string
+      source_url: string
+      file_hash: string
+      status: string
+      published_at: string | null
+      created_at: string
+    }
+    interface ScoreRuleDetail {
+      rule: ScoreRule
+      ships: Array<{ type_id: number; type_name: string; base_points: number; size_code: string }>
+      banned: Array<{ type_id: number; type_name: string }>
+      penalties: Array<{ size_code: string; penalty: number }>
+    }
+    interface Killmail {
+      km_id: string
+      killmail_time: string
+      victim_name: string
+      victim_ship_name: string
+      resolution_status: string
+      assigned_round_id: number | null
+    }
+    interface BRListItem {
+      id: number
+      round_id: number
+      match_id: number
+      match_uuid: string
+      round_no: number
+      version: number
+      status: string
+      team_a_name: string
+      team_b_name: string
+      created_at: string
+    }
+    interface KMSubmitResult {
+      items: Array<{
+        km_id: string
+        duplicate: boolean
+        resolution_status: string
+        unresolved_names: string[] | null
+      }>
+    }
+    interface BRDetail {
+      version: { id: number; round_id: number; version: number; status: string }
+      teams: Array<{
+        side: 'A' | 'B'
+        destroyed_points: number
+        hostile_damage: number
+        friendly_damage: number
+        effective_deaths: number
+      }>
+      participants: Array<{
+        side: 'A' | 'B'
+        character_name: string
+        ship_type_id: number
+        ship_name: string
+        ship_points: number
+        signatures: number
+        final_blows: number
+        hostile_damage: number
+        friendly_damage: number
+        damage_percentage: number
+        dead: boolean
+        excluded_cleanup: boolean
+      }>
+    }
+    interface Season {
+      id: number
+      name: string
+      starts_at: string
+      ends_at: string
+      is_current: boolean
+    }
+    interface MatchType {
+      id: number
+      name: string
+      contribution_value: number
+      active: boolean
+    }
+    interface CleanupShip {
+      type_id: number
+      type_name: string
+    }
+    interface ContributionUserOption {
+      id: number
+      nickname: string
+      tournament_character_name: string
+    }
+    interface ContributionRow {
+      user_id: number
+      nickname: string
+      tournament_character_name: string
+      total: number
+    }
+    interface ContributionLedger {
+      id: number
+      season_id: number
+      user_id: number
+      amount: number
+      source_type: 'match' | 'manual' | 'reversal'
+      source_key: string
+      match_id: number | null
+      reason: string
+      actor_user_id: number
+      created_at: string
+    }
+    interface RecruitmentField {
+      field_key: string
+      type: 'text' | 'textarea' | 'radio' | 'checkbox' | 'select' | 'number' | 'date' | 'image'
+      label: string
+      description: string
+      required: boolean
+      sort: number
+      options: string[] | null
+    }
+    interface RecruitmentContext {
+      link_id: number
+      title: string
+      description: string
+      questionnaire_version: number
+      fields: RecruitmentField[]
+      expires_at: string | null
+    }
+    interface Questionnaire {
+      id: number
+      title: string
+      description: string
+      version: number
+      published: boolean
+    }
+    interface QuestionnaireInput {
+      title: string
+      description: string
+      fields: RecruitmentField[]
+    }
+    interface QuestionnaireDetail {
+      questionnaire: Questionnaire
+      fields: RecruitmentField[]
+    }
+    interface RecruitmentLink {
+      id: number
+      questionnaire_id: number
+      expires_at: string | null
+      max_submissions: number
+      submission_count: number
+      active: boolean
+    }
+    interface CreatedRecruitmentLink {
+      link: RecruitmentLink
+      token: string
+    }
+    interface RecruitmentApplication {
+      id: number
+      link_id: number
+      questionnaire_id: number
+      user_id: number
+      status: string
+      main_character_name: string
+      main_character_id: number
+      submitted_at: string
+    }
+    interface RecruitmentApplicationDetail {
+      application: RecruitmentApplication & {
+        portrait_url: string
+        corporation_id: number
+        alliance_id: number | null
+        faction_id: number | null
+      }
+      fields: RecruitmentField[]
+      answers: Array<{ field_key: string; value: unknown }>
+      skills: Array<{
+        skill_id: number
+        active_level: number
+        trained_level: number
+        skillpoints_in_skill: number
+      }>
+      events: Array<{ action: string; reason: string; actor_user_id: number; created_at: string }>
     }
   }
 

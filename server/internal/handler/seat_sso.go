@@ -4,6 +4,7 @@ import (
 	"amiya-eden/internal/middleware"
 	"amiya-eden/internal/service"
 	"amiya-eden/pkg/response"
+	"amiya-eden/pkg/utils"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
@@ -52,9 +53,11 @@ func (h *SeatSSOHandler) Callback(c *gin.Context) {
 
 	redirectError := func(errMsg string) {
 		if frontendRedirect != "" {
-			target := frontendRedirect + "?error=" + url.QueryEscape(errMsg)
-			c.Redirect(302, target)
-			return
+			target, err := utils.AppendRedirectQuery(frontendRedirect, url.Values{"error": {errMsg}})
+			if err == nil {
+				c.Redirect(302, target)
+				return
+			}
 		}
 		response.Fail(c, response.CodeBizError, errMsg)
 	}
@@ -73,7 +76,15 @@ func (h *SeatSSOHandler) Callback(c *gin.Context) {
 	}
 
 	if result.RedirectURL != "" {
-		c.Redirect(302, result.RedirectURL+"?token="+result.Token+"&provider=seat")
+		target, err := utils.AppendRedirectQuery(result.RedirectURL, url.Values{
+			"token":    {result.Token},
+			"provider": {"seat"},
+		})
+		if err != nil {
+			response.Fail(c, response.CodeBizError, "生成登录回跳地址失败")
+			return
+		}
+		c.Redirect(302, target)
 		return
 	}
 

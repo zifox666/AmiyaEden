@@ -29,11 +29,15 @@ const sdeDownloadDir = "tmp/sde"
 
 // SdeService SDE 业务逻辑层
 type SdeService struct {
-	repo *repository.SdeRepository
+	repo     *repository.SdeRepository
+	charRepo *repository.EveCharacterRepository
 }
 
 func NewSdeService() *SdeService {
-	return &SdeService{repo: repository.NewSdeRepository()}
+	return &SdeService{
+		repo:     repository.NewSdeRepository(),
+		charRepo: repository.NewEveCharacterRepository(),
+	}
 }
 
 // ---- 版本管理 ----
@@ -399,7 +403,7 @@ func extractZip(srcPath, destDir string) (string, error) {
 const batchSize = 200
 
 func importSQL(sqlPath string) error {
-	sqlDB, err := global.DB.DB()
+	sqlDB, err := global.SDEDB.DB()
 	if err != nil {
 		return fmt.Errorf("获取数据库连接失败: %w", err)
 	}
@@ -591,5 +595,20 @@ func (s *SdeService) GetNames(ids map[string][]int, languageID string) (map[int]
 
 // FuzzySearch 模糊搜索物品/成员名称
 func (s *SdeService) FuzzySearch(keyword string, languageID string, categoryIDs []int, excludeCategoryIDs []int, limit int, searchMember bool) ([]repository.FuzzySearchItem, error) {
-	return s.repo.FuzzySearch(keyword, languageID, categoryIDs, excludeCategoryIDs, limit, searchMember)
+	items, err := s.repo.FuzzySearch(keyword, languageID, categoryIDs, excludeCategoryIDs, limit)
+	if err != nil || !searchMember || len(items) >= limit {
+		return items, err
+	}
+	members, err := s.charRepo.SearchByName(keyword, limit-len(items))
+	if err != nil {
+		return nil, err
+	}
+	for _, member := range members {
+		items = append(items, repository.FuzzySearchItem{
+			ID:       int(member.CharacterID),
+			Name:     member.CharacterName,
+			Category: "character",
+		})
+	}
+	return items, nil
 }

@@ -11,7 +11,7 @@
     "lib": ["esnext", "dom"],
     "types": ["vite/client", "node", "element-plus/global"],
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],

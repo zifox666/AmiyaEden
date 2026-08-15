@@ -22,11 +22,14 @@ type ServerConfig struct {
 
 // DatabaseConfig 数据库配置
 type DatabaseConfig struct {
-	Host         string `mapstructure:"host"`
-	Port         int    `mapstructure:"port"`
-	User         string `mapstructure:"user"`
-	Password     string `mapstructure:"password"`
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	// DBName is kept as a compatibility fallback for older deployments.
 	DBName       string `mapstructure:"dbname"`
+	DataDBName   string `mapstructure:"data_dbname"`
+	SDEDBName    string `mapstructure:"sde_dbname"`
 	SSLMode      string `mapstructure:"sslmode"`
 	MaxIdleConns int    `mapstructure:"max_idle_conns"`
 	MaxOpenConns int    `mapstructure:"max_open_conns"`

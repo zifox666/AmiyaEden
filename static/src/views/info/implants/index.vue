@@ -239,7 +239,7 @@
     try {
       implantsData.value = await fetchInfoImplants({
         character_id: selectedCharacterId.value,
-        language: userStore.language
+        language: userStore.gameLanguage
       })
     } catch {
       implantsData.value = null

@@ -258,7 +258,9 @@ export function fetchGetAllowListOnlyMainCharConfig() {
 }
 
 /** 更新准入名单"仅主角色"开关配置 */
-export function fetchUpdateAllowListOnlyMainCharConfig(data: Api.SystemManage.AllowListOnlyMainCharConfig) {
+export function fetchUpdateAllowListOnlyMainCharConfig(
+  data: Api.SystemManage.AllowListOnlyMainCharConfig
+) {
   return request.put<null>({
     url: '/api/v1/system/auto-role/allow-config',
     data

@@ -198,11 +198,8 @@
 <script setup lang="ts">
   import { ElDatePicker } from 'element-plus'
   import { fetchCorpNpcKills } from '@/api/npc-kill'
-  import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'CorpNpcKillReport' })
-
-  const { t } = useI18n()
 
   // ─── 状态 ───
   const dateRange = ref<[string, string] | null>(null)

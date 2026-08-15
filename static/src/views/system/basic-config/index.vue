@@ -187,7 +187,13 @@
     ElAlert
   } from 'element-plus'
   import { useSysConfigStore } from '@/store/modules/sys-config'
-  import { fetchSeatConfig, updateSeatConfig, checkServerUpdate, performServerUpgrade, performFrontendUpgrade } from '@/api/sys-config'
+  import {
+    fetchSeatConfig,
+    updateSeatConfig,
+    checkServerUpdate,
+    performServerUpgrade,
+    performFrontendUpgrade
+  } from '@/api/sys-config'
 
   defineOptions({ name: 'BasicConfig' })
 

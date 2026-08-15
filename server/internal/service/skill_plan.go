@@ -295,8 +295,9 @@ func (s *SkillPlanService) CheckAllCharacters(planID uint, language string) (*Sk
 		return nil, errors.New("skill plan has no items")
 	}
 
-	// 获取所有有效角色
-	chars, err := s.charRepo.ListAllWithToken()
+	// AT mode checks exactly one selected main character per user. Historical
+	// alt-character skills remain stored but are not exposed by skill planning.
+	chars, err := s.charRepo.ListRefreshablePrimaryWithToken()
 	if err != nil {
 		return nil, err
 	}
@@ -318,12 +319,12 @@ func (s *SkillPlanService) CheckUserCharacters(planID uint, userID uint, languag
 		return nil, errors.New("skill plan has no items")
 	}
 
-	chars, err := s.charRepo.ListByUserID(userID)
+	character, err := s.charRepo.GetSelectedPrimaryByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.doCheck(plan, items, chars, language)
+	return s.doCheck(plan, items, []model.EveCharacter{*character}, language)
 }
 
 func (s *SkillPlanService) doCheck(plan *model.SkillPlan, items []model.SkillPlanItem, chars []model.EveCharacter, language string) (*SkillCheckSummary, error) {

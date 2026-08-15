@@ -56,6 +56,9 @@
       </div>
 
       <div class="flex-c gap-2.5">
+        <ElTooltip v-if="canSubmitKM" :content="$t('at.km.quickSubmit')" placement="bottom">
+          <ArtIconButton icon="ri:file-copy-2-line" class="text-[19px]" @click="openKMSubmit" />
+        </ElTooltip>
         <!-- 国际化按钮 -->
         <ElDropdown
           @command="changeLanguage"
@@ -77,19 +80,24 @@
             </ElDropdownMenu>
           </template>
         </ElDropdown>
-
-        <!-- 通知按钮 -->
-        <ArtIconButton
-          v-if="shouldShowNotification"
-          icon="ri:notification-2-line"
-          class="notice-button relative"
-          @click="visibleNotice"
-        >
-          <div
-            v-if="hasUnread"
-            class="absolute top-2 right-2 size-1.5 !bg-danger rounded-full"
-          ></div>
-        </ArtIconButton>
+        <ElTooltip :content="$t('at.common.gameLanguage')" placement="bottom">
+          <ElDropdown @command="changeGameLanguage" popper-class="langDropDownStyle">
+            <ArtIconButton icon="ri:gamepad-line" class="text-[19px]" />
+            <template #dropdown>
+              <ElDropdownMenu>
+                <ElDropdownItem
+                  v-for="item in languageOptions"
+                  :key="item.value"
+                  :command="item.value"
+                  :class="{ 'is-selected': gameLanguage === item.value }"
+                >
+                  <span class="menu-txt">{{ item.label }}</span>
+                  <ArtSvgIcon v-if="gameLanguage === item.value" icon="ri:check-fill" />
+                </ElDropdownItem>
+              </ElDropdownMenu>
+            </template>
+          </ElDropdown>
+        </ElTooltip>
 
         <!-- Github -->
         <ArtIconButton icon="ri:github-line" class="chat-button text-[19px]" @click="openGithub" />
@@ -109,8 +117,35 @@
     <!-- 标签页 -->
     <ArtWorkTab />
 
-    <!-- 通知 -->
-    <ArtNotification v-model:value="showNotice" ref="notice" @unread-change="onUnreadChange" />
+    <ElDialog v-model="kmDialogVisible" :title="$t('at.km.quickSubmit')" width="min(760px, 92vw)">
+      <ElInput
+        v-model="kmText"
+        type="textarea"
+        :rows="14"
+        :placeholder="$t('at.km.pastePlaceholder')"
+      />
+      <div v-if="kmResult.length" class="mt-4 space-y-2">
+        <ElAlert
+          v-for="item in kmResult"
+          :key="item.km_id"
+          :type="
+            item.duplicate
+              ? 'warning'
+              : item.resolution_status === 'resolved'
+                ? 'success'
+                : 'warning'
+          "
+          :closable="false"
+          :title="`${item.km_id} · ${item.duplicate ? $t('at.km.duplicate') : item.resolution_status}`"
+        />
+      </div>
+      <template #footer>
+        <ElButton @click="router.push('/at/km-listener')">{{ $t('at.km.openListener') }}</ElButton>
+        <ElButton type="primary" :loading="kmSubmitting" @click="submitKMText">{{
+          $t('at.km.submit')
+        }}</ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>
 
@@ -127,13 +162,15 @@
   import { themeAnimation } from '@/utils/ui/animation'
   import { useCommon } from '@/hooks/core/useCommon'
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
-  import { fetchUnreadCount } from '@/api/notification'
+  import { atApi } from '@/api/at'
+  import { fetchProfile, updateProfile } from '@/api/profile'
+  import { ElMessage } from 'element-plus'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
 
   defineOptions({ name: 'ArtHeaderBar' })
 
   const router = useRouter()
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { width } = useWindowSize()
 
   const settingStore = useSettingStore()
@@ -146,19 +183,26 @@
     shouldShowMenuButton,
     shouldShowRefreshButton,
     shouldShowBreadcrumb,
-    shouldShowNotification,
     shouldShowLanguage,
     shouldShowThemeToggle
   } = useHeaderBar()
 
   const { menuOpen, menuType, isDark, tabStyle } = storeToRefs(settingStore)
 
-  const { language } = storeToRefs(userStore)
+  const { language, gameLanguage } = storeToRefs(userStore)
   const { menuList } = storeToRefs(menuStore)
 
-  const showNotice = ref(false)
-  const notice = ref(null)
-  const hasUnread = ref(false)
+  const kmDialogVisible = ref(false)
+  const kmText = ref('')
+  const kmSubmitting = ref(false)
+  const kmResult = ref<Api.AT.KMSubmitResult['items']>([])
+  const canSubmitKM = computed(() => {
+    const roles = userStore.info.roles ?? []
+    return (
+      roles.some((role) => ['fc', 'admin', 'super_admin'].includes(role)) ||
+      (userStore.info.buttons ?? []).includes('at:km:submit')
+    )
+  })
 
   // 菜单类型判断
   const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT)
@@ -169,33 +213,8 @@
 
   onMounted(() => {
     initLanguage()
-    loadUnreadCount()
     sysConfigStore.ensureLoaded()
-    document.addEventListener('click', bodyCloseNotice)
   })
-
-  onUnmounted(() => {
-    document.removeEventListener('click', bodyCloseNotice)
-  })
-
-  /**
-   * 加载未读通知数量
-   */
-  const loadUnreadCount = async (): Promise<void> => {
-    try {
-      const data = await fetchUnreadCount()
-      hasUnread.value = (data?.unread_count ?? 0) > 0
-    } catch {
-      // 静默失败
-    }
-  }
-
-  /**
-   * 通知未读数变化回调
-   */
-  const onUnreadChange = (count: number): void => {
-    hasUnread.value = count > 0
-  }
 
   /**
    * 切换菜单显示/隐藏状态
@@ -231,40 +250,58 @@
     locale.value = language.value
   }
 
-  /**
-   * 切换系统语言
-   * @param {LanguageEnum} lang - 目标语言类型
-   */
-  const changeLanguage = (lang: LanguageEnum): void => {
-    if (locale.value === lang) return
-    locale.value = lang
-    userStore.setLanguage(lang)
-    reload(50)
+  const openKMSubmit = async () => {
+    kmDialogVisible.value = true
+    kmResult.value = []
+    try {
+      if (window.isSecureContext && navigator.clipboard) {
+        kmText.value = await navigator.clipboard.readText()
+      }
+    } catch {
+      ElMessage.warning(t('at.km.clipboardDenied'))
+    }
   }
 
-  /**
-   * 点击页面其他区域关闭通知面板
-   * @param {Event} e - 点击事件对象
-   */
-  const bodyCloseNotice = (e: any): void => {
-    if (!showNotice.value) return
-
-    const target = e.target as HTMLElement
-
-    // 检查是否点击了通知按钮或通知面板内部
-    const isNoticeButton = target.closest('.notice-button')
-    const isNoticePanel = target.closest('.art-notification-panel')
-
-    if (!isNoticeButton && !isNoticePanel) {
-      showNotice.value = false
+  const submitKMText = async () => {
+    if (!kmText.value.trim()) return
+    kmSubmitting.value = true
+    try {
+      kmResult.value = (await atApi.submitKillmails(kmText.value)).items
+      ElMessage.success(t('at.km.submitted'))
+    } finally {
+      kmSubmitting.value = false
     }
   }
 
   /**
-   * 切换通知面板显示状态
+   * 切换系统语言
+   * @param {LanguageEnum} lang - 目标语言类型
    */
-  const visibleNotice = (): void => {
-    showNotice.value = !showNotice.value
+  const changeLanguage = async (lang: LanguageEnum): Promise<void> => {
+    if (locale.value === lang) return
+    locale.value = lang
+    userStore.setLanguage(lang)
+    await persistLanguages(lang, gameLanguage.value)
+    reload(50)
+  }
+
+  const changeGameLanguage = async (lang: LanguageEnum): Promise<void> => {
+    if (gameLanguage.value === lang) return
+    userStore.setGameLanguage(lang)
+    await persistLanguages(language.value, lang)
+    reload(50)
+  }
+
+  const persistLanguages = async (ui: LanguageEnum, game: LanguageEnum): Promise<void> => {
+    const profile = await fetchProfile()
+    await updateProfile({
+      qq: profile.qq,
+      nickname: profile.nickname,
+      tournament_character_name: profile.tournament_character_name,
+      tournament_character_id: profile.tournament_character_id,
+      ui_language: ui,
+      game_language: game
+    })
   }
 
   /**

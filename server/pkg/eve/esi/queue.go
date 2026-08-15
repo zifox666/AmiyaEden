@@ -62,7 +62,7 @@ func (q *Queue) Run() {
 	global.Logger.Info("[ESI Queue] 开始刷新调度")
 
 	// 1. 获取所有有 refresh_token 的角色
-	characters, err := q.charRepo.ListAllWithToken()
+	characters, err := q.charRepo.ListRefreshablePrimaryWithToken()
 	if err != nil {
 		global.Logger.Error("[ESI Queue] 获取角色列表失败", zap.Error(err))
 		return
@@ -77,7 +77,7 @@ func (q *Queue) Run() {
 	activityMap := q.checkActivity(ctx, characters)
 
 	// 3. 获取所有任务并按优先级排序
-	allTasks := AllTasks()
+	allTasks := ATTasks()
 	sortedTasks := sortTasksByPriority(allTasks)
 
 	// 4. 构建待执行任务列表
@@ -143,12 +143,15 @@ func (q *Queue) Run() {
 
 // RunTask 手动执行某个指定任务（管理页面触发）
 func (q *Queue) RunTask(taskName string, characterID int64) error {
+	if !IsATAllowedTask(taskName) {
+		return fmt.Errorf("task %q is disabled in AT mode", taskName)
+	}
 	task, ok := GetTask(taskName)
 	if !ok {
 		return fmt.Errorf("task %q not found", taskName)
 	}
 
-	char, err := q.charRepo.GetByCharacterID(characterID)
+	char, err := q.charRepo.GetRefreshablePrimaryByCharacterID(characterID)
 	if err != nil {
 		return fmt.Errorf("character %d not found: %w", characterID, err)
 	}
@@ -162,7 +165,7 @@ func (q *Queue) RunTask(taskName string, characterID int64) error {
 
 // RunAllForCharacter 对指定角色执行全部任务，忽略刷新间隔（用于新角色首次登录时的全量初始化）
 func (q *Queue) RunAllForCharacter(ctx context.Context, characterID int64) {
-	char, err := q.charRepo.GetByCharacterID(characterID)
+	char, err := q.charRepo.GetRefreshablePrimaryByCharacterID(characterID)
 	if err != nil {
 		global.Logger.Error("[ESI Queue] RunAllForCharacter: 角色不存在",
 			zap.Int64("character_id", characterID),
@@ -188,7 +191,7 @@ func (q *Queue) RunAllForCharacter(ctx context.Context, characterID int64) {
 	}
 
 	isActive := q.checkSingleActivity(ctx, *char)
-	allTasks := AllTasks()
+	allTasks := ATTasks()
 	sortedTasks := sortTasksByPriority(allTasks)
 
 	sem := make(chan struct{}, q.concurrency)
@@ -213,12 +216,15 @@ func (q *Queue) RunAllForCharacter(ctx context.Context, characterID int64) {
 
 // RunTaskByName 对所有拥有所需 scope 的角色执行指定任务
 func (q *Queue) RunTaskByName(taskName string) error {
+	if !IsATAllowedTask(taskName) {
+		return fmt.Errorf("task %q is disabled in AT mode", taskName)
+	}
 	task, ok := GetTask(taskName)
 	if !ok {
 		return fmt.Errorf("task %q not found", taskName)
 	}
 
-	characters, err := q.charRepo.ListAllWithToken()
+	characters, err := q.charRepo.ListRefreshablePrimaryWithToken()
 	if err != nil {
 		return fmt.Errorf("list characters: %w", err)
 	}

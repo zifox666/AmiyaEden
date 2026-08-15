@@ -242,3 +242,50 @@ func DefaultRoleMenuMap() map[string][]string {
 		},
 	}
 }
+
+// GetATSystemMenuSeeds is the menu allowlist used by the AT deployment. The
+// legacy seed catalogue above remains intact for source compatibility.
+func GetATSystemMenuSeeds() []MenuSeed {
+	return []MenuSeed{
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "AT", Path: "/at", Component: "/index/index", Title: "menus.at.title", Icon: "ri:trophy-line", Sort: 100, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATMatches", Path: "matches", Component: "/at/matches", Title: "menus.at.matches", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATSets", Path: "sets", Component: "/at/sets", Title: "menus.at.sets", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATKMListener", Path: "km-listener", Component: "/at/km-listener", Title: "menus.at.kmListener", Sort: 80, KeepAlive: true, Status: 1}},
+		{ParentName: "ATKMListener", Menu: Menu{Type: MenuTypeButton, Name: "ATKMSubmit", Permission: "at:km:submit", Title: "menus.at.permissions.kmSubmit", Sort: 100, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATKillmails", Path: "killmails", Component: "/at/killmails", Title: "menus.at.killmails", Sort: 75, KeepAlive: true, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATBattleReports", Path: "battle-reports", Component: "/at/battle-reports", Title: "menus.at.battleReports", Sort: 74, KeepAlive: true, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATKMReview", Path: "km-review", Component: "/at/km-review", Title: "menus.at.kmReview", Sort: 70, KeepAlive: true, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATContributions", Path: "contributions", Component: "/at/contributions", Title: "menus.at.contributions", Sort: 60, KeepAlive: true, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATRecruitment", Path: "recruitment", Component: "/at/recruitment", Title: "menus.at.recruitment", Sort: 50, KeepAlive: true, Status: 1}},
+		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATScoreRules", Path: "score-rules", Component: "/at/score-rules", Title: "menus.at.scoreRules", Sort: 40, KeepAlive: true, Status: 1}},
+
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "ATEveInfo", Path: "/eve-info", Component: "/index/index", Title: "menus.info.title", Icon: "ri:rocket-2-line", Sort: 80, Status: 1}},
+		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveSkills", Path: "skills", Component: "/info/skill", Title: "menus.info.skill", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveImplants", Path: "implants", Component: "/info/implants", Title: "menus.info.implants", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveFittings", Path: "fittings", Component: "/info/fittings", Title: "menus.info.fittings", Sort: 80, KeepAlive: true, Status: 1}},
+		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveSkillPlan", Path: "skill-plan", Component: "/operation/skill-plan", Title: "menus.operation.skillPlan", Sort: 70, KeepAlive: true, Status: 1}},
+		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveSkillPlanManage", Path: "skill-plan-manage", Component: "/corp-manage/skill-plan", Title: "menus.corpManage.skillPlanManage", Sort: 60, KeepAlive: true, Status: 1}},
+		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveSkillPlanCheck", Path: "skill-plan-check", Component: "/corp-manage/skill-plan/check", Title: "menus.corpManage.skillPlanCheck", Sort: 50, KeepAlive: true, Status: 1}},
+
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:settings-3-line", Sort: 30, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "User", Path: "user", Component: "/system/user", Title: "menus.system.user", Sort: 100, KeepAlive: true, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "RoleManage", Path: "role", Component: "/system/role", Title: "menus.system.role", Sort: 90, KeepAlive: true, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "Menus", Path: "menu", Component: "/system/menu", Title: "menus.system.menu", Sort: 80, KeepAlive: true, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "ESIRefresh", Path: "esi-refresh", Component: "/system/esi-refresh", Title: "menus.system.esiRefresh", Sort: 70, KeepAlive: true, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "BasicConfig", Path: "basic-config", Component: "/system/basic-config", Title: "menus.system.basicConfig", Sort: 60, KeepAlive: true, Status: 1}},
+		{ParentName: "System", Menu: Menu{Type: MenuTypeMenu, Name: "SdeManage", Path: "sde", Component: "/system/sde", Title: "menus.system.sdeManage", Sort: 50, KeepAlive: true, Status: 1}},
+		{ParentName: "", Menu: Menu{Type: MenuTypeMenu, Name: "UserCenter", Path: "/profile", Component: "/system/user-center", Title: "menus.system.userCenter", Icon: "ri:user-settings-line", Sort: 70, KeepAlive: true, Status: 1}},
+	}
+}
+
+func ATDefaultRoleMenuMap() map[string][]string {
+	common := []string{"AT", "ATMatches", "ATSets", "ATKMListener", "ATKMSubmit", "ATKillmails", "ATBattleReports", "ATContributions", "ATScoreRules", "ATEveInfo", "ATEveSkills", "ATEveImplants", "ATEveFittings", "ATEveSkillPlan", "UserCenter"}
+	adminExtras := []string{"ATKMReview", "ATRecruitment", "ATEveSkillPlanManage", "ATEveSkillPlanCheck"}
+	return map[string][]string{
+		RoleAdmin:     append(append([]string{}, common...), adminExtras...),
+		RoleFC:        append(append([]string{}, common...), "ATKMReview", "ATEveSkillPlanManage", "ATEveSkillPlanCheck"),
+		RoleRecruiter: append(append([]string{}, common...), "ATRecruitment"),
+		RoleUser:      common,
+		RoleGuest:     {"UserCenter", "ATEveInfo", "ATEveSkills", "ATEveImplants", "ATEveFittings"},
+	}
+}

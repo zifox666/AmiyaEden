@@ -1,21 +1,18 @@
 # AmiyaEden
 
-面向 EVE Online 联盟/军团的一体化管理平台，提供 SSO 登录、舰队行动、SRP 补损、ESI 数据同步等功能。
+面向 EVE Online Alliance Tournament 队伍的赛训平台。当前分支以 AT 最小加载模式运行；原 AmiyaEden 的商店、旧舰队/PAP、联盟 PAP、SRP、建筑等源码和历史表仍保留，但不会注册路由、菜单或定时任务。
 
 ---
 
 ## 功能特性
 
-- **EVE SSO 登录**：基于 EVE Online OAuth 2.0 身份认证，支持多角色绑定
-- **舰队行动管理**：创建舰队、ESI 成员同步、PAP 出勤记录
-- **SRP 补损系统**：关联击杀邮件的补损申请、审批与发放流程
-- **ESI 数据自动刷新**：定时从 ESI API 拉取角色资产、击杀、合同等数据
-- **SDE 静态数据**：自动从 GitHub Release 下载并导入最新 EVE 静态数据
-- **角色权限控制**：多级角色体系（超级管理员 / 管理员 / 补损管理 / 舰队指挥 / 普通用户）
-- **动态菜单路由**：后端下发菜单与路由配置，前端动态注册
-- **EVE权限关联**：基于 ESI 头衔自动分配系统角色，支持自定义映射规则
-- **成员审计**：支持模拟登录指定成员账户
-- **自动审核机器人**：基于规则引擎自动审核 SRP 申请
+- **双 OAuth 与主角色同步**：EVE SSO、SeAT OAuth；SeAT 主角色优先，仅刷新技能、配置、克隆和植入体。
+- **报名与问卷**：不可预测链接、OAuth 回跳、技能/Public 快照、签发者隔离和隐私清理。
+- **AT 分数与配置 Set**：导入官方规则 XLSX，版本冻结、禁用船/重复船惩罚、EFT 和电子战/加成替换。
+- **比赛状态机**：7v7/10v10、BO3/BO5、报名/指定、逐局阵容、重开、提前结束和重置。
+- **比赛服 KM 与 BR**：剪贴板批量提交、独立 KM 表族、15 分钟窗口、冲突审核、清场排除和版本化 BR。
+- **贡献账本**：按比赛类型结算、赛季榜单、手工调整和不可变冲正。
+- **双重语言**：UI 语言与游戏术语语言独立切换，EFT 始终使用官方英文名称。
 
 ---
 
@@ -94,7 +91,7 @@ cp config/config.example.yaml config/config.yaml
 
 | 配置项 | 说明 |
 | --- | --- |
-| `database.*` | PostgreSQL 连接信息 |
+| `database.*` | PostgreSQL 实例连接信息；`data_dbname` 为业务库、`sde_dbname` 为静态数据库 |
 | `redis.*` | Redis 连接信息 |
 | `jwt.secret` | JWT 签名密钥，生产环境务必修改 |
 | `eve_sso.client_id` | EVE 开发者控制台申请的 Client ID |
@@ -117,7 +114,30 @@ go run main.go -c ./config/config.yaml
 make run
 ```
 
-首次启动会自动执行数据库迁移（AutoMigrate）。
+首次启动会分别对 DATA/SDE 执行非破坏性迁移，并自动把 SDE 导入 SDE 数据库。两个数据库必须已存在；Docker 示例会在新数据目录中自动创建。
+
+### 双库部署与备份
+
+DATA 与 SDE 位于同一 PostgreSQL 实例、不同数据库。已有实例可幂等执行：
+
+```bash
+psql -U postgres -f deploy/postgres/init-at-databases.sql
+```
+
+备份、恢复和恢复后校验：
+
+```bash
+pg_dump -Fc -U postgres -d at_data -f at_data.dump
+pg_dump -Fc -U postgres -d amiya_eden_sde -f amiya_eden_sde.dump
+createdb -U postgres at_data_restore
+createdb -U postgres amiya_eden_sde_restore
+pg_restore -U postgres -d at_data_restore at_data.dump
+pg_restore -U postgres -d amiya_eden_sde_restore amiya_eden_sde.dump
+psql -U postgres -d at_data_restore -c "SELECT count(*) FROM at_match;"
+psql -U postgres -d amiya_eden_sde_restore -c 'SELECT count(*) FROM "invTypes";'
+```
+
+升级已有单库前先完整备份。将配置中的 `data_dbname` 指向原业务库，创建空 SDE 库并启动；程序不会删除旧源码、表或历史数据。`GET /health` 同时检查 DATA、SDE 和 Redis。
 
 ### 4. 启动前端
 

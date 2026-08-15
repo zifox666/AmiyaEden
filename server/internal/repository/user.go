@@ -24,9 +24,28 @@ func (r *UserRepository) GetByID(id uint) (*model.User, error) {
 	return &user, err
 }
 
+func (r *UserRepository) ListByIDs(ids []uint) ([]model.User, error) {
+	if len(ids) == 0 {
+		return []model.User{}, nil
+	}
+	var users []model.User
+	return users, global.DB.Where("id IN ?", ids).Find(&users).Error
+}
+
 // Update 更新用户信息
 func (r *UserRepository) Update(user *model.User) error {
 	return global.DB.Save(user).Error
+}
+
+func (r *UserRepository) UpdateProfile(id uint, req model.UpdateProfileRequest) error {
+	return global.DB.Model(&model.User{}).Where("id = ?", id).Updates(map[string]any{
+		"qq":                   req.QQ,
+		"nickname":             req.Nickname,
+		"tournament_char_name": req.TournamentCharacterName,
+		"tournament_char_id":   req.TournamentCharacterID,
+		"ui_language":          req.UILanguage,
+		"game_language":        req.GameLanguage,
+	}).Error
 }
 
 // ListAllIDs 返回所有用户 ID（供定时任务批量处理使用）

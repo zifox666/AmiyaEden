@@ -156,7 +156,12 @@
           </ElTableColumn>
           <ElTableColumn :label="$t('common.operation')" width="160" fixed="right" align="center">
             <template #default="{ row }">
-              <ElButton type="primary" link size="small" @click="copyInviteLink(row)">
+              <ElButton
+                type="primary"
+                link
+                size="small"
+                @click="copyInviteLink(row as Api.Fleet.FleetInvite)"
+              >
                 {{ $t('fleet.invite.copyLink') }}
               </ElButton>
               <ElButton
@@ -164,7 +169,7 @@
                 type="danger"
                 link
                 size="small"
-                @click="handleDeactivateInvite(row)"
+                @click="handleDeactivateInvite(row as Api.Fleet.FleetInvite)"
               >
                 {{ $t('fleet.invite.deactivate') }}
               </ElButton>

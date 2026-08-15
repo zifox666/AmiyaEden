@@ -7,18 +7,20 @@
 > **统一响应格式**：
 >
 > ```json
-> { "code": 0, "msg": "ok", "data": {} }
+> { "code": 200, "msg": "success", "data": {} }
 > ```
 >
 > 分页响应：
 >
 > ```json
 > {
->   "code": 0,
->   "msg": "ok",
+>   "code": 200,
+>   "msg": "success",
 >   "data": { "list": [], "total": 0, "page": 1, "pageSize": 20 }
 > }
 > ```
+
+> **AT 模式说明**：第 14 节是当前运行时允许名单。前文旧舰队、商店、SRP、钱包、语音等章节仅保留为历史契约，AT 模式不注册对应路由；源码和历史数据没有删除。
 
 ---
 
@@ -74,7 +76,7 @@ GET /sso/eve/callback
 { "token": "jwt_token", "user": {}, "character": {} }
 ```
 
-若有 `redirect` 则 302 重定向到 `redirect?token=<jwt>`
+若有 `redirect` 则 302 回跳并附加 `token`。Hash Router 地址会把参数加入 `#` 后的查询串，例如 `/#/auth/callback?redirect=%2F&token=<jwt>`，不会把令牌拼入 `redirect` 参数值。
 
 ---
 
@@ -1205,3 +1207,115 @@ POST /voice/mumble/ice-auth
 | `403` | 权限不足            |
 | `404` | 资源不存在          |
 | `500` | 业务错误            |
+
+---
+
+## 14. AT 赛用系统 API
+
+除公开报名上下文、EVE/SeAT OAuth 和 `/health` 外，以下接口均要求 JWT；响应继续使用本文统一 `{code,msg,data}` 封装。细粒度所有权由 Service 校验。
+
+### 14.1 健康与个人资料
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/health` | 检查 DATA、SDE、Redis；失败返回 HTTP 503 |
+| GET | `/api/v1/profile` | QQ、昵称、比赛服身份、双语言和主角色来源 |
+| PUT | `/api/v1/profile` | 更新资料；比赛服 ID 必须为唯一正整数 |
+
+资料字段为 `qq`、`nickname`、`tournament_character_name`、`tournament_character_id`、`ui_language`、`game_language`。主角色来源只读返回 `main_character_source=seat|eve|none`。个人信息页面使用根级路由 `/profile`；访客也可访问自己的技能、配置、克隆和植入体信息。
+
+### 14.2 报名
+
+| 方法 | 路径 | 权限/说明 |
+| --- | --- | --- |
+| GET | `/api/v1/recruitment/public/:token` | 公开读取有效链接的问卷快照 |
+| POST | `/api/v1/recruitment/public/:token/applications` | 登录后提交答案并固化技能/Public 快照 |
+| GET | `/api/v1/recruitment/my-applications` | 当前用户查看自己的申请 |
+| PUT | `/api/v1/recruitment/applications/:id/withdraw` | 当前用户撤回自己的申请 |
+| GET/POST | `/api/v1/recruitment/questionnaires` | 招募官；列表/创建 |
+| GET/PUT | `/api/v1/recruitment/questionnaires/:id` | 签发者或管理员；`publish=true` 发布 |
+| POST | `/api/v1/recruitment/images` | 登录用户上传问卷图片；5 MiB，校验实际 JPEG/PNG/GIF/WebP 内容 |
+| GET/POST | `/api/v1/recruitment/links` | 签发者或管理员；列表/创建 |
+| PUT | `/api/v1/recruitment/links/:id/active` | 启停链接 |
+| GET | `/api/v1/recruitment/applications` | 仅自己的链接；管理员全部 |
+| GET | `/api/v1/recruitment/applications/:id` | 答案、技能/Public 和事件，不含配置/克隆/植入体 |
+| PUT | `/api/v1/recruitment/applications/:id/review` | 状态审核和原因；通过时原子移除 `guest` 并授予 `user` 普通成员角色 |
+| POST | `/api/v1/recruitment/privacy-cleanup` | 仅管理员；原因必填 |
+
+可视化设计器提供 `text|textarea|radio|checkbox|select` 五种常用题型；后端继续兼容历史 `number|date|image` 快照。`field_key` 由系统生成且不向招募官暴露，字段另含 `label`、`description`、`required`、`sort`、`options`。OAuth/SSO 账号、QQ/昵称、比赛服角色、正式服主角色、Public 信息与技能快照是每份申请固定收集的系统项。应用状态为 `draft|submitted|reviewing|approved|rejected|withdrawn`。
+
+### 14.3 分数规则与 Set
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/v1/at/score-rules` | 规则版本列表 |
+| POST | `/api/v1/at/score-rules/import` | 管理员上传 XLSX (`multipart/form-data` 的 `file`) |
+| GET | `/api/v1/at/score-rules/:id` | 规则、舰船、禁用船和惩罚明细 |
+| POST | `/api/v1/at/score-rules/:id/publish` | 管理员发布不可变版本 |
+| GET/POST | `/api/v1/at/fits` | 装配库列表/FC 创建可复用舰船装配 |
+| GET/PUT/DELETE | `/api/v1/at/fits/:id` | 可视化装配明细/更新/删除未被引用装配 |
+| GET/POST | `/api/v1/at/sets` | 列表/创建 Set |
+| POST | `/api/v1/at/sets/parse-eft` | FC/管理员解析官方英文 EFT，返回舰船和可替换装备/弹药 |
+| GET/PUT | `/api/v1/at/sets/:id` | 读取/更新 Set、槽位和替换操作 |
+| GET | `/api/v1/at/sets/:id/eft` | 整队官方英文 EFT |
+
+`at_fit` 保存基础 EFT、EFT 已具备的基础标签和可选标签替换规则；名称由系统按“舰船 + 电子战/加成标签”生成。Set 使用 `format=7v7|10v10`、`rule_version_id` 和有序 `slots`，新槽位通过 `fit_id` 引用装配并保存该位置最终标签。历史槽位的内嵌 `base_eft` 继续只读兼容。保存及输出都会重新校验 200 分、禁用船、EFT 船型和冲突。
+
+分数导入当前严格支持 `ATXXII Comp Creator V1.4`：读取 `New Static Values (Do Not Edit)` F/J 区域，并按每艘船的 `Inflation Value` 保存重复惩罚；特殊舰船不会被 Hull Type 默认值覆盖。
+
+### 14.4 比赛与局
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET/POST | `/api/v1/at/matches` | 列表/FC 创建 |
+| GET | `/api/v1/at/matches/by-uuid/:uuid` | UUID 比赛详情 |
+| GET | `/api/v1/at/matches/:id` | 比赛、报名和所有局 |
+| POST | `/api/v1/at/matches/:id/positions/self` | 允许自选时，成员报名具体阵容位置和标签 |
+| PUT | `/api/v1/at/matches/:id/positions` | FC 指定位置成员并微调标签 |
+| GET | `/api/v1/at/matches/:id/positions/:slot/eft` | 成员复制本人位置最终英文 EFT |
+| GET | `/api/v1/at/matches/users/search?keyword=` | FC 搜索可指定用户 |
+| PUT | `/api/v1/at/matches/:id/registrations` | FC 确认/拒绝/指定；请求体包含 `user_id`、`status` |
+| PUT | `/api/v1/at/matches/:id/status` | 合法状态转换/提前结束原因 |
+| POST | `/api/v1/at/matches/:id/rounds` | 兼容接口；新流程由状态机自动创建下一局 |
+| PUT | `/api/v1/at/matches/rounds/:id/roster` | 锁定双方完整阵容 |
+| POST | `/api/v1/at/matches/rounds/:id/finish` | 进入 BR 审核 |
+| POST | `/api/v1/at/matches/rounds/:id/reopen` | 作废并生成递增 attempt |
+| POST | `/api/v1/at/matches/rounds/:id/confirm` | 确认胜/负/平；要求 BR 已固化 |
+| POST | `/api/v1/at/matches/:id/reset` | 仅管理员；整场重置和贡献冲正 |
+
+比赛状态为 `draft → recruiting → ready → in_progress → completed|early_ended|cancelled`；固定 `format`、`series=BO3|BO5`、Set/规则/贡献值/清场船快照。新比赛使用 UUID 详情页；进入 `in_progress` 自动创建第一局，确认一局且未达到系列赛胜场时自动创建下一局。KM 延迟和对手阵容暂缺只在比赛过程中提示，最终固化/确认 BR 仍执行完整校验。
+
+### 14.5 比赛服 KM 与 BR
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/v1/at/killmails/submit` | 拥有 `at:km:submit` 权限的成员批量提交中文剪贴板 KM |
+| GET | `/api/v1/at/killmails` | 全部已提交 KM（普通成员可读） |
+| GET | `/api/v1/at/killmails/pending` | 仅 FC/管理员；全局待审核库 |
+| GET | `/api/v1/at/killmails/:id/suggestions` | 仅 FC/管理员；比赛/单局归属建议 |
+| POST | `/api/v1/at/killmails/:id/assign` | 仅 FC/管理员；确认归属 |
+| POST | `/api/v1/at/killmails/rounds/:id/resolve-conflict` | 仅 FC/管理员；选择重复死亡有效记录 |
+| GET | `/api/v1/at/br/rounds/:id/latest` | 最新站内 BR 版本 |
+| GET | `/api/v1/at/br` | 每局最新 BR 总览（普通成员可读） |
+| POST | `/api/v1/at/br/rounds/:id/build` | FC 固化；后续修订仅管理员且原因必填 |
+
+KMID 为 UUIDv7，`normalized_hash` 为规范文本 SHA-256。角色/军团仅保存比赛服文本；舰船和武器批量关联 SDE TypeID。未解析、15 分钟超窗或未解决死亡冲突会阻止 BR 固化。
+
+### 14.6 赛季与贡献
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET/POST/PUT | `/api/v1/at/contributions/seasons[/:id]` | 查询；管理员新增/更新赛季 |
+| GET | `/api/v1/at/contributions/seasons/:id/cleanup-ships` | 查询赛季清场舰船及本地化名称 |
+| PUT | `/api/v1/at/contributions/seasons/:id/cleanup-ships` | 管理员独立维护清场舰船；仅接受 SDE 舰船 TypeID |
+| GET/POST/PUT | `/api/v1/at/contributions/match-types[/:id]` | 查询；管理员维护比赛类型/贡献值 |
+| GET | `/api/v1/at/contributions/users/search?keyword=` | 管理员按昵称、比赛服角色或用户编号搜索贡献调整对象 |
+| POST | `/api/v1/at/contributions/manual` | 管理员正负手调，非零且原因必填 |
+| GET | `/api/v1/at/contributions/leaderboard?season_id=` | 当前/历史赛季或生涯榜单 |
+| GET | `/api/v1/at/contributions/me?season_id=` | 当前用户的比赛、手调和冲正账目明细 |
+
+`at_contribution_ledger` 不允许业务更新或删除。比赛、手工和冲正均以唯一 `source_key` 保证幂等；一名实际参加有效局的队员每场只结算一次。
+
+### 14.7 技能规划
+
+技能规划沿用 `/api/v1/operation/skill-plans` 契约并在 AT 模式恢复。普通用户可读取规划及检查自己的正式服主角色；FC/管理员可创建、更新、删除规划并检查所有用户的主角色。历史副角色技能不会进入 AT 技能规划结果。

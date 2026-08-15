@@ -94,7 +94,12 @@
         <!-- 操作 -->
         <ElTableColumn :label="$t('fleetIncentive.action')" width="120" align="center">
           <template #default="{ row }">
-            <ElButton type="primary" size="small" :loading="row._saving" @click="handleSave(row)">
+            <ElButton
+              type="primary"
+              size="small"
+              :loading="row._saving"
+              @click="handleSave(row as Row)"
+            >
               {{ $t('fleetIncentive.save') }}
             </ElButton>
           </template>

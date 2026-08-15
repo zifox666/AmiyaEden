@@ -44,5 +44,6 @@ static/dist/
 # Temp Logs
 server/tmp/
 server/logs/
+server/uploads/
 
 .pnpm-store/*

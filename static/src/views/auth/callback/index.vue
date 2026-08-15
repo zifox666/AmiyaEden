@@ -77,7 +77,7 @@
   const goLogin = () => router.replace({ name: 'Login' })
 
   /** 完成登录流程（存 token、拉用户信息、跳转） */
-  const finishLogin = async (token: string) => {
+  const finishLogin = async (token: string, redirectOverride?: string) => {
     userStore.setToken(token)
     userStore.setLoginStatus(true)
 
@@ -88,7 +88,8 @@
     userName.value = userInfo.userName
     status.value = 'success'
 
-    const redirect = (route.query.redirect as string) || '/'
+    const redirect = redirectOverride || (route.query.redirect as string) || '/'
+    sessionStorage.removeItem('auth_return_path')
     setTimeout(() => {
       router.replace(redirect)
     }, 1200)
@@ -115,7 +116,8 @@
   }
 
   onMounted(async () => {
-    const token = route.query.token as string
+    let token = route.query.token as string
+    let recoveredRedirect = ''
     const error = route.query.error as string
     const pendingTransfer = route.query.pending_transfer as string
     const characterName = route.query.character_name as string
@@ -135,6 +137,22 @@
       return
     }
 
+    // Compatibility for callbacks produced before hash-route query handling
+    // was fixed: ?redirect=%2F%3Ftoken%3D... placed the token inside redirect.
+    if (!token && typeof route.query.redirect === 'string') {
+      try {
+        const nested = new URL(route.query.redirect, location.origin)
+        token = nested.searchParams.get('token') || ''
+        if (token) {
+          nested.searchParams.delete('token')
+          nested.searchParams.delete('provider')
+          recoveredRedirect = `${nested.pathname}${nested.search}${nested.hash}` || '/'
+        }
+      } catch {
+        // The normal missing-token state below remains authoritative.
+      }
+    }
+
     if (!token) {
       status.value = 'error'
       errMsg.value = t('authCallback.missingToken')
@@ -142,7 +160,7 @@
     }
 
     try {
-      await finishLogin(token)
+      await finishLogin(token, recoveredRedirect)
     } catch (err: any) {
       userStore.setToken('')
       userStore.setLoginStatus(false)

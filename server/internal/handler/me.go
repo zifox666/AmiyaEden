@@ -34,9 +34,9 @@ func (h *MeHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	characters, _ := h.charRepo.ListByUserID(userID)
-	if characters == nil {
-		characters = []model.EveCharacter{}
+	characters := []model.EveCharacter{}
+	if character, characterErr := h.charRepo.GetSelectedPrimaryByUserID(userID); characterErr == nil {
+		characters = append(characters, *character)
 	}
 
 	roles := middleware.GetUserRoles(c)

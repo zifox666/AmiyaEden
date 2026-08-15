@@ -52,6 +52,7 @@ export const useUserStore = defineStore(
   () => {
     // 语言设置
     const language = ref(LanguageEnum.ZH)
+    const gameLanguage = ref<LanguageEnum>(LanguageEnum.EN)
     // 登录状态
     const isLogin = ref(false)
     // 锁屏状态
@@ -80,6 +81,8 @@ export const useUserStore = defineStore(
      */
     const setUserInfo = (newInfo: Api.Auth.UserInfo) => {
       info.value = newInfo
+      if (newInfo.uiLanguage) language.value = newInfo.uiLanguage as LanguageEnum
+      if (newInfo.gameLanguage) gameLanguage.value = newInfo.gameLanguage as LanguageEnum
     }
 
     /**
@@ -97,6 +100,10 @@ export const useUserStore = defineStore(
     const setLanguage = (lang: LanguageEnum) => {
       setPageTitle(router.currentRoute.value)
       language.value = lang
+    }
+
+    const setGameLanguage = (lang: LanguageEnum) => {
+      gameLanguage.value = lang
     }
 
     /**
@@ -205,6 +212,7 @@ export const useUserStore = defineStore(
 
     return {
       language,
+      gameLanguage,
       isLogin,
       isLock,
       lockPassword,
@@ -218,6 +226,7 @@ export const useUserStore = defineStore(
       setUserInfo,
       setLoginStatus,
       setLanguage,
+      setGameLanguage,
       setSearchHistory,
       setLockStatus,
       setLockPassword,

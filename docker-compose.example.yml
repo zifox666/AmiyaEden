@@ -19,6 +19,16 @@ services:
             - /root/dockers/amiya-eden/html:/usr/share/nginx/html
         ports:
             - "80:80"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
         networks:
             - amiya-eden-network
 
@@ -31,6 +41,11 @@ services:
             - TZ=Asia/Shanghai
         volumes:
             - /root/dockers/amiya-eden/redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "-a", "amiya_eden_redis_password", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
         networks:
             - amiya-eden-network
 
@@ -41,10 +56,16 @@ services:
         environment:
             - POSTGRES_USER=postgres
             - POSTGRES_PASSWORD=amiya_eden_password
-            - POSTGRES_DB=amiya_eden
+            - POSTGRES_DB=at_data
             - TZ=Asia/Shanghai
         volumes:
             - /root/dockers/amiya-eden/database:/var/lib/postgresql/data
+            - ./deploy/postgres/init-at-databases.sql:/docker-entrypoint-initdb.d/10-at-databases.sql:ro
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres -d at_data && pg_isready -U postgres -d amiya_eden_sde"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
         networks:
             - amiya-eden-network
 

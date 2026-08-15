@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -560,6 +561,16 @@ func (s *FleetConfigService) parseEFTToFitting(eft string) (int64, []model.Fleet
 	nameToTypeID, err := s.sdeRepo.GetTypeIDsByNames(names)
 	if err != nil {
 		return 0, nil, fmt.Errorf("SDE 查询失败: %w", err)
+	}
+	var unresolved []string
+	for _, name := range names {
+		if nameToTypeID[name] == 0 {
+			unresolved = append(unresolved, name)
+		}
+	}
+	if len(unresolved) > 0 {
+		sort.Strings(unresolved)
+		return 0, nil, fmt.Errorf("EFT 中以下物品无法解析: %s", strings.Join(unresolved, ", "))
 	}
 
 	shipTypeID, ok := nameToTypeID[header.ShipType]

@@ -6,6 +6,11 @@ import "time"
 type User struct {
 	BaseModel
 	Nickname           string     `gorm:"size:128"               json:"nickname"`
+	QQ                 string     `gorm:"size:32"                json:"qq"`
+	TournamentCharName string     `gorm:"size:128"               json:"tournament_character_name"`
+	TournamentCharID   *int64     `gorm:"uniqueIndex"            json:"tournament_character_id"`
+	UILanguage         string     `gorm:"size:8;default:'zh'"     json:"ui_language"`
+	GameLanguage       string     `gorm:"size:8;default:'en'"     json:"game_language"`
 	Avatar             string     `gorm:"size:512"               json:"avatar"`
 	Status             int8       `gorm:"default:1"              json:"status"` // 1:正常 0:禁用
 	Role               string     `gorm:"size:32;default:'user'" json:"role"`

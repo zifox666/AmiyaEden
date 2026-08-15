@@ -298,7 +298,12 @@ func (s *RoleService) SeedSystemRoles() {
 
 // SeedSystemMenus 初始化系统菜单种子数据
 func (s *RoleService) SeedSystemMenus() {
-	seeds := model.GetSystemMenuSeeds()
+	// Disable every existing menu first; the AT allowlist is then re-enabled by
+	// upsert. No menu row or historical role assignment is deleted.
+	if err := global.DB.Model(&model.Menu{}).Where("status != ?", 0).Update("status", 0).Error; err != nil {
+		global.Logger.Warn("停用旧菜单失败", zap.Error(err))
+	}
+	seeds := model.GetATSystemMenuSeeds()
 	nameToID := make(map[string]uint)
 
 	// 先处理根菜单，再处理子菜单
@@ -343,7 +348,7 @@ func (s *RoleService) SeedSystemMenus() {
 }
 
 func (s *RoleService) seedDefaultRoleMenus(nameToID map[string]uint) {
-	roleMenuMap := model.DefaultRoleMenuMap()
+	roleMenuMap := model.ATDefaultRoleMenuMap()
 
 	for roleCode, menuNames := range roleMenuMap {
 		role, err := s.repo.GetByCode(roleCode)
@@ -394,6 +399,21 @@ func (s *RoleService) seedDefaultRoleMenus(nameToID map[string]uint) {
 		}
 
 		existing, _ := s.repo.GetRoleMenuIDs(role.ID)
+		removedLegacySystem := false
+		// UserCenter used to be nested under System in the first AT draft.
+		// It is now a root-level profile page, so ordinary AT roles must not
+		// retain an empty System directory from the old default mapping.
+		if systemID, ok := nameToID["System"]; ok && roleCode != model.RoleAdmin {
+			filtered := existing[:0]
+			for _, id := range existing {
+				if id != systemID {
+					filtered = append(filtered, id)
+				} else {
+					removedLegacySystem = true
+				}
+			}
+			existing = filtered
+		}
 
 		if len(existing) == 0 {
 			// 角色尚无菜单，直接写入
@@ -414,12 +434,12 @@ func (s *RoleService) seedDefaultRoleMenus(nameToID map[string]uint) {
 				toAdd = append(toAdd, id)
 			}
 		}
-		if len(toAdd) > 0 {
+		if len(toAdd) > 0 || removedLegacySystem {
 			merged := append(existing, toAdd...)
 			if err := s.repo.SetRoleMenus(role.ID, merged); err != nil {
 				global.Logger.Error("增量更新角色菜单失败", zap.String("role", roleCode), zap.Error(err))
 			} else {
-				global.Logger.Info("角色菜单已增量更新", zap.String("role", roleCode), zap.Int("added", len(toAdd)))
+				global.Logger.Info("角色菜单已更新", zap.String("role", roleCode), zap.Int("added", len(toAdd)), zap.Bool("removed_legacy_system", removedLegacySystem))
 			}
 		}
 	}

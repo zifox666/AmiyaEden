@@ -6,7 +6,11 @@ import request from '@/utils/http'
  */
 export async function getEveSSOLoginURL(scopes?: string[]): Promise<string> {
   // hash 模式下 callback 路径在 # 后面
-  const callbackURL = window.location.origin + '/#/auth/callback'
+  const returnPath = sessionStorage.getItem('auth_return_path')
+  const callbackURL =
+    window.location.origin +
+    '/#/auth/callback' +
+    (returnPath ? `?redirect=${encodeURIComponent(returnPath)}` : '')
   const params: Record<string, string> = { redirect: callbackURL }
   if (scopes && scopes.length > 0) {
     params.scopes = scopes.join(',')
@@ -99,7 +103,11 @@ export function checkSeatEnabled() {
  * 获取 SeAT 授权 URL
  */
 export async function getSeatLoginURL(): Promise<string> {
-  const callbackURL = window.location.origin + '/#/auth/callback'
+  const returnPath = sessionStorage.getItem('auth_return_path')
+  const callbackURL =
+    window.location.origin +
+    '/#/auth/callback' +
+    (returnPath ? `?redirect=${encodeURIComponent(returnPath)}` : '')
   const data = await request.get<{ url: string }>({
     url: '/api/v1/sso/seat/login',
     params: { redirect: callbackURL }
@@ -162,6 +170,8 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
     roles,
     buttons: permissions ?? [],
     characters: characters ?? [],
-    primaryCharacterId: user.primary_character_id ?? 0
+    primaryCharacterId: user.primary_character_id ?? 0,
+    uiLanguage: user.ui_language || 'zh',
+    gameLanguage: user.game_language || 'en'
   }
 }

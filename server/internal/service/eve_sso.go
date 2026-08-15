@@ -7,6 +7,7 @@ import (
 	"amiya-eden/pkg/cache"
 	"amiya-eden/pkg/eve"
 	"amiya-eden/pkg/jwt"
+	"amiya-eden/pkg/utils"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -419,8 +420,13 @@ func (s *EveSSOService) HandleCallback(ctx context.Context, code, state, clientI
 			if sd.RedirectURL == "" {
 				return nil, errors.New("该角色已绑定到其他账号，无法再次绑定")
 			}
-			target := sd.RedirectURL + "?pending_transfer=" + ptToken +
-				"&character_name=" + url.QueryEscape(claims.Name)
+			target, err := utils.AppendRedirectQuery(sd.RedirectURL, url.Values{
+				"pending_transfer": {ptToken},
+				"character_name":   {claims.Name},
+			})
+			if err != nil {
+				return nil, errors.New("生成角色迁移回跳地址失败")
+			}
 			global.Logger.Info("角色已绑定他处，发起迁移确认",
 				zap.Int64("characterID", characterID),
 				zap.Uint("targetUserID", sd.BindToUserID))
@@ -553,7 +559,9 @@ func (s *EveSSOService) refreshCharacterToken(ctx context.Context, char *model.E
 	return s.charRepo.Update(char)
 }
 
-// GetCharactersByUserID 获取用户绑定的所有 EVE 角色（不含 Token）
+// GetCharactersByUserID returns every bound character so the user can choose
+// their primary character. The AT refresh queue still schedules only the
+// effective primary character.
 func (s *EveSSOService) GetCharactersByUserID(userID uint) ([]model.EveCharacter, error) {
 	return s.charRepo.ListByUserID(userID)
 }
@@ -576,8 +584,13 @@ func (s *EveSSOService) SetPrimaryCharacter(userID uint, characterID int64) erro
 
 	user.PrimaryCharacterID = characterID
 	user.Avatar = char.PortraitURL
-	user.Nickname = char.CharacterName
-	return s.userRepo.Update(user)
+	if err := s.userRepo.Update(user); err != nil {
+		return err
+	}
+	if OnNewCharacterFunc != nil {
+		go OnNewCharacterFunc(characterID, userID)
+	}
+	return nil
 }
 
 // UnbindCharacter 解除绑定某个 EVE 角色
@@ -609,7 +622,6 @@ func (s *EveSSOService) UnbindCharacter(userID uint, characterID int64) error {
 			if c.CharacterID != characterID {
 				user.PrimaryCharacterID = c.CharacterID
 				user.Avatar = c.PortraitURL
-				user.Nickname = c.CharacterName
 				break
 			}
 		}

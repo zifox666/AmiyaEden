@@ -282,7 +282,7 @@
     loading.value = true
     try {
       fittingsData.value = await fetchInfoFittings({
-        language: userStore.language
+        language: userStore.gameLanguage
       })
     } catch {
       fittingsData.value = null

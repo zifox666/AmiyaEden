@@ -929,8 +929,9 @@ server:
 
 database:
   host: "127.0.0.1"
-  port: 3306
-  dbname: "amiya_eden"
+  port: 5432
+  data_dbname: "at_data"
+  sde_dbname: "amiya_eden_sde"
 
 redis:
   addr: "127.0.0.1:6379"
@@ -948,3 +949,35 @@ sde:
   api_key: "..."
   proxy: ""              # 可选，SDE 下载代理
 ```
+
+## 7. AT 最小加载架构
+
+AT 部署仍遵循 `router → middleware → handler → service → repository → model`。`internal/router/router.go` 是运行时允许名单：只注册认证、用户/RBAC、SDE、主角色技能/植入体/配置及 `recruitment`、`at/*` 端点。旧模块代码和表不删除，但路由、Cron、ESI task 和菜单均不加载。
+
+AT 访客拥有根级 `/profile` 与自己的 EVE 角色信息只读入口。公开报名页负责 OAuth/SSO 回跳、系统资料和主角色检查；申请通过时 Repository 在同一事务中写审核事件并将 `guest` 晋升为 `user`，Service 随后清理 RBAC 缓存。
+
+数据库边界：
+
+- `global.DB`：DATA，保存用户、OAuth、报名、分数版本、Set、比赛、`at_km_*`、BR 与贡献。
+- `global.SDEDB`：SDE，只保存静态表和 SDE 版本。
+- Repository 不做跨库 JOIN。Service 分别读取两个 Repository 后合并 DTO。
+
+新增 AT 领域切片：
+
+| 领域 | Model/Repository/Service/Handler | 前端 |
+| --- | --- | --- |
+| 报名 | `recruitment*` | `api/at.ts`、`views/at/recruitment*` |
+| 分数/Set | `at_score*`、`at_set*` | `views/at/score-rules`、`sets` |
+| 比赛/贡献 | `at_match*` | `views/at/matches`、`contributions` |
+| KM/BR | `at_km_br*`、`pkg/atkm` | 顶栏、`km-listener`、`km-review`、`br` |
+
+KM 文本解析器位于 `server/pkg/atkm`，必须保持无 HTTP 和数据库依赖。XLSX 解析位于 `server/pkg/xlsx`。所有 TypeID 解析通过 SDE Repository 批量完成，禁止循环查询。
+
+### AT 开发验证
+
+```bash
+cd server && go test ./... && go build ./...
+cd static && pnpm lint && pnpm exec vue-tsc --noEmit && pnpm build
+```
+
+运行环境还应验证 `/health`、旧路由 404、合法规则表导入、KM 重复提交，以及报名到贡献的完整流程。部署和备份命令见 `README.md`。

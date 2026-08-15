@@ -103,7 +103,7 @@
       try {
         const res = await fuzzySearch({
           keyword: keyword.trim(),
-          language: userStore.language || props.language,
+          language: userStore.gameLanguage || props.language,
           category_ids: props.categoryIds.length ? props.categoryIds : undefined,
           exclude_category_ids: props.excludeCategoryIds.length
             ? props.excludeCategoryIds

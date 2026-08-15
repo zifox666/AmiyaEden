@@ -7,7 +7,8 @@ database:
   port: 5432
   user: "postgres"
   password: "amiya_eden_password"
-  dbname: "amiya_eden"
+  data_dbname: "at_data"
+  sde_dbname: "amiya_eden_sde"
   sslmode: "disable"
   max_idle_conns: 10
   max_open_conns: 100

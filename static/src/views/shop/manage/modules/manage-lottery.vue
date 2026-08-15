@@ -154,13 +154,13 @@
         <template #label>
           {{ t('lottery.manage.fields.coverImage') }}
         </template>
-        <div style="display: flex; flex-direction: column; width: 100%;">
+        <div style="display: flex; flex-direction: column; width: 100%">
           <ElRadioGroup v-model="activityImageSourceType" style="margin-bottom: 15px">
             <ElRadioButton label="upload">{{ t('lottery.manage.uploadImage') }}</ElRadioButton>
             <ElRadioButton label="url">{{ t('lottery.manage.inputImageUrl') }}</ElRadioButton>
           </ElRadioGroup>
-          
-          <div v-if="activityImageSourceType === 'upload'" style="margin-top: 10px;">
+
+          <div v-if="activityImageSourceType === 'upload'" style="margin-top: 10px">
             <div class="image-upload-area">
               <div v-if="activityForm.image" class="image-preview">
                 <img :src="activityForm.image" alt="封面" />
@@ -188,8 +188,12 @@
               </ElUpload>
             </div>
           </div>
-          
-          <div v-else-if="activityImageSourceType === 'url'" class="image-url-input" style="margin-top: 10px;">
+
+          <div
+            v-else-if="activityImageSourceType === 'url'"
+            class="image-url-input"
+            style="margin-top: 10px"
+          >
             <ElInput
               v-model="activityForm.image"
               :placeholder="t('lottery.manage.inputImageUrl')"
@@ -200,7 +204,11 @@
             <div v-if="activityForm.image" class="image-preview-container">
               <div class="image-preview-label">{{ t('lottery.manage.previewImage') }}:</div>
               <div class="image-preview-wrapper">
-                <img :src="activityForm.image" :alt="t('lottery.manage.coverImage')" class="image-preview-small" />
+                <img
+                  :src="activityForm.image"
+                  :alt="t('lottery.manage.coverImage')"
+                  class="image-preview-small"
+                />
               </div>
               <ElButton size="small" type="danger" text @click="activityForm.image = ''">
                 <el-icon><Delete /></el-icon>
@@ -328,13 +336,13 @@
       </ElFormItem>
       <!-- 图片上传区域 -->
       <ElFormItem :label="t('lottery.manage.prizeFields.image')">
-        <div style="display: flex; flex-direction: column; width: 100%;">
+        <div style="display: flex; flex-direction: column; width: 100%">
           <ElRadioGroup v-model="prizeImageSourceType" style="margin-bottom: 15px">
             <ElRadioButton label="upload">{{ t('lottery.manage.uploadImage') }}</ElRadioButton>
             <ElRadioButton label="url">{{ t('lottery.manage.inputImageUrl') }}</ElRadioButton>
           </ElRadioGroup>
-          
-          <div v-if="prizeImageSourceType === 'upload'" style="margin-top: 10px;">
+
+          <div v-if="prizeImageSourceType === 'upload'" style="margin-top: 10px">
             <div class="image-upload-area small">
               <div v-if="prizeForm.image" class="image-preview">
                 <img :src="prizeForm.image" :alt="t('lottery.manage.prizeFields.image')" />
@@ -364,8 +372,12 @@
               </ElUpload>
             </div>
           </div>
-          
-          <div v-else-if="prizeImageSourceType === 'url'" class="image-url-input" style="margin-top: 10px;">
+
+          <div
+            v-else-if="prizeImageSourceType === 'url'"
+            class="image-url-input"
+            style="margin-top: 10px"
+          >
             <ElInput
               v-model="prizeForm.image"
               :placeholder="t('lottery.manage.inputImageUrl')"
@@ -376,7 +388,11 @@
             <div v-if="prizeForm.image" class="image-preview-container">
               <div class="image-preview-label">{{ t('lottery.manage.previewImage') }}:</div>
               <div class="image-preview-wrapper">
-                <img :src="prizeForm.image" :alt="t('lottery.manage.previewImage')" class="image-preview-small" />
+                <img
+                  :src="prizeForm.image"
+                  :alt="t('lottery.manage.previewImage')"
+                  class="image-preview-small"
+                />
               </div>
               <ElButton size="small" type="danger" text @click="prizeForm.image = ''">
                 <el-icon><Delete /></el-icon>
@@ -387,7 +403,7 @@
         <SdeSearchSelect
           v-model="prizeSdeTypeId"
           :placeholder="t('lottery.manage.prizeFields.sdeSearchPlaceholder')"
-          style="width: 200px; margin-left: 12px; margin-top: 15px;"
+          style="width: 200px; margin-left: 12px; margin-top: 15px"
           @select="onPrizeSdeSelect"
         />
       </ElFormItem>

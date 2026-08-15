@@ -398,7 +398,7 @@
     try {
       skillData.value = await fetchInfoSkills({
         character_id: selectedCharacterId.value,
-        language: userStore.language
+        language: userStore.gameLanguage
       })
     } catch {
       skillData.value = null

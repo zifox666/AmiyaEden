@@ -156,10 +156,12 @@
   } from 'element-plus'
   import { Search, Download } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
+  import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'SkillPlanCheck' })
 
-  const { t, locale } = useI18n()
+  const { t } = useI18n()
+  const userStore = useUserStore()
 
   const planList = ref<Api.SkillPlan.SkillPlanDTO[]>([])
   const selectedPlanId = ref<number | ''>('')
@@ -184,7 +186,7 @@
     if (!selectedPlanId.value) return
     checking.value = true
     try {
-      const lang = locale.value === 'en' ? 'en' : 'zh'
+      const lang = userStore.gameLanguage === 'en' ? 'en' : 'zh'
       checkResult.value = await checkAllCharacters(selectedPlanId.value as number, lang)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
