@@ -1319,3 +1319,48 @@ KMID 为 UUIDv7，`normalized_hash` 为规范文本 SHA-256。角色/军团仅�
 ### 14.7 技能规划
 
 技能规划沿用 `/api/v1/operation/skill-plans` 契约并在 AT 模式恢复。普通用户可读取规划及检查自己的正式服主角色；FC/管理员可创建、更新、删除规划并检查所有用户的主角色。历史副角色技能不会进入 AT 技能规划结果。
+
+### 14.8 EVE 战斗日志分析
+
+所有接口需要 JWT 和正式成员角色（`user|fc|recruiter|admin|super_admin`）。原始日志只在上传请求内解析，不写入文件系统或数据库；数据库仅保存派生报表、按秒时间序列、飞行员/舰船/武器拆分以及输出/承受伤害的命中质量分布。
+
+| 方法 | 路径 | 权限/说明 |
+| --- | --- | --- |
+| POST | `/api/v1/combat-logs` | `multipart/form-data` 的 `file`；UTF-8 `.txt`/`.log`，最大 20 MiB |
+| GET | `/api/v1/combat-logs?page=1&page_size=20&scope=mine` | 当前成员自己的报表；`scope=all` 仅管理员可用 |
+| GET | `/api/v1/combat-logs/:id` | 报表详情；普通成员仅可读取自己的记录，管理员可读取全部 |
+
+分析类别固定为 `damage_out|damage_in|logistics_out|logistics_in|cap_transfer_out|cap_transfer_in|cap_damage_out|cap_damage_in|mining`。伤害命中质量固定为 `barely_scratches|hits|smashes|penetrates|wrecks|glances_off`，服务端按输出/承受方向聚合事件次数、伤害量并计算次数占比。采矿行会通过 SDE 批量解析矿石体积并返回 `mining_units`、`mining_m3` 和拆分行 `volume_m3`；未匹配到 SDE 物品时体积为 0。详情响应为：
+
+```json
+{
+  "report": {
+    "id": 1,
+    "user_id": 2,
+    "user_nickname": "Pilot",
+    "character_name": "Capsuleer",
+    "language": "english",
+    "started_at": "2026-08-15T10:00:01Z",
+    "ended_at": "2026-08-15T10:05:01Z",
+    "duration_seconds": 300,
+    "event_count": 120,
+    "damage_out": 100000,
+    "damage_in": 50000
+  },
+  "breakdowns": [],
+  "timeline": [],
+	"hit_qualities": [
+	  {
+		"direction": "damage_out",
+		"quality": "hits",
+		"hit_count": 32,
+		"damage_amount": 24000,
+		"percentage": 64
+	  }
+	],
+  "average_dps_out": 333.33,
+  "average_dps_in": 166.67
+}
+```
+
+重复上传同一用户的相同文件（SHA-256 一致）会返回已有分析，并用本次请求中的日志补算/刷新命中质量分布，不重复创建报表。

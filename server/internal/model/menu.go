@@ -259,6 +259,9 @@ func GetATSystemMenuSeeds() []MenuSeed {
 		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATRecruitment", Path: "recruitment", Component: "/at/recruitment", Title: "menus.at.recruitment", Sort: 50, KeepAlive: true, Status: 1}},
 		{ParentName: "AT", Menu: Menu{Type: MenuTypeMenu, Name: "ATScoreRules", Path: "score-rules", Component: "/at/score-rules", Title: "menus.at.scoreRules", Sort: 40, KeepAlive: true, Status: 1}},
 
+		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "CombatAnalytics", Path: "/combat-analytics", Component: "/index/index", Title: "menus.combatAnalytics.title", Icon: "ri:line-chart-line", Sort: 90, Status: 1}},
+		{ParentName: "CombatAnalytics", Menu: Menu{Type: MenuTypeMenu, Name: "CombatLogReports", Path: "reports", Component: "/combat-analytics/reports", Title: "menus.combatAnalytics.reports", Sort: 100, KeepAlive: true, Status: 1}},
+
 		{ParentName: "", Menu: Menu{Type: MenuTypeDir, Name: "ATEveInfo", Path: "/eve-info", Component: "/index/index", Title: "menus.info.title", Icon: "ri:rocket-2-line", Sort: 80, Status: 1}},
 		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveSkills", Path: "skills", Component: "/info/skill", Title: "menus.info.skill", Sort: 100, KeepAlive: true, Status: 1}},
 		{ParentName: "ATEveInfo", Menu: Menu{Type: MenuTypeMenu, Name: "ATEveImplants", Path: "implants", Component: "/info/implants", Title: "menus.info.implants", Sort: 90, KeepAlive: true, Status: 1}},
@@ -279,7 +282,7 @@ func GetATSystemMenuSeeds() []MenuSeed {
 }
 
 func ATDefaultRoleMenuMap() map[string][]string {
-	common := []string{"AT", "ATMatches", "ATSets", "ATKMListener", "ATKMSubmit", "ATKillmails", "ATBattleReports", "ATContributions", "ATScoreRules", "ATEveInfo", "ATEveSkills", "ATEveImplants", "ATEveFittings", "ATEveSkillPlan", "UserCenter"}
+	common := []string{"AT", "ATMatches", "ATSets", "ATKMListener", "ATKMSubmit", "ATKillmails", "ATBattleReports", "ATContributions", "ATScoreRules", "CombatAnalytics", "CombatLogReports", "ATEveInfo", "ATEveSkills", "ATEveImplants", "ATEveFittings", "ATEveSkillPlan", "UserCenter"}
 	adminExtras := []string{"ATKMReview", "ATRecruitment", "ATEveSkillPlanManage", "ATEveSkillPlanCheck"}
 	return map[string][]string{
 		RoleAdmin:     append(append([]string{}, common...), adminExtras...),

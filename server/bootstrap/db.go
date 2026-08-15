@@ -162,6 +162,11 @@ func autoMigrateData(db *gorm.DB) {
 		&model.RecruitmentAnswer{},
 		&model.RecruitmentSkillSnapshot{},
 		&model.RecruitmentReviewEvent{},
+		// EVE combat-log analysis (derived data only; raw uploads are not stored)
+		&model.CombatLogReport{},
+		&model.CombatLogBreakdown{},
+		&model.CombatLogTimeline{},
+		&model.CombatLogHitQuality{},
 		// AT score rules
 		&model.ATScoreRuleVersion{},
 		&model.ATScoreShip{},

@@ -243,6 +243,37 @@ func (r *SdeRepository) GetTypeIDsByTranslatedNames(names []string, languageID s
 	return result, nil
 }
 
+// GetTypeVolumesByNames resolves item volume by either the canonical English
+// name or a localized type name in one batch. Combat-log mining analysis uses
+// this to convert mined units to cubic metres without per-row SDE queries.
+func (r *SdeRepository) GetTypeVolumesByNames(names []string, languageID string) (map[string]float64, error) {
+	if len(names) == 0 {
+		return map[string]float64{}, nil
+	}
+	type row struct {
+		TypeName       string  `gorm:"column:type_name"`
+		TranslatedName string  `gorm:"column:translated_name"`
+		Volume         float64 `gorm:"column:volume"`
+	}
+	var rows []row
+	err := global.SDEDB.Table(`"invTypes" t`).
+		Select(`t."typeName" AS type_name, COALESCE(tr.text, '') AS translated_name, t.volume`).
+		Joins(`LEFT JOIN "trnTranslations" tr ON tr."tcID" = ? AND tr."keyID" = t."typeID" AND tr."languageID" = ?`, TC_ID["type"], languageID).
+		Where(`t."typeName" IN ? OR tr.text IN ?`, names, names).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]float64, len(rows)*2)
+	for _, item := range rows {
+		result[item.TypeName] = item.Volume
+		if item.TranslatedName != "" {
+			result[item.TranslatedName] = item.Volume
+		}
+	}
+	return result, nil
+}
+
 // FuzzySearch searches static data only. DATA-side character search is merged
 // by SdeService so this repository never performs cross-database queries.
 func (r *SdeRepository) FuzzySearch(keyword string, languageID string, categoryIDs []int, excludeCategoryIDs []int, limit int) ([]FuzzySearchItem, error) {

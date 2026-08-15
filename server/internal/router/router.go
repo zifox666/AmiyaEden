@@ -71,6 +71,13 @@ func RegisterRoutes(r *gin.Engine) {
 	auth.POST("/recruitment/images", uploadH.UploadImage)
 	menuH := handler.NewMenuHandler()
 	auth.GET("/menu/list", menuH.GetMenuList)
+	combatLogH := handler.NewCombatLogHandler()
+	combatLogs := auth.Group("/combat-logs", middleware.RequireRole(model.RoleUser, model.RoleFC, model.RoleRecruiter, model.RoleAdmin, model.RoleSuperAdmin))
+	{
+		combatLogs.POST("", combatLogH.Upload)
+		combatLogs.GET("", combatLogH.List)
+		combatLogs.GET("/:id", combatLogH.Get)
+	}
 
 	// Only the four retained character data families are readable in AT mode.
 	infoH := handler.NewEveInfoHandler()

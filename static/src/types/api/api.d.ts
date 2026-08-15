@@ -167,6 +167,95 @@ declare namespace Api {
     >
   }
 
+  namespace CombatLog {
+    type HitDirection = 'damage_out' | 'damage_in'
+    type HitQuality =
+      'barely_scratches' | 'hits' | 'smashes' | 'penetrates' | 'wrecks' | 'glances_off'
+
+    type Category =
+      | 'damage_out'
+      | 'damage_in'
+      | 'logistics_out'
+      | 'logistics_in'
+      | 'cap_transfer_out'
+      | 'cap_transfer_in'
+      | 'cap_damage_out'
+      | 'cap_damage_in'
+      | 'mining'
+
+    interface Report {
+      id: number
+      user_id: number
+      user_nickname: string
+      original_filename: string
+      character_name: string
+      language: string
+      started_at: string
+      ended_at: string
+      duration_seconds: number
+      event_count: number
+      source_bytes: number
+      damage_out: number
+      damage_in: number
+      logistics_out: number
+      logistics_in: number
+      cap_transfer_out: number
+      cap_transfer_in: number
+      cap_damage_out: number
+      cap_damage_in: number
+      mining_units: number
+      mining_m3: number
+      created_at: string
+      updated_at: string
+    }
+
+    interface Breakdown {
+      id: number
+      report_id: number
+      category: Category
+      pilot_name: string
+      ship_type: string
+      weapon_type: string
+      amount: number
+      volume_m3: number
+      event_count: number
+    }
+
+    interface TimelinePoint {
+      id: number
+      report_id: number
+      occurred_at: string
+      category: Category
+      amount: number
+    }
+
+    interface HitQualityDistribution {
+      id: number
+      report_id: number
+      direction: HitDirection
+      quality: HitQuality
+      hit_count: number
+      damage_amount: number
+      percentage: number
+    }
+
+    interface Detail {
+      report: Report
+      breakdowns: Breakdown[]
+      timeline: TimelinePoint[]
+      hit_qualities: HitQualityDistribution[]
+      average_dps_out: number
+      average_dps_in: number
+    }
+
+    interface ReportList {
+      list: Report[]
+      total: number
+      page: number
+      page_size: number
+    }
+  }
+
   namespace AT {
     interface Match {
       id: number
