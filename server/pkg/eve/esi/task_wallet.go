@@ -7,7 +7,14 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+// walletInsertBatchSize 单条 INSERT 的行数。PostgreSQL 单条语句最多 65535 个参数，
+// 流水表每行 14 个字段，因此不分批时超过约 4600 行就会失败。
+const walletInsertBatchSize = 500
 
 func init() {
 	Register(&WalletTask{})
@@ -92,77 +99,77 @@ func (t *WalletTask) Execute(ctx *TaskContext) error {
 		return fmt.Errorf("fetch wallet transactions: %w", err)
 	}
 
-	// 入库
-	tx := global.DB.Begin()
-	var count int64
-	global.DB.Model(&model.EVECharacterWallet{}).Where("character_id = ?", ctx.CharacterID).Count(&count)
-	if count == 0 {
-		tx.Create(&model.EVECharacterWallet{
-			CharacterID: ctx.CharacterID,
-			Balance:     balance, // 直接使用 float64
+	return saveWalletData(global.DB, ctx.CharacterID, balance, walletJournal, walletTransactions)
+}
+
+// saveWalletData 在一个事务内保存钱包余额、流水和市场交易
+func saveWalletData(db *gorm.DB, characterID int64, balance float64, journal WalletJournalResult, transactions []WalletTransaction) error {
+	journalRows := make([]model.EVECharacterWalletJournal, 0, len(journal))
+	for _, entry := range journal {
+		journalRows = append(journalRows, model.EVECharacterWalletJournal{
+			ID:            entry.ID,
+			CharacterID:   characterID,
+			Amount:        entry.Amount,
+			Balance:       entry.Balance,
+			ContextID:     entry.ContextID,
+			ContextIDType: entry.ContextIDType,
+			Date:          entry.Date,
+			Description:   entry.Description,
+			FirstPartyID:  entry.FirstPartyID,
+			Reason:        entry.Reason,
+			RefType:       entry.RefType,
+			SecondPartyID: entry.SecondPartyID,
+			Tax:           entry.Tax,
+			TaxReceiverID: entry.TaxReceiverID,
 		})
-	} else {
-		// 更新余额
-		tx.Model(&model.EVECharacterWallet{}).
-			Where("character_id = ?", ctx.CharacterID).
-			Update("balance", balance)
 	}
 
-	var waitingEntries []model.EVECharacterWalletJournal
-	for _, entry := range walletJournal {
-		global.DB.Model(&model.EVECharacterWalletJournal{}).Where("ID = ?", entry.ID).Count(&count)
-		if count == 0 {
-			waitingEntries = append(waitingEntries, model.EVECharacterWalletJournal{
-				ID:            entry.ID,
-				CharacterID:   ctx.CharacterID,
-				Amount:        entry.Amount,
-				Balance:       entry.Balance,
-				ContextID:     entry.ContextID,
-				ContextIDType: entry.ContextIDType,
-				Date:          entry.Date,
-				Description:   entry.Description,
-				FirstPartyID:  entry.FirstPartyID,
-				Reason:        entry.Reason,
-				RefType:       entry.RefType,
-				SecondPartyID: entry.SecondPartyID,
-				Tax:           entry.Tax,
-				TaxReceiverID: entry.TaxReceiverID,
-			})
-		}
+	transactionRows := make([]model.EVECharacterWalletTransaction, 0, len(transactions))
+	for _, t := range transactions {
+		transactionRows = append(transactionRows, model.EVECharacterWalletTransaction{
+			TransactionID: t.TransactionID,
+			CharacterID:   characterID,
+			ClientID:      t.ClientID,
+			Date:          t.Date,
+			IsBuy:         t.IsBuy,
+			IsPersonal:    t.IsPersonal,
+			JournalRefID:  t.JournalRefID,
+			LocationID:    t.LocationID,
+			Quantity:      t.Quantity,
+			TypeID:        t.TypeID,
+			UnitPrice:     t.UnitPrice,
+		})
 	}
-	if len(waitingEntries) > 0 {
-		if err := tx.Create(&waitingEntries).Error; err != nil {
-			tx.Rollback()
+
+	return db.Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := tx.Model(&model.EVECharacterWallet{}).Where("character_id = ?", characterID).Count(&count).Error; err != nil {
+			return fmt.Errorf("query wallet: %w", err)
+		}
+		if count == 0 {
+			if err := tx.Create(&model.EVECharacterWallet{CharacterID: characterID, Balance: balance}).Error; err != nil {
+				return fmt.Errorf("insert wallet: %w", err)
+			}
+		} else if err := tx.Model(&model.EVECharacterWallet{}).
+			Where("character_id = ?", characterID).
+			Update("balance", balance).Error; err != nil {
+			return fmt.Errorf("update wallet balance: %w", err)
+		}
+
+		if err := insertIgnoringDuplicates(tx, journalRows); err != nil {
 			return fmt.Errorf("insert wallet journal: %w", err)
 		}
-	}
-
-	var waitingTransactions []model.EVECharacterWalletTransaction
-	for _, t := range walletTransactions {
-		global.DB.Model(&model.EVECharacterWalletTransaction{}).Where("transaction_id = ?", t.TransactionID).Count(&count)
-		if count == 0 {
-			waitingTransactions = append(waitingTransactions, model.EVECharacterWalletTransaction{
-				TransactionID: t.TransactionID,
-				CharacterID:   ctx.CharacterID,
-				ClientID:      t.ClientID,
-				Date:          t.Date,
-				IsBuy:         t.IsBuy,
-				IsPersonal:    t.IsPersonal,
-				JournalRefID:  t.JournalRefID,
-				LocationID:    t.LocationID,
-				Quantity:      t.Quantity,
-				TypeID:        t.TypeID,
-				UnitPrice:     t.UnitPrice,
-			})
-		}
-	}
-	if len(waitingTransactions) > 0 {
-		if err := tx.Create(&waitingTransactions).Error; err != nil {
-			tx.Rollback()
+		if err := insertIgnoringDuplicates(tx, transactionRows); err != nil {
 			return fmt.Errorf("insert wallet transactions: %w", err)
 		}
-	}
-	tx.Commit()
+		return nil
+	})
+}
 
-	return nil
+// insertIgnoringDuplicates 分批插入，跳过已存在的记录以及同一批数据内的重复记录
+func insertIgnoringDuplicates[T any](tx *gorm.DB, rows []T) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	return tx.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(rows, walletInsertBatchSize).Error
 }
