@@ -303,3 +303,11 @@ Cron (每5分钟) ──> Queue.Run()
 - 网络错误、5xx 最多尝试 3 次（单次超时 10s）；同一角色的并发刷新合并为一次。
 - 只有 EVE SSO 明确返回 `invalid_grant` 才会设置 `token_invalid`。网络错误、5xx、429、`invalid_client` 只返回错误，角色保持有效，下次调度重试。
 - 已标记失效的角色在服务启动时和每日 04:30 重新验证一次（`RecheckInvalidTokens`），刷新成功则自动恢复。
+
+## SeAT passthrough 冷却
+
+SeAT-only 角色通过 passthrough 端点获取 token。端点返回 404 时，角色进入 1 小时冷却，定时队列在冷却期内跳过该角色，避免每 5 分钟为每个任务重复请求 SeAT。
+
+- 冷却结束后由队列重新探测一次，因此在 SeAT 恢复绑定后最多 1 小时自动恢复。
+- 手动触发的任务和用户主动操作不受冷却限制，成功后立即解除冷却。
+- 404 不会设置 `token_invalid`。

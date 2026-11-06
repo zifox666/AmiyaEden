@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -231,6 +232,22 @@ func decodeJWTPayload(token string) ([]byte, error) {
 	return payload, nil
 }
 
+// SeatPassthroughError SeAT passthrough 端点返回的非 200 响应
+type SeatPassthroughError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *SeatPassthroughError) Error() string {
+	return fmt.Sprintf("SeAT passthrough error %d: %s", e.StatusCode, e.Body)
+}
+
+// IsSeatPassthroughNotFound 判断错误是否为 SeAT 拒绝为该角色签发 token（404）
+func IsSeatPassthroughNotFound(err error) bool {
+	var passthroughErr *SeatPassthroughError
+	return errors.As(err, &passthroughErr) && passthroughErr.StatusCode == http.StatusNotFound
+}
+
 // GetPassthroughToken 用 SeAT access_token 为指定角色换取 ESI access_token
 // 返回的 token 可直接用于请求 https://esi.evetech.net
 // esiScopes 为空时不传 scope 参数（SeAT 会使用该角色已授权的全部 ESI scopes）
@@ -270,7 +287,7 @@ func (c *SeatClient) GetPassthroughToken(ctx context.Context, characterID int64,
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("SeAT passthrough error %d: %s", resp.StatusCode, string(body))
+		return nil, &SeatPassthroughError{StatusCode: resp.StatusCode, Body: string(body)}
 	}
 
 	var tokenResp SeatTokenResponse

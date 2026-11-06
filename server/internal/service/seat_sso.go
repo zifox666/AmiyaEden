@@ -22,7 +22,9 @@ import (
 
 const (
 	seatStateCachePrefix = "seat:sso:state:"
-	seatStateCacheTTL    = 10 * time.Minute
+	// seatPassthroughCooldownPrefix SeAT passthrough 返回 404 的角色冷却标记
+	seatPassthroughCooldownPrefix = "seat:passthrough:cooldown:"
+	seatStateCacheTTL             = 10 * time.Minute
 )
 
 // seatStateData SeAT OAuth state 中存储的数据
@@ -625,8 +627,12 @@ func (s *SeatSSOService) GetESITokenForCharacter(ctx context.Context, characterI
 	// 4. 调用 passthrough 端点换取 ESI access_token
 	tokenResp, err := client.GetPassthroughToken(ctx, characterID, seatAccessToken, nil)
 	if err != nil {
+		if eve.IsSeatPassthroughNotFound(err) {
+			startSeatPassthroughCooldown(ctx, characterID)
+		}
 		return "", fmt.Errorf("SeAT passthrough 角色 %d 失败: %w", characterID, err)
 	}
+	clearSeatPassthroughCooldown(ctx, characterID)
 
 	// 5. 解析 passthrough token 中的 scopes，写回角色记录以供 ESI 队列调度
 	if claims, parseErr := eve.ParsePassthroughToken(tokenResp.AccessToken); parseErr == nil && len(claims.Scp) > 0 {
@@ -645,6 +651,34 @@ func (s *SeatSSOService) GetESITokenForCharacter(ctx context.Context, characterI
 	}
 
 	return tokenResp.AccessToken, nil
+}
+
+// seatPassthroughCooldown SeAT passthrough 返回 404 后，定时队列跳过该角色的时长
+const seatPassthroughCooldown = time.Hour
+
+// IsSeatPassthroughCoolingDown 判断角色最近是否被 SeAT passthrough 返回 404。
+// 冷却只影响定时队列；用户主动操作仍会实时请求 SeAT，成功后立即解除冷却。
+func IsSeatPassthroughCoolingDown(ctx context.Context, characterID int64) bool {
+	exists, err := cache.Exists(ctx, seatPassthroughCooldownKey(characterID))
+	return err == nil && exists
+}
+
+func seatPassthroughCooldownKey(characterID int64) string {
+	return fmt.Sprintf("%s%d", seatPassthroughCooldownPrefix, characterID)
+}
+
+func startSeatPassthroughCooldown(ctx context.Context, characterID int64) {
+	if err := cache.SetString(ctx, seatPassthroughCooldownKey(characterID), "1", seatPassthroughCooldown); err != nil {
+		global.Logger.Warn("[SeAT Passthrough] 写入冷却标记失败",
+			zap.Int64("characterID", characterID), zap.Error(err))
+	}
+}
+
+func clearSeatPassthroughCooldown(ctx context.Context, characterID int64) {
+	if err := cache.Del(ctx, seatPassthroughCooldownKey(characterID)); err != nil {
+		global.Logger.Warn("[SeAT Passthrough] 清除冷却标记失败",
+			zap.Int64("characterID", characterID), zap.Error(err))
+	}
 }
 
 // RefreshAllSeatUserGroups 刷新所有 SeAT 用户的 token，解析 id_token 更新 groups

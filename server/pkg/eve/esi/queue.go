@@ -68,13 +68,19 @@ func (q *Queue) Run() {
 		return
 	}
 
+	isCoolingDown := func(characterID int64) bool {
+		return service.IsSeatPassthroughCoolingDown(ctx, characterID)
+	}
+	characters = excludeCoolingDownCharacters(characters, isCoolingDown)
+
 	if len(characters) == 0 {
 		global.Logger.Info("[ESI Queue] 没有需要刷新的角色")
 		return
 	}
 
-	// 2. 检测角色活跃度
+	// 2. 检测角色活跃度（对 SeAT-only 角色同时起到探测作用：返回 404 的角色会进入冷却）
 	activityMap := q.checkActivity(ctx, characters)
+	characters = excludeCoolingDownCharacters(characters, isCoolingDown)
 
 	// 3. 获取所有任务并按优先级排序
 	allTasks := AllTasks()
@@ -139,6 +145,19 @@ func (q *Queue) Run() {
 
 	wg.Wait()
 	global.Logger.Info("[ESI Queue] 刷新调度完成")
+}
+
+// excludeCoolingDownCharacters 排除 SeAT passthrough 冷却中的 SeAT-only 角色。
+// 持有 EVE SSO refresh token 的角色不依赖 SeAT，不受影响。
+func excludeCoolingDownCharacters(characters []model.EveCharacter, isCoolingDown func(characterID int64) bool) []model.EveCharacter {
+	available := make([]model.EveCharacter, 0, len(characters))
+	for _, char := range characters {
+		if char.RefreshToken == "" && isCoolingDown(char.CharacterID) {
+			continue
+		}
+		available = append(available, char)
+	}
+	return available
 }
 
 // RunTask 手动执行某个指定任务（管理页面触发）
