@@ -13,13 +13,26 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 )
+
+const (
+	// tokenRefreshThreshold access token 剩余有效期低于该值时刷新
+	tokenRefreshThreshold = 3 * time.Minute
+	// tokenRecheckInterval 批量验证失效角色时的请求间隔，避免触发 SSO 限流
+	tokenRecheckInterval = 200 * time.Millisecond
+)
+
+// characterTokenRefreshGroup 合并同一角色的并发刷新。
+// 必须是包级变量：NewEveSSOService 在各模块中会被多次调用。
+var characterTokenRefreshGroup singleflight.Group
 
 // ─────────────────────────────────────────────
 //  Scope 注册机制（供其他模块使用）
@@ -518,39 +531,125 @@ func (s *EveSSOService) GetValidToken(ctx context.Context, characterID int64) (s
 		return "", errors.New("该角色的 token 已失效，请重新授权")
 	}
 
-	// Token 有效期剩余 < 3 分钟则刷新
-	if time.Until(char.TokenExpiry) < 3*time.Minute {
-		if err := s.refreshCharacterToken(ctx, char); err != nil {
-			return "", err
-		}
+	// Token 即将过期则刷新
+	if time.Until(char.TokenExpiry) < tokenRefreshThreshold {
+		return refreshCharacterToken(ctx, s.charRepo, s.eveClient, characterID)
 	}
 
 	return char.AccessToken, nil
 }
 
-// refreshCharacterToken 刷新角色 Token 并持久化
-func (s *EveSSOService) refreshCharacterToken(ctx context.Context, char *model.EveCharacter) error {
-	tokenResp, err := s.eveClient.RefreshAccessToken(ctx, char.RefreshToken)
+// characterTokenStore refreshCharacterToken 依赖的角色存储
+type characterTokenStore interface {
+	GetByCharacterID(characterID int64) (*model.EveCharacter, error)
+	Update(char *model.EveCharacter) error
+	MarkTokenInvalid(characterID int64, refreshToken string) error
+}
+
+// ssoTokenRefresher refreshCharacterToken 依赖的 SSO 客户端
+type ssoTokenRefresher interface {
+	RefreshAccessToken(ctx context.Context, refreshToken string) (*eve.TokenResponse, error)
+}
+
+// refreshCharacterToken 刷新角色 Token 并持久化，返回新的 access_token。
+// 同一角色的并发刷新合并为一次，避免并发任务用同一个旧 refresh token 重复请求。
+func refreshCharacterToken(ctx context.Context, store characterTokenStore, client ssoTokenRefresher, characterID int64) (string, error) {
+	result, err, _ := characterTokenRefreshGroup.Do(strconv.FormatInt(characterID, 10), func() (any, error) {
+		return doRefreshCharacterToken(ctx, store, client, characterID)
+	})
 	if err != nil {
-		char.TokenInvalid = true
-		_ = s.charRepo.Update(char)
-		return err
+		return "", err
+	}
+	return result.(string), nil
+}
+
+func doRefreshCharacterToken(ctx context.Context, store characterTokenStore, client ssoTokenRefresher, characterID int64) (string, error) {
+	// 重新读取：调用方持有的数据可能已被上一轮刷新或用户重新授权更新
+	char, err := store.GetByCharacterID(characterID)
+	if err != nil {
+		return "", err
+	}
+	if char.RefreshToken == "" {
+		return "", fmt.Errorf("角色 %d 没有 refresh token", characterID)
+	}
+	if !char.TokenInvalid && time.Until(char.TokenExpiry) >= tokenRefreshThreshold {
+		return char.AccessToken, nil
+	}
+
+	tokenResp, err := client.RefreshAccessToken(ctx, char.RefreshToken)
+	if err != nil {
+		// 只有 SSO 明确拒绝 refresh token 才算失效，网络波动、SSO 故障下次调度会自动重试
+		if !eve.IsRefreshTokenRevoked(err) {
+			return "", fmt.Errorf("刷新角色 %d 的 token 暂时失败: %w", characterID, err)
+		}
+		if !char.TokenInvalid {
+			global.Logger.Warn("角色 refresh token 已被 EVE SSO 拒绝，标记为失效",
+				zap.Int64("character_id", characterID), zap.Error(err))
+			if markErr := store.MarkTokenInvalid(characterID, char.RefreshToken); markErr != nil {
+				global.Logger.Error("标记角色 token 失效失败",
+					zap.Int64("character_id", characterID), zap.Error(markErr))
+			}
+		}
+		return "", fmt.Errorf("角色 %d 的 token 已失效: %w", characterID, err)
 	}
 
 	claims, err := eve.ParseAccessToken(tokenResp.AccessToken)
 	if err != nil {
-		char.TokenInvalid = true
-		_ = s.charRepo.Update(char)
-		return err
+		return "", fmt.Errorf("解析角色 %d 的 access token 失败: %w", characterID, err)
 	}
 
 	char.AccessToken = tokenResp.AccessToken
-	char.RefreshToken = tokenResp.RefreshToken
+	// OAuth 允许响应不返回新的 refresh token，此时继续使用旧值
+	if tokenResp.RefreshToken != "" {
+		char.RefreshToken = tokenResp.RefreshToken
+	}
 	char.TokenExpiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 	char.Scopes = strings.Join(claims.GetScopes(), " ")
 	char.TokenInvalid = false
 
-	return s.charRepo.Update(char)
+	if err := store.Update(char); err != nil {
+		return "", err
+	}
+	return char.AccessToken, nil
+}
+
+// RecheckInvalidTokens 重新验证已标记失效的角色：刷新成功则自动恢复，
+// 用于修复因网络波动被误标记的角色，也让用户在 EVE 侧恢复授权后无需重新绑定。
+func (s *EveSSOService) RecheckInvalidTokens(ctx context.Context) {
+	characterIDs, err := s.charRepo.ListTokenInvalidCharacterIDs()
+	if err != nil {
+		global.Logger.Error("[Token Recheck] 查询失效角色失败", zap.Error(err))
+		return
+	}
+
+	recovered, revoked, failed := 0, 0, 0
+	for _, characterID := range characterIDs {
+		_, refreshErr := refreshCharacterToken(ctx, s.charRepo, s.eveClient, characterID)
+		switch {
+		case refreshErr == nil:
+			recovered++
+			global.Logger.Info("[Token Recheck] 角色 token 已恢复", zap.Int64("character_id", characterID))
+		case eve.IsRefreshTokenRevoked(refreshErr):
+			revoked++
+		default:
+			failed++
+			global.Logger.Warn("[Token Recheck] 验证失败，保持现状",
+				zap.Int64("character_id", characterID), zap.Error(refreshErr))
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(tokenRecheckInterval):
+		}
+	}
+
+	global.Logger.Info("[Token Recheck] 完成",
+		zap.Int("total", len(characterIDs)),
+		zap.Int("recovered", recovered),
+		zap.Int("revoked", revoked),
+		zap.Int("failed", failed),
+	)
 }
 
 // GetCharactersByUserID 获取用户绑定的所有 EVE 角色（不含 Token）

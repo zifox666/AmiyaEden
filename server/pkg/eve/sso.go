@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +21,49 @@ const (
 	TokenURL = "https://login.eveonline.com/v2/oauth/token"
 	// PortraitURLFmt EVE 角色头像 URL 模板
 	PortraitURLFmt = "https://images.evetech.net/characters/%d/portrait?size=128"
+
+	// refreshMaxAttempts 刷新 Token 的最大尝试次数（仅对网络错误、5xx 重试）
+	refreshMaxAttempts = 3
+	// refreshAttemptTimeout 单次刷新请求超时，三次尝试的总耗时与原先单次 30s 上限基本一致
+	refreshAttemptTimeout = 10 * time.Second
+	// tokenErrorBodyLimit 错误信息中保留的响应体长度（网关错误页可能很长）
+	tokenErrorBodyLimit = 256
 )
+
+// refreshRetryBackoff 刷新重试的基础退避时间（第 n 次重试等待 n 倍）
+var refreshRetryBackoff = 500 * time.Millisecond
+
+// TokenError EVE SSO Token 接口返回的非 200 响应
+type TokenError struct {
+	StatusCode int
+	Code       string // OAuth 错误码，如 invalid_grant；响应不是 OAuth 错误格式时为空
+	Body       string
+}
+
+func (e *TokenError) Error() string {
+	return fmt.Sprintf("EVE SSO error %d: %s", e.StatusCode, e.Body)
+}
+
+// IsRefreshTokenRevoked 判断错误是否明确表示 refresh token 已失效（需要用户重新授权）。
+// 仅 invalid_grant 属于此类；网络错误、5xx、429、invalid_client（我方配置问题）等都不代表
+// 角色授权失效，不能据此标记角色。
+func IsRefreshTokenRevoked(err error) bool {
+	var tokenErr *TokenError
+	if !errors.As(err, &tokenErr) {
+		return false
+	}
+	return tokenErr.StatusCode >= 400 && tokenErr.StatusCode < 500 && tokenErr.Code == "invalid_grant"
+}
+
+// isRetryableTokenError 判断刷新失败是否值得立即重试。
+// 429 不重试，避免在被限流时加重请求。
+func isRetryableTokenError(err error) bool {
+	var tokenErr *TokenError
+	if errors.As(err, &tokenErr) {
+		return tokenErr.StatusCode >= 500
+	}
+	return true
+}
 
 // Client EVE SSO OAuth 客户端
 type Client struct {
@@ -68,12 +111,30 @@ func (c *Client) ExchangeCode(ctx context.Context, code string) (*TokenResponse,
 	return c.doTokenRequest(ctx, data)
 }
 
-// RefreshAccessToken 刷新 Access Token
+// RefreshAccessToken 刷新 Access Token，遇到网络错误或 5xx 时自动重试。
+// 返回的错误可用 IsRefreshTokenRevoked 判断 refresh token 是否真正失效。
 func (c *Client) RefreshAccessToken(ctx context.Context, refreshToken string) (*TokenResponse, error) {
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
 	data.Set("refresh_token", refreshToken)
-	return c.doTokenRequest(ctx, data)
+
+	for attempt := 1; ; attempt++ {
+		attemptCtx, cancel := context.WithTimeout(ctx, refreshAttemptTimeout)
+		tokenResp, err := c.doTokenRequest(attemptCtx, data)
+		cancel()
+		if err == nil {
+			return tokenResp, nil
+		}
+		if attempt >= refreshMaxAttempts || ctx.Err() != nil || !isRetryableTokenError(err) {
+			return nil, err
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, err
+		case <-time.After(time.Duration(attempt) * refreshRetryBackoff):
+		}
+	}
 }
 
 func (c *Client) doTokenRequest(ctx context.Context, data url.Values) (*TokenResponse, error) {
@@ -96,7 +157,7 @@ func (c *Client) doTokenRequest(ctx context.Context, data url.Values) (*TokenRes
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("EVE SSO error %d: %s", resp.StatusCode, string(body))
+		return nil, newTokenError(resp.StatusCode, body)
 	}
 
 	var tokenResp TokenResponse
@@ -104,6 +165,18 @@ func (c *Client) doTokenRequest(ctx context.Context, data url.Values) (*TokenRes
 		return nil, fmt.Errorf("parse token response: %w", err)
 	}
 	return &tokenResp, nil
+}
+
+func newTokenError(statusCode int, body []byte) *TokenError {
+	var oauthErr struct {
+		Error string `json:"error"`
+	}
+	_ = json.Unmarshal(body, &oauthErr) // 网关错误页不是 JSON，此时 Code 留空
+
+	if len(body) > tokenErrorBodyLimit {
+		body = body[:tokenErrorBodyLimit]
+	}
+	return &TokenError{StatusCode: statusCode, Code: oauthErr.Error, Body: string(body)}
 }
 
 // JWTClaims EVE SSO v2 JWT access_token 解析后的载荷

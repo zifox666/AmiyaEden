@@ -86,3 +86,22 @@ func registerESIRefreshJob(c *cron.Cron) {
 	}
 	global.Logger.Info("注册 ESI 刷新定时任务成功", zap.Int("entry_id", int(id)))
 }
+
+// registerTokenRecheckJob 注册每日验证失效角色 token 的定时任务
+func registerTokenRecheckJob(c *cron.Cron) {
+	id, err := c.AddFunc("0 30 4 * * *", tokenRecheckTask)
+	if err != nil {
+		global.Logger.Error("注册 Token 验证定时任务失败", zap.Error(err))
+		return
+	}
+	global.Logger.Info("注册 Token 验证定时任务成功", zap.Int("entry_id", int(id)))
+}
+
+// TokenRecheckOnStartup 启动时验证一次失效角色 token（供 main 调用）
+func TokenRecheckOnStartup() {
+	tokenRecheckTask()
+}
+
+func tokenRecheckTask() {
+	service.NewEveSSOService().RecheckInvalidTokens(context.Background())
+}

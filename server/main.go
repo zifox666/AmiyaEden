@@ -36,6 +36,7 @@ func main() {
 
 	// 启动时异步检查 SDE 是否有新版本
 	go jobs.SdeCheckOnStartup()
+	go jobs.TokenRecheckOnStartup()
 
 	// 将 ESI 任务模块的 scope 注册到 SSO 服务
 	bootstrap.InitScopes()

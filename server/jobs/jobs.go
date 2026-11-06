@@ -11,6 +11,7 @@ import (
 func RegisterAll(c *cron.Cron) {
 	registerSdeJob(c)
 	registerESIRefreshJob(c)
+	registerTokenRecheckJob(c)
 	registerAlliancePAPJob(c)
 	RegisterRoleJobs(c)
 	RegisterAutoRoleJobs(c)

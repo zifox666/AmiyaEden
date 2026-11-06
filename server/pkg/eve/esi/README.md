@@ -295,3 +295,11 @@ Cron (每5分钟) ──> Queue.Run()
                            │
                            └─ 更新 Redis 状态
 ```
+
+## Token 刷新与失效判定
+
+`GetValidToken` 在 access token 即将过期时自动刷新：
+
+- 网络错误、5xx 最多尝试 3 次（单次超时 10s）；同一角色的并发刷新合并为一次。
+- 只有 EVE SSO 明确返回 `invalid_grant` 才会设置 `token_invalid`。网络错误、5xx、429、`invalid_client` 只返回错误，角色保持有效，下次调度重试。
+- 已标记失效的角色在服务启动时和每日 04:30 重新验证一次（`RecheckInvalidTokens`），刷新成功则自动恢复。
